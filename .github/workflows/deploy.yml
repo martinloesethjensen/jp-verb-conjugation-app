@@ -1,0 +1,134 @@
+name: Deploy & Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Web: Firebase Hosting ──────────────────────────────────────────────────
+  deploy-web:
+    name: Deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # needed for PR preview comments
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Firebase Hosting (live channel on main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+
+      - name: Deploy to Firebase Hosting (preview channel on PR)
+        if: github.event_name == 'pull_request'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          # Preview channel is auto-created per PR
+
+  # ── macOS: Tauri DMG Release ───────────────────────────────────────────────
+  release-macos:
+    name: Build & Release macOS DMG
+    # Only run on pushes to main (not on PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+    permissions:
+      contents: write  # needed to create/update releases
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Both targets needed for universal binary (Apple Silicon + Intel)
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache Rust build artifacts
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Generate app icons
+        # Requires a source PNG — replace icon-source.png with your own 1024x1024 image.
+        # If no icon-source.png is present, a placeholder purple square is used.
+        run: |
+          if [ ! -f icon-source.png ]; then
+            # Create a simple placeholder icon using sips + Python
+            python3 -c "
+          import struct, zlib
+
+          def make_png(size, r, g, b):
+              def chunk(name, data):
+                  c = zlib.crc32(name + data) & 0xffffffff
+                  return struct.pack('>I', len(data)) + name + data + struct.pack('>I', c)
+              ihdr = struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0)
+              row = b'\\x00' + bytes([r, g, b] * size)
+              raw = row * size
+              idat = zlib.compress(raw)
+              return b'\\x89PNG\\r\\n\\x1a\\n' + chunk(b'IHDR', ihdr) + chunk(b'IDAT', idat) + chunk(b'IEND', b'')
+
+          with open('icon-source.png', 'wb') as f:
+              f.write(make_png(1024, 124, 58, 237))
+          "
+          fi
+          npm run tauri icon icon-source.png
+
+      - name: Build Tauri app (universal macOS)
+        run: npm run tauri build -- --target universal-apple-darwin
+        env:
+          # Disable code signing for CI; set these secrets for signed builds:
+          # APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+          # APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
+          TAURI_SIGNING_PRIVATE_KEY: ""
+
+      - name: Upload DMG as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: JP-Verb-Conjugation-macOS
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          retention-days: 30
+
+      - name: Create or update "latest" GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Build
+          body: |
+            Automated build from commit ${{ github.sha }}.
+
+            **Note:** This macOS app is unsigned. On first open, right-click → Open to bypass Gatekeeper.
+
+            Download the `.dmg`, open it, and drag the app to Applications.
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg

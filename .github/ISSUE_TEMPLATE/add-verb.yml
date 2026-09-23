@@ -1,0 +1,126 @@
+name: Add Verb Conjugation
+description: Suggest a new Japanese verb to add to the conjugation table
+title: "[VERB] <dict-form> — <meaning>"
+labels: ["verb-addition"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing! Please fill in the conjugation forms as completely as possible.
+        The maintainers will verify accuracy before merging.
+
+  - type: input
+    id: dict
+    attributes:
+      label: Dictionary Form (辞書形)
+      description: The plain/dictionary form of the verb in hiragana
+      placeholder: "e.g. たべる"
+    validations:
+      required: true
+
+  - type: input
+    id: kanji
+    attributes:
+      label: Kanji Form
+      description: The kanji writing of the verb (leave blank if none)
+      placeholder: "e.g. 食べる"
+
+  - type: input
+    id: meaning
+    attributes:
+      label: English Meaning
+      description: A concise English translation starting with "to"
+      placeholder: "e.g. to eat"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Verb Type
+      description: What type of verb is this?
+      options:
+        - "ru — ru-verb (一段動詞, ends in -eru or -iru)"
+        - "u — u-verb (五段動詞, all others)"
+        - "irr. — irregular (する or くる only)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: te_group
+    attributes:
+      label: て-form Group (u-verbs only)
+      description: Which て-form sound change does this u-verb use?
+      options:
+        - "N/A — not a u-verb"
+        - "tte (って) — verb ends in う / つ / る"
+        - "nde (んで) — verb ends in む / ぶ / ぬ"
+        - "ite (いて) — verb ends in く"
+        - "ide (いで) — verb ends in ぐ"
+        - "shite (して) — verb ends in す"
+    validations:
+      required: true
+
+  - type: textarea
+    id: forms
+    attributes:
+      label: Conjugation Forms
+      description: Fill in every form. Check a Japanese dictionary (e.g. jisho.org) if unsure.
+      value: |
+        | Form                        | Value |
+        |-----------------------------|-------|
+        | ます (polite present +)      |       |
+        | ません (polite present −)    |       |
+        | ました (polite past +)       |       |
+        | ませんでした (polite past −) |       |
+        | て-form                     |       |
+        | short present +             |       |
+        | short present − (ない-form) |       |
+        | short past +                |       |
+        | short past −                |       |
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: One or two sentences about what the verb means and how it is used
+      placeholder: "e.g. A ru-verb meaning to eat. Drop the final る and add your ending."
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Usage Notes (optional)
+      description: Important grammar notes, common collocations, or pitfalls for learners
+      placeholder: "e.g. て-form たべて is used in sequences like たべてから (after eating)."
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example Sentences (optional)
+      description: |
+        Provide 2–5 example sentences. One per block, Japanese on one line, English on the next.
+        Indicate which conjugation form each example uses.
+      placeholder: |
+        Form: masu_pos
+        JP: あさごはんをたべます。
+        EN: I eat breakfast.
+
+        Form: te
+        JP: たべてから、でかけます。
+        EN: After eating, I'll go out.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Submission checklist
+      options:
+        - label: I have verified the conjugations using a reliable source (e.g. jisho.org, a textbook)
+          required: true
+        - label: All nine conjugation forms are filled in
+          required: true
+        - label: The verb is not already in the table
+          required: true
