@@ -1,0 +1,26 @@
+name: JPVerbConjugation
+options:
+  bundleIdPrefix: dev.martinloeseth
+packages:
+  VerbKit:
+    path: Packages/VerbKit
+targets:
+  JPVerbConjugation:
+    type: application
+    platform: [iOS, macOS]
+    deploymentTarget:
+      iOS: "17.0"
+      macOS: "14.0"
+    sources:
+      - path: App
+    dependencies:
+      - package: VerbKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.martinloeseth.jpverbconjugation
+        PRODUCT_NAME: "JP Verb Conjugation"
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
