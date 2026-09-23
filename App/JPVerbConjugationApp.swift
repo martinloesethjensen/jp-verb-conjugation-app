@@ -5,7 +5,7 @@ import VerbKit
 struct JPVerbConjugationApp: App {
     var body: some Scene {
         WindowGroup {
-            Text(verbKitPlaceholder ? "JP Verb Conjugation" : "")
+            Text("JP Verb Conjugation")
                 .padding()
         }
     }

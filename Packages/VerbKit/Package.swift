@@ -11,6 +11,11 @@ let package = Package(
         .library(name: "VerbKit", targets: ["VerbKit"])
     ],
     targets: [
-        .target(name: "VerbKit")
+        .target(name: "VerbKit"),
+        .testTarget(
+            name: "VerbKitTests",
+            dependencies: ["VerbKit"],
+            resources: [.copy("Fixtures/verbs-fixture.json")]
+        )
     ]
 )

@@ -1,0 +1,52 @@
+{
+  "version": "test-fixture",
+  "description": "Fixture for VerbKit decoding tests.",
+  "verbs": [
+    {
+      "type": "irr.",
+      "label": "Irregular",
+      "dict": "する",
+      "kanji": null,
+      "meaning": "to do",
+      "description": "The most common irregular verb.",
+      "notes": "Compounds like べんきょうする follow する's pattern.",
+      "forms": {
+        "masu_pos": "します",
+        "masu_neg": "しません",
+        "masu_past": "しました",
+        "masu_past_neg": "しませんでした",
+        "te": "して",
+        "short_pos": "する",
+        "short_neg": "しない",
+        "short_past": "した",
+        "short_past_neg": "しなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "まいにちべんきょうします。", "en": "I study every day." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "たべる",
+      "kanji": "食べる",
+      "meaning": "to eat",
+      "description": "A common ichidan verb.",
+      "forms": {
+        "masu_pos": "たべます",
+        "masu_neg": "たべません",
+        "masu_past": "たべました",
+        "masu_past_neg": "たべませんでした",
+        "te": "たべて",
+        "short_pos": "たべる",
+        "short_neg": "たべない",
+        "short_past": "たべた",
+        "short_past_neg": "たべなかった"
+      },
+      "examples": [
+        { "form": "te", "jp": "たべてください。", "en": "Please eat." },
+        { "form": "short_pos", "jp": "まいにちたべる。", "en": "I eat every day." }
+      ]
+    }
+  ]
+}
