@@ -101,18 +101,30 @@ since each later piece depends on infrastructure the earlier ones establish.
   existing "suggest a verb via GitHub issue → maintainer edits the JSON →
   everyone gets it automatically" workflow, now without requiring an app
   release to ship new verbs.
+- **Manifest**: a small `data/manifest.json` alongside it —
+  `{"version": "1.2.0", "sha256": "<hash of verbs.json content>"}` — bumped
+  whenever `verbs.json` changes. The app fetches this tiny file first on
+  every sync check; only when its `version`/`sha256` differ from the last
+  values stored locally (`UserDefaults`) does it fetch and parse the full
+  `verbs.json`. This avoids downloading and re-decoding the whole verb file
+  on every launch when nothing changed, and the hash doubles as an
+  integrity check — if the fetched `verbs.json`'s computed hash doesn't
+  match the manifest's declared hash, that's treated as
+  `failed(.malformedData)` (corrupted/incomplete download) rather than
+  silently accepting bad data.
 - **Local store**: a SwiftData `Verb` model (flattened form fields or a
   nested `Codable` `VerbForms` attribute; `[VerbExample]` stored as a
   `Codable` array attribute), in the shared App Group container so the
   widget/Shortcuts extension can read it too.
-- **`VerbDataFetching` protocol**: abstracts the network fetch so sync logic
-  is unit-testable with a mock, independent of real network calls.
+- **`VerbDataFetching` protocol**: abstracts fetching the manifest and the
+  verb data so sync logic is unit-testable with a mock, independent of real
+  network calls.
 - **First launch** (empty local store) — a dedicated **"Loading verb data"**
   screen, state-machine driven:
   1. `checking` — quick connectivity check via `NWPathMonitor` before
      attempting the fetch.
-  2. `fetching` — spinner while the GitHub request is in flight (timeout,
-     e.g. 15s).
+  2. `fetching` — spinner while the manifest and (if needed) `verbs.json`
+     requests are in flight (timeout, e.g. 15s).
   3. `failed(.offline)` — "No internet connection" messaging; the screen
      auto-retries when `NWPathMonitor` reports connectivity restored, and
      also offers a manual "Try Again" button.
@@ -124,11 +136,11 @@ since each later piece depends on infrastructure the earlier ones establish.
   6. `success` — seeds SwiftData, proceeds into the normal list/detail UI.
 - **Subsequent launches**: local SwiftData already has data, so the app
   opens straight into the UI (fully offline-capable from here on) while a
-  background `Task` re-fetches from GitHub. If the fetched content's hash
-  differs from the last-synced hash (stored in `UserDefaults`), the local
-  store is **replace-synced** (remote JSON is the source of truth — verbs
-  removed remotely are removed locally too). Never blocks the UI; failures
-  here are silent since cached data remains valid.
+  background `Task` checks `manifest.json`. If its version/hash differs
+  from what's stored locally, `verbs.json` is fetched and the local store
+  is **replace-synced** (remote JSON is the source of truth — verbs removed
+  remotely are removed locally too). Never blocks the UI; failures here are
+  silent since cached data remains valid.
 - **Widget/Shortcuts**: read only from the local SwiftData store — no
   network fetch of their own, since widget extensions have tight execution
   budgets and the main app owns all networking.
@@ -175,9 +187,9 @@ since each later piece depends on infrastructure the earlier ones establish.
 
 - Unit tests on the `VerbKit` package cover: quiz question/distractor
   generation, search/filter matching, JSON decoding against the real data
-  file, and the fetch/sync logic (decode success, malformed JSON, and the
-  hash-based skip-if-unchanged logic) via the injected `VerbDataFetching`
-  mock.
+  file, and the fetch/sync logic (manifest-unchanged skip, manifest-changed
+  full sync, and hash-mismatch-on-`verbs.json` corruption handling) via the
+  injected `VerbDataFetching` mock.
 - UI is verified by running the app in Simulator per platform rather than
   SwiftUI snapshot/UI tests, given this is a personal-scale app.
 
@@ -209,4 +221,5 @@ Packages/
     Tests/VerbKitTests/
 data/
   verbs.json                  # source of truth, fetched via raw.githubusercontent.com
+  manifest.json                # {version, sha256} of verbs.json, checked before re-fetching
 ```
