@@ -34,12 +34,19 @@ schema).
   `package-lock.json`, `tsconfig.json`, `vite.config.ts`, `index.html`,
   `.firebaserc`, and `firebase.json` are removed once the native app is in
   place.
-- **Targets**:
-  - One multiplatform **App** target ("JP Verb Conjugation") covering iOS,
-    iPadOS, and macOS natively — true SwiftUI multiplatform (not Mac
-    Catalyst).
-  - One **Widget Extension** target for the home screen widget, added when
-    that phase of work starts.
+- **Targets**: generated via [XcodeGen](https://github.com/yonaskolb/XcodeGen)
+  from a checked-in `project.yml` (no GUI project creation needed, and the
+  `.xcodeproj` itself is gitignored/regenerated) — confirmed working with
+  the installed XcodeGen 2.46.
+  - **App**: XcodeGen's stable multiplatform support generates two targets
+    (`JPVerbConjugation_iOS`, `JPVerbConjugation_macOS`) that both build
+    from the same `App/` source directory and the same `VerbKit` package —
+    XcodeGen 2.46 doesn't yet support Xcode's newer single-target
+    multiplatform format, so this two-target/shared-sources form is the
+    practical equivalent (same SwiftUI code, `#if os()` where genuinely
+    needed, two schemes to build/run instead of one; not Mac Catalyst
+    either way).
+  - **Widget Extension**: added when that phase of work starts.
 - **Shared package**: a local Swift package, `VerbKit`, holds everything
   platform-agnostic — models, data fetching/sync, quiz logic, SwiftData
   persistence, and App Intents. Both the App target and the Widget Extension
