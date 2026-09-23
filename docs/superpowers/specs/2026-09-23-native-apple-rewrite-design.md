@@ -17,10 +17,15 @@ verb detail + examples, Kahoot-style quiz, dark mode), this rewrite also adds:
 - Quiz score history
 - A home screen widget and Siri/Shortcuts support
 - A GitHub-hosted verb data source, synced into a local on-device database
+- An expanded conjugation form set (potential, volitional, passive,
+  causative, causative-passive, both conditionals, imperative, たい-form),
+  populated via a JMdict + Tatoeba content pipeline (section 9)
 
-All four pieces are designed together here; implementation is expected to
-proceed in roughly that order (core port → persistence → history → widgets),
-since each later piece depends on infrastructure the earlier ones establish.
+All pieces are designed together here; implementation is expected to
+proceed in roughly this order: core port → persistence → history → widgets,
+with the content pipeline and expanded form set developed in parallel since
+they're independent of the app's UI work (they only share the `VerbForms`
+schema).
 
 ## 1. Project & platform foundations
 
@@ -56,8 +61,18 @@ since each later piece depends on infrastructure the earlier ones establish.
 - **iPhone (compact width)**: `NavigationStack`. Root screen is the verb
   list — `.searchable` search field, filter chips (All / Irregular / Ru /
   U), collapsible "verb type guide" panel, て-form legend. Tapping a verb
-  pushes a **Verb Detail** screen (description, notes, full 9-form
-  breakdown, buttons for Examples / Test this verb / Jisho).
+  pushes a **Verb Detail** screen (description, notes, buttons for Examples
+  / Test this verb / Jisho, and the full form breakdown — see below).
+- **Verb Detail form layout**: with the expanded form set (section 9) there
+  are up to 18 forms per verb, too many for a flat list on iPhone. The
+  detail screen groups them into collapsible sections — "Polite" (masu ±
+  present/past), "Plain" (short ± present/past), "て-form", and "Advanced"
+  (potential, volitional, passive, causative, causative-passive, ば/たら
+  conditionals, imperative, たい) — with Polite/Plain/て-form expanded by
+  default and Advanced collapsed, matching how textbooks typically
+  introduce these forms in tiers. Same grouped layout on all platforms; on
+  iPad/Mac the extra width just means less scrolling, not a different
+  structure.
 - **iPad/Mac (regular width)**: `NavigationSplitView`. The same verb list
   becomes the sidebar; selecting a verb shows Verb Detail in the trailing
   pane instead of pushing. Same view code as iPhone — `NavigationSplitView`
@@ -116,6 +131,19 @@ since each later piece depends on infrastructure the earlier ones establish.
   nested `Codable` `VerbForms` attribute; `[VerbExample]` stored as a
   `Codable` array attribute), in the shared App Group container so the
   widget/Shortcuts extension can read it too.
+- **Expanded `VerbForms` schema**: alongside the existing 9 fields
+  (`masu_pos`, `masu_neg`, `masu_past`, `masu_past_neg`, `te`, `short_pos`,
+  `short_neg`, `short_past`, `short_past_neg`), 9 new fields are added:
+  `potential`, `volitional`, `passive`, `causative`, `causative_passive`,
+  `conditional_ba`, `conditional_tara`, `imperative`, `tai`. Each holds the
+  base (plain, non-past affirmative) form — e.g. `potential: "食べられる"` —
+  not a full further-conjugated matrix (potential/passive/causative are
+  themselves conjugatable verbs, but chaining that out to every
+  tense/polarity is out of scope; flag if you actually want that depth).
+  Note that potential and passive are orthographically identical for
+  ichidan verbs (both `食べられる`) — both fields are still populated
+  (with the same string), and the detail UI can note the overlap rather
+  than hide one. See section 9 for how these are generated.
 - **`VerbDataFetching` protocol**: abstracts fetching the manifest and the
   verb data so sync logic is unit-testable with a mock, independent of real
   network calls.
@@ -193,6 +221,45 @@ since each later piece depends on infrastructure the earlier ones establish.
 - UI is verified by running the app in Simulator per platform rather than
   SwiftUI snapshot/UI tests, given this is a personal-scale app.
 
+## 9. Content pipeline (JMdict + Tatoeba)
+
+A maintenance-time tool, separate from the Swift app, that (re)generates
+`data/verbs.json` and `data/manifest.json`. It doesn't ship inside the app
+or run on a user's device — it's what a maintainer runs before committing a
+data update.
+
+- **Location**: `scripts/generate-verb-data/`, a standalone Python tool
+  (Python fits naturally here since `jmdict-simplified` is plain JSON and
+  Tatoeba's export is straightforward to process with it — no need to
+  match the app's Swift toolchain for a script that never ships).
+- **Verb selection**: a maintainer-edited `target-verbs.txt` (dictionary
+  forms, one per line) controls which verbs are included — the pipeline
+  does **not** import all of JMdict's tens of thousands of verb entries.
+  Curated scope matters for a learning app; this keeps growth intentional.
+- **Steps**:
+  1. Look up each target verb in a `jmdict-simplified` (common-only,
+     English) release for kanji, reading, gloss (→ `meaning`), and its verb
+     POS tag (→ ichidan/godan/irregular classification).
+  2. Run a rule-based conjugation engine (ported from / cross-checked
+     against `jconj`'s conjugation tables) to generate all 18 `VerbForms`
+     fields per verb from its dictionary form and class.
+  3. Pull Tatoeba's Japanese-English sentence-pair export and, for each
+     verb, substring-match its conjugated surface forms against sentence
+     text to source `examples`, tagged by which form appears, capped at a
+     couple of examples per form and preferring shorter sentences.
+  4. Merge into the existing `data/verbs.json`: hand-curated prose fields
+     (`description`, `notes`) on verbs that already exist are preserved
+     untouched; only `forms`/`examples` are regenerated. New verbs get a
+     `"description": "TODO: write description"` placeholder for a
+     maintainer to fill in — the pipeline doesn't attempt to generate that
+     kind of pedagogical prose.
+  5. Bump `manifest.json`'s version and recompute its `sha256`.
+- **Review flow**: run manually (locally, or via a manually-dispatched
+  GitHub Action) and opened as a PR — not auto-merged, and not run on a
+  schedule. Since the app treats whatever's on `main` as safe to sync to
+  every user automatically (section 4), generated content (example-sentence
+  selection especially) gets a human glance before it's reachable.
+
 ## Proposed project layout
 
 ```
@@ -222,4 +289,8 @@ Packages/
 data/
   verbs.json                  # source of truth, fetched via raw.githubusercontent.com
   manifest.json                # {version, sha256} of verbs.json, checked before re-fetching
+scripts/
+  generate-verb-data/          # maintainer-run Python pipeline, not shipped in the app
+    target-verbs.txt           # curated list of dictionary-form verbs to include
+    generate.py                # JMdict lookup + conjugation engine + Tatoeba example sourcing
 ```
