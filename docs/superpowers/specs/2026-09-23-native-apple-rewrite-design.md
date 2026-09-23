@@ -70,9 +70,11 @@ schema).
   (potential, volitional, passive, causative, causative-passive, ば/たら
   conditionals, imperative, たい) — with Polite/Plain/て-form expanded by
   default and Advanced collapsed, matching how textbooks typically
-  introduce these forms in tiers. Same grouped layout on all platforms; on
-  iPad/Mac the extra width just means less scrolling, not a different
-  structure.
+  introduce these forms in tiers. The Advanced section only renders when a
+  verb actually has any of those (optional) fields populated — see section
+  4 on why they start out absent for most verbs. Same grouped layout on
+  all platforms; on iPad/Mac the extra width just means less scrolling,
+  not a different structure.
 - **iPad/Mac (regular width)**: `NavigationSplitView`. The same verb list
   becomes the sidebar; selecting a verb shows Verb Detail in the trailing
   pane instead of pushing. Same view code as iPhone — `NavigationSplitView`
@@ -131,19 +133,27 @@ schema).
   nested `Codable` `VerbForms` attribute; `[VerbExample]` stored as a
   `Codable` array attribute), in the shared App Group container so the
   widget/Shortcuts extension can read it too.
-- **Expanded `VerbForms` schema**: alongside the existing 9 fields
+- **Expanded `VerbForms` schema**: alongside the existing 9 required fields
   (`masu_pos`, `masu_neg`, `masu_past`, `masu_past_neg`, `te`, `short_pos`,
-  `short_neg`, `short_past`, `short_past_neg`), 9 new fields are added:
-  `potential`, `volitional`, `passive`, `causative`, `causative_passive`,
-  `conditional_ba`, `conditional_tara`, `imperative`, `tai`. Each holds the
-  base (plain, non-past affirmative) form — e.g. `potential: "食べられる"` —
-  not a full further-conjugated matrix (potential/passive/causative are
-  themselves conjugatable verbs, but chaining that out to every
-  tense/polarity is out of scope; flag if you actually want that depth).
-  Note that potential and passive are orthographically identical for
-  ichidan verbs (both `食べられる`) — both fields are still populated
-  (with the same string), and the detail UI can note the overlap rather
-  than hide one. See section 9 for how these are generated.
+  `short_neg`, `short_past`, `short_past_neg`), 9 new **optional** fields
+  are added: `potential`, `volitional`, `passive`, `causative`,
+  `causative_passive`, `conditional_ba`, `conditional_tara`, `imperative`,
+  `tai`. They're optional rather than required because the core app
+  (implementation plan 1) ships by migrating the existing hand-curated
+  9-field verb data as-is — hand-authoring 18 forms × 25 verbs isn't
+  practical implementation-plan work, and the content pipeline (section 9,
+  implementation plan 4) that properly generates them is separate,
+  independent work. The Verb Detail "Advanced" section (see below) simply
+  doesn't render for a verb whose new fields are absent, and starts
+  appearing automatically once the pipeline backfills them — no schema
+  change needed at that point. Each populated field holds the base (plain,
+  non-past affirmative) form — e.g. `potential: "食べられる"` — not a full
+  further-conjugated matrix (potential/passive/causative are themselves
+  conjugatable verbs, but chaining that out to every tense/polarity is out
+  of scope; flag if you actually want that depth). Note that potential and
+  passive are orthographically identical for ichidan verbs (both
+  `食べられる`) — both fields are still populated (with the same string),
+  and the detail UI can note the overlap rather than hide one.
 - **`VerbDataFetching` protocol**: abstracts fetching the manifest and the
   verb data so sync logic is unit-testable with a mock, independent of real
   network calls.
