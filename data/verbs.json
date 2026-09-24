@@ -1,0 +1,742 @@
+{
+  "version": "1.0.0",
+  "description": "Japanese verb conjugation data. To suggest a new verb, open a GitHub issue using the Add Verb template.",
+  "verbs": [
+    {
+      "type": "irr.",
+      "label": "Irregular",
+      "dict": "する",
+      "kanji": null,
+      "meaning": "to do",
+      "description": "The most common irregular verb. Attaches to nouns to make compound verbs (e.g. べんきょうする, そうじする).",
+      "notes": "Compounds like べんきょうする, うんどうする, and りょうりする all follow する's conjugation pattern.",
+      "forms": {
+        "masu_pos": "します",
+        "masu_neg": "しません",
+        "masu_past": "しました",
+        "masu_past_neg": "しませんでした",
+        "te": "して",
+        "short_pos": "する",
+        "short_neg": "しない",
+        "short_past": "した",
+        "short_past_neg": "しなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "まいにちべんきょうします。", "en": "I study every day." },
+        { "form": "masu_neg", "jp": "しゅくだいはしません。", "en": "I don't do homework." },
+        { "form": "masu_past", "jp": "きのうそうじしました。", "en": "I cleaned yesterday." },
+        { "form": "masu_past_neg", "jp": "うんどうはしませんでした。", "en": "I didn't exercise." },
+        { "form": "te", "jp": "しずかにしてください。", "en": "Please be quiet." },
+        { "form": "te", "jp": "りょうりをしてから、たべます。", "en": "After cooking, I eat." },
+        { "form": "short_pos", "jp": "週末何する？", "en": "What are you doing this weekend?" },
+        { "form": "short_neg", "jp": "何もしない。", "en": "I'm not doing anything." },
+        { "form": "short_past", "jp": "もうした。", "en": "I already did it." },
+        { "form": "short_past", "jp": "かれはりょうりをした。", "en": "He cooked." },
+        { "form": "short_past_neg", "jp": "きのうべんきょうしなかった。", "en": "I didn't study yesterday." }
+      ]
+    },
+    {
+      "type": "irr.",
+      "label": "Irregular",
+      "dict": "くる",
+      "kanji": "来る",
+      "meaning": "to come",
+      "description": "The second irregular verb in Japanese. Its stem changes dramatically across conjugations.",
+      "notes": "Often used with て-form patterns: もってくる (bring), かえってくる (come back).",
+      "forms": {
+        "masu_pos": "きます",
+        "masu_neg": "きません",
+        "masu_past": "きました",
+        "masu_past_neg": "きませんでした",
+        "te": "きて",
+        "short_pos": "くる",
+        "short_neg": "こない",
+        "short_past": "きた",
+        "short_past_neg": "こなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "バスがもうすぐきます。", "en": "The bus is coming soon." },
+        { "form": "masu_pos", "jp": "ともだちがうちにきます。", "en": "My friend is coming to my house." },
+        { "form": "masu_neg", "jp": "たなかさんはきません。", "en": "Tanaka-san isn't coming." },
+        { "form": "masu_past", "jp": "せんせいがきょうしつにきました。", "en": "The teacher came to the classroom." },
+        { "form": "masu_past", "jp": "にほんからともだちがきました。", "en": "A friend came from Japan." },
+        { "form": "masu_past_neg", "jp": "かれはきませんでした。", "en": "He didn't come." },
+        { "form": "te", "jp": "こっちにきてください。", "en": "Please come this way." },
+        { "form": "te", "jp": "ここにきてよかった。", "en": "I'm glad I came here." },
+        { "form": "short_pos", "jp": "明日くる？", "en": "Are you coming tomorrow?" },
+        { "form": "short_neg", "jp": "今日はこない。", "en": "They're not coming today." },
+        { "form": "short_past", "jp": "あ、きた！", "en": "Oh, they're here!" }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "たべる",
+      "kanji": "食べる",
+      "meaning": "to eat",
+      "description": "A fundamental ru-verb. Drop the final る and add your ending.",
+      "notes": "て-form たべて is used in sequences like たべてから (after eating).",
+      "forms": {
+        "masu_pos": "たべます",
+        "masu_neg": "たべません",
+        "masu_past": "たべました",
+        "masu_past_neg": "たべませんでした",
+        "te": "たべて",
+        "short_pos": "たべる",
+        "short_neg": "たべない",
+        "short_past": "たべた",
+        "short_past_neg": "たべなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "あさごはんをたべます。", "en": "I eat breakfast." },
+        { "form": "masu_pos", "jp": "レストランでばんごはんをたべます。", "en": "I eat dinner at a restaurant." },
+        { "form": "masu_neg", "jp": "あまいものはたべません。", "en": "I don't eat sweets." },
+        { "form": "masu_past", "jp": "おすしをたべました。", "en": "I ate sushi." },
+        { "form": "masu_past", "jp": "はははやさいをたべました。", "en": "My mother ate vegetables." },
+        { "form": "masu_past_neg", "jp": "きのうはあさごはんをたべませんでした。", "en": "I didn't eat breakfast yesterday." },
+        { "form": "te", "jp": "たべてから、でかけます。", "en": "After eating, I'll go out." },
+        { "form": "te", "jp": "いっしょにたべてもいいですか。", "en": "Is it okay if I eat with you?" },
+        { "form": "short_pos", "jp": "何たべる？", "en": "What do you want to eat?" },
+        { "form": "short_neg", "jp": "朝はたべない。", "en": "I don't eat in the morning." },
+        { "form": "short_past", "jp": "もうたべた？", "en": "Did you eat already?" },
+        { "form": "short_past", "jp": "おいしいものをたべた。", "en": "I ate something delicious." },
+        { "form": "short_past_neg", "jp": "まだたべなかった。", "en": "I haven't eaten yet." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "みる",
+      "kanji": "見る",
+      "meaning": "to see / watch",
+      "description": "A core ru-verb meaning both 'to see' and 'to watch'. Also used in Vてみる (to try doing).",
+      "notes": "みてみる (try watching/looking) is common. Can also mean 'to look at' depending on context.",
+      "forms": {
+        "masu_pos": "みます",
+        "masu_neg": "みません",
+        "masu_past": "みました",
+        "masu_past_neg": "みませんでした",
+        "te": "みて",
+        "short_pos": "みる",
+        "short_neg": "みない",
+        "short_past": "みた",
+        "short_past_neg": "みなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "まいにちテレビをみます。", "en": "I watch TV every day." },
+        { "form": "masu_neg", "jp": "こわいえいがはみません。", "en": "I don't watch scary movies." },
+        { "form": "masu_past", "jp": "きのうえいがをみました。", "en": "I watched a movie yesterday." },
+        { "form": "masu_past", "jp": "かのじょとえいがをみました。", "en": "I watched a movie with my girlfriend." },
+        { "form": "masu_past_neg", "jp": "そのばんぐみはみませんでした。", "en": "I didn't watch that show." },
+        { "form": "te", "jp": "これみて！", "en": "Look at this!" },
+        { "form": "te", "jp": "やってみてください。", "en": "Please try doing it." },
+        { "form": "short_pos", "jp": "今夜何みる？", "en": "What shall we watch tonight?" },
+        { "form": "short_past", "jp": "もうみた？", "en": "Have you seen it?" },
+        { "form": "short_past", "jp": "はじめてふじさんをみた。", "en": "I saw Mt. Fuji for the first time." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "ねる",
+      "kanji": "寝る",
+      "meaning": "to sleep",
+      "description": "A ru-verb for sleeping or going to bed.",
+      "notes": "Often used with time expressions: 十一時にねます.",
+      "forms": {
+        "masu_pos": "ねます",
+        "masu_neg": "ねません",
+        "masu_past": "ねました",
+        "masu_past_neg": "ねませんでした",
+        "te": "ねて",
+        "short_pos": "ねる",
+        "short_neg": "ねない",
+        "short_past": "ねた",
+        "short_past_neg": "ねなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "じゅういちじにねます。", "en": "I go to sleep at eleven." },
+        { "form": "masu_neg", "jp": "まだねません。", "en": "I'm not sleeping yet." },
+        { "form": "masu_past", "jp": "きのうはやくねました。", "en": "I went to bed early yesterday." },
+        { "form": "masu_past", "jp": "つかれて、はやくねました。", "en": "I was tired, so I went to bed early." },
+        { "form": "masu_past_neg", "jp": "ゆうべはぜんぜんねませんでした。", "en": "I didn't sleep at all last night." },
+        { "form": "te", "jp": "もうねてください。", "en": "Please go to sleep now." },
+        { "form": "short_pos", "jp": "もうねる。", "en": "I'm going to bed now." },
+        { "form": "short_past", "jp": "よくねた！", "en": "I slept well!" },
+        { "form": "short_past_neg", "jp": "ゆうべはあまりねなかった。", "en": "I didn't sleep much last night." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "おきる",
+      "kanji": "起きる",
+      "meaning": "to wake up / get up",
+      "description": "A ru-verb meaning to wake up or get out of bed.",
+      "notes": "Paired naturally with ねる. Common in schedules: ろくじにおきます.",
+      "forms": {
+        "masu_pos": "おきます",
+        "masu_neg": "おきません",
+        "masu_past": "おきました",
+        "masu_past_neg": "おきませんでした",
+        "te": "おきて",
+        "short_pos": "おきる",
+        "short_neg": "おきない",
+        "short_past": "おきた",
+        "short_past_neg": "おきなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "しちじにおきます。", "en": "I wake up at seven." },
+        { "form": "masu_pos", "jp": "まいあさろくじにおきます。", "en": "I wake up every morning at six." },
+        { "form": "masu_neg", "jp": "しゅうまつははやくおきません。", "en": "I don't wake up early on weekends." },
+        { "form": "masu_past", "jp": "きょうはおそくおきました。", "en": "I woke up late today." },
+        { "form": "te", "jp": "おきてください！", "en": "Please wake up!" },
+        { "form": "te", "jp": "おきてから、シャワーをあびます。", "en": "After waking up, I take a shower." },
+        { "form": "short_pos", "jp": "何時におきる？", "en": "What time do you wake up?" },
+        { "form": "short_past", "jp": "やっとおきた。", "en": "I finally got up." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "みせる",
+      "kanji": "見せる",
+      "meaning": "to show",
+      "description": "A ru-verb meaning to show or display something to someone.",
+      "notes": "みせてください is one of the most practical request phrases for travel and shopping.",
+      "forms": {
+        "masu_pos": "みせます",
+        "masu_neg": "みせません",
+        "masu_past": "みせました",
+        "masu_past_neg": "みせませんでした",
+        "te": "みせて",
+        "short_pos": "みせる",
+        "short_neg": "みせない",
+        "short_past": "みせた",
+        "short_past_neg": "みせなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "しゃしんをみせます。", "en": "I'll show you a photo." },
+        { "form": "masu_neg", "jp": "だれにもみせません。", "en": "I won't show anyone." },
+        { "form": "masu_past", "jp": "せんせいにしゅくだいをみせました。", "en": "I showed my homework to the teacher." },
+        { "form": "te", "jp": "みせてください。", "en": "Please show me." },
+        { "form": "te", "jp": "パスポートをみせてください。", "en": "Please show me your passport." },
+        { "form": "short_pos", "jp": "ちょっとみせる？", "en": "Can you show me for a sec?" }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "かりる",
+      "kanji": "借りる",
+      "meaning": "to borrow",
+      "description": "A ru-verb meaning to borrow or rent.",
+      "notes": "Antonym: かえす (to return). Pair: としょかんで本をかります / 本をかえします.",
+      "forms": {
+        "masu_pos": "かります",
+        "masu_neg": "かりません",
+        "masu_past": "かりました",
+        "masu_past_neg": "かりませんでした",
+        "te": "かりて",
+        "short_pos": "かりる",
+        "short_neg": "かりない",
+        "short_past": "かりた",
+        "short_past_neg": "かりなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "としょかんで本をかります。", "en": "I borrow books from the library." },
+        { "form": "masu_pos", "jp": "ともだちにじしょをかります。", "en": "I borrow a dictionary from my friend." },
+        { "form": "masu_neg", "jp": "ひとのものはかりません。", "en": "I don't borrow other people's things." },
+        { "form": "masu_past", "jp": "ともだちからじてんしゃをかりました。", "en": "I borrowed a bicycle from a friend." },
+        { "form": "te", "jp": "かりてもいいですか。", "en": "May I borrow this?" },
+        { "form": "short_past", "jp": "かりた！ありがとう。", "en": "Borrowed it! Thanks." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "かう",
+      "kanji": "買う",
+      "meaning": "to buy",
+      "teGroup": "tte",
+      "description": "A u-verb ending in う. The negative short form uses the special わ stem (かわない).",
+      "notes": "Negative short stem is わ: かわない (not ×かあない). This applies to all う-ending u-verbs.",
+      "forms": {
+        "masu_pos": "かいます",
+        "masu_neg": "かいません",
+        "masu_past": "かいました",
+        "masu_past_neg": "かいませんでした",
+        "te": "かって",
+        "short_pos": "かう",
+        "short_neg": "かわない",
+        "short_past": "かった",
+        "short_past_neg": "かわなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "スーパーでたまごをかいます。", "en": "I buy eggs at the supermarket." },
+        { "form": "masu_neg", "jp": "こんしゅうはなにもかいません。", "en": "I'm not buying anything this week." },
+        { "form": "masu_past", "jp": "デパートでプレゼントをかいました。", "en": "I bought a present at the department store." },
+        { "form": "masu_past", "jp": "おみやげをたくさんかいました。", "en": "I bought lots of souvenirs." },
+        { "form": "te", "jp": "みずをかってきてください。", "en": "Please go and buy some water." },
+        { "form": "short_neg", "jp": "たかいから、かわない。", "en": "It's expensive, so I won't buy it." },
+        { "form": "short_past", "jp": "もうかった。", "en": "I already bought it." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "あう",
+      "kanji": "会う",
+      "meaning": "to meet",
+      "teGroup": "tte",
+      "description": "A u-verb ending in う. Takes に to mark the person met.",
+      "notes": "Use に for the person you meet: ともだちにあう.",
+      "forms": {
+        "masu_pos": "あいます",
+        "masu_neg": "あいません",
+        "masu_past": "あいました",
+        "masu_past_neg": "あいませんでした",
+        "te": "あって",
+        "short_pos": "あう",
+        "short_neg": "あわない",
+        "short_past": "あった",
+        "short_past_neg": "あわなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "えきでともだちにあいます。", "en": "I'm meeting my friend at the station." },
+        { "form": "masu_past", "jp": "えきであいました。", "en": "We met at the station." },
+        { "form": "masu_past", "jp": "こうえんでともだちにあいました。", "en": "I met my friend at the park." },
+        { "form": "te", "jp": "あってはなしましょう。", "en": "Let's meet and talk." },
+        { "form": "short_past", "jp": "ひさしぶりにあった！", "en": "I saw them for the first time in ages!" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "まつ",
+      "kanji": "待つ",
+      "meaning": "to wait",
+      "teGroup": "tte",
+      "description": "A u-verb ending in つ. て-form is まって, also the casual imperative 'wait!'",
+      "notes": "まって！ is extremely common in everyday speech. Formal request: まってください.",
+      "forms": {
+        "masu_pos": "まちます",
+        "masu_neg": "まちません",
+        "masu_past": "まちました",
+        "masu_past_neg": "まちませんでした",
+        "te": "まって",
+        "short_pos": "まつ",
+        "short_neg": "またない",
+        "short_past": "まった",
+        "short_past_neg": "またなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "えきのまえでまちます。", "en": "I'll wait in front of the station." },
+        { "form": "masu_pos", "jp": "バスていでバスをまちます。", "en": "I wait for the bus at the bus stop." },
+        { "form": "masu_past", "jp": "いちじかんまちました。", "en": "I waited one hour." },
+        { "form": "te", "jp": "ちょっとまってください。", "en": "Please wait a moment." },
+        { "form": "short_past", "jp": "ながくまった。", "en": "I waited a long time." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "とる",
+      "kanji": "取る",
+      "meaning": "to take",
+      "teGroup": "tte",
+      "description": "A u-verb ending in る (not a ru-verb!). Stem change: と+り (masu), と+った (past).",
+      "notes": "Also means 'to take a photo' (しゃしんをとる) and 'to pass something' (しおをとる).",
+      "forms": {
+        "masu_pos": "とります",
+        "masu_neg": "とりません",
+        "masu_past": "とりました",
+        "masu_past_neg": "とりませんでした",
+        "te": "とって",
+        "short_pos": "とる",
+        "short_neg": "とらない",
+        "short_past": "とった",
+        "short_past_neg": "とらなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "しゃしんをとります。", "en": "I'll take a photo." },
+        { "form": "masu_pos", "jp": "じゅぎょうのノートをとります。", "en": "I take notes in class." },
+        { "form": "masu_past", "jp": "いいしゃしんをとりました。", "en": "I took a good photo." },
+        { "form": "te", "jp": "しおをとってください。", "en": "Please pass the salt." },
+        { "form": "te", "jp": "しゃしんをとってもいいですか。", "en": "May I take a photo?" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "ある",
+      "kanji": null,
+      "meaning": "to exist (things)",
+      "teGroup": "tte",
+      "description": "The existential verb for inanimate objects. Irregular negative: ない (not ×あらない).",
+      "notes": "Pair with いる (for living things): 本がある vs 犬がいる.",
+      "forms": {
+        "masu_pos": "あります",
+        "masu_neg": "ありません",
+        "masu_past": "ありました",
+        "masu_past_neg": "ありませんでした",
+        "te": "あって",
+        "short_pos": "ある",
+        "short_neg": "ない",
+        "short_past": "あった",
+        "short_past_neg": "なかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "つくえのうえにほんがあります。", "en": "There is a book on the desk." },
+        { "form": "masu_neg", "jp": "いまおかねがありません。", "en": "I don't have money right now." },
+        { "form": "masu_neg", "jp": "ちかくにぎんこうがありません。", "en": "There's no bank nearby." },
+        { "form": "masu_past", "jp": "むかしここにえきがありました。", "en": "There used to be a station here." },
+        { "form": "short_neg", "jp": "じかんがない。", "en": "I don't have time." },
+        { "form": "short_past", "jp": "いいことがあった！", "en": "Something good happened!" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "もつ",
+      "kanji": "持つ",
+      "meaning": "to hold / carry",
+      "teGroup": "tte",
+      "description": "A u-verb ending in つ. Conjugates identically to まつ.",
+      "notes": "Used in もっていく (take along) and もってくる (bring here).",
+      "forms": {
+        "masu_pos": "もちます",
+        "masu_neg": "もちません",
+        "masu_past": "もちました",
+        "masu_past_neg": "もちませんでした",
+        "te": "もって",
+        "short_pos": "もつ",
+        "short_neg": "もたない",
+        "short_past": "もった",
+        "short_past_neg": "もたなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "かばんをもちます。", "en": "I'll carry the bag." },
+        { "form": "masu_pos", "jp": "まいにちおべんとうをもってきます。", "en": "I bring my lunch box every day." },
+        { "form": "te", "jp": "これもってください。", "en": "Please hold this." },
+        { "form": "te", "jp": "かさをもっていってください。", "en": "Please take an umbrella with you." },
+        { "form": "short_past_neg", "jp": "さいふをもたなかった。", "en": "I didn't bring my wallet." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "よむ",
+      "kanji": "読む",
+      "meaning": "to read",
+      "teGroup": "nde",
+      "description": "A u-verb ending in む. Part of the む/ぶ/ぬ group using んで/んだ て-form.",
+      "notes": "よんで is both the て-form and a casual command 'read it!'",
+      "forms": {
+        "masu_pos": "よみます",
+        "masu_neg": "よみません",
+        "masu_past": "よみました",
+        "masu_past_neg": "よみませんでした",
+        "te": "よんで",
+        "short_pos": "よむ",
+        "short_neg": "よまない",
+        "short_past": "よんだ",
+        "short_past_neg": "よまなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "まいにちしんぶんをよみます。", "en": "I read the newspaper every day." },
+        { "form": "masu_pos", "jp": "としょかんでほんをよみます。", "en": "I read books at the library." },
+        { "form": "masu_past", "jp": "おもしろいほんをよみました。", "en": "I read an interesting book." },
+        { "form": "masu_past", "jp": "にほんごのざっしをよみました。", "en": "I read a Japanese magazine." },
+        { "form": "te", "jp": "よんでみてください。", "en": "Please try reading it." },
+        { "form": "short_past", "jp": "もうよんだ？", "en": "Did you read it already?" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "のむ",
+      "kanji": "飲む",
+      "meaning": "to drink",
+      "teGroup": "nde",
+      "description": "A u-verb ending in む. Used for drinking beverages and taking medicine.",
+      "notes": "のんで is used in casual requests. Also used for swallowing pills.",
+      "forms": {
+        "masu_pos": "のみます",
+        "masu_neg": "のみません",
+        "masu_past": "のみました",
+        "masu_past_neg": "のみませんでした",
+        "te": "のんで",
+        "short_pos": "のむ",
+        "short_neg": "のまない",
+        "short_past": "のんだ",
+        "short_past_neg": "のまなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "まいあさコーヒーをのみます。", "en": "I drink coffee every morning." },
+        { "form": "masu_pos", "jp": "くすりをのみます。", "en": "I take medicine." },
+        { "form": "masu_neg", "jp": "おさけはのみません。", "en": "I don't drink alcohol." },
+        { "form": "masu_past", "jp": "ともだちとおちゃをのみました。", "en": "I had tea with a friend." },
+        { "form": "masu_past", "jp": "びょういんでくすりをのみました。", "en": "I took medicine at the hospital." },
+        { "form": "te", "jp": "おみずをのんでください。", "en": "Please drink some water." },
+        { "form": "short_past", "jp": "のみすぎた！", "en": "I drank too much!" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "あそぶ",
+      "kanji": "遊ぶ",
+      "meaning": "to play / hang out",
+      "teGroup": "nde",
+      "description": "A u-verb ending in ぶ. Covers playing and hanging out with friends.",
+      "notes": "あそびにいく (go to hang out) is a very natural phrase.",
+      "forms": {
+        "masu_pos": "あそびます",
+        "masu_neg": "あそびません",
+        "masu_past": "あそびました",
+        "masu_past_neg": "あそびませんでした",
+        "te": "あそんで",
+        "short_pos": "あそぶ",
+        "short_neg": "あそばない",
+        "short_past": "あそんだ",
+        "short_past_neg": "あそばなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "こうえんであそびます。", "en": "I play at the park." },
+        { "form": "masu_pos", "jp": "しゅうまつともだちとあそびます。", "en": "I hang out with friends on weekends." },
+        { "form": "masu_past", "jp": "こどもとこうえんであそびました。", "en": "I played at the park with the kids." },
+        { "form": "te", "jp": "あそびにきてください。", "en": "Please come and hang out." },
+        { "form": "short_past", "jp": "たのしくあそんだ！", "en": "We had such a good time!" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "しぬ",
+      "kanji": "死ぬ",
+      "meaning": "to die",
+      "teGroup": "nde",
+      "description": "A u-verb ending in ぬ — the only common ぬ-ending verb in modern Japanese.",
+      "notes": "Often used hyperbolically: おなかすいてしぬ (starving to death).",
+      "forms": {
+        "masu_pos": "しにます",
+        "masu_neg": "しにません",
+        "masu_past": "しにました",
+        "masu_past_neg": "しにませんでした",
+        "te": "しんで",
+        "short_pos": "しぬ",
+        "short_neg": "しなない",
+        "short_past": "しんだ",
+        "short_past_neg": "しななかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "むしはふゆにしにます。", "en": "Insects die in winter." },
+        { "form": "short_pos", "jp": "おなかすいてしぬ！", "en": "I'm so hungry I could die!" },
+        { "form": "short_past", "jp": "スマホのバッテリーがしんだ。", "en": "My phone battery died." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "かく",
+      "kanji": "書く",
+      "meaning": "to write",
+      "teGroup": "ite",
+      "description": "A u-verb ending in く. Conjugates with the いて/いた pattern.",
+      "notes": "Covers handwriting and typing. Common phrase: なまえをかいてください.",
+      "forms": {
+        "masu_pos": "かきます",
+        "masu_neg": "かきません",
+        "masu_past": "かきました",
+        "masu_past_neg": "かきませんでした",
+        "te": "かいて",
+        "short_pos": "かく",
+        "short_neg": "かかない",
+        "short_past": "かいた",
+        "short_past_neg": "かかなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "てがみをかきます。", "en": "I write a letter." },
+        { "form": "masu_pos", "jp": "にほんごでにっきをかきます。", "en": "I write my diary in Japanese." },
+        { "form": "masu_past", "jp": "レポートをかきました。", "en": "I wrote the report." },
+        { "form": "masu_past", "jp": "かんじをノートにかきました。", "en": "I wrote kanji in my notebook." },
+        { "form": "te", "jp": "ここになまえをかいてください。", "en": "Please write your name here." },
+        { "form": "short_past", "jp": "もうかいた？", "en": "Did you write it already?" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "きく",
+      "kanji": "聞く",
+      "meaning": "to listen / ask",
+      "teGroup": "ite",
+      "description": "A u-verb ending in く. Means 'to listen' (を) or 'to ask' (に) depending on particle.",
+      "notes": "きく can mean both 'listen' (おんがくをきく) and 'ask' (せんせいにきく).",
+      "forms": {
+        "masu_pos": "ききます",
+        "masu_neg": "ききません",
+        "masu_past": "ききました",
+        "masu_past_neg": "ききませんでした",
+        "te": "きいて",
+        "short_pos": "きく",
+        "short_neg": "きかない",
+        "short_past": "きいた",
+        "short_past_neg": "きかなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "まいにちおんがくをききます。", "en": "I listen to music every day." },
+        { "form": "masu_pos", "jp": "わからないときはせんせいにききます。", "en": "When I don't understand, I ask the teacher." },
+        { "form": "masu_past", "jp": "みちをひとにききました。", "en": "I asked someone for directions." },
+        { "form": "te", "jp": "よくきいてください。", "en": "Please listen carefully." },
+        { "form": "short_past", "jp": "あのうたきいた？", "en": "Did you hear that song?" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "いく",
+      "kanji": "行く",
+      "meaning": "to go",
+      "teGroup": "ite",
+      "description": "A く-ending u-verb with an exception: て-form is いって (not ×いいて). The only く-verb exception.",
+      "notes": "Extremely common: いってきます (I'm heading out). Also used in V+にいく (go to do something).",
+      "forms": {
+        "masu_pos": "いきます",
+        "masu_neg": "いきません",
+        "masu_past": "いきました",
+        "masu_past_neg": "いきませんでした",
+        "te": "いって",
+        "short_pos": "いく",
+        "short_neg": "いかない",
+        "short_past": "いった",
+        "short_past_neg": "いかなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "がっこうにいきます。", "en": "I go to school." },
+        { "form": "masu_pos", "jp": "あしたともだちのうちにいきます。", "en": "I'm going to a friend's house tomorrow." },
+        { "form": "masu_neg", "jp": "今日はどこもいきません。", "en": "I'm not going anywhere today." },
+        { "form": "masu_past", "jp": "にほんにいきました。", "en": "I went to Japan." },
+        { "form": "masu_past", "jp": "かぞくといっしょにきょうとにいきました。", "en": "I went to Kyoto with my family." },
+        { "form": "te", "jp": "いってきます！", "en": "I'm heading out!" },
+        { "form": "te", "jp": "かいものにいってきました。", "en": "I went out shopping." },
+        { "form": "short_past", "jp": "もういった？", "en": "Did they go already?" },
+        { "form": "short_past", "jp": "こうえんにさんぽにいった。", "en": "I went to the park for a walk." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "いそぐ",
+      "kanji": "急ぐ",
+      "meaning": "to hurry",
+      "teGroup": "ide",
+      "description": "A u-verb ending in ぐ. Uses the voiced て-form いで/いだ.",
+      "notes": "いそいで！ is the casual imperative 'hurry up!'",
+      "forms": {
+        "masu_pos": "いそぎます",
+        "masu_neg": "いそぎません",
+        "masu_past": "いそぎました",
+        "masu_past_neg": "いそぎませんでした",
+        "te": "いそいで",
+        "short_pos": "いそぐ",
+        "short_neg": "いそがない",
+        "short_past": "いそいだ",
+        "short_past_neg": "いそがなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "はやくいそぎましょう！", "en": "Let's hurry up!" },
+        { "form": "te", "jp": "いそいでください！", "en": "Please hurry!" },
+        { "form": "short_neg", "jp": "いそがなくていいよ。", "en": "No need to hurry." },
+        { "form": "short_past", "jp": "バスにのるためにいそいだ。", "en": "I hurried to catch the bus." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "およぐ",
+      "kanji": "泳ぐ",
+      "meaning": "to swim",
+      "teGroup": "ide",
+      "description": "A u-verb ending in ぐ. Shares the いで/いだ て-form with いそぐ.",
+      "notes": "Don't forget the voiced で (not て) — a common beginner mistake.",
+      "forms": {
+        "masu_pos": "およぎます",
+        "masu_neg": "およぎません",
+        "masu_past": "およぎました",
+        "masu_past_neg": "およぎませんでした",
+        "te": "およいで",
+        "short_pos": "およぐ",
+        "short_neg": "およがない",
+        "short_past": "およいだ",
+        "short_past_neg": "およがなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "うみでおよぎます。", "en": "I swim in the sea." },
+        { "form": "masu_past", "jp": "なつにうみでおよぎました。", "en": "I swam in the sea in summer." },
+        { "form": "te", "jp": "いっしょにおよいでください！", "en": "Please swim with me!" },
+        { "form": "short_past", "jp": "なつやすみにおよいだ。", "en": "I swam during summer vacation." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "はなす",
+      "kanji": "話す",
+      "meaning": "to speak / talk",
+      "teGroup": "shite",
+      "description": "A u-verb ending in す. The す group always uses して/した for て-form.",
+      "notes": "Contrast with いう (to say) — はなす implies a longer exchange.",
+      "forms": {
+        "masu_pos": "はなします",
+        "masu_neg": "はなしません",
+        "masu_past": "はなしました",
+        "masu_past_neg": "はなしませんでした",
+        "te": "はなして",
+        "short_pos": "はなす",
+        "short_neg": "はなさない",
+        "short_past": "はなした",
+        "short_past_neg": "はなさなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "にほんごをすこしはなします。", "en": "I speak a little Japanese." },
+        { "form": "masu_pos", "jp": "せんせいとにほんごではなします。", "en": "I speak in Japanese with my teacher." },
+        { "form": "masu_past", "jp": "せんせいとはなしました。", "en": "I spoke with the teacher." },
+        { "form": "masu_past", "jp": "でんわでともだちとながくはなしました。", "en": "I talked on the phone with my friend for a long time." },
+        { "form": "te", "jp": "ゆっくりはなしてください。", "en": "Please speak slowly." },
+        { "form": "te", "jp": "せんせいにはなしてみます。", "en": "I'll try talking to the teacher." },
+        { "form": "short_past", "jp": "もうはなした？", "en": "Did you talk to them already?" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "かえす",
+      "kanji": "返す",
+      "meaning": "to return (something)",
+      "teGroup": "shite",
+      "description": "A u-verb ending in す. Means to give something back. Antonym of かりる (to borrow).",
+      "notes": "Pair with かりる for borrowing/returning vocabulary.",
+      "forms": {
+        "masu_pos": "かえします",
+        "masu_neg": "かえしません",
+        "masu_past": "かえしました",
+        "masu_past_neg": "かえしませんでした",
+        "te": "かえして",
+        "short_pos": "かえす",
+        "short_neg": "かえさない",
+        "short_past": "かえした",
+        "short_past_neg": "かえさなかった"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "あしたかえします。", "en": "I'll return it tomorrow." },
+        { "form": "masu_pos", "jp": "としょかんにほんをかえします。", "en": "I return the book to the library." },
+        { "form": "masu_past", "jp": "ほんをかえしました。", "en": "I returned the book." },
+        { "form": "masu_past", "jp": "かりたおかねをかえしました。", "en": "I returned the money I borrowed." },
+        { "form": "te", "jp": "かえしてください！", "en": "Please give it back!" },
+        { "form": "te", "jp": "よんでからかえしてください。", "en": "Please return it after reading." }
+      ]
+    }
+  ]
+}
