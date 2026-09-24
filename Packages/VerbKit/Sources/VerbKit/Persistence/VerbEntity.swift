@@ -27,7 +27,11 @@ public final class VerbEntity {
 
     public var forms: VerbForms {
         get {
-            (try? JSONDecoder().decode(VerbForms.self, from: formsData)) ?? .empty
+            if let decoded = try? JSONDecoder().decode(VerbForms.self, from: formsData) {
+                return decoded
+            }
+            assertionFailure("VerbEntity.forms failed to decode formsData for dict=\(dict)")
+            return .empty
         }
         set {
             formsData = (try? JSONEncoder().encode(newValue)) ?? Data()
@@ -36,7 +40,11 @@ public final class VerbEntity {
 
     public var examples: [VerbExample] {
         get {
-            (try? JSONDecoder().decode([VerbExample].self, from: examplesData)) ?? []
+            if let decoded = try? JSONDecoder().decode([VerbExample].self, from: examplesData) {
+                return decoded
+            }
+            assertionFailure("VerbEntity.examples failed to decode examplesData for dict=\(dict)")
+            return []
         }
         set {
             examplesData = (try? JSONEncoder().encode(newValue)) ?? Data()
