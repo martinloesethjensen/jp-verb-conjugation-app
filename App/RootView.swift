@@ -22,6 +22,11 @@ struct RootView: View {
                     ContentUnavailableView("Select a Verb", systemImage: "text.book.closed")
                 }
             }
+            .sheet(isPresented: $showingExamples) {
+                if let selection {
+                    ExamplesView(verb: selection)
+                }
+            }
         } else {
             DataLoadingView(state: verbStore.firstLaunchState) {
                 Task { await verbStore.retryFirstLaunch() }
