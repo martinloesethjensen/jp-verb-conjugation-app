@@ -311,3 +311,39 @@ scripts/
     target-verbs.txt           # curated list of dictionary-form verbs to include
     generate.py                # JMdict lookup + conjugation engine + Tatoeba example sourcing
 ```
+
+## 10. Visual design direction (added mid-implementation)
+
+Added after user feedback during Plan 1's execution (core app was already
+partially built — this retrofits earlier screens as well as shaping the
+screens built after this point):
+
+- **Edge-to-edge, immersive feel app-wide**: minimize navigation-bar chrome
+  where reasonable; let content extend under safe areas using standard
+  SwiftUI edge-to-edge layout rather than fighting it with opaque
+  full-bleed backgrounds. The quiz screen specifically hides the home
+  indicator during play (`.persistentSystemOverlays(.hidden)`) for a true
+  fullscreen takeover — the existing `.fullScreenCover` presentation
+  already gets most of the way there, this closes the gap.
+- **Liquid Glass adoption**: standard SwiftUI containers (`NavigationStack`,
+  `NavigationSplitView`, toolbars, `List`, sheets) already render with the
+  system's Liquid Glass materials for free on this SDK — no extra code
+  needed there, and nothing should override that with forced opaque
+  backgrounds. Custom-drawn surfaces that aren't standard system chrome —
+  the type-label capsules, the quiz's answer-choice buttons, the notes
+  callout box, the form-group value tiles — adopt the explicit
+  `.glassEffect()` modifier so they read as part of the same design
+  language rather than looking like flat, pre-iOS-26 UI next to it.
+- **No accessibility work**: no `.accessibilityLabel`/`.accessibilityHint`/
+  Dynamic Type-specific tuning is added deliberately. Standard SwiftUI
+  controls keep whatever baseline VoiceOver/Dynamic Type behavior they get
+  for free from the system — that's not being fought — but no additional
+  accessibility-specific code is written.
+
+## Future ideas (explicitly out of scope for now)
+
+- **Highlight verb stems**: in the conjugation forms display, visually
+  distinguish the unchanging stem from the part that changes per form
+  (e.g. dim or color the stem, emphasize the ending) — a pedagogically
+  useful readability improvement. Flagged by the user as a "later" idea,
+  not scheduled into any current plan.
