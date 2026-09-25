@@ -41,7 +41,12 @@ struct VerbListView: View {
 
             Section {
                 ForEach(filtered) { verb in
-                    VerbRow(verb: verb)
+                    Button {
+                        selection = verb
+                    } label: {
+                        VerbRow(verb: verb)
+                    }
+                    .buttonStyle(.plain)
                 }
             } footer: {
                 Link("Suggest a verb", destination: githubSuggestVerbURL)
