@@ -6,6 +6,8 @@ private let githubSuggestVerbURL = URL(string: "https://github.com/martinloeseth
 struct VerbListView: View {
     @Environment(VerbStore.self) private var verbStore
     @Binding var selection: Verb?
+    var onRandomQuiz: () -> Void
+    var onSettings: () -> Void
     @State private var search = ""
     @State private var typeFilter: VerbType?
     @State private var showGuide = false
@@ -41,12 +43,7 @@ struct VerbListView: View {
 
             Section {
                 ForEach(filtered) { verb in
-                    Button {
-                        selection = verb
-                    } label: {
-                        VerbRow(verb: verb)
-                    }
-                    .buttonStyle(.plain)
+                    VerbRow(verb: verb)
                 }
             } footer: {
                 Link("Suggest a verb", destination: githubSuggestVerbURL)
@@ -58,6 +55,14 @@ struct VerbListView: View {
         .overlay {
             if !search.isEmpty && filtered.isEmpty {
                 ContentUnavailableView.search(text: search)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Random Quiz", systemImage: "gamecontroller", action: onRandomQuiz)
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Settings", systemImage: "gearshape", action: onSettings)
             }
         }
     }

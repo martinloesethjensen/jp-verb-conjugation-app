@@ -28,6 +28,11 @@ struct JPVerbConjugationApp: App {
                     await verbStore.start()
                 }
         }
+        #if os(macOS)
+        Settings {
+            SettingsView()
+        }
+        #endif
     }
 
     /// Falls back to an in-memory (non-persistent) store rather than
