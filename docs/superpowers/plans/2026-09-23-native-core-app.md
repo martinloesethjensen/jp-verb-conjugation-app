@@ -12,7 +12,15 @@
 
 ## Global Constraints
 
-- Deployment target: iOS 17.0 / macOS 14.0 minimum (spec section 1).
+- Deployment target: **iOS 26.0 / macOS 26.0 minimum** (raised
+  mid-implementation from the original iOS 17.0/macOS 14.0 — see spec
+  section 10, added after Task 16 — specifically because Liquid Glass
+  APIs `.glassEffect()`/`.buttonStyle(.glass)`/`.buttonStyle(.glassProminent)`
+  require it; Task 17 updates `project.yml`/`Package.swift` accordingly.
+  Backward-compatible with everything already built — SwiftData/
+  Observation/NavigationSplitView are all available well below iOS 17
+  already, so this only raises the floor, it doesn't require touching
+  earlier tasks' logic).
 - Bundle ID: `dev.martinloeseth.jpverbconjugation`; App Group:
   `group.dev.martinloeseth.jpverbconjugation` (spec section 1).
 - No Mac Catalyst; no App Store submission in this plan's scope (spec
@@ -27,6 +35,11 @@
 - Any `git push` to the GitHub remote requires explicit user confirmation
   at execution time — do not push without asking first, per this session's
   standing safety rules.
+- No accessibility-specific code (`.accessibilityLabel`/`.accessibilityHint`/
+  Dynamic Type tuning) is added deliberately — standing user preference,
+  added mid-implementation (spec section 10). Standard controls keep
+  whatever baseline behavior they get for free from the system; nothing
+  extra is written on top of it.
 
 ---
 
@@ -3400,6 +3413,16 @@ on iOS/iPadOS — both are full-viewport takeovers, just not a literally
 separate OS window on Mac. Flag if you want the real separate-window
 version instead.
 
+**Note:** this task builds the quiz with the same plain
+`.regularMaterial`/`.borderedProminent` styling as the rest of the app
+had at this point in the plan. Task 17 (later) retrofits it — along with
+the list/detail screens — onto Liquid Glass and adds the immersive
+fullscreen treatment (hidden home indicator), once the deployment target
+that Liquid Glass requires has actually been raised. Building it here
+first and reskinning once in Task 17 avoids a sequencing hazard: this
+task runs before the deployment-target bump, so Liquid Glass APIs
+wouldn't compile yet if used here directly.
+
 **Files:**
 - Create: `App/FormLabels.swift`
 - Create: `App/QuizQuestionView.swift`
@@ -4058,9 +4081,443 @@ EOF
 
 ---
 
-## Task 17: Full verification pass
+## Task 17: Visual polish — color-coding and Liquid Glass across existing screens
 
-No new code — this confirms the whole app (all 16 prior tasks) actually
+Added mid-implementation per spec section 10 (user feedback after Task
+14 was already built, Tasks 15-16 not yet dispatched): the app should
+feel more colorful — echoing the original web app's per-verb-type and
+per-て-form-group color palette, which the native port simplified away to
+plain gray capsules — and its custom-drawn surfaces (as opposed to
+standard system chrome, which already renders with Liquid Glass for
+free) should adopt `.glassEffect` so they read as part of the same
+design language, with the quiz specifically also getting a true
+immersive fullscreen treatment. This task raises the deployment target
+(required for the Liquid Glass APIs), retrofits `VerbRow`,
+`TeFormLegend`, `FormGroupSection`, `VerbDetailView`, and the quiz
+screens (`QuizQuestionView`/`QuizResultsView`/`QuizView`, built plain in
+Task 15 specifically to avoid using Liquid Glass APIs before this task
+raises the deployment target that makes them available) — Task 16
+(settings) is a plain system `Form` with no custom-drawn surfaces to
+retrofit, nothing to do there.
+
+**Files:**
+- Create: `App/VerbColors.swift`
+- Modify: `App/VerbRow.swift` (full replacement)
+- Modify: `App/TeFormLegend.swift` (full replacement)
+- Modify: `App/FormGroupSection.swift` (full replacement)
+- Modify: `App/VerbDetailView.swift` (full replacement)
+- Modify: `App/QuizQuestionView.swift`, `App/QuizResultsView.swift`,
+  `App/QuizView.swift` (targeted edits, not full replacement)
+- Modify: `project.yml`, `Packages/VerbKit/Package.swift` (deployment
+  target)
+
+**Interfaces:**
+- Consumes: `VerbType`, `TeGroup` (Task 2).
+- Produces: `VerbType.accentColor: Color`, `TeGroup.accentColor: Color` —
+  used by all four modified views, and available to any future screen
+  that wants the same palette.
+
+- [ ] **Step 1: Raise the deployment target to iOS 26.0 / macOS 26.0**
+
+Liquid Glass APIs (`.glassEffect()`, `.buttonStyle(.glass)`,
+`.buttonStyle(.glassProminent)`) require iOS 26/macOS 26. Two independent
+changes are needed (verified directly against this toolchain, not
+assumed):
+
+1. `project.yml`'s `targets.JPVerbConjugation.deploymentTarget` — from
+   `iOS: "17.0"` / `macOS: "14.0"` to `iOS: "26.0"` / `macOS: "26.0"`.
+   This governs the App target (built via Xcode/XcodeGen, not SwiftPM) —
+   `SWIFT_VERSION: "5.0"` stays unchanged, this is purely an
+   API-availability floor, not a language-mode change.
+2. `Packages/VerbKit/Package.swift` needs THREE coordinated changes, not
+   just the platforms list — the `.v26` platform case requires
+   `swift-tools-version:6.2` (confirmed: `.v26` fails to compile under
+   the current `5.10` with "'v26' was introduced in PackageDescription
+   6.2"), and bumping tools-version to 6.0+ silently switches SwiftPM
+   targets to Swift 6's strict-concurrency language mode by default
+   unless pinned back — which risks turning the `@MainActor`-adjacent
+   pattern already flagged as a deferred Minor finding in Task 9's
+   review into a real compile error. Confirmed via a standalone scratch
+   package that all three together compile clean:
+   - Header: `// swift-tools-version:5.10` → `// swift-tools-version:6.2`
+   - `platforms: [.iOS(.v17), .macOS(.v14)]` → `platforms: [.iOS(.v26), .macOS(.v26)]`
+   - Add `swiftLanguageModes: [.v5]` as a new top-level `Package(...)`
+     argument (alongside `name`/`platforms`/`products`/`targets`), to
+     keep VerbKit compiling in Swift 5 language mode despite the
+     tools-version bump — do not skip this, it's what prevents the
+     strict-concurrency risk above.
+
+```bash
+./scripts/generate-project.sh
+cd Packages/VerbKit && swift build 2>&1 | tail -10 && cd ../..
+```
+
+Expected: package still builds clean after the platform bump (confirms
+no accidental syntax issue in the edit, before moving on to real
+Liquid Glass code). If you see a strict-concurrency-flavored error here
+that wasn't present before, `swiftLanguageModes: [.v5]` is missing or
+misplaced — this exact combination was verified to work.
+
+- [ ] **Step 2: Define the color palette**
+
+`App/VerbColors.swift`:
+
+```swift
+import SwiftUI
+import VerbKit
+
+extension VerbType {
+    /// Echoes the original web app's per-type palette (getTypeColors).
+    var accentColor: Color {
+        switch self {
+        case .irregular: return Color(red: 0.973, green: 0.443, blue: 0.400)
+        case .ru: return Color(red: 0.486, green: 0.831, blue: 0.992)
+        case .u: return Color(red: 0.992, green: 0.792, blue: 0.243)
+        }
+    }
+}
+
+extension TeGroup {
+    /// Echoes the original web app's per-て-form-group palette (TE_GROUPS).
+    var accentColor: Color {
+        switch self {
+        case .tte: return Color(red: 0.976, green: 0.451, blue: 0.086)
+        case .nde: return Color(red: 0.176, green: 0.831, blue: 0.749)
+        case .ite: return Color(red: 0.655, green: 0.545, blue: 0.980)
+        case .ide: return Color(red: 0.506, green: 0.549, blue: 0.973)
+        case .shite: return Color(red: 0.984, green: 0.447, blue: 0.522)
+        }
+    }
+}
+```
+
+- [ ] **Step 3: Color and glass the list row — replace `App/VerbRow.swift` entirely**
+
+```swift
+import SwiftUI
+import VerbKit
+
+struct VerbRow: View {
+    let verb: Verb
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(verb.label)
+                .font(.caption2.weight(.semibold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .foregroundStyle(verb.type.accentColor)
+                .glassEffect(.regular.tint(verb.type.accentColor), in: Capsule())
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(verb.dict)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(verb.teGroup?.accentColor ?? verb.type.accentColor)
+                    if let kanji = verb.kanji {
+                        Text(kanji)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Text(verb.meaning)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+```
+
+- [ ] **Step 4: Color and glass the て-form legend chips — replace `App/TeFormLegend.swift` entirely**
+
+```swift
+import SwiftUI
+import VerbKit
+
+struct TeFormLegend: View {
+    private let rules: [(TeGroup, String)] = [
+        (.tte, "う/つ/る → って"),
+        (.nde, "む/ぶ/ぬ → んで"),
+        (.ite, "く → いて"),
+        (.ide, "ぐ → いで"),
+        (.shite, "す → して"),
+    ]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(rules, id: \.0) { group, rule in
+                    Text(rule)
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .foregroundStyle(group.accentColor)
+                        .glassEffect(.regular.tint(group.accentColor), in: Capsule())
+                }
+            }
+        }
+        .listRowSeparator(.hidden)
+    }
+}
+```
+
+- [ ] **Step 5: Glass the form-group tiles — replace `App/FormGroupSection.swift` entirely**
+
+```swift
+import SwiftUI
+
+struct FormGroupSection: View {
+    let title: String
+    let forms: [(String, String)]
+    @State private var isExpanded: Bool
+
+    init(title: String, forms: [(String, String)], defaultExpanded: Bool) {
+        self.title = title
+        self.forms = forms
+        _isExpanded = State(initialValue: defaultExpanded)
+    }
+
+    var body: some View {
+        DisclosureGroup(title, isExpanded: $isExpanded) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(forms, id: \.0) { label, value in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(label)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(value)
+                            .font(.headline)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 8))
+                }
+            }
+            .padding(.top, 4)
+        }
+        .font(.subheadline.weight(.semibold))
+    }
+}
+```
+
+- [ ] **Step 6: Color and glass the detail header/actions/notes — replace `App/VerbDetailView.swift` entirely**
+
+```swift
+import SwiftUI
+import VerbKit
+
+struct VerbDetailView: View {
+    let verb: Verb
+    var onExamples: () -> Void
+    var onQuiz: () -> Void
+
+    private var accent: Color {
+        verb.teGroup?.accentColor ?? verb.type.accentColor
+    }
+
+    private var jishoURL: URL {
+        let encoded = verb.dict.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? verb.dict
+        return URL(string: "https://jisho.org/search/\(encoded)")!
+    }
+
+    private var hasAdvancedForms: Bool {
+        let f = verb.forms
+        return [f.potential, f.volitional, f.passive, f.causative, f.causativePassive, f.conditionalBa, f.conditionalTara, f.imperative, f.tai]
+            .contains { $0 != nil }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                header
+                actions
+                if let notes = verb.notes {
+                    notesBox(notes)
+                }
+                Text(verb.description)
+                    .font(.body)
+                formGroups
+            }
+            .padding()
+        }
+        .navigationTitle(verb.dict)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verb.label)
+                    .font(.caption.weight(.bold))
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .foregroundStyle(verb.type.accentColor)
+                    .glassEffect(.regular.tint(verb.type.accentColor), in: Capsule())
+                if let teGroup = verb.teGroup {
+                    Text(teGroup.rawValue)
+                        .font(.caption)
+                        .foregroundStyle(teGroup.accentColor)
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(verb.dict).font(.system(size: 34, weight: .heavy)).foregroundStyle(accent)
+                if let kanji = verb.kanji {
+                    Text(kanji).font(.title2).foregroundStyle(.secondary)
+                }
+            }
+            Text(verb.meaning).font(.headline).foregroundStyle(.secondary).italic()
+        }
+    }
+
+    private var actions: some View {
+        HStack(spacing: 10) {
+            Button("Examples", systemImage: "book", action: onExamples)
+            Button("Test this verb", systemImage: "gamecontroller", action: onQuiz)
+                .buttonStyle(.glassProminent)
+                .tint(accent)
+            Link(destination: jishoURL) {
+                Label("Jisho", systemImage: "link")
+            }
+        }
+        .buttonStyle(.glass)
+    }
+
+    private func notesBox(_ notes: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "lightbulb")
+            Text(notes).font(.footnote)
+        }
+        .padding(12)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private var formGroups: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            FormGroupSection(title: "Polite", forms: [
+                ("ます (polite +)", verb.forms.masuPos),
+                ("ません (polite −)", verb.forms.masuNeg),
+                ("ました (polite past +)", verb.forms.masuPast),
+                ("ませんでした (polite past −)", verb.forms.masuPastNeg),
+            ], defaultExpanded: true)
+
+            FormGroupSection(title: "Plain", forms: [
+                ("short (present +)", verb.forms.shortPos),
+                ("short (present −)", verb.forms.shortNeg),
+                ("short (past +)", verb.forms.shortPast),
+                ("short (past −)", verb.forms.shortPastNeg),
+            ], defaultExpanded: true)
+
+            FormGroupSection(title: "て-form", forms: [
+                ("て-form", verb.forms.te),
+            ], defaultExpanded: true)
+
+            if hasAdvancedForms {
+                FormGroupSection(
+                    title: "Advanced",
+                    forms: [
+                        ("Potential", verb.forms.potential),
+                        ("Volitional", verb.forms.volitional),
+                        ("Passive", verb.forms.passive),
+                        ("Causative", verb.forms.causative),
+                        ("Causative-passive", verb.forms.causativePassive),
+                        ("Conditional (ば)", verb.forms.conditionalBa),
+                        ("Conditional (たら)", verb.forms.conditionalTara),
+                        ("Imperative", verb.forms.imperative),
+                        ("たい (want to)", verb.forms.tai),
+                    ].compactMap { label, value in value.map { (label, $0) } },
+                    defaultExpanded: false
+                )
+            }
+        }
+    }
+}
+```
+
+- [ ] **Step 7: Glass and immersive-fullscreen the quiz — modify `App/QuizQuestionView.swift`, `App/QuizResultsView.swift`, `App/QuizView.swift`**
+
+Three targeted edits (not full-file replacements — these files are
+otherwise unchanged from Task 15):
+
+In `QuizQuestionView.swift`:
+- `promptCard`'s `.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))` → `.glassEffect(in: RoundedRectangle(cornerRadius: 20))`
+- The "Next →"/"See Results →" button's `.buttonStyle(.borderedProminent)` → `.buttonStyle(.glassProminent)`
+- `choiceButton`'s `.buttonStyle(.borderedProminent)` → `.buttonStyle(.glassProminent)` (keep the existing `.tint(background)` right after it)
+- `feedback`'s body: replace
+  ```swift
+  .background(viewModel.timedOut ? Color.orange : (viewModel.selected == question.correct ? Color.green : Color.red))
+  .foregroundStyle(.white)
+  .clipShape(RoundedRectangle(cornerRadius: 12))
+  ```
+  with
+  ```swift
+  .foregroundStyle(.white)
+  .glassEffect(
+      .regular.tint(viewModel.timedOut ? .orange : (viewModel.selected == question.correct ? .green : .red)),
+      in: RoundedRectangle(cornerRadius: 12)
+  )
+  ```
+
+In `QuizResultsView.swift`:
+- The results list's `.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))` → `.glassEffect(in: RoundedRectangle(cornerRadius: 16))`
+- "Back to Table"'s `.buttonStyle(.borderedProminent)` → `.buttonStyle(.glassProminent)`
+
+In `QuizView.swift`, add to the end of the modifier chain on `body` (after
+the existing `.task(id: viewModel.index) { ... }` block):
+```swift
+        // Immersive fullscreen takeover per spec section 10 — hides the
+        // home indicator for the duration of the quiz.
+        .persistentSystemOverlays(.hidden)
+```
+
+- [ ] **Step 8: Rebuild and verify**
+
+```bash
+./scripts/generate-project.sh
+xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_iOS -destination "generic/platform=iOS Simulator" build 2>&1 | tail -15
+```
+
+Expected: `** BUILD SUCCEEDED **`. (macOS build is a pre-accepted, tracked
+gap in this environment per Task 11 — skip it, iOS Simulator only.)
+
+In Simulator: confirm each verb type (Irregular/Ru/U) shows a distinctly
+colored type badge in both the list and detail screens, confirm the
+て-form legend chips are each colored differently, confirm a verb's
+dictionary-form heading in the detail view picks up its て-group's color
+(or its type's color if it has no て-group, e.g. irregular verbs), confirm
+the notes box / form-group tiles / action buttons read as glassy material
+rather than flat gray fills, and confirm the quiz's prompt card/choice
+buttons/feedback banner/results list are also glassy — with the home
+indicator hidden while the quiz is on screen. Compare against
+pre-Task-17 screenshots if you want a clear before/after.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add App project.yml Packages/VerbKit/Package.swift
+git commit -m "$(cat <<'EOF'
+Add color-coding and Liquid Glass to existing screens
+
+Restores the original web app's per-verb-type and per-て-form-group
+color palette (simplified away during the initial port) via
+VerbType.accentColor/TeGroup.accentColor, and moves custom-drawn
+surfaces (badges, notes box, form tiles, action buttons, quiz UI)
+from flat gray/.quaternary/.regularMaterial fills onto .glassEffect,
+matching the Liquid Glass material standard SwiftUI chrome already
+renders with for free. The quiz also gets a true immersive
+fullscreen treatment (hidden home indicator). Also raises the
+deployment target to iOS 26.0/macOS 26.0 (from 17.0/14.0), required
+by the Liquid Glass APIs.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
+## Task 18: Full verification pass
+
+No new code — this confirms the whole app (all 17 prior tasks) actually
 works together, including the offline/first-launch scenario that's hard
 to exercise until now (it needs a truly fresh install). **Scope note:**
 this session's tooling can drive the iOS Simulator interactively
@@ -4168,6 +4625,7 @@ Summarize, in plain terms: which of Steps 1-4 passed, any screenshots
 taken, and any deviations from the spec noticed along the way (the two
 already flagged — the two-target XcodeGen structure instead of one
 multiplatform target, and the macOS quiz sheet instead of a separate
-Window scene — plus anything new). This closes out Plan 1; quiz history,
+Window scene — plus the mid-implementation visual-direction addition in
+Task 17, plus anything new). This closes out Plan 1; quiz history,
 widgets/Shortcuts, and the content pipeline are separate plans per the
 brainstorming decomposition.
