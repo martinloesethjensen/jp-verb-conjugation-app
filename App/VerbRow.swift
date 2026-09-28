@@ -10,12 +10,14 @@ struct VerbRow: View {
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(.tertiary, in: Capsule())
+                .foregroundStyle(verb.type.accentColor)
+                .glassEffect(.regular.tint(verb.type.accentColor), in: Capsule())
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(verb.dict)
                         .font(.title3.weight(.bold))
+                        .foregroundStyle(verb.teGroup?.accentColor ?? verb.type.accentColor)
                     if let kanji = verb.kanji {
                         Text(kanji)
                             .font(.subheadline)

@@ -27,5 +27,8 @@ struct QuizView: View {
                 viewModel.tickTimer()
             }
         }
+        // Immersive fullscreen takeover per spec section 10 — hides the
+        // home indicator for the duration of the quiz.
+        .persistentSystemOverlays(.hidden)
     }
 }

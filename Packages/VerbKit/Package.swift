@@ -1,11 +1,11 @@
-// swift-tools-version:5.10
+// swift-tools-version:6.2
 import PackageDescription
 
 let package = Package(
     name: "VerbKit",
     platforms: [
-        .iOS(.v17),
-        .macOS(.v14)
+        .iOS(.v26),
+        .macOS(.v26)
     ],
     products: [
         .library(name: "VerbKit", targets: ["VerbKit"])
@@ -17,5 +17,6 @@ let package = Package(
             dependencies: ["VerbKit"],
             resources: [.copy("Fixtures/verbs-fixture.json")]
         )
-    ]
+    ],
+    swiftLanguageModes: [.v5]
 )

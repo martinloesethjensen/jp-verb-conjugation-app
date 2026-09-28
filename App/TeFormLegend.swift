@@ -13,12 +13,13 @@ struct TeFormLegend: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(rules, id: \.0) { _, rule in
+                ForEach(rules, id: \.0) { group, rule in
                     Text(rule)
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(.tertiary, in: Capsule())
+                        .foregroundStyle(group.accentColor)
+                        .glassEffect(.regular.tint(group.accentColor), in: Capsule())
                 }
             }
         }

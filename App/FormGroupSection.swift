@@ -24,7 +24,7 @@ struct FormGroupSection: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                    .glassEffect(in: RoundedRectangle(cornerRadius: 8))
                 }
             }
             .padding(.top, 4)

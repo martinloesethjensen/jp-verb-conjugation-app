@@ -36,10 +36,10 @@ struct QuizResultsView: View {
                         Divider()
                     }
                 }
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .glassEffect(in: RoundedRectangle(cornerRadius: 16))
 
                 Button("Back to Table", action: onDone)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
             }
             .padding()
         }

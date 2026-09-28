@@ -28,7 +28,7 @@ struct QuizQuestionView: View {
                     Button(viewModel.index + 1 >= viewModel.questions.count ? "See Results →" : "Next →") {
                         viewModel.advance()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
                 }
             }
             .padding()
@@ -62,7 +62,7 @@ struct QuizQuestionView: View {
                 .foregroundStyle(timerColor)
         }
         .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .glassEffect(in: RoundedRectangle(cornerRadius: 20))
     }
 
     private var timerColor: Color {
@@ -88,7 +88,7 @@ struct QuizQuestionView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 60)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.glassProminent)
         .tint(background)
         .disabled(viewModel.isAnswered)
         .opacity(viewModel.isAnswered && !isCorrect && !isSelected ? 0.35 : 1)
@@ -107,8 +107,10 @@ struct QuizQuestionView: View {
         .font(.headline)
         .padding()
         .frame(maxWidth: .infinity)
-        .background(viewModel.timedOut ? Color.orange : (viewModel.selected == question.correct ? Color.green : Color.red))
         .foregroundStyle(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .glassEffect(
+            .regular.tint(viewModel.timedOut ? .orange : (viewModel.selected == question.correct ? .green : .red)),
+            in: RoundedRectangle(cornerRadius: 12)
+        )
     }
 }

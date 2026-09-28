@@ -6,6 +6,10 @@ struct VerbDetailView: View {
     var onExamples: () -> Void
     var onQuiz: () -> Void
 
+    private var accent: Color {
+        verb.teGroup?.accentColor ?? verb.type.accentColor
+    }
+
     private var jishoURL: URL {
         let encoded = verb.dict.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? verb.dict
         return URL(string: "https://jisho.org/search/\(encoded)")!
@@ -40,15 +44,16 @@ struct VerbDetailView: View {
                 Text(verb.label)
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 8).padding(.vertical, 2)
-                    .background(.tertiary, in: Capsule())
+                    .foregroundStyle(verb.type.accentColor)
+                    .glassEffect(.regular.tint(verb.type.accentColor), in: Capsule())
                 if let teGroup = verb.teGroup {
                     Text(teGroup.rawValue)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(teGroup.accentColor)
                 }
             }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(verb.dict).font(.system(size: 34, weight: .heavy))
+                Text(verb.dict).font(.system(size: 34, weight: .heavy)).foregroundStyle(accent)
                 if let kanji = verb.kanji {
                     Text(kanji).font(.title2).foregroundStyle(.secondary)
                 }
@@ -61,12 +66,13 @@ struct VerbDetailView: View {
         HStack(spacing: 10) {
             Button("Examples", systemImage: "book", action: onExamples)
             Button("Test this verb", systemImage: "gamecontroller", action: onQuiz)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
+                .tint(accent)
             Link(destination: jishoURL) {
                 Label("Jisho", systemImage: "link")
             }
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.glass)
     }
 
     private func notesBox(_ notes: String) -> some View {
@@ -75,7 +81,7 @@ struct VerbDetailView: View {
             Text(notes).font(.footnote)
         }
         .padding(12)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+        .glassEffect(in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var formGroups: some View {
