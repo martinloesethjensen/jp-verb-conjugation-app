@@ -31,7 +31,7 @@ public struct GitHubVerbFetcher: VerbDataFetching {
             (data, response) = try await session.data(from: url)
         } catch let urlError as URLError {
             switch urlError.code {
-            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .timedOut:
+            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
                 throw VerbSyncError.offline
             default:
                 throw VerbSyncError.serverUnreachable
