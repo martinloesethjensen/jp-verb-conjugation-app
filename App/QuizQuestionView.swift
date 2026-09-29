@@ -4,6 +4,7 @@ import VerbKit
 struct QuizQuestionView: View {
     var viewModel: QuizViewModel
     let question: QuizQuestion
+    var onDone: () -> Void
 
     private let shapeSymbols = ["triangle.fill", "diamond.fill", "circle.fill", "square.fill"]
     private let choiceColors: [Color] = [.red, .blue, .yellow, .green]
@@ -37,6 +38,14 @@ struct QuizQuestionView: View {
 
     private var header: some View {
         HStack {
+            Button {
+                onDone()
+            } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.glass)
+            .accessibilityLabel("Quit quiz")
+
             Text("\(viewModel.index + 1) / \(viewModel.questions.count)")
                 .font(.headline)
             Spacer()
@@ -90,7 +99,7 @@ struct QuizQuestionView: View {
         }
         .buttonStyle(.glassProminent)
         .tint(background)
-        .disabled(viewModel.isAnswered)
+        .allowsHitTesting(!viewModel.isAnswered)
         .opacity(viewModel.isAnswered && !isCorrect && !isSelected ? 0.35 : 1)
     }
 

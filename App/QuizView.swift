@@ -15,7 +15,7 @@ struct QuizView: View {
             if viewModel.finished {
                 QuizResultsView(viewModel: viewModel, onDone: onDone)
             } else if let question = viewModel.currentQuestion {
-                QuizQuestionView(viewModel: viewModel, question: question)
+                QuizQuestionView(viewModel: viewModel, question: question, onDone: onDone)
             }
         }
         // Restarts the countdown loop each time the question index
