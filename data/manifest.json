@@ -1,4 +1,8 @@
 {
-  "version": "1.0.0",
-  "sha256": "e828f3d558236fc6b653e81b75ff5f0d9147ecf1585bafff24854d3e31408909"
+  "version": "1.1.0",
+  "sha256": "1ea0408b78db165c9b31bb574b0b242a3201871bac4c3845a1e88aa42965cdaf",
+  "grammar": {
+    "version": "1.0.0",
+    "sha256": "52564ae50911554f78b900df9c862e396f433d06609cd3ad95e96eda695bd8e2"
+  }
 }

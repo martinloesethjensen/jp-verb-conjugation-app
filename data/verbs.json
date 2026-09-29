@@ -19,7 +19,15 @@
         "short_pos": "する",
         "short_neg": "しない",
         "short_past": "した",
-        "short_past_neg": "しなかった"
+        "short_past_neg": "しなかった",
+        "nd_pos": "するんです",
+        "nd_neg": "しないんです",
+        "nd_past": "したんです",
+        "nd_past_neg": "しなかったんです",
+        "nd_casual_pos": "するんだ",
+        "nd_casual_neg": "しないんだ",
+        "nd_casual_past": "したんだ",
+        "nd_casual_past_neg": "しなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちべんきょうします。", "en": "I study every day." },
@@ -52,7 +60,15 @@
         "short_pos": "くる",
         "short_neg": "こない",
         "short_past": "きた",
-        "short_past_neg": "こなかった"
+        "short_past_neg": "こなかった",
+        "nd_pos": "くるんです",
+        "nd_neg": "こないんです",
+        "nd_past": "きたんです",
+        "nd_past_neg": "こなかったんです",
+        "nd_casual_pos": "くるんだ",
+        "nd_casual_neg": "こないんだ",
+        "nd_casual_past": "きたんだ",
+        "nd_casual_past_neg": "こなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "バスがもうすぐきます。", "en": "The bus is coming soon." },
@@ -85,7 +101,15 @@
         "short_pos": "たべる",
         "short_neg": "たべない",
         "short_past": "たべた",
-        "short_past_neg": "たべなかった"
+        "short_past_neg": "たべなかった",
+        "nd_pos": "たべるんです",
+        "nd_neg": "たべないんです",
+        "nd_past": "たべたんです",
+        "nd_past_neg": "たべなかったんです",
+        "nd_casual_pos": "たべるんだ",
+        "nd_casual_neg": "たべないんだ",
+        "nd_casual_past": "たべたんだ",
+        "nd_casual_past_neg": "たべなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "あさごはんをたべます。", "en": "I eat breakfast." },
@@ -120,7 +144,15 @@
         "short_pos": "みる",
         "short_neg": "みない",
         "short_past": "みた",
-        "short_past_neg": "みなかった"
+        "short_past_neg": "みなかった",
+        "nd_pos": "みるんです",
+        "nd_neg": "みないんです",
+        "nd_past": "みたんです",
+        "nd_past_neg": "みなかったんです",
+        "nd_casual_pos": "みるんだ",
+        "nd_casual_neg": "みないんだ",
+        "nd_casual_past": "みたんだ",
+        "nd_casual_past_neg": "みなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちテレビをみます。", "en": "I watch TV every day." },
@@ -152,7 +184,15 @@
         "short_pos": "ねる",
         "short_neg": "ねない",
         "short_past": "ねた",
-        "short_past_neg": "ねなかった"
+        "short_past_neg": "ねなかった",
+        "nd_pos": "ねるんです",
+        "nd_neg": "ねないんです",
+        "nd_past": "ねたんです",
+        "nd_past_neg": "ねなかったんです",
+        "nd_casual_pos": "ねるんだ",
+        "nd_casual_neg": "ねないんだ",
+        "nd_casual_past": "ねたんだ",
+        "nd_casual_past_neg": "ねなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "じゅういちじにねます。", "en": "I go to sleep at eleven." },
@@ -183,7 +223,15 @@
         "short_pos": "おきる",
         "short_neg": "おきない",
         "short_past": "おきた",
-        "short_past_neg": "おきなかった"
+        "short_past_neg": "おきなかった",
+        "nd_pos": "おきるんです",
+        "nd_neg": "おきないんです",
+        "nd_past": "おきたんです",
+        "nd_past_neg": "おきなかったんです",
+        "nd_casual_pos": "おきるんだ",
+        "nd_casual_neg": "おきないんだ",
+        "nd_casual_past": "おきたんだ",
+        "nd_casual_past_neg": "おきなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しちじにおきます。", "en": "I wake up at seven." },
@@ -213,7 +261,15 @@
         "short_pos": "みせる",
         "short_neg": "みせない",
         "short_past": "みせた",
-        "short_past_neg": "みせなかった"
+        "short_past_neg": "みせなかった",
+        "nd_pos": "みせるんです",
+        "nd_neg": "みせないんです",
+        "nd_past": "みせたんです",
+        "nd_past_neg": "みせなかったんです",
+        "nd_casual_pos": "みせるんだ",
+        "nd_casual_neg": "みせないんだ",
+        "nd_casual_past": "みせたんだ",
+        "nd_casual_past_neg": "みせなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しゃしんをみせます。", "en": "I'll show you a photo." },
@@ -241,7 +297,15 @@
         "short_pos": "かりる",
         "short_neg": "かりない",
         "short_past": "かりた",
-        "short_past_neg": "かりなかった"
+        "short_past_neg": "かりなかった",
+        "nd_pos": "かりるんです",
+        "nd_neg": "かりないんです",
+        "nd_past": "かりたんです",
+        "nd_past_neg": "かりなかったんです",
+        "nd_casual_pos": "かりるんだ",
+        "nd_casual_neg": "かりないんだ",
+        "nd_casual_past": "かりたんだ",
+        "nd_casual_past_neg": "かりなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "としょかんで本をかります。", "en": "I borrow books from the library." },
@@ -270,7 +334,15 @@
         "short_pos": "かう",
         "short_neg": "かわない",
         "short_past": "かった",
-        "short_past_neg": "かわなかった"
+        "short_past_neg": "かわなかった",
+        "nd_pos": "かうんです",
+        "nd_neg": "かわないんです",
+        "nd_past": "かったんです",
+        "nd_past_neg": "かわなかったんです",
+        "nd_casual_pos": "かうんだ",
+        "nd_casual_neg": "かわないんだ",
+        "nd_casual_past": "かったんだ",
+        "nd_casual_past_neg": "かわなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "スーパーでたまごをかいます。", "en": "I buy eggs at the supermarket." },
@@ -300,7 +372,15 @@
         "short_pos": "あう",
         "short_neg": "あわない",
         "short_past": "あった",
-        "short_past_neg": "あわなかった"
+        "short_past_neg": "あわなかった",
+        "nd_pos": "あうんです",
+        "nd_neg": "あわないんです",
+        "nd_past": "あったんです",
+        "nd_past_neg": "あわなかったんです",
+        "nd_casual_pos": "あうんだ",
+        "nd_casual_neg": "あわないんだ",
+        "nd_casual_past": "あったんだ",
+        "nd_casual_past_neg": "あわなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "えきでともだちにあいます。", "en": "I'm meeting my friend at the station." },
@@ -328,7 +408,15 @@
         "short_pos": "まつ",
         "short_neg": "またない",
         "short_past": "まった",
-        "short_past_neg": "またなかった"
+        "short_past_neg": "またなかった",
+        "nd_pos": "まつんです",
+        "nd_neg": "またないんです",
+        "nd_past": "まったんです",
+        "nd_past_neg": "またなかったんです",
+        "nd_casual_pos": "まつんだ",
+        "nd_casual_neg": "またないんだ",
+        "nd_casual_past": "まったんだ",
+        "nd_casual_past_neg": "またなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "えきのまえでまちます。", "en": "I'll wait in front of the station." },
@@ -356,7 +444,15 @@
         "short_pos": "とる",
         "short_neg": "とらない",
         "short_past": "とった",
-        "short_past_neg": "とらなかった"
+        "short_past_neg": "とらなかった",
+        "nd_pos": "とるんです",
+        "nd_neg": "とらないんです",
+        "nd_past": "とったんです",
+        "nd_past_neg": "とらなかったんです",
+        "nd_casual_pos": "とるんだ",
+        "nd_casual_neg": "とらないんだ",
+        "nd_casual_past": "とったんだ",
+        "nd_casual_past_neg": "とらなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しゃしんをとります。", "en": "I'll take a photo." },
@@ -384,7 +480,15 @@
         "short_pos": "ある",
         "short_neg": "ない",
         "short_past": "あった",
-        "short_past_neg": "なかった"
+        "short_past_neg": "なかった",
+        "nd_pos": "あるんです",
+        "nd_neg": "ないんです",
+        "nd_past": "あったんです",
+        "nd_past_neg": "なかったんです",
+        "nd_casual_pos": "あるんだ",
+        "nd_casual_neg": "ないんだ",
+        "nd_casual_past": "あったんだ",
+        "nd_casual_past_neg": "なかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "つくえのうえにほんがあります。", "en": "There is a book on the desk." },
@@ -413,7 +517,15 @@
         "short_pos": "もつ",
         "short_neg": "もたない",
         "short_past": "もった",
-        "short_past_neg": "もたなかった"
+        "short_past_neg": "もたなかった",
+        "nd_pos": "もつんです",
+        "nd_neg": "もたないんです",
+        "nd_past": "もったんです",
+        "nd_past_neg": "もたなかったんです",
+        "nd_casual_pos": "もつんだ",
+        "nd_casual_neg": "もたないんだ",
+        "nd_casual_past": "もったんだ",
+        "nd_casual_past_neg": "もたなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "かばんをもちます。", "en": "I'll carry the bag." },
@@ -441,7 +553,15 @@
         "short_pos": "よむ",
         "short_neg": "よまない",
         "short_past": "よんだ",
-        "short_past_neg": "よまなかった"
+        "short_past_neg": "よまなかった",
+        "nd_pos": "よむんです",
+        "nd_neg": "よまないんです",
+        "nd_past": "よんだんです",
+        "nd_past_neg": "よまなかったんです",
+        "nd_casual_pos": "よむんだ",
+        "nd_casual_neg": "よまないんだ",
+        "nd_casual_past": "よんだんだ",
+        "nd_casual_past_neg": "よまなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちしんぶんをよみます。", "en": "I read the newspaper every day." },
@@ -470,7 +590,15 @@
         "short_pos": "のむ",
         "short_neg": "のまない",
         "short_past": "のんだ",
-        "short_past_neg": "のまなかった"
+        "short_past_neg": "のまなかった",
+        "nd_pos": "のむんです",
+        "nd_neg": "のまないんです",
+        "nd_past": "のんだんです",
+        "nd_past_neg": "のまなかったんです",
+        "nd_casual_pos": "のむんだ",
+        "nd_casual_neg": "のまないんだ",
+        "nd_casual_past": "のんだんだ",
+        "nd_casual_past_neg": "のまなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいあさコーヒーをのみます。", "en": "I drink coffee every morning." },
@@ -500,7 +628,15 @@
         "short_pos": "あそぶ",
         "short_neg": "あそばない",
         "short_past": "あそんだ",
-        "short_past_neg": "あそばなかった"
+        "short_past_neg": "あそばなかった",
+        "nd_pos": "あそぶんです",
+        "nd_neg": "あそばないんです",
+        "nd_past": "あそんだんです",
+        "nd_past_neg": "あそばなかったんです",
+        "nd_casual_pos": "あそぶんだ",
+        "nd_casual_neg": "あそばないんだ",
+        "nd_casual_past": "あそんだんだ",
+        "nd_casual_past_neg": "あそばなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "こうえんであそびます。", "en": "I play at the park." },
@@ -528,7 +664,15 @@
         "short_pos": "しぬ",
         "short_neg": "しなない",
         "short_past": "しんだ",
-        "short_past_neg": "しななかった"
+        "short_past_neg": "しななかった",
+        "nd_pos": "しぬんです",
+        "nd_neg": "しなないんです",
+        "nd_past": "しんだんです",
+        "nd_past_neg": "しななかったんです",
+        "nd_casual_pos": "しぬんだ",
+        "nd_casual_neg": "しなないんだ",
+        "nd_casual_past": "しんだんだ",
+        "nd_casual_past_neg": "しななかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "むしはふゆにしにます。", "en": "Insects die in winter." },
@@ -554,7 +698,15 @@
         "short_pos": "かく",
         "short_neg": "かかない",
         "short_past": "かいた",
-        "short_past_neg": "かかなかった"
+        "short_past_neg": "かかなかった",
+        "nd_pos": "かくんです",
+        "nd_neg": "かかないんです",
+        "nd_past": "かいたんです",
+        "nd_past_neg": "かかなかったんです",
+        "nd_casual_pos": "かくんだ",
+        "nd_casual_neg": "かかないんだ",
+        "nd_casual_past": "かいたんだ",
+        "nd_casual_past_neg": "かかなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "てがみをかきます。", "en": "I write a letter." },
@@ -583,7 +735,15 @@
         "short_pos": "きく",
         "short_neg": "きかない",
         "short_past": "きいた",
-        "short_past_neg": "きかなかった"
+        "short_past_neg": "きかなかった",
+        "nd_pos": "きくんです",
+        "nd_neg": "きかないんです",
+        "nd_past": "きいたんです",
+        "nd_past_neg": "きかなかったんです",
+        "nd_casual_pos": "きくんだ",
+        "nd_casual_neg": "きかないんだ",
+        "nd_casual_past": "きいたんだ",
+        "nd_casual_past_neg": "きかなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちおんがくをききます。", "en": "I listen to music every day." },
@@ -611,7 +771,15 @@
         "short_pos": "いく",
         "short_neg": "いかない",
         "short_past": "いった",
-        "short_past_neg": "いかなかった"
+        "short_past_neg": "いかなかった",
+        "nd_pos": "いくんです",
+        "nd_neg": "いかないんです",
+        "nd_past": "いったんです",
+        "nd_past_neg": "いかなかったんです",
+        "nd_casual_pos": "いくんだ",
+        "nd_casual_neg": "いかないんだ",
+        "nd_casual_past": "いったんだ",
+        "nd_casual_past_neg": "いかなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "がっこうにいきます。", "en": "I go to school." },
@@ -643,7 +811,15 @@
         "short_pos": "いそぐ",
         "short_neg": "いそがない",
         "short_past": "いそいだ",
-        "short_past_neg": "いそがなかった"
+        "short_past_neg": "いそがなかった",
+        "nd_pos": "いそぐんです",
+        "nd_neg": "いそがないんです",
+        "nd_past": "いそいだんです",
+        "nd_past_neg": "いそがなかったんです",
+        "nd_casual_pos": "いそぐんだ",
+        "nd_casual_neg": "いそがないんだ",
+        "nd_casual_past": "いそいだんだ",
+        "nd_casual_past_neg": "いそがなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "はやくいそぎましょう！", "en": "Let's hurry up!" },
@@ -670,7 +846,15 @@
         "short_pos": "およぐ",
         "short_neg": "およがない",
         "short_past": "およいだ",
-        "short_past_neg": "およがなかった"
+        "short_past_neg": "およがなかった",
+        "nd_pos": "およぐんです",
+        "nd_neg": "およがないんです",
+        "nd_past": "およいだんです",
+        "nd_past_neg": "およがなかったんです",
+        "nd_casual_pos": "およぐんだ",
+        "nd_casual_neg": "およがないんだ",
+        "nd_casual_past": "およいだんだ",
+        "nd_casual_past_neg": "およがなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "うみでおよぎます。", "en": "I swim in the sea." },
@@ -697,7 +881,15 @@
         "short_pos": "はなす",
         "short_neg": "はなさない",
         "short_past": "はなした",
-        "short_past_neg": "はなさなかった"
+        "short_past_neg": "はなさなかった",
+        "nd_pos": "はなすんです",
+        "nd_neg": "はなさないんです",
+        "nd_past": "はなしたんです",
+        "nd_past_neg": "はなさなかったんです",
+        "nd_casual_pos": "はなすんだ",
+        "nd_casual_neg": "はなさないんだ",
+        "nd_casual_past": "はなしたんだ",
+        "nd_casual_past_neg": "はなさなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "にほんごをすこしはなします。", "en": "I speak a little Japanese." },
@@ -727,7 +919,15 @@
         "short_pos": "かえす",
         "short_neg": "かえさない",
         "short_past": "かえした",
-        "short_past_neg": "かえさなかった"
+        "short_past_neg": "かえさなかった",
+        "nd_pos": "かえすんです",
+        "nd_neg": "かえさないんです",
+        "nd_past": "かえしたんです",
+        "nd_past_neg": "かえさなかったんです",
+        "nd_casual_pos": "かえすんだ",
+        "nd_casual_neg": "かえさないんだ",
+        "nd_casual_past": "かえしたんだ",
+        "nd_casual_past_neg": "かえさなかったんだ"
       },
       "examples": [
         { "form": "masu_pos", "jp": "あしたかえします。", "en": "I'll return it tomorrow." },

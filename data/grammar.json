@@ -1,0 +1,152 @@
+{
+  "version": "1.0.0",
+  "description": "Japanese grammar points for the JP Verb Conjugation app. Hand-authored; run scripts/update_data.py after editing.",
+  "grammar": [
+    {
+      "id": "n-desu",
+      "title": "んです",
+      "summary": "Marks a sentence as explanation, context or reason. Use んです after verbs and い-adjectives, and なんです after nouns and な-adjectives.",
+      "level": "beginner",
+      "usages": [
+        {
+          "heading": "Asking for or giving a reason",
+          "explanation": "The most basic use. A question with んですか asks for the story behind something you can see or have just heard, and a statement with んです supplies it.",
+          "examples": [
+            { "jp": "どうしたんですか。頭が痛いんです。", "en": "What's wrong? I have a headache." },
+            { "jp": "どうして遅れたんですか。電車が止まったんです。", "en": "Why were you late? The train stopped." }
+          ]
+        },
+        {
+          "heading": "Softening a request or a lead-in",
+          "explanation": "Before asking for something, んですが or んですけど sets the scene and leaves the request unsaid. It sounds much gentler than asking outright.",
+          "examples": [
+            { "jp": "すみません、道を聞きたいんですが。", "en": "Excuse me, I'd like to ask for directions." },
+            { "jp": "ちょっと手伝ってほしいんですけど。", "en": "I'd like a little help, if that's okay." }
+          ]
+        },
+        {
+          "heading": "Refusing with a reason",
+          "explanation": "Turning a refusal into an explanation makes it softer and more polite than a flat no. Verbs in the potential form are very common here.",
+          "examples": [
+            { "jp": "すみません、今日は行けないんです。", "en": "Sorry, I can't go today." },
+            { "jp": "お酒は飲めないんです。", "en": "I can't drink alcohol." }
+          ]
+        },
+        {
+          "heading": "Reacting to something you noticed",
+          "explanation": "With ね, んです shows you have just realized or been impressed by something.",
+          "examples": [
+            { "jp": "日本語が上手なんですね。", "en": "Your Japanese is good, isn't it. I'm impressed." },
+            { "jp": "外は雨が降っているんですね。", "en": "So it's raining outside." }
+          ]
+        },
+        {
+          "heading": "Emphasis and background",
+          "explanation": "Use it to give the background to what you are about to say, to correct an assumption, or to put the focus on one part of the sentence.",
+          "examples": [
+            { "jp": "実は、まだ食べていないんです。", "en": "Actually, I haven't eaten yet." },
+            { "jp": "昨日買ったのは、この本なんです。", "en": "What I bought yesterday is this book." }
+          ]
+        },
+        {
+          "heading": "Checking an inference",
+          "explanation": "You have guessed something from what you can see or hear, and you ask whether you are right.",
+          "examples": [
+            { "jp": "疲れているんですか。", "en": "Are you tired? (You look it.)" },
+            { "jp": "日本に住んでいたんですか。", "en": "So you used to live in Japan?" }
+          ]
+        },
+        {
+          "heading": "Acknowledging what someone told you",
+          "explanation": "Saying そうなんですか shows you have taken in new information: \"oh, is that so?\" The casual version is そうなんだ.",
+          "examples": [
+            { "jp": "来月、京都に行くんです。そうなんですか。", "en": "I'm going to Kyoto next month. Oh, really?" },
+            { "jp": "来週、引っ越すんだ。そうなんだ。", "en": "I'm moving next week. Oh, I see." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "pattern": "plain form + んです",
+          "example": "食べるんです / 食べないんです / 食べたんです / 食べなかったんです",
+          "note": "The polite form never comes before it: 食べますんです is wrong."
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "plain form + んです",
+          "example": "高いんです / 高くないんです / 高かったんです / 高くなかったんです"
+        },
+        {
+          "word_class": "na-adjective",
+          "condition": "non-past, affirmative",
+          "pattern": "stem + なんです",
+          "example": "静かなんです",
+          "note": "The な is the plain だ turning into な before の, which is why it only appears here."
+        },
+        {
+          "word_class": "noun",
+          "condition": "non-past, affirmative",
+          "pattern": "noun + なんです",
+          "example": "学生なんです"
+        },
+        {
+          "word_class": "na-adjective",
+          "condition": "past or negative",
+          "pattern": "stem + だった / じゃない + んです",
+          "example": "静かだったんです / 静かじゃないんです"
+        },
+        {
+          "word_class": "noun",
+          "condition": "past or negative",
+          "pattern": "noun + だった / じゃない + んです",
+          "example": "学生だったんです / 学生じゃないんです"
+        }
+      ],
+      "conjugations": [
+        { "form": "んです", "register": "polite" },
+        { "form": "んですか", "register": "polite", "note": "Asks for an explanation." },
+        { "form": "んですが / んですけど", "register": "polite", "note": "Sets the scene, often before a request." },
+        { "form": "んですね", "register": "polite", "note": "Reacts to something you just noticed." },
+        { "form": "んじゃないですか", "register": "polite", "note": "\"Isn't it that...?\" Used to suggest or double-check." },
+        { "form": "んじゃありません", "register": "polite", "note": "Denies the explanation. After a plain verb it can also mean \"don't do it!\" (see Watch out)." },
+        { "form": "んでした", "register": "polite", "note": "Rare. The past normally goes on the verb instead: 食べたんです." },
+        { "form": "んだ", "register": "casual" },
+        { "form": "んだよ", "register": "casual", "note": "Adds \"you know\" when telling someone." },
+        { "form": "の？ / んだ？", "register": "casual", "note": "A casual question. の？ is very common and neutral." },
+        { "form": "の", "register": "casual", "note": "As a statement (行くの。) it sounds softer and, for many speakers, feminine." },
+        { "form": "んじゃない", "register": "casual" },
+        { "form": "のです", "register": "formal", "note": "The written or formal version of んです." },
+        { "form": "のだ", "register": "formal" },
+        { "form": "のではありません", "register": "formal" }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Negating it is not a plain refusal",
+          "explanation": "食べないんです explains why you are not eating. But 食べるんじゃない (or 食べるんじゃありません) is a strong \"don't eat!\", and 食べたんじゃない means \"it's not that I ate\".",
+          "examples": [
+            { "jp": "今は食べないんです。", "en": "I'm not eating right now (and there's a reason)." },
+            { "jp": "そんなに食べるんじゃない。", "en": "Don't eat so much!" },
+            { "jp": "食べたんじゃないんです。", "en": "It's not that I ate it." }
+          ]
+        },
+        {
+          "heading": "Don't overuse it",
+          "explanation": "For plain new information, use the ordinary polite form. Adding んです makes a sentence sound like an explanation. And んですか asks for one, so it can sound probing or, in the wrong tone, demanding or aggressive. It is not a neutral question marker.",
+          "examples": [
+            { "jp": "毎日学校に行きます。", "en": "I go to school every day. (a plain statement)" },
+            { "jp": "毎日学校に行くんです。", "en": "I go to school every day. (explaining, e.g. why you get up early)" }
+          ]
+        },
+        {
+          "heading": "The past goes on the verb",
+          "explanation": "To explain something that happened, put the past tense on the verb before んです. 〜んでした exists but is rare.",
+          "examples": [
+            { "jp": "昨日は早く寝たんです。", "en": "I went to bed early yesterday." }
+          ]
+        }
+      ],
+      "related": []
+    }
+  ]
+}
