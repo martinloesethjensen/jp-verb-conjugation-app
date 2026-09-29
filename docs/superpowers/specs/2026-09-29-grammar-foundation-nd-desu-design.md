@@ -1,7 +1,8 @@
 # Grammar Foundation + んです / なんです — Design
 
 **Date:** 2026-09-29
-**Status:** Approved in brainstorming, pending written-spec review
+**Status:** Approved in brainstorming; refined during implementation planning
+(see "Refinements found while planning" at the end)
 **Builds on:** [2026-09-23-native-apple-rewrite-design.md](2026-09-23-native-apple-rewrite-design.md)
 
 ## Summary
@@ -52,10 +53,13 @@ be added to the app's credits.
 - `level` — beginner / intermediate
 - `usages: [GrammarUsage]` — each has a `heading`, an `explanation`, and
   `examples: [GrammarExample]` (`jp`, `en`)
-- `attachment: [AttachmentRule]` — one per word class: `wordClass`,
-  `pattern`, a worked `example`, optional `note`
+- `attachment: [AttachmentRule]` — one per word class and, where the rule
+  differs, per condition: `wordClass`, optional `condition` (e.g.
+  "non-past, affirmative"), `pattern`, a worked `example`, optional `note`
 - `conjugations: [GrammarConjugation]` — the ending's own forms, each with
   `form`, `register` (polite / casual / formal), optional `note`
+- `pitfalls: [GrammarPitfall]` — common mistakes and nuances ("Watch out"):
+  `heading`, `explanation`, and `examples` (which may be omitted)
 - `related: [String]` — ids of other grammar points
 
 `WordClass` is a new small enum (verb, i-adjective, na-adjective, noun). It is
@@ -115,7 +119,9 @@ downloaded yet" state and retries on the next sync. Errors reuse
 (`loadAllGrammarPoints`, `replaceAllGrammarPoints`) with a SwiftData
 `GrammarEntity`. Like `VerbEntity`, it stores the point as a `Codable` blob,
 is replace-synced (removed lessons disappear locally), and shares the same
-`ModelContainer` and App Group.
+`ModelContainer` and App Group. It also stores each point's position in the
+source file (`sortOrder`), so lessons keep their authored order — a SwiftData
+fetch is otherwise unordered.
 
 **Pipeline.** Section 9 of the rewrite spec describes a Python generator,
 but it is not in the repo. This project requires it to:
@@ -136,13 +142,14 @@ point exists), so this section builds on that spec's navigation design.
 
 **Top-level navigation.**
 
-- iPhone: `TabView` with **Verbs** and **Grammar** tabs, each with its own
-  `NavigationStack`. Quiz, history and settings stay reachable from the
-  Verbs tab as the rewrite spec describes.
-- iPad/Mac: the sidebar has Verbs and Grammar sections; selecting an item
-  shows detail in the trailing pane.
-- This is the one change to the rewrite spec: it assumed the verb list is
-  the app root.
+- All platforms: a `TabView` with **Verbs** and **Grammar** tabs, each tab
+  its own `NavigationSplitView` (list/detail at regular width, a stack on
+  iPhone). Quiz, history and settings stay reachable from the Verbs tab as
+  the rewrite spec describes.
+- This changes the rewrite spec, which assumed the verb list is the app
+  root. A sidebar with Verbs/Grammar sections on iPad/Mac (the original
+  intent here) needs `TabView`'s sidebar-adaptable style, which requires
+  iOS 18 / macOS 15; the iOS 17 / macOS 14 floor rules it out.
 
 **Grammar list.** Rows show title, summary and a level badge. `.searchable`
 matches title, summary and example `jp` text. No filter chips in v1. If
@@ -155,7 +162,9 @@ grammar has not synced, show the "not downloaded yet" state with Try Again.
 3. Usages — one card each: heading, explanation, examples with tap-to-reveal
    English
 4. Conjugations — grouped by register
-5. Related — links to other grammar points (empty until more exist)
+5. Watch out — the lesson's pitfalls, examples included
+6. Related — links to other grammar points that exist locally (empty until
+   more exist)
 
 **Verb detail additions.** A collapsible **"んです"** section after
 "Advanced", collapsed by default, hidden when the verb has no `nd_*` fields.
@@ -163,8 +172,13 @@ It shows the eight forms in a polite/casual grid. A "Learn about んです →"
 row navigates to `n-desu`, resolved by grammar id and hidden if that point
 has not synced.
 
-**Routing.** A single `Route` enum (`.verb(id)`, `.grammar(id)`) drives both
-stacks, so cross-links and later widget/Shortcuts deep links share one path.
+**Routing.** A single `Route` enum (`.verb(id)`, `.grammar(id)`) is the one
+path for cross-links and later widget/Shortcuts deep links. The app exposes
+it to views as an `openRoute` environment action, so a verb page can jump to
+a lesson without any parameters threaded through existing views. Because an
+iPhone `NavigationSplitView` shows its list until told otherwise, opening a
+lesson also sets the grammar tab's `preferredCompactColumn` to `.detail`;
+otherwise a link to a tab that hasn't been visited yet would land on the list.
 
 **Out of scope for v1:** grammar in the quiz, bookmarks/progress, audio,
 furigana or reading toggles, filter chips.
@@ -207,7 +221,7 @@ in the non-past affirmative. The polite form never precedes it:
 
 | Register | Forms |
 |---|---|
-| Polite | んです · んですか · んですが/けど · んですね · んじゃないですか |
+| Polite | んです · んですか · んですが/けど · んですね · んじゃないですか · んじゃありません · んでした (rare) |
 | Casual | んだ · んだよ · の？ / んだ？ · の (soft statement) · んじゃない |
 | Formal/written | のです · のだ · のではありません |
 
@@ -247,10 +261,30 @@ not linguistically exhaustive.
 - **UI**: verified by running in Simulator per platform, consistent with the
   rewrite spec (no UI/snapshot tests).
 
-## 6. Open items for implementation planning
+## 6. Open items
 
-- Whether the Python generator from rewrite-spec section 9 exists by then,
-  or the minimal standalone script is built instead (section 2).
-- Exact `TabView` / sidebar wiring depends on the rewrite spec's UI work
-  landing first; this project's navigation changes should be folded into
-  that plan if it has not started.
+- The Python generator from rewrite-spec section 9 does not exist, so the
+  minimal standalone script from section 2 is built: `scripts/update_data.py`.
+- The UI half (sections 3's screens) builds on the core app's verb list and
+  detail screens, so it can only be implemented once those exist; the data
+  and logic half has no such dependency.
+
+## Refinements found while planning
+
+Discovered while writing and verifying the implementation plan; the sections
+above already reflect them.
+
+- The lesson content promised "pitfalls", but the data model had nowhere to
+  put them: added `pitfalls` (sections 1, 3).
+- Attachment rows for な-adjectives and nouns differ by tense/polarity, so a
+  rule needs an optional `condition` (section 1).
+- Persisted grammar keeps authored order via `sortOrder` (section 2).
+- `TabView` on every platform, not sidebar sections on iPad/Mac (section 3).
+- Cross-links use an `openRoute` environment action plus
+  `preferredCompactColumn` (section 3).
+- The conjugation table gained んじゃありません and んでした, which section 1
+  already said the matrix would hold (section 4).
+- `List(selection:)` rows need an explicit `.tag(value)`: with `ForEach` over
+  `Identifiable` items, SwiftUI matches selection against the row's `id`, not
+  the element, so taps silently do nothing. This affects the core app's verb
+  list as well as the grammar list.
