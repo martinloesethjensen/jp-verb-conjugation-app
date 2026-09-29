@@ -9,14 +9,18 @@ struct JPVerbConjugationApp: App {
 
     init() {
         let container = Self.makeModelContainer()
-        let persisting = SwiftDataVerbPersisting(modelContext: ModelContext(container))
-        let syncService = VerbSyncService(
-            fetcher: GitHubVerbFetcher.githubMain(),
-            syncState: UserDefaultsSyncStateStore()
-        )
+        let context = ModelContext(container)
+        let fetcher = GitHubVerbFetcher.githubMain()
+        let syncState = UserDefaultsSyncStateStore()
         let monitor = NetworkMonitor()
         _networkMonitor = State(initialValue: monitor)
-        _verbStore = State(initialValue: VerbStore(syncService: syncService, persisting: persisting, networkMonitor: monitor))
+        _verbStore = State(initialValue: VerbStore(
+            syncService: VerbSyncService(fetcher: fetcher, syncState: syncState),
+            persisting: SwiftDataVerbPersisting(modelContext: context),
+            networkMonitor: monitor,
+            grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
+            grammarPersisting: SwiftDataGrammarPersisting(modelContext: context)
+        ))
     }
 
     var body: some Scene {
