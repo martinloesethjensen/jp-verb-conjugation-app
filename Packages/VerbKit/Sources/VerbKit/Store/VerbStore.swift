@@ -7,14 +7,29 @@ public final class VerbStore {
     public private(set) var firstLaunchState: FirstLaunchState = .checking
     public var hasLocalData: Bool { !verbs.isEmpty }
 
+    /// Grammar is non-blocking: empty until its first sync succeeds, and
+    /// a grammar failure never affects `verbs` or `firstLaunchState`.
+    public private(set) var grammarPoints: [GrammarPoint] = []
+    public var hasGrammar: Bool { !grammarPoints.isEmpty }
+
     private let syncService: VerbSyncService
     private let persisting: VerbPersisting
     private let networkMonitor: NetworkMonitor
+    private let grammarSyncService: GrammarSyncService?
+    private let grammarPersisting: GrammarPersisting?
 
-    public init(syncService: VerbSyncService, persisting: VerbPersisting, networkMonitor: NetworkMonitor) {
+    public init(
+        syncService: VerbSyncService,
+        persisting: VerbPersisting,
+        networkMonitor: NetworkMonitor,
+        grammarSyncService: GrammarSyncService? = nil,
+        grammarPersisting: GrammarPersisting? = nil
+    ) {
         self.syncService = syncService
         self.persisting = persisting
         self.networkMonitor = networkMonitor
+        self.grammarSyncService = grammarSyncService
+        self.grammarPersisting = grammarPersisting
     }
 
     public func start() async {
@@ -26,9 +41,12 @@ public final class VerbStore {
             }
         }
 
+        loadCachedGrammar()
+
         if let cached = try? persisting.loadAllVerbs(), !cached.isEmpty {
             verbs = cached
             await syncInBackground()
+            await syncGrammar()
             return
         }
 
@@ -37,6 +55,11 @@ public final class VerbStore {
 
     public func retryFirstLaunch() async {
         await runFirstLaunchFetch()
+    }
+
+    /// Re-attempts the grammar sync, e.g. from the Grammar tab's Try Again.
+    public func retryGrammarSync() async {
+        await syncGrammar()
     }
 
     private func runFirstLaunchFetch() async {
@@ -61,6 +84,8 @@ public final class VerbStore {
                 syncService.confirmSynced(manifest)
                 verbs = fetchedVerbs
                 firstLaunchState = .success
+                // Verbs are the gate; grammar follows once they're in.
+                await syncGrammar()
             }
         } catch let error as VerbSyncError {
             firstLaunchState = .failed(error)
@@ -83,5 +108,28 @@ public final class VerbStore {
         }
         syncService.confirmSynced(manifest)
         verbs = fetchedVerbs
+    }
+
+    private func loadCachedGrammar() {
+        guard let grammarPersisting,
+              let cached = try? grammarPersisting.loadAllGrammarPoints() else { return }
+        grammarPoints = cached
+    }
+
+    /// Same contract as the verb sync: persist first, and only then
+    /// confirm the manifest, so a persistence failure leaves it
+    /// unrecorded and the next sync genuinely retries. Every failure
+    /// here is silent and never touches `verbs` or `firstLaunchState`.
+    private func syncGrammar() async {
+        guard let grammarSyncService, let grammarPersisting else { return }
+        guard let result = try? await grammarSyncService.sync() else { return }
+        guard case let .updated(manifest, points) = result else { return }
+        do {
+            try grammarPersisting.replaceAllGrammarPoints(with: points)
+        } catch {
+            return
+        }
+        grammarSyncService.confirmSynced(manifest)
+        grammarPoints = points
     }
 }
