@@ -1,8 +1,9 @@
 # Grammar Foundation + んです / なんです — Design
 
 **Date:** 2026-09-29
-**Status:** Approved in brainstorming; refined during implementation planning
-(see "Refinements found while planning" at the end)
+**Status:** Implemented on branch `feature/grammar-nd-desu`, based on `main` at
+`3b56c92`; refined while planning and while reconciling with newer `main`
+(see "Refinements found along the way" at the end)
 **Builds on:** [2026-09-23-native-apple-rewrite-design.md](2026-09-23-native-apple-rewrite-design.md)
 
 ## Summary
@@ -109,6 +110,12 @@ sync.
   file.
 - Sync state stores a separate last-synced manifest per file.
 
+**Sync contract.** Like `VerbSyncService`, `GrammarSyncService.sync()` records
+nothing as synced. The caller persists the points and only then calls
+`confirmSynced(_:)`. If sync recorded state itself, a persistence failure would
+look like "nothing changed" on the next attempt and the lessons would never be
+fetched again.
+
 **Failure isolation.** Verbs remain the first-launch gate. Grammar is
 non-blocking: `VerbStore` syncs verbs first, then grammar in the background.
 A grammar failure never affects verbs; the Grammar tab shows a "not
@@ -144,12 +151,20 @@ point exists), so this section builds on that spec's navigation design.
 
 - All platforms: a `TabView` with **Verbs** and **Grammar** tabs, each tab
   its own `NavigationSplitView` (list/detail at regular width, a stack on
-  iPhone). Quiz, history and settings stay reachable from the Verbs tab as
-  the rewrite spec describes.
-- This changes the rewrite spec, which assumed the verb list is the app
-  root. A sidebar with Verbs/Grammar sections on iPad/Mac (the original
-  intent here) needs `TabView`'s sidebar-adaptable style, which requires
-  iOS 18 / macOS 15; the iOS 17 / macOS 14 floor rules it out.
+  iPhone). It uses the sidebar-adaptable style, so on iPad and Mac the tabs
+  can become a sidebar. Quiz, history and settings stay reachable from the
+  Verbs tab as the rewrite spec describes.
+- This changes the rewrite spec, which assumed the verb list is the app root.
+- The sidebar-adaptable style needs iOS 18 / macOS 15; the project's floor is
+  now iOS 26 / macOS 26, so it is available. Only the default state was
+  checked on an iPad simulator (a floating Verbs | Grammar switcher above the
+  verb list/detail split); the toggled sidebar, where the tabs and each tab's
+  own split view are both sidebars, was not exercised.
+
+**Visual style** follows the rewrite spec's design direction (its section 10):
+custom surfaces — level badges, lesson cards, the んです form tiles, link
+buttons — use `.glassEffect()` / `.glass` button styles, standard containers
+are left alone, and no accessibility-specific modifiers are added.
 
 **Grammar list.** Rows show title, summary and a level badge. `.searchable`
 matches title, summary and example `jp` text. No filter chips in v1. If
@@ -269,22 +284,31 @@ not linguistically exhaustive.
   detail screens, so it can only be implemented once those exist; the data
   and logic half has no such dependency.
 
-## Refinements found while planning
+## Refinements found along the way
 
-Discovered while writing and verifying the implementation plan; the sections
-above already reflect them.
+Discovered while writing and verifying the implementation plan, and again
+when reconciling it with a `main` that had moved on (the core app UI was built
+and several fixes landed). The sections above already reflect them.
 
 - The lesson content promised "pitfalls", but the data model had nowhere to
   put them: added `pitfalls` (sections 1, 3).
 - Attachment rows for な-adjectives and nouns differ by tense/polarity, so a
   rule needs an optional `condition` (section 1).
 - Persisted grammar keeps authored order via `sortOrder` (section 2).
-- `TabView` on every platform, not sidebar sections on iPad/Mac (section 3).
+- `sync()` must not record the manifest; the caller confirms after
+  persisting. `main` adopted this contract for verbs after the plan was
+  written, and grammar follows it (section 2).
+- The platform floor moved from iOS 17 / macOS 14 to iOS 26 / macOS 26, which
+  makes the sidebar-adaptable tab style available; an earlier revision of
+  this spec had dropped it (section 3).
 - Cross-links use an `openRoute` environment action plus
   `preferredCompactColumn` (section 3).
 - The conjugation table gained んじゃありません and んでした, which section 1
   already said the matrix would hold (section 4).
-- `List(selection:)` rows need an explicit `.tag(value)`: with `ForEach` over
+- `List(selection:)` rows need an explicit selection: with `ForEach` over
   `Identifiable` items, SwiftUI matches selection against the row's `id`, not
-  the element, so taps silently do nothing. This affects the core app's verb
-  list as well as the grammar list.
+  the element, so taps silently do nothing. `main` settled on a `Button` that
+  sets the selection plus `.tag(value)`, and the grammar list uses the same
+  pattern.
+- The rewrite spec's design direction (Liquid Glass surfaces, no
+  accessibility modifiers) applies to the new screens (section 3).

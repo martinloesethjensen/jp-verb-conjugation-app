@@ -4,32 +4,56 @@
 
 **Goal:** Add a Grammar content type — model, GitHub-synced data, SwiftData cache, and a Grammar tab — with んです/なんです as its first lesson, plus eight stored んです forms per verb, shown on the verb detail page and linked to the lesson.
 
-**Architecture:** `grammar.json` is a second published file beside `verbs.json`, tracked by an optional `grammar` block in `manifest.json` and synced by a `GrammarSyncService` that mirrors `VerbSyncService`. `VerbStore` syncs verbs first and grammar after, in the background, so a grammar failure never touches verbs. The UI adds a `TabView` (Verbs / Grammar) around the existing verb experience, and a single `openRoute` environment action lets a verb page jump to a lesson. A small standalone Python script fills the per-verb `nd_*` forms and recomputes the manifest hashes.
+**Architecture:** `grammar.json` is a second published file beside `verbs.json`, tracked by an optional `grammar` block in `manifest.json` and synced by a `GrammarSyncService` that mirrors `VerbSyncService` (including its persist-then-`confirmSynced` contract). `VerbStore` syncs verbs first and grammar after, in the background, so a grammar failure never touches verbs. The UI wraps the existing verb experience in a `TabView` (Verbs / Grammar), and a single `openRoute` environment action lets a verb page jump to a lesson. A small standalone Python script fills the per-verb `nd_*` forms and recomputes the manifest hashes.
 
-**Tech Stack:** Swift 5 language mode on Xcode 27, SwiftUI, SwiftData, CryptoKit, XCTest; Python 3 (standard library only) for the maintainer script; XcodeGen 2.46.
+**Tech Stack:** Swift 5 language mode on Xcode 27 (SwiftPM tools 6.2), SwiftUI with Liquid Glass, SwiftData, CryptoKit, XCTest; Python 3 (standard library only) for the maintainer script; XcodeGen 2.46.
 
-**Spec:** [docs/superpowers/specs/2026-09-29-grammar-foundation-nd-desu-design.md](../specs/2026-09-29-grammar-foundation-nd-desu-design.md), which builds on the [native rewrite spec](../specs/2026-09-23-native-apple-rewrite-design.md). Read both.
+**Spec:** [docs/superpowers/specs/2026-09-29-grammar-foundation-nd-desu-design.md](../specs/2026-09-29-grammar-foundation-nd-desu-design.md), which builds on the [native rewrite spec](../specs/2026-09-23-native-apple-rewrite-design.md). Read both, including the rewrite spec's section 10 (visual design direction).
 
-**Prerequisites and ordering:**
-- **Tasks 1–8** (VerbKit, data, script) change only code that exists today. They can be done now, and every task ends with `swift test` / `python3 -m unittest` green.
-- **Tasks 9–10** (App/) modify screens created by the core app plan ([2026-09-23-native-core-app.md](2026-09-23-native-core-app.md)) Tasks 11–13. Do not start them until `App/RootView.swift`, `App/VerbListView.swift` and `App/VerbDetailView.swift` exist.
-- **Task 11** is the final verification pass.
-
-**How this plan was verified:** every Swift and Python file below was compiled and tested in a scratch copy of the repo (99 Swift tests and 19 Python tests passing; macOS and iOS Simulator builds succeeding; the iOS app run in the Simulator against local copies of the data). The `App/` edits were checked against the core plan's Task 11–13 code exactly as it is written in that plan, not against a real implementation of it, so expect small differences if Tasks 11–13 were implemented with variations.
+**Verified against:** `main` at `3b56c92`. Every task below was executed on branch `feature/grammar-nd-desu` (one commit per task), with all tests passing, both app targets building, and the app run in the iOS Simulator against local copies of the data. **If `main` has moved since then, re-check the "Files changed on main" list in Task 0 before starting.**
 
 ## Global Constraints
 
-- Deployment target: iOS 17.0 / macOS 14.0 minimum (rewrite spec §1). Do not use APIs that need newer OS versions (for example `TabView`'s sidebar-adaptable style needs iOS 18 / macOS 15).
-- Grammar data lives in `data/grammar.json`, tracked by an **optional** `grammar: {version, sha256}` block in `data/manifest.json`. The top-level `version` and `sha256` keep meaning "`verbs.json`", so builds already installed keep working (spec §2).
+- Deployment target: **iOS 26 / macOS 26** minimum, Swift language mode 5 (`Package.swift` is `swift-tools-version:6.2` with `swiftLanguageModes: [.v5]`). Do not lower it.
+- **Patch existing files; never replace them wholesale.** `main` changes underneath this work. Modified files are given as diffs against `3b56c92`: apply with `git apply --3way`, or make the equivalent edit by hand if the surrounding code has moved. Never paste over a whole existing source file.
+- Sync contract (mirrors `VerbSyncService`): `sync()` records **nothing** as synced. The caller persists, then calls `confirmSynced(_:)`. A persistence failure must leave the manifest unrecorded so the next sync re-fetches.
+- Grammar data lives in `data/grammar.json`, tracked by an **optional** `grammar: {version, sha256}` block in `data/manifest.json`. The top-level `version` and `sha256` keep meaning "`verbs.json`", so installed builds keep working (spec §2).
 - `VerbManifest` compares by whole-struct equality; never nest the grammar entry inside it, or a grammar edit would re-download verbs (spec §2).
 - The eight new `VerbForms` fields are **optional** and snake_case in JSON: `nd_pos`, `nd_neg`, `nd_past`, `nd_past_neg`, `nd_casual_pos`, `nd_casual_neg`, `nd_casual_past`, `nd_casual_past_neg` (spec §1).
 - A grammar failure must never change `VerbStore.verbs` or `VerbStore.firstLaunchState`. Grammar sync starts only after verbs are available (spec §2).
 - `nd_*` forms get **no** `FormKey` cases, so they do not appear in quiz questions (spec §1).
+- Visual design direction (rewrite spec §10): custom surfaces use `.glassEffect(...)` / `.glass` and `.glassProminent` button styles; standard containers are left as they are; **no accessibility-specific modifiers** (`.accessibilityLabel`, `.accessibilityHint`, …).
+- `List(selection:)` rows use the pattern already in `VerbListView`: a `Button` that sets the selection, `.buttonStyle(.plain)`, and `.tag(value)`.
 - The んです section on verb detail is collapsed by default and hidden when the verb has no `nd_*` fields; its "Learn about んです" link is hidden when the lesson hasn't synced (spec §3).
 - Out of scope for v1: grammar in the quiz, bookmarks or progress, audio, furigana or reading toggles, grammar filter chips, and sub-projects 2–4 (potential form deep-dive, nuance endings, verb auxiliaries) (spec §3, Decomposition).
 - Lesson text is written independently. Do not copy wording or examples from Yokubi (spec, Decomposition). Examples use mostly hiragana with kanji where natural.
 - `data/verbs.json` and `data/manifest.json` are changed only by running `scripts/update_data.py`, never by hand. Hashes must match the files byte for byte.
 - Any `git push` to the GitHub remote requires explicit user confirmation at execution time. Do not push without asking first.
+
+---
+
+## Task 0: Baseline
+
+**Files:** none.
+
+- [ ] **Step 1: Create the branch and record the baseline**
+
+```bash
+git worktree add -b feature/grammar-nd-desu .claude/worktrees/grammar-nd-desu main
+cd .claude/worktrees/grammar-nd-desu
+git log -1 --format=%h
+cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -1
+```
+
+Expected: the commit hash you start from, and `Executed 51 tests, with 0 failures` when starting from `3b56c92`. Every count below is relative to that baseline.
+
+- [ ] **Step 2: If `main` is newer than `3b56c92`, see what it touched**
+
+```bash
+git diff --name-only 3b56c92 main -- . ':!docs' ':!*.png'
+```
+
+Expected: nothing. If files appear, and any is one this plan modifies (`VerbStore.swift`, `VerbSyncService.swift`, `GitHubVerbFetcher.swift`, `VerbForms.swift`, `VerbModelContainer.swift`, `RootView.swift`, `VerbDetailView.swift`, `JPVerbConjugationApp.swift`, `Package.swift`, the sync/fetcher/store tests), read that diff before applying the matching diff below, and adapt rather than overwrite.
 
 ---
 
@@ -344,7 +368,7 @@ EOF
 ## Task 2: んです forms on `VerbForms`
 
 **Files:**
-- Modify: `Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift` (replace the whole file)
+- Modify: `Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift`
 - Test: `Packages/VerbKit/Tests/VerbKitTests/VerbFormsNdTests.swift`
 
 **Interfaces:**
@@ -428,159 +452,97 @@ Expected: build fails with `value of type 'VerbForms' has no member 'ndCasualPas
 
 - [ ] **Step 3: Add the fields**
 
-Replace the contents of `Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift` with:
+Apply this diff to `Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift`. It is purely additive (the one removed line only gains a trailing comma):
 
-```swift
-public struct VerbForms: Codable, Hashable, Sendable {
-    public var masuPos: String
-    public var masuNeg: String
-    public var masuPast: String
-    public var masuPastNeg: String
-    public var te: String
-    public var shortPos: String
-    public var shortNeg: String
-    public var shortPast: String
-    public var shortPastNeg: String
-
-    public var potential: String?
-    public var volitional: String?
-    public var passive: String?
-    public var causative: String?
-    public var causativePassive: String?
-    public var conditionalBa: String?
-    public var conditionalTara: String?
-    public var imperative: String?
-    public var tai: String?
-
-    // んです forms (grammar point `n-desu`): the plain forms + んです/んだ.
-    public var ndPos: String?
-    public var ndNeg: String?
-    public var ndPast: String?
-    public var ndPastNeg: String?
-    public var ndCasualPos: String?
-    public var ndCasualNeg: String?
-    public var ndCasualPast: String?
-    public var ndCasualPastNeg: String?
-
-    /// True when at least one んです form is populated.
-    public var hasNdForms: Bool {
-        [ndPos, ndNeg, ndPast, ndPastNeg, ndCasualPos, ndCasualNeg, ndCasualPast, ndCasualPastNeg]
-            .contains { $0 != nil }
-    }
-
-    public init(
-        masuPos: String,
-        masuNeg: String,
-        masuPast: String,
-        masuPastNeg: String,
-        te: String,
-        shortPos: String,
-        shortNeg: String,
-        shortPast: String,
-        shortPastNeg: String,
-        potential: String? = nil,
-        volitional: String? = nil,
-        passive: String? = nil,
-        causative: String? = nil,
-        causativePassive: String? = nil,
-        conditionalBa: String? = nil,
-        conditionalTara: String? = nil,
-        imperative: String? = nil,
-        tai: String? = nil,
-        ndPos: String? = nil,
-        ndNeg: String? = nil,
-        ndPast: String? = nil,
-        ndPastNeg: String? = nil,
-        ndCasualPos: String? = nil,
-        ndCasualNeg: String? = nil,
-        ndCasualPast: String? = nil,
-        ndCasualPastNeg: String? = nil
-    ) {
-        self.masuPos = masuPos
-        self.masuNeg = masuNeg
-        self.masuPast = masuPast
-        self.masuPastNeg = masuPastNeg
-        self.te = te
-        self.shortPos = shortPos
-        self.shortNeg = shortNeg
-        self.shortPast = shortPast
-        self.shortPastNeg = shortPastNeg
-        self.potential = potential
-        self.volitional = volitional
-        self.passive = passive
-        self.causative = causative
-        self.causativePassive = causativePassive
-        self.conditionalBa = conditionalBa
-        self.conditionalTara = conditionalTara
-        self.imperative = imperative
-        self.tai = tai
-        self.ndPos = ndPos
-        self.ndNeg = ndNeg
-        self.ndPast = ndPast
-        self.ndPastNeg = ndPastNeg
-        self.ndCasualPos = ndCasualPos
-        self.ndCasualNeg = ndCasualNeg
-        self.ndCasualPast = ndCasualPast
-        self.ndCasualPastNeg = ndCasualPastNeg
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case masuPos = "masu_pos"
-        case masuNeg = "masu_neg"
-        case masuPast = "masu_past"
-        case masuPastNeg = "masu_past_neg"
-        case te
-        case shortPos = "short_pos"
-        case shortNeg = "short_neg"
-        case shortPast = "short_past"
-        case shortPastNeg = "short_past_neg"
-        case potential
-        case volitional
-        case passive
-        case causative
-        case causativePassive = "causative_passive"
-        case conditionalBa = "conditional_ba"
-        case conditionalTara = "conditional_tara"
-        case imperative
-        case tai
-        case ndPos = "nd_pos"
-        case ndNeg = "nd_neg"
-        case ndPast = "nd_past"
-        case ndPastNeg = "nd_past_neg"
-        case ndCasualPos = "nd_casual_pos"
-        case ndCasualNeg = "nd_casual_neg"
-        case ndCasualPast = "nd_casual_past"
-        case ndCasualPastNeg = "nd_casual_past_neg"
-    }
-
-    public subscript(_ key: FormKey) -> String {
-        switch key {
-        case .masuPos: return masuPos
-        case .masuNeg: return masuNeg
-        case .masuPast: return masuPast
-        case .masuPastNeg: return masuPastNeg
-        case .te: return te
-        case .shortPos: return shortPos
-        case .shortNeg: return shortNeg
-        case .shortPast: return shortPast
-        case .shortPastNeg: return shortPastNeg
-        }
-    }
-}
+```diff
+diff --git a/Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift b/Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift
+index d0b61fc..8650023 100644
+--- a/Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift
++++ b/Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift
+@@ -19,6 +19,22 @@ public struct VerbForms: Codable, Hashable, Sendable {
+     public var imperative: String?
+     public var tai: String?
+ 
++    // んです forms (grammar point `n-desu`): the plain forms + んです/んだ.
++    public var ndPos: String?
++    public var ndNeg: String?
++    public var ndPast: String?
++    public var ndPastNeg: String?
++    public var ndCasualPos: String?
++    public var ndCasualNeg: String?
++    public var ndCasualPast: String?
++    public var ndCasualPastNeg: String?
++
++    /// True when at least one んです form is populated.
++    public var hasNdForms: Bool {
++        [ndPos, ndNeg, ndPast, ndPastNeg, ndCasualPos, ndCasualNeg, ndCasualPast, ndCasualPastNeg]
++            .contains { $0 != nil }
++    }
++
+     public init(
+         masuPos: String,
+         masuNeg: String,
+@@ -37,7 +53,15 @@ public struct VerbForms: Codable, Hashable, Sendable {
+         conditionalBa: String? = nil,
+         conditionalTara: String? = nil,
+         imperative: String? = nil,
+-        tai: String? = nil
++        tai: String? = nil,
++        ndPos: String? = nil,
++        ndNeg: String? = nil,
++        ndPast: String? = nil,
++        ndPastNeg: String? = nil,
++        ndCasualPos: String? = nil,
++        ndCasualNeg: String? = nil,
++        ndCasualPast: String? = nil,
++        ndCasualPastNeg: String? = nil
+     ) {
+         self.masuPos = masuPos
+         self.masuNeg = masuNeg
+@@ -57,6 +81,14 @@ public struct VerbForms: Codable, Hashable, Sendable {
+         self.conditionalTara = conditionalTara
+         self.imperative = imperative
+         self.tai = tai
++        self.ndPos = ndPos
++        self.ndNeg = ndNeg
++        self.ndPast = ndPast
++        self.ndPastNeg = ndPastNeg
++        self.ndCasualPos = ndCasualPos
++        self.ndCasualNeg = ndCasualNeg
++        self.ndCasualPast = ndCasualPast
++        self.ndCasualPastNeg = ndCasualPastNeg
+     }
+ 
+     enum CodingKeys: String, CodingKey {
+@@ -78,6 +110,14 @@ public struct VerbForms: Codable, Hashable, Sendable {
+         case conditionalTara = "conditional_tara"
+         case imperative
+         case tai
++        case ndPos = "nd_pos"
++        case ndNeg = "nd_neg"
++        case ndPast = "nd_past"
++        case ndPastNeg = "nd_past_neg"
++        case ndCasualPos = "nd_casual_pos"
++        case ndCasualNeg = "nd_casual_neg"
++        case ndCasualPast = "nd_casual_past"
++        case ndCasualPastNeg = "nd_casual_past_neg"
+     }
+ 
+     public subscript(_ key: FormKey) -> String {
 ```
 
 - [ ] **Step 4: Run the whole suite to verify it passes**
 
 ```bash
-cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -2
+cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -1
 ```
 
-Expected: `Executed 58 tests, with 0 failures` (the 46 existing tests, 7 from Task 1 and 5 new). The existing tests prove old data without `nd_*` keys still decodes.
+Expected: `Executed 63 tests, with 0 failures` (51 baseline, 7 from Task 1, 5 new). The existing tests prove data without `nd_*` keys still decodes.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Packages/VerbKit/Sources/VerbKit/Models/VerbForms.swift Packages/VerbKit/Tests/VerbKitTests/VerbFormsNdTests.swift
+git add Packages/VerbKit
 git commit -m "$(cat <<'EOF'
 Add optional んです forms to VerbForms
 
@@ -1123,24 +1085,25 @@ EOF
 **Files:**
 - Create: `data/grammar.json`
 - Modify: `data/verbs.json`, `data/manifest.json` (both only via the script)
-- Test: `Packages/VerbKit/Tests/VerbKitTests/RealDataTests.swift`
+- Test: `Packages/VerbKit/Tests/VerbKitTests/RealGrammarDataTests.swift`
 
 **Interfaces:**
 - Consumes: `GrammarDataFile`, `GrammarPoint.nDesuID`, `VerbForms.nd*` (Tasks 1–2), `scripts/update_data.py` (Task 3), the internal `sha256Hex(of:)` from `Data/Hashing.swift`.
-- Produces: the published data the app syncs. `RealDataTests` reads `data/` straight from the checkout, so any later edit to the data that skips the script fails a test.
+- Produces: the published data the app syncs. `RealGrammarDataTests` reads `data/` straight from the checkout, so any later edit to the data that skips the script fails a test. `main`'s existing `RealDataFileTests` guards `verbs.json` against the manifest hash, which this task also changes (and must keep passing).
 
 - [ ] **Step 1: Write the failing test**
 
-`Packages/VerbKit/Tests/VerbKitTests/RealDataTests.swift`:
+`Packages/VerbKit/Tests/VerbKitTests/RealGrammarDataTests.swift`:
 
 ```swift
 import XCTest
 @testable import VerbKit
 
-/// Tests against the real published files in `data/`. They read the files
-/// straight from the repo checkout (not a bundled copy), so they fail
-/// when someone edits the data and forgets `scripts/update_data.py`.
-final class RealDataTests: XCTestCase {
+/// Tests against the grammar half of the real published files in `data/`
+/// (`RealDataFileTests` already guards `verbs.json` against its manifest
+/// hash). They read the files straight from the repo checkout, so they
+/// fail when someone edits the data and forgets `scripts/update_data.py`.
+final class RealGrammarDataTests: XCTestCase {
     private func dataURL(_ name: String) -> URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent() // VerbKitTests
@@ -1213,14 +1176,10 @@ final class RealDataTests: XCTestCase {
         }
     }
 
-    func testManifestHashesMatchTheDataFiles() throws {
+    func testManifestGrammarHashMatchesTheGrammarFile() throws {
         let manifestData = try Data(contentsOf: dataURL("manifest.json"))
-        let manifest = try JSONDecoder().decode(VerbManifest.self, from: manifestData)
-        XCTAssertEqual(manifest.sha256, sha256Hex(of: try Data(contentsOf: dataURL("verbs.json"))))
-
-        let grammar = try XCTUnwrap(
-            (try JSONSerialization.jsonObject(with: manifestData) as? [String: Any])?["grammar"] as? [String: String]
-        )
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: manifestData) as? [String: Any])
+        let grammar = try XCTUnwrap(manifest["grammar"] as? [String: String], "manifest.json has no grammar block")
         XCTAssertEqual(grammar["sha256"], sha256Hex(of: try Data(contentsOf: dataURL("grammar.json"))))
     }
 }
@@ -1229,7 +1188,7 @@ final class RealDataTests: XCTestCase {
 - [ ] **Step 2: Run the test to verify it fails**
 
 ```bash
-cd Packages/VerbKit && swift test --filter RealDataTests 2>&1 | grep -E "error|failed|Executed" | head
+cd Packages/VerbKit && swift test --filter RealGrammarDataTests 2>&1 | grep -E "error|failed|Executed" | head
 ```
 
 Expected: failures. `nd_*` values are `nil`, and `grammar.json` does not exist.
@@ -1414,27 +1373,27 @@ python3 scripts/update_data.py --check
 cat data/manifest.json
 ```
 
-Expected: `verbs.json` changes by about 225 insertions and 25 deletions (eight new lines per verb across 25 verbs, plus a trailing comma on each verb's previously-last form). `manifest.json` has version `1.1.0`, a fresh `sha256`, and a `grammar` block at `1.0.0`. `--check` prints `data is up to date`.
+Expected: `verbs.json` gains eight `nd_*` lines per verb across 25 verbs (about 230 insertions, 27 deletions including the trailing comma on each verb's previously-last form). `manifest.json` has version `1.1.0`, a fresh `sha256`, and a `grammar` block at `1.0.0`. `--check` prints `data is up to date`. The manifest should contain `"sha256": "1ea0408b78db165c9b31bb574b0b242a3201871bac4c3845a1e88aa42965cdaf"` and grammar `"52564ae50911554f78b900df9c862e396f433d06609cd3ad95e96eda695bd8e2"` — the script is deterministic, so a different hash means the inputs differ.
 
 - [ ] **Step 6: Run the whole suite**
 
 ```bash
-cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -2
+cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -1
 ```
 
-Expected: `Executed 63 tests, with 0 failures`.
+Expected: `Executed 68 tests, with 0 failures`, which includes `main`'s `RealDataFileTests` passing against the regenerated manifest.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add data Packages/VerbKit/Tests/VerbKitTests/RealDataTests.swift
+git add data Packages/VerbKit/Tests/VerbKitTests/RealGrammarDataTests.swift
 git commit -m "$(cat <<'EOF'
 Publish the んです / なんです lesson and per-verb んです forms
 
 Adds data/grammar.json (seven usages, six attachment rules, the ending's
 own conjugations, three pitfalls), fills nd_* on all 25 verbs, and adds a
-grammar block to the manifest. RealDataTests pins the nd_* values, the
-lesson's shape, and that the manifest hashes match the files.
+grammar block to the manifest. RealGrammarDataTests pins the nd_* values,
+the lesson's shape, and that the manifest's grammar hash matches the file.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 EOF
@@ -1448,18 +1407,14 @@ EOF
 **Files:**
 - Create: `Packages/VerbKit/Sources/VerbKit/Data/GrammarManifest.swift`
 - Create: `Packages/VerbKit/Sources/VerbKit/Data/GrammarSyncService.swift`
-- Modify: `Packages/VerbKit/Sources/VerbKit/Data/VerbDataFetching.swift` (replace)
-- Modify: `Packages/VerbKit/Sources/VerbKit/Data/SyncStateStoring.swift` (replace)
-- Modify: `Packages/VerbKit/Sources/VerbKit/Data/UserDefaultsSyncStateStore.swift` (replace)
-- Modify: `Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift` (replace)
-- Modify: `Packages/VerbKit/Tests/VerbKitTests/VerbSyncServiceTests.swift` (mocks)
-- Modify: `Packages/VerbKit/Tests/VerbKitTests/GitHubVerbFetcherTests.swift`
+- Modify: `Packages/VerbKit/Sources/VerbKit/Data/VerbDataFetching.swift`, `SyncStateStoring.swift`, `UserDefaultsSyncStateStore.swift`, `GitHubVerbFetcher.swift`
+- Modify: `Packages/VerbKit/Tests/VerbKitTests/VerbSyncServiceTests.swift` (mocks), `GitHubVerbFetcherTests.swift`
 - Create: `Packages/VerbKit/Tests/VerbKitTests/GrammarTestSupport.swift`
 - Test: `Packages/VerbKit/Tests/VerbKitTests/GrammarSyncServiceTests.swift`
 
 **Interfaces:**
 - Consumes: `GrammarDataFile`, `GrammarPoint` (Task 1), `sha256Hex(of:)`, `VerbSyncError`.
-- Produces: `GrammarManifest(version:sha256:)`; `VerbDataFetching.fetchGrammarManifest() async throws -> GrammarManifest?` (`nil` = no grammar published) and `fetchGrammarData() async throws -> Data`; `SyncStateStoring.lastSyncedGrammarManifest()` / `saveLastSyncedGrammarManifest(_:)`; `GitHubVerbFetcher.init(manifestURL:verbsURL:grammarURL:session:)`; `GrammarSyncService(fetcher:syncState:).sync() async throws -> GrammarSyncResult` (`.upToDate` or `.updated(manifest:points:)`); test helpers `GrammarFixture.json/data/points` (used by Tasks 6–8) and grammar members on `MockVerbDataFetcher` / `InMemorySyncStateStore`.
+- Produces: `GrammarManifest(version:sha256:)`; `VerbDataFetching.fetchGrammarManifest() async throws -> GrammarManifest?` (`nil` = no grammar published) and `fetchGrammarData() async throws -> Data`; `SyncStateStoring.lastSyncedGrammarManifest()` / `saveLastSyncedGrammarManifest(_:)`; `GitHubVerbFetcher.init(manifestURL:verbsURL:grammarURL:session:)`; `GrammarSyncService(fetcher:syncState:)` with `sync() async throws -> GrammarSyncResult` (`.upToDate` or `.updated(manifest:points:)`, **recording nothing**) and `confirmSynced(_ manifest: GrammarManifest)`; test helpers `GrammarFixture.json/data/points` (used by Tasks 6–8) and grammar members on `MockVerbDataFetcher` / `InMemorySyncStateStore`.
 
 - [ ] **Step 1: Add the shared grammar test fixture**
 
@@ -1550,7 +1505,7 @@ final class GrammarSyncServiceTests: XCTestCase {
         XCTAssertEqual(result, .upToDate)
     }
 
-    func testUnchangedManifestSkipsGrammarDataFetch() async throws {
+    func testUnchangedConfirmedManifestSkipsGrammarDataFetch() async throws {
         let entry = manifest(for: GrammarFixture.data)
         let fetcher = MockVerbDataFetcher()
         fetcher.grammarManifestResult = .success(entry)
@@ -1563,7 +1518,7 @@ final class GrammarSyncServiceTests: XCTestCase {
         XCTAssertEqual(result, .upToDate)
     }
 
-    func testChangedManifestFetchesDecodesAndRecordsState() async throws {
+    func testChangedManifestFetchesAndDecodesButDoesNotRecordState() async throws {
         let entry = manifest(for: GrammarFixture.data, version: "1.1.0")
         let fetcher = MockVerbDataFetcher()
         fetcher.grammarManifestResult = .success(entry)
@@ -1577,7 +1532,26 @@ final class GrammarSyncServiceTests: XCTestCase {
         }
         XCTAssertEqual(updatedManifest, entry)
         XCTAssertEqual(points.map(\.id), ["n-desu", "wake-desu"])
+        // Recording is the caller's job, after it has persisted the points.
+        XCTAssertNil(syncState.lastSyncedGrammarManifest())
+    }
+
+    func testConfirmSyncedRecordsTheManifestOnlyWhenCalled() async throws {
+        let entry = manifest(for: GrammarFixture.data)
+        let fetcher = MockVerbDataFetcher()
+        fetcher.grammarManifestResult = .success(entry)
+        fetcher.grammarDataResult = .success(GrammarFixture.data)
+
+        let syncState = InMemorySyncStateStore()
+        let service = GrammarSyncService(fetcher: fetcher, syncState: syncState)
+        _ = try await service.sync()
+        XCTAssertNil(syncState.lastSyncedGrammarManifest())
+
+        service.confirmSynced(entry)
         XCTAssertEqual(syncState.lastSyncedGrammarManifest(), entry)
+        // After confirming, the same manifest is up to date.
+        let again = try await service.sync()
+        XCTAssertEqual(again, .upToDate)
     }
 
     func testGrammarSyncDoesNotTouchVerbSyncState() async throws {
@@ -1587,12 +1561,14 @@ final class GrammarSyncServiceTests: XCTestCase {
         fetcher.grammarDataResult = .success(GrammarFixture.data)
 
         let syncState = InMemorySyncStateStore()
-        _ = try await GrammarSyncService(fetcher: fetcher, syncState: syncState).sync()
+        let service = GrammarSyncService(fetcher: fetcher, syncState: syncState)
+        _ = try await service.sync()
+        service.confirmSynced(entry)
 
         XCTAssertNil(syncState.lastSyncedManifest())
     }
 
-    func testHashMismatchThrowsMalformedDataAndRecordsNothing() async throws {
+    func testHashMismatchThrowsMalformedData() async throws {
         let fetcher = MockVerbDataFetcher()
         fetcher.grammarManifestResult = .success(GrammarManifest(version: "1.1.0", sha256: "not-the-real-hash"))
         fetcher.grammarDataResult = .success(GrammarFixture.data)
@@ -1634,117 +1610,149 @@ final class GrammarSyncServiceTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 3: Update the existing test mocks**
+- [ ] **Step 3: Extend the existing test mocks and fetcher tests**
 
-In `Packages/VerbKit/Tests/VerbKitTests/VerbSyncServiceTests.swift`, replace everything from the line `final class MockVerbDataFetcher` to the end of the file with:
+Apply these diffs. The first only replaces the two mock classes at the bottom of the file, leaving `main`'s newer sync tests alone; the second adds a `grammarURL` constant, updates the three existing initializer calls, and adds fetcher tests. `grammarManifestResult` defaults to "no grammar published", so existing verb-only tests are unaffected.
 
-```swift
-final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
-    var manifestResult: Result<VerbManifest, Error> = .failure(VerbSyncError.offline)
-    var verbDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
-    /// Defaults to "no grammar published" so verb-only tests are unaffected.
-    var grammarManifestResult: Result<GrammarManifest?, Error> = .success(nil)
-    var grammarDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
-
-    func fetchManifest() async throws -> VerbManifest { try manifestResult.get() }
-    func fetchVerbData() async throws -> Data { try verbDataResult.get() }
-    func fetchGrammarManifest() async throws -> GrammarManifest? { try grammarManifestResult.get() }
-    func fetchGrammarData() async throws -> Data { try grammarDataResult.get() }
-}
-
-final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
-    private var manifest: VerbManifest?
-    private var grammarManifest: GrammarManifest?
-    func lastSyncedManifest() -> VerbManifest? { manifest }
-    func saveLastSyncedManifest(_ manifest: VerbManifest) { self.manifest = manifest }
-    func lastSyncedGrammarManifest() -> GrammarManifest? { grammarManifest }
-    func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) { grammarManifest = manifest }
-}
+```diff
+diff --git a/Packages/VerbKit/Tests/VerbKitTests/VerbSyncServiceTests.swift b/Packages/VerbKit/Tests/VerbKitTests/VerbSyncServiceTests.swift
+index bb4f3e9..2593734 100644
+--- a/Packages/VerbKit/Tests/VerbKitTests/VerbSyncServiceTests.swift
++++ b/Packages/VerbKit/Tests/VerbKitTests/VerbSyncServiceTests.swift
+@@ -114,13 +114,21 @@ final class VerbSyncServiceTests: XCTestCase {
+ final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
+     var manifestResult: Result<VerbManifest, Error> = .failure(VerbSyncError.offline)
+     var verbDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
++    /// Defaults to "no grammar published" so verb-only tests are unaffected.
++    var grammarManifestResult: Result<GrammarManifest?, Error> = .success(nil)
++    var grammarDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
+ 
+     func fetchManifest() async throws -> VerbManifest { try manifestResult.get() }
+     func fetchVerbData() async throws -> Data { try verbDataResult.get() }
++    func fetchGrammarManifest() async throws -> GrammarManifest? { try grammarManifestResult.get() }
++    func fetchGrammarData() async throws -> Data { try grammarDataResult.get() }
+ }
+ 
+ final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
+     private var manifest: VerbManifest?
++    private var grammarManifest: GrammarManifest?
+     func lastSyncedManifest() -> VerbManifest? { manifest }
+     func saveLastSyncedManifest(_ manifest: VerbManifest) { self.manifest = manifest }
++    func lastSyncedGrammarManifest() -> GrammarManifest? { grammarManifest }
++    func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) { grammarManifest = manifest }
+ }
 ```
 
-(Keep the comment above `MockVerbDataFetcher` as it is. `grammarManifestResult` defaults to "no grammar published", so every existing verb-only test is unaffected.)
-
-- [ ] **Step 4: Update and extend the fetcher tests**
-
-In `Packages/VerbKit/Tests/VerbKitTests/GitHubVerbFetcherTests.swift`:
-
-1. Add this constant directly after the existing `verbsURL` constant:
-
-```swift
-    private let grammarURL = URL(string: "https://raw.githubusercontent.com/example/repo/main/data/grammar.json")!
+```diff
+diff --git a/Packages/VerbKit/Tests/VerbKitTests/GitHubVerbFetcherTests.swift b/Packages/VerbKit/Tests/VerbKitTests/GitHubVerbFetcherTests.swift
+index 16ed2eb..20e6201 100644
+--- a/Packages/VerbKit/Tests/VerbKitTests/GitHubVerbFetcherTests.swift
++++ b/Packages/VerbKit/Tests/VerbKitTests/GitHubVerbFetcherTests.swift
+@@ -10,6 +10,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
+ 
+     private let manifestURL = URL(string: "https://raw.githubusercontent.com/example/repo/main/data/manifest.json")!
+     private let verbsURL = URL(string: "https://raw.githubusercontent.com/example/repo/main/data/verbs.json")!
++    private let grammarURL = URL(string: "https://raw.githubusercontent.com/example/repo/main/data/grammar.json")!
+ 
+     override func tearDown() {
+         StubURLProtocol.handler = nil
+@@ -22,7 +23,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
+             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+             return (response, json)
+         }
+-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, session: makeSession())
++        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+ 
+         let manifest = try await fetcher.fetchManifest()
+         XCTAssertEqual(manifest, VerbManifest(version: "1.0.0", sha256: "abc"))
+@@ -33,7 +34,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
+             let response = HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!
+             return (response, Data())
+         }
+-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, session: makeSession())
++        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+ 
+         do {
+             _ = try await fetcher.fetchManifest()
+@@ -45,7 +46,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
+ 
+     func testFetchManifestMapsOfflineURLErrorToOffline() async throws {
+         StubURLProtocol.handler = { _ in throw URLError(.notConnectedToInternet) }
+-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, session: makeSession())
++        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+ 
+         do {
+             _ = try await fetcher.fetchManifest()
+@@ -54,6 +55,66 @@ final class GitHubVerbFetcherTests: XCTestCase {
+             // expected
+         }
+     }
++
++    func testFetchGrammarManifestReadsTheGrammarBlock() async throws {
++        let json = Data(#"{"version": "1.1.0", "sha256": "abc", "grammar": {"version": "2.0.0", "sha256": "def"}}"#.utf8)
++        StubURLProtocol.handler = { request in
++            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
++        }
++        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
++
++        let grammar = try await fetcher.fetchGrammarManifest()
++        XCTAssertEqual(grammar, GrammarManifest(version: "2.0.0", sha256: "def"))
++    }
++
++    func testFetchGrammarManifestIsNilWithoutAGrammarBlock() async throws {
++        let json = Data(#"{"version": "1.0.0", "sha256": "abc"}"#.utf8)
++        StubURLProtocol.handler = { request in
++            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
++        }
++        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
++
++        let grammar = try await fetcher.fetchGrammarManifest()
++        XCTAssertNil(grammar)
++    }
++
++    /// Builds already installed must keep working once the manifest gains a grammar block.
++    func testVerbManifestStillDecodesWhenGrammarBlockIsPresent() async throws {
++        let json = Data(#"{"version": "1.1.0", "sha256": "abc", "grammar": {"version": "2.0.0", "sha256": "def"}}"#.utf8)
++        StubURLProtocol.handler = { request in
++            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
++        }
++        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
++
++        let manifest = try await fetcher.fetchManifest()
++        XCTAssertEqual(manifest, VerbManifest(version: "1.1.0", sha256: "abc"))
++    }
++
++    func testFetchGrammarDataRequestsTheGrammarURL() async throws {
++        let body = Data("grammar-bytes".utf8)
++        StubURLProtocol.handler = { request in
++            XCTAssertEqual(request.url?.lastPathComponent, "grammar.json")
++            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
++        }
++        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
++
++        let data = try await fetcher.fetchGrammarData()
++        XCTAssertEqual(data, body)
++    }
++
++    func testFetchGrammarManifestMapsMalformedManifestToMalformedData() async throws {
++        StubURLProtocol.handler = { request in
++            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data("nope".utf8))
++        }
++        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
++
++        do {
++            _ = try await fetcher.fetchGrammarManifest()
++            XCTFail("expected malformedData")
++        } catch VerbSyncError.malformedData {
++            // expected
++        }
++    }
+ }
+ 
+ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
 ```
 
-2. Update the three existing initializer calls:
-
-```bash
-sed -i '' 's/verbsURL: verbsURL, session:/verbsURL: verbsURL, grammarURL: grammarURL, session:/' Packages/VerbKit/Tests/VerbKitTests/GitHubVerbFetcherTests.swift
-```
-
-3. Add these tests inside `GitHubVerbFetcherTests`, directly before the closing `}` that precedes `private final class StubURLProtocol`:
-
-```swift
-    func testFetchGrammarManifestReadsTheGrammarBlock() async throws {
-        let json = Data(#"{"version": "1.1.0", "sha256": "abc", "grammar": {"version": "2.0.0", "sha256": "def"}}"#.utf8)
-        StubURLProtocol.handler = { request in
-            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
-        }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
-
-        let grammar = try await fetcher.fetchGrammarManifest()
-        XCTAssertEqual(grammar, GrammarManifest(version: "2.0.0", sha256: "def"))
-    }
-
-    func testFetchGrammarManifestIsNilWithoutAGrammarBlock() async throws {
-        let json = Data(#"{"version": "1.0.0", "sha256": "abc"}"#.utf8)
-        StubURLProtocol.handler = { request in
-            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
-        }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
-
-        let grammar = try await fetcher.fetchGrammarManifest()
-        XCTAssertNil(grammar)
-    }
-
-    /// Builds already installed must keep working once the manifest gains a grammar block.
-    func testVerbManifestStillDecodesWhenGrammarBlockIsPresent() async throws {
-        let json = Data(#"{"version": "1.1.0", "sha256": "abc", "grammar": {"version": "2.0.0", "sha256": "def"}}"#.utf8)
-        StubURLProtocol.handler = { request in
-            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
-        }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
-
-        let manifest = try await fetcher.fetchManifest()
-        XCTAssertEqual(manifest, VerbManifest(version: "1.1.0", sha256: "abc"))
-    }
-
-    func testFetchGrammarDataRequestsTheGrammarURL() async throws {
-        let body = Data("grammar-bytes".utf8)
-        StubURLProtocol.handler = { request in
-            XCTAssertEqual(request.url?.lastPathComponent, "grammar.json")
-            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
-        }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
-
-        let data = try await fetcher.fetchGrammarData()
-        XCTAssertEqual(data, body)
-    }
-
-    func testFetchGrammarManifestMapsMalformedManifestToMalformedData() async throws {
-        StubURLProtocol.handler = { request in
-            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data("nope".utf8))
-        }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
-
-        do {
-            _ = try await fetcher.fetchGrammarManifest()
-            XCTFail("expected malformedData")
-        } catch VerbSyncError.malformedData {
-            // expected
-        }
-    }
-```
-
-- [ ] **Step 5: Run the tests to verify they fail**
+- [ ] **Step 4: Run the tests to verify they fail**
 
 ```bash
 cd Packages/VerbKit && swift test 2>&1 | grep -E "error:" | head -5
@@ -1752,7 +1760,9 @@ cd Packages/VerbKit && swift test 2>&1 | grep -E "error:" | head -5
 
 Expected: build errors such as `cannot find 'GrammarManifest' in scope`.
 
-- [ ] **Step 6: Implement the sync layer**
+- [ ] **Step 5: Implement the sync layer**
+
+New files:
 
 `Packages/VerbKit/Sources/VerbKit/Data/GrammarManifest.swift`:
 
@@ -1782,9 +1792,13 @@ public enum GrammarSyncResult: Equatable, Sendable {
     case updated(manifest: GrammarManifest, points: [GrammarPoint])
 }
 
-/// Mirrors `VerbSyncService` for `grammar.json`. It is deliberately a
-/// second concrete service, not a generic one: with two users an
-/// abstraction isn't earning its keep yet.
+/// Mirrors `VerbSyncService` for `grammar.json`, including its contract:
+/// `sync()` does not record anything as synced. The caller persists the
+/// points and only then calls `confirmSynced(_:)`, so a persistence
+/// failure can't be mistaken for "nothing changed" on the next attempt.
+///
+/// It is deliberately a second concrete service, not a generic one: with
+/// two users an abstraction isn't earning its keep yet.
 public struct GrammarSyncService: Sendable {
     private let fetcher: VerbDataFetching
     private let syncState: SyncStateStoring
@@ -1795,10 +1809,10 @@ public struct GrammarSyncService: Sendable {
     }
 
     /// Fetches the manifest's `grammar` entry. No entry, or an entry
-    /// unchanged since the last sync, returns `.upToDate` without
-    /// fetching grammar data. Otherwise fetches it, verifies its hash
-    /// (a mismatch is corrupted/incomplete data), decodes it, records the
-    /// new entry as synced, and returns the points.
+    /// unchanged since the last confirmed sync, returns `.upToDate`
+    /// without fetching grammar data. Otherwise fetches it, verifies its
+    /// hash (a mismatch is corrupted/incomplete data), decodes it, and
+    /// returns the points. Does NOT record the manifest as synced.
     public func sync() async throws -> GrammarSyncResult {
         guard let manifest = try await fetcher.fetchGrammarManifest() else {
             return .upToDate
@@ -1819,171 +1833,147 @@ public struct GrammarSyncService: Sendable {
             throw VerbSyncError.malformedData
         }
 
-        syncState.saveLastSyncedGrammarManifest(manifest)
         return .updated(manifest: manifest, points: decoded.grammar)
     }
-}
-```
 
-Replace `Packages/VerbKit/Sources/VerbKit/Data/VerbDataFetching.swift` with:
-
-```swift
-import Foundation
-
-public protocol VerbDataFetching: Sendable {
-    func fetchManifest() async throws -> VerbManifest
-    func fetchVerbData() async throws -> Data
-
-    /// The manifest's `grammar` entry, or `nil` if none is published.
-    func fetchGrammarManifest() async throws -> GrammarManifest?
-    func fetchGrammarData() async throws -> Data
-}
-```
-
-Replace `Packages/VerbKit/Sources/VerbKit/Data/SyncStateStoring.swift` with:
-
-```swift
-public protocol SyncStateStoring: Sendable {
-    func lastSyncedManifest() -> VerbManifest?
-    func saveLastSyncedManifest(_ manifest: VerbManifest)
-
-    func lastSyncedGrammarManifest() -> GrammarManifest?
-    func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest)
-}
-```
-
-Replace `Packages/VerbKit/Sources/VerbKit/Data/UserDefaultsSyncStateStore.swift` with:
-
-```swift
-import Foundation
-
-public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Sendable {
-    private let defaults: UserDefaults
-    private let versionKey = "VerbKit.lastSyncedManifest.version"
-    private let hashKey = "VerbKit.lastSyncedManifest.sha256"
-    private let grammarVersionKey = "VerbKit.lastSyncedGrammarManifest.version"
-    private let grammarHashKey = "VerbKit.lastSyncedGrammarManifest.sha256"
-
-    public init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
-    }
-
-    public func lastSyncedManifest() -> VerbManifest? {
-        guard let version = defaults.string(forKey: versionKey),
-              let sha256 = defaults.string(forKey: hashKey) else { return nil }
-        return VerbManifest(version: version, sha256: sha256)
-    }
-
-    public func saveLastSyncedManifest(_ manifest: VerbManifest) {
-        defaults.set(manifest.version, forKey: versionKey)
-        defaults.set(manifest.sha256, forKey: hashKey)
-    }
-
-    public func lastSyncedGrammarManifest() -> GrammarManifest? {
-        guard let version = defaults.string(forKey: grammarVersionKey),
-              let sha256 = defaults.string(forKey: grammarHashKey) else { return nil }
-        return GrammarManifest(version: version, sha256: sha256)
-    }
-
-    public func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) {
-        defaults.set(manifest.version, forKey: grammarVersionKey)
-        defaults.set(manifest.sha256, forKey: grammarHashKey)
+    /// Records `manifest` as the last successfully synced grammar
+    /// manifest. Call only after the points that came with it have been
+    /// durably persisted.
+    public func confirmSynced(_ manifest: GrammarManifest) {
+        syncState.saveLastSyncedGrammarManifest(manifest)
     }
 }
 ```
 
-Replace `Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift` with:
+Modified files (apply each diff; note `GitHubVerbFetcher.swift` on `main` no longer maps `.timedOut` to offline, and the diff leaves that alone):
 
-```swift
-import Foundation
-
-public struct GitHubVerbFetcher: VerbDataFetching {
-    private let manifestURL: URL
-    private let verbsURL: URL
-    private let grammarURL: URL
-    private let session: URLSession
-
-    public init(manifestURL: URL, verbsURL: URL, grammarURL: URL, session: URLSession = .shared) {
-        self.manifestURL = manifestURL
-        self.verbsURL = verbsURL
-        self.grammarURL = grammarURL
-        self.session = session
-    }
-
-    public func fetchManifest() async throws -> VerbManifest {
-        let data = try await fetchData(from: manifestURL)
-        do {
-            return try JSONDecoder().decode(VerbManifest.self, from: data)
-        } catch {
-            throw VerbSyncError.malformedData
-        }
-    }
-
-    public func fetchVerbData() async throws -> Data {
-        try await fetchData(from: verbsURL)
-    }
-
-    public func fetchGrammarManifest() async throws -> GrammarManifest? {
-        let data = try await fetchData(from: manifestURL)
-        do {
-            return try JSONDecoder().decode(ManifestFile.self, from: data).grammar
-        } catch {
-            throw VerbSyncError.malformedData
-        }
-    }
-
-    public func fetchGrammarData() async throws -> Data {
-        try await fetchData(from: grammarURL)
-    }
-
-    /// Just the part of `manifest.json` that carries the grammar entry.
-    private struct ManifestFile: Decodable {
-        let grammar: GrammarManifest?
-    }
-
-    private func fetchData(from url: URL) async throws -> Data {
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(from: url)
-        } catch let urlError as URLError {
-            switch urlError.code {
-            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .timedOut:
-                throw VerbSyncError.offline
-            default:
-                throw VerbSyncError.serverUnreachable
-            }
-        }
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw VerbSyncError.serverUnreachable
-        }
-        return data
-    }
-}
-
-public extension GitHubVerbFetcher {
-    /// Points at this repo's `data/` files on the `main` branch.
-    static func githubMain(session: URLSession = .shared) -> GitHubVerbFetcher {
-        let base = "https://raw.githubusercontent.com/martinloesethjensen/jp-verb-conjugation-app/main/data/"
-        return GitHubVerbFetcher(
-            manifestURL: URL(string: base + "manifest.json")!,
-            verbsURL: URL(string: base + "verbs.json")!,
-            grammarURL: URL(string: base + "grammar.json")!,
-            session: session
-        )
-    }
-}
+```diff
+diff --git a/Packages/VerbKit/Sources/VerbKit/Data/VerbDataFetching.swift b/Packages/VerbKit/Sources/VerbKit/Data/VerbDataFetching.swift
+index 25a5151..f9c7a35 100644
+--- a/Packages/VerbKit/Sources/VerbKit/Data/VerbDataFetching.swift
++++ b/Packages/VerbKit/Sources/VerbKit/Data/VerbDataFetching.swift
+@@ -3,4 +3,8 @@ import Foundation
+ public protocol VerbDataFetching: Sendable {
+     func fetchManifest() async throws -> VerbManifest
+     func fetchVerbData() async throws -> Data
++
++    /// The manifest's `grammar` entry, or `nil` if none is published.
++    func fetchGrammarManifest() async throws -> GrammarManifest?
++    func fetchGrammarData() async throws -> Data
+ }
 ```
 
-- [ ] **Step 7: Run the whole suite to verify it passes**
+```diff
+diff --git a/Packages/VerbKit/Sources/VerbKit/Data/SyncStateStoring.swift b/Packages/VerbKit/Sources/VerbKit/Data/SyncStateStoring.swift
+index e83e213..79b92f7 100644
+--- a/Packages/VerbKit/Sources/VerbKit/Data/SyncStateStoring.swift
++++ b/Packages/VerbKit/Sources/VerbKit/Data/SyncStateStoring.swift
+@@ -1,4 +1,7 @@
+ public protocol SyncStateStoring: Sendable {
+     func lastSyncedManifest() -> VerbManifest?
+     func saveLastSyncedManifest(_ manifest: VerbManifest)
++
++    func lastSyncedGrammarManifest() -> GrammarManifest?
++    func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest)
+ }
+```
+
+```diff
+diff --git a/Packages/VerbKit/Sources/VerbKit/Data/UserDefaultsSyncStateStore.swift b/Packages/VerbKit/Sources/VerbKit/Data/UserDefaultsSyncStateStore.swift
+index 12f342a..7595d38 100644
+--- a/Packages/VerbKit/Sources/VerbKit/Data/UserDefaultsSyncStateStore.swift
++++ b/Packages/VerbKit/Sources/VerbKit/Data/UserDefaultsSyncStateStore.swift
+@@ -4,6 +4,8 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
+     private let defaults: UserDefaults
+     private let versionKey = "VerbKit.lastSyncedManifest.version"
+     private let hashKey = "VerbKit.lastSyncedManifest.sha256"
++    private let grammarVersionKey = "VerbKit.lastSyncedGrammarManifest.version"
++    private let grammarHashKey = "VerbKit.lastSyncedGrammarManifest.sha256"
+ 
+     public init(defaults: UserDefaults = .standard) {
+         self.defaults = defaults
+@@ -19,4 +21,15 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
+         defaults.set(manifest.version, forKey: versionKey)
+         defaults.set(manifest.sha256, forKey: hashKey)
+     }
++
++    public func lastSyncedGrammarManifest() -> GrammarManifest? {
++        guard let version = defaults.string(forKey: grammarVersionKey),
++              let sha256 = defaults.string(forKey: grammarHashKey) else { return nil }
++        return GrammarManifest(version: version, sha256: sha256)
++    }
++
++    public func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) {
++        defaults.set(manifest.version, forKey: grammarVersionKey)
++        defaults.set(manifest.sha256, forKey: grammarHashKey)
++    }
+ }
+```
+
+```diff
+diff --git a/Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift b/Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift
+index 15a6eed..ad677d7 100644
+--- a/Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift
++++ b/Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift
+@@ -3,11 +3,13 @@ import Foundation
+ public struct GitHubVerbFetcher: VerbDataFetching {
+     private let manifestURL: URL
+     private let verbsURL: URL
++    private let grammarURL: URL
+     private let session: URLSession
+ 
+-    public init(manifestURL: URL, verbsURL: URL, session: URLSession = .shared) {
++    public init(manifestURL: URL, verbsURL: URL, grammarURL: URL, session: URLSession = .shared) {
+         self.manifestURL = manifestURL
+         self.verbsURL = verbsURL
++        self.grammarURL = grammarURL
+         self.session = session
+     }
+ 
+@@ -24,6 +26,24 @@ public struct GitHubVerbFetcher: VerbDataFetching {
+         try await fetchData(from: verbsURL)
+     }
+ 
++    public func fetchGrammarManifest() async throws -> GrammarManifest? {
++        let data = try await fetchData(from: manifestURL)
++        do {
++            return try JSONDecoder().decode(ManifestFile.self, from: data).grammar
++        } catch {
++            throw VerbSyncError.malformedData
++        }
++    }
++
++    public func fetchGrammarData() async throws -> Data {
++        try await fetchData(from: grammarURL)
++    }
++
++    /// Just the part of `manifest.json` that carries the grammar entry.
++    private struct ManifestFile: Decodable {
++        let grammar: GrammarManifest?
++    }
++
+     private func fetchData(from url: URL) async throws -> Data {
+         let data: Data
+         let response: URLResponse
+@@ -51,6 +71,7 @@ public extension GitHubVerbFetcher {
+         return GitHubVerbFetcher(
+             manifestURL: URL(string: base + "manifest.json")!,
+             verbsURL: URL(string: base + "verbs.json")!,
++            grammarURL: URL(string: base + "grammar.json")!,
+             session: session
+         )
+     }
+```
+
+- [ ] **Step 6: Run the whole suite to verify it passes**
 
 ```bash
-cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -2
+cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -1
 ```
 
-Expected: `Executed 75 tests, with 0 failures` (the 63 so far plus 7 sync-service and 5 fetcher tests).
+Expected: `Executed 81 tests, with 0 failures` (68 so far, plus 8 sync-service and 5 fetcher tests).
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add Packages/VerbKit
@@ -1993,8 +1983,10 @@ Add grammar sync: fetcher, per-file sync state, GrammarSyncService
 GrammarManifest is a separate type from VerbManifest on purpose: nesting
 it would make a grammar edit re-download verbs, because VerbManifest
 compares by whole-struct equality. Old app builds ignore the manifest's
-new grammar block, and a manifest without one just means nothing to
-sync.
+new grammar block, and a manifest without one just means nothing to sync.
+
+GrammarSyncService follows VerbSyncService's contract: sync() records
+nothing, and the caller calls confirmSynced(_:) only after persisting.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 EOF
@@ -2006,10 +1998,8 @@ EOF
 ## Task 6: Grammar persistence
 
 **Files:**
-- Create: `Packages/VerbKit/Sources/VerbKit/Persistence/GrammarPersisting.swift`
-- Create: `Packages/VerbKit/Sources/VerbKit/Persistence/GrammarEntity.swift`
-- Create: `Packages/VerbKit/Sources/VerbKit/Persistence/SwiftDataGrammarPersisting.swift`
-- Modify: `Packages/VerbKit/Sources/VerbKit/Persistence/VerbModelContainer.swift` (replace)
+- Create: `Packages/VerbKit/Sources/VerbKit/Persistence/GrammarPersisting.swift`, `GrammarEntity.swift`, `SwiftDataGrammarPersisting.swift`
+- Modify: `Packages/VerbKit/Sources/VerbKit/Persistence/VerbModelContainer.swift`
 - Test: `Packages/VerbKit/Tests/VerbKitTests/SwiftDataGrammarPersistingTests.swift`
 
 **Interfaces:**
@@ -2172,47 +2162,40 @@ public final class SwiftDataGrammarPersisting: GrammarPersisting {
 }
 ```
 
-Replace `Packages/VerbKit/Sources/VerbKit/Persistence/VerbModelContainer.swift` with:
+Apply this diff to `VerbModelContainer.swift`:
 
-```swift
-import Foundation
-import SwiftData
-
-public enum VerbModelContainerError: Error {
-    case appGroupUnavailable
-}
-
-public enum VerbModelContainer {
-    public static let appGroupIdentifier = "group.dev.martinloeseth.jpverbconjugation"
-
-    /// The real, on-disk, App Group-shared store — used by the app and,
-    /// later, the widget/Shortcuts extension.
-    public static func make() throws -> ModelContainer {
-        let schema = Schema([VerbEntity.self, GrammarEntity.self])
-        guard let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
-            throw VerbModelContainerError.appGroupUnavailable
-        }
-        let storeURL = groupURL.appendingPathComponent("VerbKit.sqlite")
-        let configuration = ModelConfiguration(schema: schema, url: storeURL)
-        return try ModelContainer(for: schema, configurations: [configuration])
-    }
-
-    /// An in-memory store for tests and previews — never touches disk.
-    public static func makeInMemory() throws -> ModelContainer {
-        let schema = Schema([VerbEntity.self, GrammarEntity.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [configuration])
-    }
-}
+```diff
+diff --git a/Packages/VerbKit/Sources/VerbKit/Persistence/VerbModelContainer.swift b/Packages/VerbKit/Sources/VerbKit/Persistence/VerbModelContainer.swift
+index a6a9712..9a3c797 100644
+--- a/Packages/VerbKit/Sources/VerbKit/Persistence/VerbModelContainer.swift
++++ b/Packages/VerbKit/Sources/VerbKit/Persistence/VerbModelContainer.swift
+@@ -11,7 +11,7 @@ public enum VerbModelContainer {
+     /// The real, on-disk, App Group-shared store — used by the app and,
+     /// later, the widget/Shortcuts extension.
+     public static func make() throws -> ModelContainer {
+-        let schema = Schema([VerbEntity.self])
++        let schema = Schema([VerbEntity.self, GrammarEntity.self])
+         guard let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
+             throw VerbModelContainerError.appGroupUnavailable
+         }
+@@ -22,7 +22,7 @@ public enum VerbModelContainer {
+ 
+     /// An in-memory store for tests and previews — never touches disk.
+     public static func makeInMemory() throws -> ModelContainer {
+-        let schema = Schema([VerbEntity.self])
++        let schema = Schema([VerbEntity.self, GrammarEntity.self])
+         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+         return try ModelContainer(for: schema, configurations: [configuration])
+     }
 ```
 
 - [ ] **Step 4: Run the whole suite to verify it passes**
 
 ```bash
-cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -2
+cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -1
 ```
 
-Expected: `Executed 81 tests, with 0 failures`.
+Expected: `Executed 87 tests, with 0 failures`.
 
 - [ ] **Step 5: Commit**
 
@@ -2236,11 +2219,11 @@ EOF
 ## Task 7: `VerbStore` grammar integration
 
 **Files:**
-- Modify: `Packages/VerbKit/Sources/VerbKit/Store/VerbStore.swift` (replace)
+- Modify: `Packages/VerbKit/Sources/VerbKit/Store/VerbStore.swift`
 - Test: `Packages/VerbKit/Tests/VerbKitTests/VerbStoreGrammarTests.swift`
 
 **Interfaces:**
-- Consumes: `GrammarSyncService` (Task 5), `GrammarPersisting` (Task 6), `GrammarFixture`, `MockVerbDataFetcher`, `InMemorySyncStateStore`.
+- Consumes: `GrammarSyncService` incl. `confirmSynced` (Task 5), `GrammarPersisting` (Task 6), `GrammarFixture`, `MockVerbDataFetcher`, `InMemorySyncStateStore`.
 - Produces: `VerbStore.init(syncService:persisting:networkMonitor:grammarSyncService:grammarPersisting:)` (the last two default to `nil`, so existing call sites are unchanged), `VerbStore.grammarPoints: [GrammarPoint]`, `VerbStore.hasGrammar: Bool`, `VerbStore.retryGrammarSync() async`.
 
 - [ ] **Step 1: Write the failing test**
@@ -2264,6 +2247,7 @@ final class VerbStoreGrammarTests: XCTestCase {
         let fetcher: MockVerbDataFetcher
         let verbPersisting: SwiftDataVerbPersisting
         let grammarPersisting: SwiftDataGrammarPersisting
+        let syncState: InMemorySyncStateStore
     }
 
     /// A store wired for both verbs and grammar, with both syncs succeeding
@@ -2288,7 +2272,7 @@ final class VerbStoreGrammarTests: XCTestCase {
             grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
             grammarPersisting: grammarPersisting
         )
-        return Harness(store: store, fetcher: fetcher, verbPersisting: verbPersisting, grammarPersisting: grammarPersisting)
+        return Harness(store: store, fetcher: fetcher, verbPersisting: verbPersisting, grammarPersisting: grammarPersisting, syncState: syncState)
     }
 
     func testFirstLaunchSyncsGrammarAfterVerbs() async throws {
@@ -2358,6 +2342,56 @@ final class VerbStoreGrammarTests: XCTestCase {
         XCTAssertEqual(h.store.grammarPoints.count, 2)
     }
 
+    // MARK: persistence failure (same contract as verbs)
+
+    func testGrammarPersistenceFailureLeavesManifestUnconfirmedSoRetryRefetches() async throws {
+        let entry = GrammarManifest(version: "1.0.0", sha256: sha256Hex(of: GrammarFixture.data))
+        let verbBytes = try verbData()
+        let fetcher = MockVerbDataFetcher()
+        fetcher.manifestResult = .success(VerbManifest(version: "1.0.0", sha256: sha256Hex(of: verbBytes)))
+        fetcher.verbDataResult = .success(verbBytes)
+        fetcher.grammarManifestResult = .success(entry)
+        fetcher.grammarDataResult = .success(GrammarFixture.data)
+
+        let container = try VerbModelContainer.makeInMemory()
+        let syncState = InMemorySyncStateStore()
+        let grammarPersisting = FailingGrammarPersisting(shouldFail: true)
+        let store = VerbStore(
+            syncService: VerbSyncService(fetcher: fetcher, syncState: syncState),
+            persisting: SwiftDataVerbPersisting(modelContext: ModelContext(container)),
+            networkMonitor: NetworkMonitor(),
+            grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
+            grammarPersisting: grammarPersisting
+        )
+
+        await store.start()
+
+        // Verbs are unaffected, and the failed grammar persist is not
+        // recorded as synced.
+        XCTAssertEqual(store.firstLaunchState, .success)
+        XCTAssertEqual(store.verbs.count, 2)
+        XCTAssertTrue(store.grammarPoints.isEmpty)
+        XCTAssertNil(syncState.lastSyncedGrammarManifest())
+
+        // Once persistence works again, a retry must really re-fetch
+        // instead of short-circuiting to "up to date".
+        grammarPersisting.shouldFail = false
+        await store.retryGrammarSync()
+
+        XCTAssertEqual(store.grammarPoints.count, 2)
+        XCTAssertEqual(syncState.lastSyncedGrammarManifest(), entry)
+    }
+
+    func testSuccessfulGrammarSyncConfirmsTheManifestAfterPersisting() async throws {
+        let h = try makeHarness()
+        let entry = GrammarManifest(version: "1.0.0", sha256: sha256Hex(of: GrammarFixture.data))
+
+        await h.store.start()
+
+        XCTAssertEqual(h.syncState.lastSyncedGrammarManifest(), entry)
+        XCTAssertEqual(try h.grammarPersisting.loadAllGrammarPoints().count, 2)
+    }
+
     func testStoreWithoutGrammarDependenciesIgnoresGrammar() async throws {
         let verbBytes = try verbData()
         let fetcher = MockVerbDataFetcher()
@@ -2377,6 +2411,29 @@ final class VerbStoreGrammarTests: XCTestCase {
         XCTAssertTrue(store.grammarPoints.isEmpty)
     }
 }
+
+/// A `GrammarPersisting` whose `replaceAllGrammarPoints(with:)` can be made
+/// to throw on demand, to simulate a persistence failure.
+private enum FailingGrammarPersistingError: Error {
+    case persistFailed
+}
+
+@MainActor
+private final class FailingGrammarPersisting: GrammarPersisting {
+    var shouldFail: Bool
+    private var stored: [GrammarPoint] = []
+
+    init(shouldFail: Bool) {
+        self.shouldFail = shouldFail
+    }
+
+    func loadAllGrammarPoints() throws -> [GrammarPoint] { stored }
+
+    func replaceAllGrammarPoints(with points: [GrammarPoint]) throws {
+        if shouldFail { throw FailingGrammarPersistingError.persistFailed }
+        stored = points
+    }
+}
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -2389,131 +2446,115 @@ Expected: `extra arguments at positions #4, #5 in call` (the store does not take
 
 - [ ] **Step 3: Extend `VerbStore`**
 
-Replace `Packages/VerbKit/Sources/VerbKit/Store/VerbStore.swift` with:
+Apply this diff. It only adds; the one removed line is the old `init` signature, and `main`'s `confirmSynced` handling for verbs is untouched:
 
-```swift
-import Observation
-
-@MainActor
-@Observable
-public final class VerbStore {
-    public private(set) var verbs: [Verb] = []
-    public private(set) var firstLaunchState: FirstLaunchState = .checking
-    public var hasLocalData: Bool { !verbs.isEmpty }
-
-    /// Grammar is non-blocking: empty until its first sync succeeds, and
-    /// a grammar failure never affects `verbs` or `firstLaunchState`.
-    public private(set) var grammarPoints: [GrammarPoint] = []
-    public var hasGrammar: Bool { !grammarPoints.isEmpty }
-
-    private let syncService: VerbSyncService
-    private let persisting: VerbPersisting
-    private let networkMonitor: NetworkMonitor
-    private let grammarSyncService: GrammarSyncService?
-    private let grammarPersisting: GrammarPersisting?
-
-    public init(
-        syncService: VerbSyncService,
-        persisting: VerbPersisting,
-        networkMonitor: NetworkMonitor,
-        grammarSyncService: GrammarSyncService? = nil,
-        grammarPersisting: GrammarPersisting? = nil
-    ) {
-        self.syncService = syncService
-        self.persisting = persisting
-        self.networkMonitor = networkMonitor
-        self.grammarSyncService = grammarSyncService
-        self.grammarPersisting = grammarPersisting
-    }
-
-    public func start() async {
-        networkMonitor.onChange = { [weak self] connected in
-            guard connected else { return }
-            guard case .failed(.offline) = self?.firstLaunchState else { return }
-            Task { @MainActor [weak self] in
-                await self?.retryFirstLaunch()
-            }
-        }
-
-        loadCachedGrammar()
-
-        if let cached = try? persisting.loadAllVerbs(), !cached.isEmpty {
-            verbs = cached
-            await syncInBackground()
-            await syncGrammar()
-            return
-        }
-
-        await runFirstLaunchFetch()
-    }
-
-    /// Re-attempts the grammar sync, e.g. from the Grammar tab's Try Again.
-    public func retryGrammarSync() async {
-        await syncGrammar()
-    }
-
-    public func retryFirstLaunch() async {
-        await runFirstLaunchFetch()
-    }
-
-    private func runFirstLaunchFetch() async {
-        firstLaunchState = .checking
-        firstLaunchState = .fetching
-        do {
-            let result = try await syncService.sync()
-            switch result {
-            case .upToDate:
-                // Only reachable if a manifest was somehow already
-                // recorded as synced with nothing locally persisted —
-                // treat as corrupt local state rather than silently
-                // leaving the user on an empty verb list forever.
-                firstLaunchState = .failed(.malformedData)
-            case let .updated(_, fetchedVerbs):
-                try persisting.replaceAllVerbs(with: fetchedVerbs)
-                verbs = fetchedVerbs
-                firstLaunchState = .success
-                // Verbs are the gate; grammar follows once they're in.
-                await syncGrammar()
-            }
-        } catch let error as VerbSyncError {
-            firstLaunchState = .failed(error)
-        } catch {
-            firstLaunchState = .failed(.malformedData)
-        }
-    }
-
-    private func loadCachedGrammar() {
-        guard let grammarPersisting,
-              let cached = try? grammarPersisting.loadAllGrammarPoints() else { return }
-        grammarPoints = cached
-    }
-
-    private func syncGrammar() async {
-        guard let grammarSyncService, let grammarPersisting else { return }
-        guard let result = try? await grammarSyncService.sync() else { return }
-        if case let .updated(_, points) = result {
-            try? grammarPersisting.replaceAllGrammarPoints(with: points)
-            grammarPoints = points
-        }
-    }
-
-    private func syncInBackground() async {
-        guard let result = try? await syncService.sync() else { return }
-        if case let .updated(_, fetchedVerbs) = result {
-            try? persisting.replaceAllVerbs(with: fetchedVerbs)
-            verbs = fetchedVerbs
-        }
-    }
-}
+```diff
+diff --git a/Packages/VerbKit/Sources/VerbKit/Store/VerbStore.swift b/Packages/VerbKit/Sources/VerbKit/Store/VerbStore.swift
+index 867ad1c..7aa0737 100644
+--- a/Packages/VerbKit/Sources/VerbKit/Store/VerbStore.swift
++++ b/Packages/VerbKit/Sources/VerbKit/Store/VerbStore.swift
+@@ -7,14 +7,29 @@ public final class VerbStore {
+     public private(set) var firstLaunchState: FirstLaunchState = .checking
+     public var hasLocalData: Bool { !verbs.isEmpty }
+ 
++    /// Grammar is non-blocking: empty until its first sync succeeds, and
++    /// a grammar failure never affects `verbs` or `firstLaunchState`.
++    public private(set) var grammarPoints: [GrammarPoint] = []
++    public var hasGrammar: Bool { !grammarPoints.isEmpty }
++
+     private let syncService: VerbSyncService
+     private let persisting: VerbPersisting
+     private let networkMonitor: NetworkMonitor
++    private let grammarSyncService: GrammarSyncService?
++    private let grammarPersisting: GrammarPersisting?
+ 
+-    public init(syncService: VerbSyncService, persisting: VerbPersisting, networkMonitor: NetworkMonitor) {
++    public init(
++        syncService: VerbSyncService,
++        persisting: VerbPersisting,
++        networkMonitor: NetworkMonitor,
++        grammarSyncService: GrammarSyncService? = nil,
++        grammarPersisting: GrammarPersisting? = nil
++    ) {
+         self.syncService = syncService
+         self.persisting = persisting
+         self.networkMonitor = networkMonitor
++        self.grammarSyncService = grammarSyncService
++        self.grammarPersisting = grammarPersisting
+     }
+ 
+     public func start() async {
+@@ -26,9 +41,12 @@ public final class VerbStore {
+             }
+         }
+ 
++        loadCachedGrammar()
++
+         if let cached = try? persisting.loadAllVerbs(), !cached.isEmpty {
+             verbs = cached
+             await syncInBackground()
++            await syncGrammar()
+             return
+         }
+ 
+@@ -39,6 +57,11 @@ public final class VerbStore {
+         await runFirstLaunchFetch()
+     }
+ 
++    /// Re-attempts the grammar sync, e.g. from the Grammar tab's Try Again.
++    public func retryGrammarSync() async {
++        await syncGrammar()
++    }
++
+     private func runFirstLaunchFetch() async {
+         firstLaunchState = .checking
+         firstLaunchState = .fetching
+@@ -61,6 +84,8 @@ public final class VerbStore {
+                 syncService.confirmSynced(manifest)
+                 verbs = fetchedVerbs
+                 firstLaunchState = .success
++                // Verbs are the gate; grammar follows once they're in.
++                await syncGrammar()
+             }
+         } catch let error as VerbSyncError {
+             firstLaunchState = .failed(error)
+@@ -84,4 +109,27 @@ public final class VerbStore {
+         syncService.confirmSynced(manifest)
+         verbs = fetchedVerbs
+     }
++
++    private func loadCachedGrammar() {
++        guard let grammarPersisting,
++              let cached = try? grammarPersisting.loadAllGrammarPoints() else { return }
++        grammarPoints = cached
++    }
++
++    /// Same contract as the verb sync: persist first, and only then
++    /// confirm the manifest, so a persistence failure leaves it
++    /// unrecorded and the next sync genuinely retries. Every failure
++    /// here is silent and never touches `verbs` or `firstLaunchState`.
++    private func syncGrammar() async {
++        guard let grammarSyncService, let grammarPersisting else { return }
++        guard let result = try? await grammarSyncService.sync() else { return }
++        guard case let .updated(manifest, points) = result else { return }
++        do {
++            try grammarPersisting.replaceAllGrammarPoints(with: points)
++        } catch {
++            return
++        }
++        grammarSyncService.confirmSynced(manifest)
++        grammarPoints = points
++    }
+ }
 ```
 
 - [ ] **Step 4: Run the whole suite to verify it passes**
 
 ```bash
-cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -2
+cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -1
 ```
 
-Expected: `Executed 88 tests, with 0 failures`. The existing `VerbStoreTests` passing unchanged shows the new parameters really are optional.
+Expected: `Executed 96 tests, with 0 failures`. `main`'s existing `VerbStoreTests` passing unchanged shows the new parameters really are optional.
 
 - [ ] **Step 5: Commit**
 
@@ -2523,8 +2564,10 @@ git commit -m "$(cat <<'EOF'
 Sync grammar from VerbStore, non-blocking and after verbs
 
 Grammar sync starts only once verbs are available and never changes
-verbs or firstLaunchState when it fails. Cached grammar loads at start,
-so lessons work offline. The grammar dependencies are optional
+verbs or firstLaunchState when it fails. Like verbs, it persists first
+and only then confirms the manifest, so a persistence failure leaves the
+manifest unrecorded and the next sync retries. Cached grammar loads at
+start, so lessons work offline. The grammar dependencies are optional
 parameters, so existing call sites are unchanged.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
@@ -2698,11 +2741,11 @@ public extension Route {
 - [ ] **Step 4: Run the whole suite to verify it passes**
 
 ```bash
-cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -2
+cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -1
 cd ../.. && python3 -m unittest discover -s scripts -p "test_*.py" 2>&1 | tail -2
 ```
 
-Expected: `Executed 99 tests, with 0 failures`, and `Ran 19 tests ... OK`.
+Expected: `Executed 107 tests, with 0 failures`, and `Ran 19 tests ... OK`.
 
 - [ ] **Step 5: Commit**
 
@@ -2725,14 +2768,12 @@ EOF
 
 ## Task 9: Grammar tab (screens, tab bar, wiring)
 
-> **Precondition:** core app plan Tasks 11–13 are done, so `App/RootView.swift`, `App/VerbListView.swift`, `App/VerbDetailView.swift` and `App/JPVerbConjugationApp.swift` exist. If core Tasks 14–16 are also done, the edits below still apply; see the notes in Step 3.
-
 **Files:**
 - Create: `App/GrammarDisplay.swift`, `App/OpenRouteAction.swift`, `App/ExampleRow.swift`, `App/GrammarListView.swift`, `App/GrammarDetailView.swift`, `App/MainTabView.swift`
-- Modify: `App/RootView.swift`, `App/VerbListView.swift`, `App/JPVerbConjugationApp.swift`
+- Modify: `App/RootView.swift`, `App/JPVerbConjugationApp.swift`
 
 **Interfaces:**
-- Consumes: `VerbStore.grammarPoints/hasGrammar/retryGrammarSync()` (Task 7), `matchesGrammarSearch` and `Route` (Task 8), the model types (Task 1), and the core app's `VerbStore` environment object, `VerbListView(selection:)` and `RootView`.
+- Consumes: `VerbStore.grammarPoints/hasGrammar/retryGrammarSync()` (Task 7), `matchesGrammarSearch` and `Route` (Task 8), the model types (Task 1), and the app's `VerbStore` environment object and `RootView`.
 - Produces: `OpenRouteAction` and `EnvironmentValues.openRoute` (call `openRoute(.grammar("n-desu"))`; Task 10 uses it); `MainTabView(verbSelection:verbsTab:)`; `GrammarListView(selection:)`, `GrammarDetailView(point:)`, `ExampleRow(example:)`.
 
 - [ ] **Step 1: Add the presentation helpers**
@@ -2805,7 +2846,7 @@ extension EnvironmentValues {
 }
 ```
 
-`App/ExampleRow.swift`:
+`App/ExampleRow.swift` (no accessibility modifiers, per the design direction):
 
 ```swift
 import SwiftUI
@@ -2834,14 +2875,13 @@ struct ExampleRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Shows or hides the English translation")
     }
 }
 ```
 
 - [ ] **Step 2: Add the Grammar screens and the tab container**
 
-`App/GrammarListView.swift`. The `.tag(point)` is required: with `ForEach` over `Identifiable` items, `List(selection:)` matches the row's `id` (a `String`), not the element, so without it taps silently do nothing.
+`App/GrammarListView.swift`. Rows use the same `Button` + `.tag` pattern as `VerbListView`; `List(selection:)` alone matches the row's `id` (a `String`), not the element, so taps would silently do nothing.
 
 ```swift
 import SwiftUI
@@ -2859,7 +2899,7 @@ struct GrammarRow: View {
                     .font(.caption2.weight(.semibold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(.tertiary, in: Capsule())
+                    .glassEffect(in: Capsule())
             }
             Text(point.summary)
                 .font(.caption)
@@ -2882,8 +2922,17 @@ struct GrammarListView: View {
     var body: some View {
         List(selection: $selection) {
             ForEach(filtered) { point in
-                GrammarRow(point: point)
-                    .tag(point)
+                // Same row pattern as VerbListView: an explicit Button
+                // sets the selection, and .tag keeps List's own selection
+                // in sync (List(selection:) alone matches the row's id,
+                // not the element, so taps would silently do nothing).
+                Button {
+                    selection = point
+                } label: {
+                    GrammarRow(point: point)
+                }
+                .buttonStyle(.plain)
+                .tag(point)
             }
         }
         .searchable(text: $search, prompt: "Search grammar…")
@@ -2898,7 +2947,7 @@ struct GrammarListView: View {
                     Button("Try Again") {
                         Task { await verbStore.retryGrammarSync() }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
                 }
             } else if filtered.isEmpty {
                 ContentUnavailableView.search(text: search)
@@ -2957,7 +3006,7 @@ struct GrammarDetailView: View {
             Text(point.level.displayName)
                 .font(.caption.weight(.bold))
                 .padding(.horizontal, 8).padding(.vertical, 2)
-                .background(.tertiary, in: Capsule())
+                .glassEffect(in: Capsule())
             Text(point.title)
                 .font(.system(size: 34, weight: .heavy))
             Text(point.summary)
@@ -2979,7 +3028,7 @@ struct GrammarDetailView: View {
         VStack(alignment: .leading, spacing: 8, content: content)
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: How it attaches
@@ -3082,14 +3131,14 @@ struct GrammarDetailView: View {
                 } label: {
                     Label(related.title, systemImage: "arrow.right.circle")
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.glass)
             }
         }
     }
 }
 ```
 
-`App/MainTabView.swift`. `preferredCompactColumn` makes a cross-link land on the lesson even when the Grammar tab hasn't been visited yet; without it, iPhone shows the list instead.
+`App/MainTabView.swift`. `preferredCompactColumn` makes a cross-link land on the lesson even when the Grammar tab hasn't been visited yet; without it, iPhone shows the list instead. `.sidebarAdaptable` turns the tabs into a sidebar on iPad and Mac.
 
 ```swift
 import SwiftUI
@@ -3101,7 +3150,7 @@ enum AppTab: Hashable {
 }
 
 /// Verbs and Grammar as two tabs, each its own `NavigationSplitView`
-/// (list/detail on iPad and Mac, a stack on iPhone). Also owns the
+/// (list/detail at regular width, a stack on iPhone). Also owns the
 /// `openRoute` action, so a verb page can jump to a lesson and a lesson
 /// can jump to a related one.
 struct MainTabView<VerbsTab: View>: View {
@@ -3122,13 +3171,14 @@ struct MainTabView<VerbsTab: View>: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            verbsTab
-                .tabItem { Label("Verbs", systemImage: "character.book.closed") }
-                .tag(AppTab.verbs)
-            GrammarTab(selection: $grammarSelection, preferredColumn: $grammarColumn)
-                .tabItem { Label("Grammar", systemImage: "text.book.closed") }
-                .tag(AppTab.grammar)
+            Tab("Verbs", systemImage: "character.book.closed", value: AppTab.verbs) {
+                verbsTab
+            }
+            Tab("Grammar", systemImage: "text.book.closed", value: AppTab.grammar) {
+                GrammarTab(selection: $grammarSelection, preferredColumn: $grammarColumn)
+            }
         }
+        .tabViewStyle(.sidebarAdaptable)
         .environment(\.openRoute, OpenRouteAction { open($0) })
     }
 
@@ -3167,142 +3217,216 @@ struct GrammarTab: View {
 
 - [ ] **Step 3: Wrap the Verbs experience in the tab container**
 
-The existing verb experience (a `NavigationSplitView` plus any `.sheet` / `.fullScreenCover` modifiers chained onto it) moves, unchanged, into a `verbsTab` property. `RootView` then hosts it inside `MainTabView`.
+The existing verb experience (a `NavigationSplitView` plus the sheets and quiz presentation chained onto it) is **moved, unchanged**, into a `verbsTab` property, and `RootView` hosts it inside `MainTabView`. Apply this diff to `App/RootView.swift`; the removed and added blocks are the same code, dedented:
 
-For the Task 13 state of `App/RootView.swift`, the result is:
-
-```swift
-import SwiftUI
-import VerbKit
-
-struct RootView: View {
-    @Environment(VerbStore.self) private var verbStore
-    @State private var selection: Verb?
-    @State private var showingExamples = false
-    @State private var quizQuestions: [QuizQuestion]?
-
-    var body: some View {
-        if verbStore.hasLocalData {
-            MainTabView(verbSelection: $selection) {
-                verbsTab
-            }
-        } else {
-            DataLoadingView(state: verbStore.firstLaunchState) {
-                Task { await verbStore.retryFirstLaunch() }
-            }
-        }
-    }
-
-    /// The existing Verbs experience, moved here unchanged (including any
-    /// `.sheet` / `.fullScreenCover` modifiers chained onto it) so
-    /// `MainTabView` can host it as one tab.
-    @ViewBuilder
-    private var verbsTab: some View {
-        NavigationSplitView {
-            VerbListView(selection: $selection)
-        } detail: {
-            if let selection {
-                VerbDetailView(
-                    verb: selection,
-                    onExamples: { showingExamples = true },
-                    onQuiz: { quizQuestions = buildQuestions(verbs: [selection], count: 9) }
-                )
-            } else {
-                ContentUnavailableView("Select a Verb", systemImage: "text.book.closed")
-            }
-        }
-    }
-}
+```diff
+diff --git a/App/RootView.swift b/App/RootView.swift
+index 2ed45ae..4fabf89 100644
+--- a/App/RootView.swift
++++ b/App/RootView.swift
+@@ -17,52 +17,9 @@ struct RootView: View {
+     var body: some View {
+         Group {
+             if verbStore.hasLocalData {
+-                NavigationSplitView {
+-                    VerbListView(
+-                        selection: $selection,
+-                        onRandomQuiz: { quizQuestions = buildQuestions(verbs: verbStore.verbs, count: quizQuestionCount) },
+-                        onSettings: { showingSettings = true }
+-                    )
+-                } detail: {
+-                    if let selection {
+-                        VerbDetailView(
+-                            verb: selection,
+-                            onExamples: { showingExamples = true },
+-                            onQuiz: { quizQuestions = buildQuestions(verbs: [selection], count: min(quizQuestionCount, 9)) }
+-                        )
+-                    } else {
+-                        ContentUnavailableView("Select a Verb", systemImage: "text.book.closed")
+-                    }
+-                }
+-                .sheet(isPresented: $showingExamples) {
+-                    if let selection {
+-                        ExamplesView(verb: selection)
+-                    }
+-                }
+-                .sheet(isPresented: $showingSettings) {
+-                    NavigationStack {
+-                        SettingsView()
+-                            .toolbar {
+-                                ToolbarItem(placement: .confirmationAction) {
+-                                    Button("Done") { showingSettings = false }
+-                                }
+-                            }
+-                    }
+-                }
+-                #if os(iOS)
+-                .fullScreenCover(isPresented: quizPresentationBinding) {
+-                    if let quizQuestions {
+-                        QuizView(questions: quizQuestions, onDone: { self.quizQuestions = nil })
+-                    }
+-                }
+-                #else
+-                .sheet(isPresented: quizPresentationBinding) {
+-                    if let quizQuestions {
+-                        QuizView(questions: quizQuestions, onDone: { self.quizQuestions = nil })
+-                            .frame(minWidth: 560, minHeight: 640)
+-                    }
++                MainTabView(verbSelection: $selection) {
++                    verbsTab
+                 }
+-                #endif
+             } else {
+                 DataLoadingView(state: verbStore.firstLaunchState) {
+                     Task { await verbStore.retryFirstLaunch() }
+@@ -72,6 +29,59 @@ struct RootView: View {
+         .preferredColorScheme(appearance.colorScheme)
+     }
+ 
++    /// The existing Verbs experience — moved here unchanged, including the
++    /// sheets and quiz presentation chained onto it — so `MainTabView`
++    /// can host it as one tab.
++    @ViewBuilder
++    private var verbsTab: some View {
++        NavigationSplitView {
++            VerbListView(
++                selection: $selection,
++                onRandomQuiz: { quizQuestions = buildQuestions(verbs: verbStore.verbs, count: quizQuestionCount) },
++                onSettings: { showingSettings = true }
++            )
++        } detail: {
++            if let selection {
++                VerbDetailView(
++                    verb: selection,
++                    onExamples: { showingExamples = true },
++                    onQuiz: { quizQuestions = buildQuestions(verbs: [selection], count: min(quizQuestionCount, 9)) }
++                )
++            } else {
++                ContentUnavailableView("Select a Verb", systemImage: "text.book.closed")
++            }
++        }
++        .sheet(isPresented: $showingExamples) {
++            if let selection {
++                ExamplesView(verb: selection)
++            }
++        }
++        .sheet(isPresented: $showingSettings) {
++            NavigationStack {
++                SettingsView()
++                    .toolbar {
++                        ToolbarItem(placement: .confirmationAction) {
++                            Button("Done") { showingSettings = false }
++                        }
++                    }
++            }
++        }
++        #if os(iOS)
++        .fullScreenCover(isPresented: quizPresentationBinding) {
++            if let quizQuestions {
++                QuizView(questions: quizQuestions, onDone: { self.quizQuestions = nil })
++            }
++        }
++        #else
++        .sheet(isPresented: quizPresentationBinding) {
++            if let quizQuestions {
++                QuizView(questions: quizQuestions, onDone: { self.quizQuestions = nil })
++                    .frame(minWidth: 560, minHeight: 640)
++            }
++        }
++        #endif
++    }
++
+     private var quizPresentationBinding: Binding<Bool> {
+         Binding(
+             get: { quizQuestions != nil },
 ```
 
-If core Tasks 14–16 have also been done, do the same move rather than pasting this file: cut the `NavigationSplitView { … }` expression **together with every modifier chained onto it** (`.sheet(isPresented: $showingExamples)`, `.sheet(isPresented: $showingSettings)`, and the quiz `.fullScreenCover` / `.sheet` under `#if os(iOS)`) into `@ViewBuilder private var verbsTab: some View { … }`, and in its place inside the `if verbStore.hasLocalData` branch write:
+If `RootView` has changed since `3b56c92`, do the same move by hand instead of applying the diff: cut the `NavigationSplitView { … }` expression **together with every modifier chained onto it** into `@ViewBuilder private var verbsTab: some View { … }`, and in its place inside the `if verbStore.hasLocalData` branch write `MainTabView(verbSelection: $selection) { verbsTab }`. Leave `.preferredColorScheme(...)`, the `Group`, `quizPresentationBinding` and all `@State` / `@AppStorage` properties where they are.
 
-```swift
-MainTabView(verbSelection: $selection) {
-    verbsTab
-}
+- [ ] **Step 4: Hand the store its grammar dependencies**
+
+Apply this diff to `App/JPVerbConjugationApp.swift`. One `ModelContext`, one fetcher and one sync-state store are shared by the verb and grammar services:
+
+```diff
+diff --git a/App/JPVerbConjugationApp.swift b/App/JPVerbConjugationApp.swift
+index d780802..fd2056e 100644
+--- a/App/JPVerbConjugationApp.swift
++++ b/App/JPVerbConjugationApp.swift
+@@ -9,14 +9,18 @@ struct JPVerbConjugationApp: App {
+ 
+     init() {
+         let container = Self.makeModelContainer()
+-        let persisting = SwiftDataVerbPersisting(modelContext: ModelContext(container))
+-        let syncService = VerbSyncService(
+-            fetcher: GitHubVerbFetcher.githubMain(),
+-            syncState: UserDefaultsSyncStateStore()
+-        )
++        let context = ModelContext(container)
++        let fetcher = GitHubVerbFetcher.githubMain()
++        let syncState = UserDefaultsSyncStateStore()
+         let monitor = NetworkMonitor()
+         _networkMonitor = State(initialValue: monitor)
+-        _verbStore = State(initialValue: VerbStore(syncService: syncService, persisting: persisting, networkMonitor: monitor))
++        _verbStore = State(initialValue: VerbStore(
++            syncService: VerbSyncService(fetcher: fetcher, syncState: syncState),
++            persisting: SwiftDataVerbPersisting(modelContext: context),
++            networkMonitor: monitor,
++            grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
++            grammarPersisting: SwiftDataGrammarPersisting(modelContext: context)
++        ))
+     }
+ 
+     var body: some Scene {
 ```
 
-Leave `.preferredColorScheme(...)`, the `Group`, `quizPresentationBinding` and all `@State` / `@AppStorage` properties where they are.
-
-- [ ] **Step 4: Make sure the verb list rows are tagged**
-
-In `App/VerbListView.swift`, the rows in `ForEach(filtered)` must have `.tag(verb)` (same reason as the grammar list). The core plan now includes it; if your copy lacks it, add it:
-
-```swift
-                ForEach(filtered) { verb in
-                    VerbRow(verb: verb)
-                        .tag(verb)
-                }
-```
-
-- [ ] **Step 5: Hand the store its grammar dependencies**
-
-In `App/JPVerbConjugationApp.swift`, replace the body of `init()` up to and including the `_verbStore = State(...)` line with:
-
-```swift
-        let container = Self.makeModelContainer()
-        let context = ModelContext(container)
-        let fetcher = GitHubVerbFetcher.githubMain()
-        let syncState = UserDefaultsSyncStateStore()
-        let monitor = NetworkMonitor()
-        _networkMonitor = State(initialValue: monitor)
-        _verbStore = State(initialValue: VerbStore(
-            syncService: VerbSyncService(fetcher: fetcher, syncState: syncState),
-            persisting: SwiftDataVerbPersisting(modelContext: context),
-            networkMonitor: monitor,
-            grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
-            grammarPersisting: SwiftDataGrammarPersisting(modelContext: context)
-        ))
-```
-
-(One `ModelContext`, one fetcher and one sync-state store are shared by the verb and grammar services. Leave `body` and `makeModelContainer()` as they are.)
-
-- [ ] **Step 6: Generate the project and build both platforms**
+- [ ] **Step 5: Generate the project and build both platforms**
 
 ```bash
 ./scripts/generate-project.sh
-xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_macOS -destination "platform=macOS" build 2>&1 | tail -5
-xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_iOS -destination "generic/platform=iOS Simulator" build 2>&1 | tail -5
+xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_macOS -destination "platform=macOS" CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
+xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_iOS -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
 ```
 
-Expected: `** BUILD SUCCEEDED **` for both.
+Expected: `** BUILD SUCCEEDED **` for both. (`CODE_SIGNING_ALLOWED=NO` avoids needing the signing identity; the App Group is then unavailable and the app falls back to an in-memory store, which is fine for this check.)
 
-- [ ] **Step 7: Verify in the Simulator against the local data**
+- [ ] **Step 6: Verify in the Simulator against the local data**
 
 The app fetches from GitHub `main`, where the new data is not published yet. To verify now, serve `data/` locally and temporarily point the fetcher at it.
 
 1. In a separate terminal, from the repo root: `python3 -m http.server 8765 --bind 127.0.0.1 --directory data`.
 2. **Temporarily** edit `base` in `GitHubVerbFetcher.githubMain` (`Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift`) to `"http://127.0.0.1:8765/"`. (ATS does not block plain HTTP to an IP address.) Do not commit this.
-3. Rebuild, then boot a simulator and install and launch the app with the iOS Simulator tool.
-4. Between runs, uninstall to clear the recorded sync state: `xcrun simctl uninstall booted dev.martinloeseth.jpverbconjugation`. (If the App Group isn't provisioned the store is in-memory but sync state persists in `UserDefaults`, so a relaunch would report "up to date" with no data.)
+3. Rebuild the iOS scheme, then boot an iPhone simulator and install and launch the app with the iOS Simulator tool.
+4. Between runs, uninstall to clear the recorded sync state: `xcrun simctl uninstall booted dev.martinloeseth.jpverbconjugation`. (With no App Group the store is in-memory but sync state persists in `UserDefaults`, so a relaunch would report "up to date" with no data.)
 
 Expected, in the app:
-- A tab bar with **Verbs** and **Grammar**.
-- **Grammar** lists one row, "んです", with a Beginner badge and a two-line summary.
-- Searching `なんです` and `頭が痛い` keeps the row; searching `headache` or `はず` shows "No Results".
-- Tapping the row opens the lesson: level badge, title, summary, then "How it attaches" (six cards; long examples one per line), "Usages" (seven cards; tapping an example row reveals its English), "Conjugations" (Polite / Casual / Formal), and "Watch out" (three cards). On iPhone the navigation title is inline, not a second large title.
-- Tapping a verb in the **Verbs** tab still opens its detail (this proves the `.tag(verb)` fix).
+- The Verbs tab looks as it did before (colour-coded rows, toolbar, guide), now with a floating **Verbs** / **Grammar** tab bar.
+- **Grammar** lists one row, "んです", with a Beginner glass badge and a two-line summary.
+- Tapping the row opens the lesson: badge, title, summary, "How it attaches" (six glass cards; long examples one per line), "Usages" (seven cards; tapping an example reveals its English), "Conjugations" (Polite / Casual / Formal), "Watch out" (three cards). The navigation title is inline, not a second large title.
+- Tapping a verb in the **Verbs** tab still opens its detail.
+- On an iPad simulator the tabs appear as a floating switcher above the list/detail split. (Launch it with `xcrun simctl install/launch` if the tool has no permission for that device.)
 
 Then revert the temporary edit: `git checkout Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift`, and stop the local server.
 
-> The offline path ("Grammar Not Downloaded Yet" with Try Again) is covered by `VerbStoreGrammarTests` and was not exercised by hand.
-> If the app renders letterboxed on iPhone, that is the project's missing launch-screen setting, not this change.
+> The offline path ("Grammar Not Downloaded Yet" with Try Again) is covered by `VerbStoreGrammarTests` and was not exercised by hand. The iPad sidebar-toggle state was not exercised either.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git status --short   # confirm GitHubVerbFetcher.swift is unchanged (no local-server URL)
-git add App Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift
+git add App/ExampleRow.swift App/GrammarDetailView.swift App/GrammarDisplay.swift App/GrammarListView.swift App/MainTabView.swift App/OpenRouteAction.swift App/RootView.swift App/JPVerbConjugationApp.swift
 git commit -m "$(cat <<'EOF'
 Add Grammar tab: list, lesson detail, and Verbs/Grammar tab bar
 
 MainTabView hosts the existing verb experience as one tab and the new
-grammar screens as the other, and provides an openRoute environment
-action so any view can navigate to a lesson. preferredCompactColumn
-makes a cross-link land on the lesson even if the tab hasn't been
-opened yet. List rows are tagged explicitly, since List(selection:)
-otherwise matches the row id and taps do nothing.
+grammar screens as the other (sidebar-adaptable on iPad and Mac), and
+provides an openRoute environment action so any view can navigate to a
+lesson. preferredCompactColumn makes a cross-link land on the lesson
+even if the tab hasn't been opened yet.
+
+RootView's verb experience is moved unchanged into a verbsTab property,
+sheets and quiz presentation included. Grammar rows use the same
+Button + .tag pattern as the verb list, and custom surfaces use
+.glassEffect() per the design direction.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 EOF
@@ -3323,7 +3447,7 @@ EOF
 
 - [ ] **Step 1: Create the section**
 
-`App/NdesuFormsSection.swift`:
+`App/NdesuFormsSection.swift`. The grid sits on a glass tile like `FormGroupSection`'s cells, and the link is a glass button:
 
 ```swift
 import SwiftUI
@@ -3385,7 +3509,7 @@ struct NdesuFormsSection: View {
                 }
                 .padding(8)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                .glassEffect(in: RoundedRectangle(cornerRadius: 8))
 
                 if lessonIsAvailable {
                     Button {
@@ -3393,7 +3517,7 @@ struct NdesuFormsSection: View {
                     } label: {
                         Label("Learn about んです", systemImage: "arrow.right.circle")
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.glass)
                     .font(.subheadline)
                 }
             }
@@ -3406,31 +3530,41 @@ struct NdesuFormsSection: View {
 
 - [ ] **Step 2: Show it on verb detail**
 
-In `App/VerbDetailView.swift`, in the `formGroups` property, add the new block directly **after** the `if hasAdvancedForms { … }` block, still inside the enclosing `VStack`:
+Apply this diff to `App/VerbDetailView.swift`. The block goes directly **after** the `if hasAdvancedForms { … }` block, inside `formGroups`:
 
-```swift
-            if verb.forms.hasNdForms {
-                NdesuFormsSection(forms: verb.forms)
-            }
+```diff
+diff --git a/App/VerbDetailView.swift b/App/VerbDetailView.swift
+index 0b3f5a9..8112f4c 100644
+--- a/App/VerbDetailView.swift
++++ b/App/VerbDetailView.swift
+@@ -121,6 +121,10 @@ struct VerbDetailView: View {
+                     defaultExpanded: false
+                 )
+             }
++
++            if verb.forms.hasNdForms {
++                NdesuFormsSection(forms: verb.forms)
++            }
+         }
+     }
+ }
 ```
-
-(The surrounding lines are the `if hasAdvancedForms` block above it and the closing braces of the `VStack`, `formGroups` and the struct.)
 
 - [ ] **Step 3: Build both platforms**
 
 ```bash
-xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_macOS -destination "platform=macOS" build 2>&1 | tail -5
-xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_iOS -destination "generic/platform=iOS Simulator" build 2>&1 | tail -5
+xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_macOS -destination "platform=macOS" CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
+xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_iOS -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
 ```
 
 Expected: `** BUILD SUCCEEDED **` for both.
 
 - [ ] **Step 4: Verify in the Simulator**
 
-Repeat Task 9 Step 7's setup (local server, temporary base-URL edit, fresh install). Then, in the Simulator:
+Repeat Task 9 Step 6's setup (local server, temporary base-URL edit, fresh install). Then, in the Simulator:
 - Open **Verbs → たべる**. Below the て-form section there is a collapsed **んです** section.
-- Expanding it shows a Polite / Casual grid: たべるんです / たべるんだ, たべないんです / たべないんだ, たべたんです / たべたんだ, たべなかったんです / たべなかったんだ, none of them wrapping.
-- Tapping **Learn about んです** switches to the Grammar tab and lands on the んです lesson. This must work even if the Grammar tab was never opened before.
+- Expanding it shows a Polite / Casual grid on glass tiles: たべるんです / たべるんだ, たべないんです / たべないんだ, たべたんです / たべたんだ, たべなかったんです / たべなかったんだ, none of them wrapping.
+- Tapping **Learn about んです** switches to the Grammar tab and lands on the んです lesson. This must work even if the Grammar tab was never opened before (fresh install).
 - Repeat for **くる**: the negative reads こないんです and the past きたんです.
 
 Then revert the temporary edit and stop the server, as in Task 9.
@@ -3439,13 +3573,14 @@ Then revert the temporary edit and stop the server, as in Task 9.
 
 ```bash
 git status --short   # GitHubVerbFetcher.swift must be unchanged
-git add App
+git add App/NdesuFormsSection.swift App/VerbDetailView.swift
 git commit -m "$(cat <<'EOF'
 Show んです forms on verb detail, linked to the lesson
 
 A collapsed section after Advanced, shown only for verbs that have nd_*
-data, with polite and casual forms side by side. Its Learn about link
-resolves through Route and is hidden until the lesson has synced.
+data, with polite and casual forms side by side on glass tiles. Its
+Learn about link resolves through Route and is hidden until the lesson
+has synced.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 EOF
@@ -3454,26 +3589,26 @@ EOF
 
 ---
 
-## Task 11: Full verification and publishing
+## Task 11: Full verification, merge and publishing
 
 **Files:** none (verification only).
 
 - [ ] **Step 1: Run every test suite**
 
 ```bash
-cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -2
+cd Packages/VerbKit && swift test 2>&1 | grep -E "error:|failed|Executed .* tests" | tail -1
 cd ../.. && python3 -m unittest discover -s scripts -p "test_*.py" 2>&1 | tail -2
 python3 scripts/update_data.py --check
 ```
 
-Expected: `Executed 99 tests, with 0 failures`; `Ran 19 tests ... OK`; `data is up to date`.
+Expected: `Executed 107 tests, with 0 failures`; `Ran 19 tests ... OK`; `data is up to date`.
 
 - [ ] **Step 2: Build both app targets from a clean generate**
 
 ```bash
 ./scripts/generate-project.sh
-xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_macOS -destination "platform=macOS" build 2>&1 | tail -3
-xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_iOS -destination "generic/platform=iOS Simulator" build 2>&1 | tail -3
+xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_macOS -destination "platform=macOS" CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
+xcodebuild -project JPVerbConjugation.xcodeproj -scheme JPVerbConjugation_iOS -destination "generic/platform=iOS Simulator" CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -3
 ```
 
 Expected: `** BUILD SUCCEEDED **` twice.
@@ -3482,13 +3617,24 @@ Expected: `** BUILD SUCCEEDED **` twice.
 
 ```bash
 grep -n "raw.githubusercontent.com" Packages/VerbKit/Sources/VerbKit/Data/GitHubVerbFetcher.swift
-grep -rn "127.0.0.1" Packages App scripts --include=*.swift --include=*.py
+grep -rn "127.0.0.1" Packages App scripts | grep -v "/.build/"
 git status --short
 ```
 
 Expected: the first command shows the `raw.githubusercontent.com/.../main/data/` line; the second prints nothing; the third shows a clean tree.
 
-- [ ] **Step 4: Publish (needs the user's explicit go-ahead)**
+- [ ] **Step 4: Merge gracefully**
+
+The branch must merge without clobbering anything `main` has gained. Before merging:
+
+```bash
+git fetch origin 2>/dev/null; git log --oneline main..HEAD | cat        # only this work's commits
+git diff --name-only HEAD...main -- . ':!docs' | cat                    # files main changed since we branched
+```
+
+Expected: the second command prints nothing. If `main` has moved, do **not** force anything: `git rebase main` (or `git merge main` into the branch), resolve conflicts by keeping `main`'s side and re-applying only this work's additions, re-run Steps 1–3, and only then merge. If `main` has not moved, the merge is a fast-forward: `git switch main && git merge --ff-only feature/grammar-nd-desu`. Get the user's go-ahead before merging into `main`.
+
+- [ ] **Step 5: Publish (needs the user's explicit go-ahead)**
 
 The app reads the data from GitHub `main`, so the lesson and `nd_*` forms reach users only after the commits are pushed. **Do not push without asking the user first.** After they approve and the push lands:
 
@@ -3499,21 +3645,22 @@ shasum -a 256 data/verbs.json data/grammar.json
 
 Expected: the manifest's `sha256` and `grammar.sha256` match the two `shasum` lines. If GitHub's raw cache serves the old manifest, wait a minute and retry.
 
-- [ ] **Step 5: Final review checklist**
+- [ ] **Step 6: Final review checklist**
 
 Every item is verified by a step above; confirm none was skipped:
 - [ ] Grammar syncs from the manifest's `grammar` block, only when its hash changes (Task 5 tests).
+- [ ] `sync()` records nothing; a persistence failure leaves the manifest unconfirmed and a retry re-fetches (Tasks 5 and 7 tests).
 - [ ] A grammar failure never changes verbs or first-launch state (Task 7 tests).
 - [ ] Cached grammar loads offline (Task 7 tests).
 - [ ] Old app builds ignore the new manifest block (Task 5 fetcher test).
 - [ ] Grammar tab lists, searches and shows the lesson (Task 9 Simulator run).
-- [ ] Verb detail shows the んです section only for verbs with `nd_*` data, and the link works (Task 10 Simulator run).
-- [ ] `data/` is byte-consistent with its manifest (Task 4 `RealDataTests`, Task 3 `--check`).
+- [ ] Verb detail shows the んです section only for verbs with `nd_*` data, and the link works from a never-visited Grammar tab (Task 10 Simulator run).
+- [ ] `data/` is byte-consistent with its manifest (Task 4 tests and Task 3 `--check`).
+- [ ] No `.accessibility*` modifiers and no flat `.quaternary` / `.tertiary` backgrounds were added (`grep -rn "accessibility\|quaternary\|tertiary" App/Grammar* App/ExampleRow.swift App/NdesuFormsSection.swift App/MainTabView.swift` prints nothing).
 
 ---
 
 ## Notes for the executor
 
-- **Known limitation, matching the verb sync:** `GrammarSyncService` records the new manifest as synced before `VerbStore` persists the points. If persisting throws, grammar is shown for that session but never re-fetched. It is rare and already true for verbs; fixing it belongs in a change that touches both.
 - **Two manifest requests per sync:** the verb and grammar services each fetch the (tiny) `manifest.json`. Keeping the services independent was worth one extra small request.
-- **Follow-ups, out of scope here:** a Verbs → Grammar link for other lessons once sub-projects 2–4 add them; `nd_*` in the quiz; furigana.
+- **Follow-ups, out of scope here:** verb links from other lessons once sub-projects 2–4 add them; `nd_*` in the quiz; furigana; exercising the iPad sidebar-toggle state and the Mac window by hand.
