@@ -26,16 +26,21 @@ sub-projects, each with its own spec → plan → implementation cycle:
    reuses its model, sync path and screens.
 2. **Potential form deep-dive** — content, plus the potential form's own
    conjugation matrix (explicitly out of scope in the rewrite spec).
-3. **Nuance endings** — わけ, はず, よう/みたい, そう, らしい.
-4. **Verb auxiliaries** — ている, ておく, てしまう, てある, てみる, ながら,
-   すぎる, やすい/にくい.
+3. **Nuance endings** — わけ, はず, べき, ものだ, かもしれない (Yokubi
+   groups these), and よう/みたい, そう, らしい, ぽい (also grouped there).
+4. **Verb auxiliaries** — ている/てある first, then てしまう/ておく, then
+   てみる, ながら, すぎる, やすい/にくい.
 
 Sub-projects 2–4 are mostly content authoring once this one lands.
 
-Ideas beyond んです/なんです come from the author's grammar knowledge.
-yoku.bi was consulted only at the structure level (its landing page);
-lesson-level pages could not be fetched, so nothing here is derived from its
-lesson text.
+Ideas beyond んです/なんです come from the author's grammar knowledge,
+cross-checked against the structure of the Yokubi grammar guide
+([Morgawr/yokubi](https://github.com/Morgawr/yokubi), CC-BY-4.0): its table
+of contents and its lesson on explanatory のだ/んです (Lesson 20) informed the
+usage list and the sub-project grouping above. Lesson prose and examples in
+this project are written independently and are not copied from Yokubi. If
+any Yokubi wording or examples are ever adapted, CC-BY-4.0 attribution must
+be added to the app's credits.
 
 ## 1. Data model
 
@@ -195,14 +200,19 @@ in the non-past affirmative. The polite form never precedes it:
 5. Emphasis or background, including the cleft type — 実は、まだ食べていない
    んです。 / 昨日買ったのは、この本なんです。
 6. Checking an inference — 疲れているんですか。
+7. Acknowledging what someone told you ("oh, is that so") — そうなんですか。
+   / そうなんだ。
 
 **The ending's own conjugations**
 
 | Register | Forms |
 |---|---|
 | Polite | んです · んですか · んですが/けど · んですね · んじゃないですか |
-| Casual | んだ · んだよ · の？ / んだ？ · んじゃない |
+| Casual | んだ · んだよ · の？ / んだ？ · の (soft statement) · んじゃない |
 | Formal/written | のです · のだ · のではありません |
+
+Note on の as a statement (行くの。): it sounds softer and, for many
+speakers, feminine. As a question (行くの？) it is neutral and very common.
 
 **Pitfalls stated explicitly in the lesson**
 
@@ -210,8 +220,9 @@ in the non-past affirmative. The polite form never precedes it:
   食べるんじゃありません is a strong "don't eat!", and 食べたんじゃない
   means "it's not that I ate".
 - **Overuse.** For plain new information use the ordinary polite form
-  (毎日学校に行きます). んですか can sound probing ("what's going on?"), not
-  neutral.
+  (毎日学校に行きます). んですか asks for an explanation, so it can sound
+  probing ("what's going on?") or, with the wrong tone, demanding or
+  aggressive. It is not a neutral question marker.
 - **Past.** The past goes on the verb (食べたんです). 〜んでした exists but is
   rare; mentioned as an aside only.
 
