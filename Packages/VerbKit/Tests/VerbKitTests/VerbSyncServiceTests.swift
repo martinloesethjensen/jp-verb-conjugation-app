@@ -114,13 +114,21 @@ final class VerbSyncServiceTests: XCTestCase {
 final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
     var manifestResult: Result<VerbManifest, Error> = .failure(VerbSyncError.offline)
     var verbDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
+    /// Defaults to "no grammar published" so verb-only tests are unaffected.
+    var grammarManifestResult: Result<GrammarManifest?, Error> = .success(nil)
+    var grammarDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
 
     func fetchManifest() async throws -> VerbManifest { try manifestResult.get() }
     func fetchVerbData() async throws -> Data { try verbDataResult.get() }
+    func fetchGrammarManifest() async throws -> GrammarManifest? { try grammarManifestResult.get() }
+    func fetchGrammarData() async throws -> Data { try grammarDataResult.get() }
 }
 
 final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
     private var manifest: VerbManifest?
+    private var grammarManifest: GrammarManifest?
     func lastSyncedManifest() -> VerbManifest? { manifest }
     func saveLastSyncedManifest(_ manifest: VerbManifest) { self.manifest = manifest }
+    func lastSyncedGrammarManifest() -> GrammarManifest? { grammarManifest }
+    func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) { grammarManifest = manifest }
 }

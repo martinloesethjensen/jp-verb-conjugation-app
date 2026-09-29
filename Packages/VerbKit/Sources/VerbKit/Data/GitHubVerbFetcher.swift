@@ -3,11 +3,13 @@ import Foundation
 public struct GitHubVerbFetcher: VerbDataFetching {
     private let manifestURL: URL
     private let verbsURL: URL
+    private let grammarURL: URL
     private let session: URLSession
 
-    public init(manifestURL: URL, verbsURL: URL, session: URLSession = .shared) {
+    public init(manifestURL: URL, verbsURL: URL, grammarURL: URL, session: URLSession = .shared) {
         self.manifestURL = manifestURL
         self.verbsURL = verbsURL
+        self.grammarURL = grammarURL
         self.session = session
     }
 
@@ -22,6 +24,24 @@ public struct GitHubVerbFetcher: VerbDataFetching {
 
     public func fetchVerbData() async throws -> Data {
         try await fetchData(from: verbsURL)
+    }
+
+    public func fetchGrammarManifest() async throws -> GrammarManifest? {
+        let data = try await fetchData(from: manifestURL)
+        do {
+            return try JSONDecoder().decode(ManifestFile.self, from: data).grammar
+        } catch {
+            throw VerbSyncError.malformedData
+        }
+    }
+
+    public func fetchGrammarData() async throws -> Data {
+        try await fetchData(from: grammarURL)
+    }
+
+    /// Just the part of `manifest.json` that carries the grammar entry.
+    private struct ManifestFile: Decodable {
+        let grammar: GrammarManifest?
     }
 
     private func fetchData(from url: URL) async throws -> Data {
@@ -51,6 +71,7 @@ public extension GitHubVerbFetcher {
         return GitHubVerbFetcher(
             manifestURL: URL(string: base + "manifest.json")!,
             verbsURL: URL(string: base + "verbs.json")!,
+            grammarURL: URL(string: base + "grammar.json")!,
             session: session
         )
     }
