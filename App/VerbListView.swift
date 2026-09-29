@@ -49,6 +49,7 @@ struct VerbListView: View {
                         VerbRow(verb: verb)
                     }
                     .buttonStyle(.plain)
+                    .tag(verb)
                 }
             } footer: {
                 Link("Suggest a verb", destination: githubSuggestVerbURL)
