@@ -45,7 +45,7 @@ struct VerbDetailView: View {
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 8).padding(.vertical, 2)
                     .foregroundStyle(verb.type.accentColor)
-                    .glassEffect(.regular.tint(verb.type.accentColor), in: Capsule())
+                    .glassEffect(.regular.tint(verb.type.accentColor.opacity(0.35)), in: Capsule())
                 if let teGroup = verb.teGroup {
                     Text(teGroup.rawValue)
                         .font(.caption)

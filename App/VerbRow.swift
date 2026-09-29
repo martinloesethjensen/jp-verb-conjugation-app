@@ -11,7 +11,7 @@ struct VerbRow: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
                 .foregroundStyle(verb.type.accentColor)
-                .glassEffect(.regular.tint(verb.type.accentColor), in: Capsule())
+                .glassEffect(.regular.tint(verb.type.accentColor.opacity(0.35)), in: Capsule())
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
