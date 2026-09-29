@@ -57,7 +57,7 @@ struct VerbListView: View {
             }
         }
         .searchable(text: $search, prompt: "Search hiragana, kanji, or English…")
-        .navigationTitle("動詞活用表")
+        .navigationTitle("早見表")
         .overlay {
             if !search.isEmpty && filtered.isEmpty {
                 ContentUnavailableView.search(text: search)
