@@ -121,6 +121,10 @@ struct VerbDetailView: View {
                     defaultExpanded: false
                 )
             }
+
+            if verb.forms.hasNdForms {
+                NdesuFormsSection(forms: verb.forms)
+            }
         }
     }
 }
