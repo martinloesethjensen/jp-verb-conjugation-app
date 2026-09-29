@@ -2925,6 +2925,11 @@ struct VerbListView: View {
             Section {
                 ForEach(filtered) { verb in
                     VerbRow(verb: verb)
+                        // Required: with ForEach over Identifiable items,
+                        // List(selection:) matches the row's `id` (a String),
+                        // not the element, so without an explicit tag the
+                        // Binding<Verb?> is never set and taps do nothing.
+                        .tag(verb)
                 }
             } footer: {
                 Link("Suggest a verb", destination: githubSuggestVerbURL)
@@ -3885,6 +3890,11 @@ struct VerbListView: View {
             Section {
                 ForEach(filtered) { verb in
                     VerbRow(verb: verb)
+                        // Required: with ForEach over Identifiable items,
+                        // List(selection:) matches the row's `id` (a String),
+                        // not the element, so without an explicit tag the
+                        // Binding<Verb?> is never set and taps do nothing.
+                        .tag(verb)
                 }
             } footer: {
                 Link("Suggest a verb", destination: githubSuggestVerbURL)
