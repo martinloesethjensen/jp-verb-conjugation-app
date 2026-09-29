@@ -51,8 +51,14 @@ public final class VerbStore {
                 // treat as corrupt local state rather than silently
                 // leaving the user on an empty verb list forever.
                 firstLaunchState = .failed(.malformedData)
-            case let .updated(_, fetchedVerbs):
+            case let .updated(manifest, fetchedVerbs):
                 try persisting.replaceAllVerbs(with: fetchedVerbs)
+                // Only record the manifest as synced once persistence has
+                // actually succeeded — otherwise a persistence failure
+                // here would be caught below (leaving the manifest
+                // unrecorded) and a retry could genuinely re-fetch,
+                // instead of seeing `.upToDate` forever.
+                syncService.confirmSynced(manifest)
                 verbs = fetchedVerbs
                 firstLaunchState = .success
             }
@@ -65,9 +71,17 @@ public final class VerbStore {
 
     private func syncInBackground() async {
         guard let result = try? await syncService.sync() else { return }
-        if case let .updated(_, fetchedVerbs) = result {
-            try? persisting.replaceAllVerbs(with: fetchedVerbs)
-            verbs = fetchedVerbs
+        guard case let .updated(manifest, fetchedVerbs) = result else { return }
+        do {
+            try persisting.replaceAllVerbs(with: fetchedVerbs)
+        } catch {
+            // Persistence failed — leave the manifest unrecorded so the
+            // next sync (foreground or background) still sees this as
+            // changed and retries, instead of reporting `.upToDate` with
+            // nothing actually saved.
+            return
         }
+        syncService.confirmSynced(manifest)
+        verbs = fetchedVerbs
     }
 }

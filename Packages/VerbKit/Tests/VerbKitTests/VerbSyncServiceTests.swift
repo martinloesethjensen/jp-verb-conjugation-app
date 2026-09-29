@@ -39,6 +39,27 @@ final class VerbSyncServiceTests: XCTestCase {
         }
         XCTAssertEqual(updatedManifest, manifest)
         XCTAssertEqual(verbs.count, 2)
+        // sync() must NOT record the manifest as synced on its own —
+        // only a caller who has durably persisted the verbs should do
+        // that, via confirmSynced(_:). See Important #4 of the final
+        // whole-branch review: recording it here would make a later
+        // persistence failure indistinguishable from "nothing changed".
+        XCTAssertNil(syncState.lastSyncedManifest())
+    }
+
+    func testConfirmSyncedRecordsManifestOnlyWhenCalled() async throws {
+        let data = try fixtureData()
+        let manifest = VerbManifest(version: "1.1.0", sha256: sha256Hex(of: data))
+        let fetcher = MockVerbDataFetcher()
+        fetcher.manifestResult = .success(manifest)
+        fetcher.verbDataResult = .success(data)
+
+        let syncState = InMemorySyncStateStore()
+        let service = VerbSyncService(fetcher: fetcher, syncState: syncState)
+        _ = try await service.sync()
+        XCTAssertNil(syncState.lastSyncedManifest())
+
+        service.confirmSynced(manifest)
         XCTAssertEqual(syncState.lastSyncedManifest(), manifest)
     }
 
