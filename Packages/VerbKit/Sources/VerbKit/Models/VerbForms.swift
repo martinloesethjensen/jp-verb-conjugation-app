@@ -19,6 +19,22 @@ public struct VerbForms: Codable, Hashable, Sendable {
     public var imperative: String?
     public var tai: String?
 
+    // んです forms (grammar point `n-desu`): the plain forms + んです/んだ.
+    public var ndPos: String?
+    public var ndNeg: String?
+    public var ndPast: String?
+    public var ndPastNeg: String?
+    public var ndCasualPos: String?
+    public var ndCasualNeg: String?
+    public var ndCasualPast: String?
+    public var ndCasualPastNeg: String?
+
+    /// True when at least one んです form is populated.
+    public var hasNdForms: Bool {
+        [ndPos, ndNeg, ndPast, ndPastNeg, ndCasualPos, ndCasualNeg, ndCasualPast, ndCasualPastNeg]
+            .contains { $0 != nil }
+    }
+
     public init(
         masuPos: String,
         masuNeg: String,
@@ -37,7 +53,15 @@ public struct VerbForms: Codable, Hashable, Sendable {
         conditionalBa: String? = nil,
         conditionalTara: String? = nil,
         imperative: String? = nil,
-        tai: String? = nil
+        tai: String? = nil,
+        ndPos: String? = nil,
+        ndNeg: String? = nil,
+        ndPast: String? = nil,
+        ndPastNeg: String? = nil,
+        ndCasualPos: String? = nil,
+        ndCasualNeg: String? = nil,
+        ndCasualPast: String? = nil,
+        ndCasualPastNeg: String? = nil
     ) {
         self.masuPos = masuPos
         self.masuNeg = masuNeg
@@ -57,6 +81,14 @@ public struct VerbForms: Codable, Hashable, Sendable {
         self.conditionalTara = conditionalTara
         self.imperative = imperative
         self.tai = tai
+        self.ndPos = ndPos
+        self.ndNeg = ndNeg
+        self.ndPast = ndPast
+        self.ndPastNeg = ndPastNeg
+        self.ndCasualPos = ndCasualPos
+        self.ndCasualNeg = ndCasualNeg
+        self.ndCasualPast = ndCasualPast
+        self.ndCasualPastNeg = ndCasualPastNeg
     }
 
     enum CodingKeys: String, CodingKey {
@@ -78,6 +110,14 @@ public struct VerbForms: Codable, Hashable, Sendable {
         case conditionalTara = "conditional_tara"
         case imperative
         case tai
+        case ndPos = "nd_pos"
+        case ndNeg = "nd_neg"
+        case ndPast = "nd_past"
+        case ndPastNeg = "nd_past_neg"
+        case ndCasualPos = "nd_casual_pos"
+        case ndCasualNeg = "nd_casual_neg"
+        case ndCasualPast = "nd_casual_past"
+        case ndCasualPastNeg = "nd_casual_past_neg"
     }
 
     public subscript(_ key: FormKey) -> String {
