@@ -6,6 +6,7 @@ import VerbKit
 struct JPVerbConjugationApp: App {
     @State private var networkMonitor: NetworkMonitor
     @State private var verbStore: VerbStore
+    @State private var furiganaStore: FuriganaStore
 
     init() {
         let container = Self.makeModelContainer()
@@ -21,15 +22,24 @@ struct JPVerbConjugationApp: App {
             grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
             grammarPersisting: SwiftDataGrammarPersisting(modelContext: context)
         ))
+        _furiganaStore = State(initialValue: FuriganaStore(
+            syncService: FuriganaSyncService(fetcher: fetcher, syncState: syncState),
+            persisting: SwiftDataFuriganaPersisting(modelContext: context)
+        ))
     }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(verbStore)
+                .environment(furiganaStore)
                 .task {
                     networkMonitor.start()
                     await verbStore.start()
+                }
+                .task {
+                    // Independent of the verb sync: furigana is an enhancement.
+                    await furiganaStore.start()
                 }
         }
         #if os(macOS)

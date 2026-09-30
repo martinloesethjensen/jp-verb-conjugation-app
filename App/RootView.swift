@@ -3,8 +3,10 @@ import VerbKit
 
 struct RootView: View {
     @Environment(VerbStore.self) private var verbStore
+    @Environment(FuriganaStore.self) private var furiganaStore
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
+    @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
     @State private var selection: Verb?
     @State private var showingExamples = false
     @State private var showingSettings = false
@@ -26,6 +28,8 @@ struct RootView: View {
                 }
             }
         }
+        .environment(\.furiganaEnabled, showFurigana)
+        .environment(\.furiganaDictionary, furiganaStore.dictionary)
         .preferredColorScheme(appearance.colorScheme)
     }
 

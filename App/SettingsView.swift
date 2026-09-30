@@ -25,6 +25,7 @@ enum AppearanceMode: String, CaseIterable, Identifiable, Hashable {
 struct SettingsView: View {
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
+    @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
 
     private var appearanceMode: Binding<AppearanceMode> {
         Binding(
@@ -45,6 +46,9 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+            }
+            Section("Reading") {
+                Toggle("Show furigana", isOn: $showFurigana)
             }
             Section("Quiz") {
                 Picker("Number of questions", selection: $quizQuestionCount) {
