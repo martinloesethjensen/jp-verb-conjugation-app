@@ -958,6 +958,8 @@ index 14bc096..8a4bdd9 100644
  }
 ```
 
+> **Correction after the final review (commit `aafa7a1`).** The `conjugations` rows in the diff above were later corrected: the て-form note no longer claims requests (potential verbs are not used for requests: ×食べられてください), and the rows show the ru-verb pattern (`〜られます` …) with the u-verb equivalent (飲めます …) in each note instead of the misleading `〜れます`. The "Verbs with no potential" sentence and the `ことができる` note were tightened too. The final text is in `data/grammar.json`; the manifest was re-hashed with versions unchanged. Apply the diff above and then that commit's changes, or take `data/grammar.json` from it.
+
 The summary deliberately says "The potential form …": the list search matches the title, summary and Japanese example text, and the title is only 可能形, so without the English word a search for "potential" would find nothing.
 
 - [ ] **Step 5: Add ある's note**
