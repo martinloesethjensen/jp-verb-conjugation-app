@@ -4,5 +4,9 @@
   "grammar": {
     "version": "1.1.0",
     "sha256": "8671713840f2dfae672f07847e78859652b8ab18b279728fdc87fd868d8b36c6"
+  },
+  "furigana": {
+    "version": "1.0.0",
+    "sha256": "65eb7ac0af67be881227c707dc9f4ea4b754bc4b9023591447fbaf847796ccd4"
   }
 }
