@@ -17,7 +17,7 @@ struct VerbDetailView: View {
 
     private var hasAdvancedForms: Bool {
         let f = verb.forms
-        return [f.potential, f.volitional, f.passive, f.causative, f.causativePassive, f.conditionalBa, f.conditionalTara, f.imperative, f.tai]
+        return [f.volitional, f.passive, f.causative, f.causativePassive, f.conditionalBa, f.conditionalTara, f.imperative, f.tai]
             .contains { $0 != nil }
     }
 
@@ -104,11 +104,14 @@ struct VerbDetailView: View {
                 ("て-form", verb.forms.te),
             ], defaultExpanded: true)
 
+            if verb.forms.hasPotentialForms {
+                PotentialFormsSection(forms: verb.forms)
+            }
+
             if hasAdvancedForms {
                 FormGroupSection(
                     title: "Advanced",
                     forms: [
-                        ("Potential", verb.forms.potential),
                         ("Volitional", verb.forms.volitional),
                         ("Passive", verb.forms.passive),
                         ("Causative", verb.forms.causative),
