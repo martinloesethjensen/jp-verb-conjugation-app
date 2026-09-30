@@ -32,7 +32,7 @@ The work has four parts:
 - **The scope is small.** Conjugation forms are all kana, verb examples are 169
   strings of which only 10 contain kanji, the lessons have 73 strings with kanji
   (mostly example sentences), and there are only **92 distinct kanji** in total. The
-  quiz contains no kanji at all.
+  quiz shows a kanji hint under each question, so it gets furigana too.
 - **Published data is also read by older app builds.** Whatever is stored must not
   change how existing strings look to them.
 
@@ -50,10 +50,14 @@ A third published file, beside `verbs.json` and `grammar.json`:
 - A **key** is a run of kanji, optionally followed by a few kana that disambiguate
   it. The **value** is the hiragana reading of the **kanji run only**, so okurigana is
   never part of the ruby.
-- **Matching.** For each maximal kanji run in a string, the app takes the longest key
-  that matches the text starting at that run, and draws the value above the run. One
-  `食` entry covers 食べる, 食べた and 食べられる. Only ambiguous kanji need longer keys
-  (来 is く, こ or き depending on what follows).
+- **Matching.** The text is read left to right. At each kanji, the app takes the
+  longest key that matches there, where the key's kanji part may be any prefix of the
+  current kanji run and its kana part (at most three kana) must match the text that
+  follows. The value is drawn above the matched kanji. So a run of several words such as
+  遅れ is read as a whole (おく) rather than kanji by kanji, and a shorter key (遅, おそ)
+  still applies when no longer one matches. One `食` entry covers 食べる, 食べた and
+  食べられる. Only ambiguous kanji need longer keys (来 is く, こ or き depending on what
+  follows: 来る = く, 来られる = こ via the key 来ら, 来た = き).
 - **Unknown runs stay plain.** A kanji run with no entry is drawn without a reading,
   so nothing breaks while data is catching up.
 - **Content.** The roughly 100 existing kanji runs, drafted and then reviewed by the
@@ -104,6 +108,8 @@ lives in the app.
     as Japanese allows.
   - Closing punctuation (。、」）！？) attaches to the previous unit, so a line never
     starts with it.
+  - Okurigana, the hiragana piece that directly follows a ruby unit (the べる of 食べる),
+    attaches to that unit, so a line never breaks between a kanji and its ending.
 - **`JapaneseText(_ text: String)`** (app) is the drop-in replacement for `Text`. It
   uses plain `Text` when furigana is off, the dictionary is not loaded, or the string
   has no kanji. Otherwise it flows the units with a custom `Layout`.
@@ -113,6 +119,10 @@ lives in the app.
 - **Ruby size.** SwiftUI cannot report a font's point size, so each reading is
   rendered in the inherited font, scaled to half, and placed centred over its base.
   The layout reserves half a line's height above the text.
+- **Baselines.** Both layouts report the text's first and last baseline, so a
+  `JapaneseText` aligns with neighbouring `Text` in rows and stacks, and kanji sit on
+  the same baseline as kana. A `lineLimit` is honoured by capping the number of lines
+  and clipping.
 - **Line height** is uniform within a string that has any ruby, so lines do not
   jitter. A unit is as wide as the wider of its base and its reading, so neighbours
   never collide.
@@ -138,6 +148,7 @@ Every data-driven string that can contain kanji:
 - **Verb list and detail:** the kanji form in the row and the page header, and the
   verb's description and note (three verbs have kanji there).
 - **Verb examples:** the Japanese sentence on the Examples sheet.
+- **Quiz:** the kanji hint under each question.
 - **Grammar list:** each lesson's title and summary.
 - **Lesson page:** the header title and summary; the attachment cards (condition,
   pattern, example lines, note); every usage heading and explanation; the example
@@ -145,7 +156,7 @@ Every data-driven string that can contain kanji:
   and the related-lesson links.
 
 **Already kana, so unchanged:** all conjugation tiles, the んです and Potential
-sections, and the whole quiz.
+sections, and the quiz's options and answers.
 
 ### Deliberately left plain
 
