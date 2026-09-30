@@ -39,6 +39,7 @@ furigana, was added later):
    Japanese. Cross-cutting (it needs a way to store and draw readings), so it
    gets its own spec; it runs after sub-project 2 so a single pass can annotate
    all the lesson text and verb examples.
+   Specified in [2026-09-30-furigana-design.md](2026-09-30-furigana-design.md).
 
 Sub-projects 2–4 are mostly content authoring once this one lands.
 
