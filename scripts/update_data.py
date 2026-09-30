@@ -6,7 +6,7 @@ Run after editing data/verbs.json or data/grammar.json:
     python3 scripts/update_data.py            # rewrite files in place
     python3 scripts/update_data.py --check    # verify only; exit 1 if stale/invalid
 
-It does four things:
+It does six things:
   1. Fills the nd_* (んです / んだ) forms on every verb in verbs.json by
      appending to the verb's plain forms. Deterministic; safe to re-run.
   2. Fills the nine potential forms (`potential` and the eight pot_* fields)
@@ -14,8 +14,13 @@ It does four things:
      Deterministic; safe to re-run.
   3. Validates data/grammar.json (hand-authored) against the schema the
      app decodes. It never generates lesson text.
-  4. Recomputes the SHA-256 of both files into data/manifest.json, bumping
-     a file's version (minor) when its content changed.
+  4. Validates data/furigana.json (hand-authored), then checks that every
+     kanji in verbs.json and grammar.json has a reading in it, and that each
+     verb's `kanji` spells its kana `dict` form. Missing readings fail the
+     run, so new content cannot ship without furigana.
+  5. Recomputes the SHA-256 of all three files into data/manifest.json,
+     bumping a file's version (minor) when its content changed.
+  6. With --check, verifies all of the above without writing anything.
 
 Standard library only.
 """
@@ -74,6 +79,15 @@ POTENTIAL_CONJUGATIONS = [
 
 # Every field the potential step owns: the base form plus the eight above.
 POTENTIAL_FIELDS = ["potential"] + [name for name, _ in POTENTIAL_CONJUGATIONS]
+
+# --- Furigana (readings above kanji) ----------------------------------------
+
+# A reading key may be followed by at most this many kana that select the
+# reading (来ら -> こ). The app's matcher uses the same limit.
+MAX_OKURIGANA_IN_KEY = 3
+MAX_PROBLEMS_SHOWN = 20
+KEY_PATTERN = re.compile("^[一-鿿々]+[ぁ-ゖ]{0,%d}$" % MAX_OKURIGANA_IN_KEY)
+READING_PATTERN = re.compile("^[ぁ-ゖー]+$")
 
 LEVELS = {"beginner", "intermediate"}
 WORD_CLASSES = {"verb", "i-adjective", "na-adjective", "noun"}
@@ -148,6 +162,129 @@ def apply_potential_forms(verbs_doc):
                 del forms[name]
                 changed = True
     return changed
+
+
+def is_kanji(char):
+    """CJK ideographs plus the iteration mark 々 (same as the app's matcher)."""
+    return "一" <= char <= "鿿" or char == "々"
+
+
+def scan(text, readings):
+    """Split `text` into (piece, reading-or-None) pairs using the reading
+    dictionary, exactly as the app does: left to right, at each kanji take the
+    longest key that matches from there. A key's kanji part can be any prefix
+    of the kanji run, and kana after a run that ends at the key's end can
+    follow it (up to MAX_OKURIGANA_IN_KEY). Non-kanji stretches are one piece
+    with no reading; a kanji with no matching key is its own piece with none."""
+    chars = list(text)
+    n = len(chars)
+    pieces = []
+    plain = []
+
+    def flush():
+        if plain:
+            pieces.append(("".join(plain), None))
+            plain.clear()
+
+    i = 0
+    while i < n:
+        if not is_kanji(chars[i]):
+            plain.append(chars[i])
+            i += 1
+            continue
+        flush()
+        run_end = i
+        while run_end < n and is_kanji(chars[run_end]):
+            run_end += 1
+        best = None  # (total length, kanji length, reading)
+        for kanji_len in range(run_end - i, 0, -1):
+            kanji_end = i + kanji_len
+            max_suffix = min(MAX_OKURIGANA_IN_KEY, n - kanji_end) if kanji_end == run_end else 0
+            for suffix in range(max_suffix, -1, -1):
+                reading = readings.get("".join(chars[i:kanji_end + suffix]))
+                if reading is None:
+                    continue
+                total = kanji_len + suffix
+                if best is None or total > best[0]:
+                    best = (total, kanji_len, reading)
+        if best:
+            pieces.append(("".join(chars[i:i + best[1]]), best[2]))
+            i += best[1]
+        else:
+            pieces.append((chars[i], None))
+            i += 1
+    flush()
+    return pieces
+
+
+def uncovered_kanji(text, readings):
+    """The kanji in `text` that have no reading, in order."""
+    return [piece for piece, reading in scan(text, readings)
+            if reading is None and any(is_kanji(c) for c in piece)]
+
+
+def kana_reading(text, readings):
+    """`text` spelled out in kana, using readings where they exist."""
+    return "".join(reading or piece for piece, reading in scan(text, readings))
+
+
+def validate_furigana(doc):
+    """Returns a list of human-readable problems (empty when valid)."""
+    if not isinstance(doc, dict):
+        return ["furigana: must be an object"]
+    errors = []
+    for key in ("version", "description"):
+        if not isinstance(doc.get(key), str):
+            errors.append(f"{key}: missing or not a string")
+    readings = doc.get("readings")
+    if not isinstance(readings, dict) or not readings:
+        errors.append("readings: must be a non-empty object")
+        return errors
+    for key, value in readings.items():
+        if not KEY_PATTERN.match(key):
+            errors.append(
+                f"readings key '{key}': must be kanji, optionally followed by up to "
+                f"{MAX_OKURIGANA_IN_KEY} hiragana"
+            )
+        if not isinstance(value, str) or not READING_PATTERN.match(value):
+            errors.append(f"readings['{key}']: reading '{value}' must be non-empty hiragana")
+    return errors
+
+
+def strings_in(doc, path=""):
+    """Every string value in a JSON document with a readable location."""
+    if isinstance(doc, dict):
+        for key, value in doc.items():
+            yield from strings_in(value, f"{path}/{key}" if path else key)
+    elif isinstance(doc, list):
+        for index, value in enumerate(doc):
+            yield from strings_in(value, f"{path}[{index}]")
+    elif isinstance(doc, str):
+        yield path, doc
+
+
+def check_coverage(verbs_doc, grammar_doc, readings):
+    """One problem per unread kanji per string, naming where it occurs."""
+    problems = []
+    for doc in (verbs_doc, grammar_doc):
+        for path, text in strings_in(doc):
+            for kanji in dict.fromkeys(uncovered_kanji(text, readings)):
+                snippet = text if len(text) <= 40 else text[:40] + "..."
+                problems.append(f'{path}: no reading for {kanji} in "{snippet}"')
+    return problems
+
+
+def check_verb_kanji(verbs_doc, readings):
+    """Each verb's `kanji` must spell out its kana `dict` form."""
+    problems = []
+    for verb in verbs_doc["verbs"]:
+        kanji = verb.get("kanji")
+        if not kanji:
+            continue
+        got = kana_reading(kanji, readings)
+        if got != verb["dict"]:
+            problems.append(f"{verb['dict']}: kanji {kanji} reads as {got}, expected {verb['dict']}")
+    return problems
 
 
 def dump_verbs(doc):
@@ -251,10 +388,12 @@ def bump_minor(version):
     return f"{major}.{int(minor) + 1}.0"
 
 
-def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, grammar_version=None):
+def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, grammar_version=None,
+                   furigana_bytes=None, furigana_version=None):
     """New manifest dict. A file's version is kept when its hash is
     unchanged, bumped (minor) when it changed, or forced by an explicit
-    version. A grammar block that did not exist yet starts at 1.0.0."""
+    version. A grammar or furigana block that did not exist yet starts at
+    1.0.0. The furigana block is left out when no furigana bytes are given."""
     verbs_hash = sha256_hex(verbs_bytes)
     grammar_hash = sha256_hex(grammar_bytes)
 
@@ -276,25 +415,56 @@ def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, gra
     else:
         new_grammar_version = bump_minor(old_grammar["version"])
 
-    return {
+    manifest = {
         "version": new_verbs_version,
         "sha256": verbs_hash,
         "grammar": {"version": new_grammar_version, "sha256": grammar_hash},
     }
 
+    if furigana_bytes is not None:
+        furigana_hash = sha256_hex(furigana_bytes)
+        old_furigana = existing.get("furigana")
+        if furigana_version:
+            new_furigana_version = furigana_version
+        elif old_furigana is None:
+            new_furigana_version = "1.0.0"
+        elif old_furigana.get("sha256") == furigana_hash:
+            new_furigana_version = old_furigana["version"]
+        else:
+            new_furigana_version = bump_minor(old_furigana["version"])
+        manifest["furigana"] = {"version": new_furigana_version, "sha256": furigana_hash}
+    return manifest
 
-def run(data_dir, check=False, verbs_version=None, grammar_version=None):
+
+def capped(heading, problems):
+    """A problem list for the user, cut to MAX_PROBLEMS_SHOWN lines."""
+    lines = [heading] + [f"  - {p}" for p in problems[:MAX_PROBLEMS_SHOWN]]
+    if len(problems) > MAX_PROBLEMS_SHOWN:
+        lines.append(f"  ... and {len(problems) - MAX_PROBLEMS_SHOWN} more")
+    return lines
+
+
+def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None):
     """Returns (exit_code, messages)."""
     data_dir = Path(data_dir)
     verbs_path = data_dir / "verbs.json"
     grammar_path = data_dir / "grammar.json"
+    furigana_path = data_dir / "furigana.json"
     manifest_path = data_dir / "manifest.json"
     messages = []
 
     grammar_bytes = grammar_path.read_bytes()
-    problems = validate_grammar(json.loads(grammar_bytes))
+    grammar_doc = json.loads(grammar_bytes)
+    problems = validate_grammar(grammar_doc)
     if problems:
         return 1, ["grammar.json is invalid:"] + [f"  - {p}" for p in problems]
+
+    furigana_bytes = furigana_path.read_bytes()
+    furigana_doc = json.loads(furigana_bytes)
+    problems = validate_furigana(furigana_doc)
+    if problems:
+        return 1, capped("furigana.json is invalid:", problems)
+    readings = furigana_doc["readings"]
 
     verbs_doc = json.loads(verbs_path.read_text(encoding="utf-8"))
     apply_nd_forms(verbs_doc)
@@ -302,11 +472,20 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None):
         apply_potential_forms(verbs_doc)
     except ValueError as error:
         return 1, [f"cannot generate potential forms: {error}"]
+    problems = check_coverage(verbs_doc, grammar_doc, readings)
+    if problems:
+        return 1, capped("kanji without a reading in furigana.json:", problems)
+    problems = check_verb_kanji(verbs_doc, readings)
+    if problems:
+        return 1, capped("a verb's kanji does not match its kana form:", problems)
     verbs_text = dump_verbs(verbs_doc)
     verbs_bytes = verbs_text.encode("utf-8")
 
     existing = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest = build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version, grammar_version)
+    manifest = build_manifest(
+        existing, verbs_bytes, grammar_bytes, verbs_version, grammar_version,
+        furigana_bytes=furigana_bytes, furigana_version=furigana_version,
+    )
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
 
     stale = []
@@ -326,7 +505,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None):
     if "data/manifest.json" in stale:
         manifest_path.write_text(manifest_text, encoding="utf-8")
         messages.append(
-            f"updated data/manifest.json (verbs {manifest['version']}, grammar {manifest['grammar']['version']})"
+            f"updated data/manifest.json (verbs {manifest['version']}, grammar {manifest['grammar']['version']}, "
+            f"furigana {manifest['furigana']['version']})"
         )
     if not stale:
         messages.append("nothing to do; data is up to date")
@@ -339,8 +519,9 @@ def main(argv=None):
     parser.add_argument("--check", action="store_true", help="verify only; write nothing")
     parser.add_argument("--verbs-version", help="force the verbs.json manifest version")
     parser.add_argument("--grammar-version", help="force the grammar.json manifest version")
+    parser.add_argument("--furigana-version", help="force the furigana.json manifest version")
     args = parser.parse_args(argv)
-    code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version)
+    code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version, args.furigana_version)
     for line in messages:
         print(line)
     return code
