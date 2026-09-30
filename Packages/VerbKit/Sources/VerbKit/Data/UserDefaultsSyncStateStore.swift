@@ -6,6 +6,8 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
     private let hashKey = "VerbKit.lastSyncedManifest.sha256"
     private let grammarVersionKey = "VerbKit.lastSyncedGrammarManifest.version"
     private let grammarHashKey = "VerbKit.lastSyncedGrammarManifest.sha256"
+    private let furiganaVersionKey = "VerbKit.lastSyncedFuriganaManifest.version"
+    private let furiganaHashKey = "VerbKit.lastSyncedFuriganaManifest.sha256"
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -31,5 +33,16 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
     public func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) {
         defaults.set(manifest.version, forKey: grammarVersionKey)
         defaults.set(manifest.sha256, forKey: grammarHashKey)
+    }
+
+    public func lastSyncedFuriganaManifest() -> FuriganaManifest? {
+        guard let version = defaults.string(forKey: furiganaVersionKey),
+              let sha256 = defaults.string(forKey: furiganaHashKey) else { return nil }
+        return FuriganaManifest(version: version, sha256: sha256)
+    }
+
+    public func saveLastSyncedFuriganaManifest(_ manifest: FuriganaManifest) {
+        defaults.set(manifest.version, forKey: furiganaVersionKey)
+        defaults.set(manifest.sha256, forKey: furiganaHashKey)
     }
 }

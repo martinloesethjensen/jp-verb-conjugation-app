@@ -117,18 +117,26 @@ final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
     /// Defaults to "no grammar published" so verb-only tests are unaffected.
     var grammarManifestResult: Result<GrammarManifest?, Error> = .success(nil)
     var grammarDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
+    /// Defaults to "no furigana published" so verb- and grammar-only tests are unaffected.
+    var furiganaManifestResult: Result<FuriganaManifest?, Error> = .success(nil)
+    var furiganaDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
 
     func fetchManifest() async throws -> VerbManifest { try manifestResult.get() }
     func fetchVerbData() async throws -> Data { try verbDataResult.get() }
     func fetchGrammarManifest() async throws -> GrammarManifest? { try grammarManifestResult.get() }
     func fetchGrammarData() async throws -> Data { try grammarDataResult.get() }
+    func fetchFuriganaManifest() async throws -> FuriganaManifest? { try furiganaManifestResult.get() }
+    func fetchFuriganaData() async throws -> Data { try furiganaDataResult.get() }
 }
 
 final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
     private var manifest: VerbManifest?
     private var grammarManifest: GrammarManifest?
+    private var furiganaManifest: FuriganaManifest?
     func lastSyncedManifest() -> VerbManifest? { manifest }
     func saveLastSyncedManifest(_ manifest: VerbManifest) { self.manifest = manifest }
     func lastSyncedGrammarManifest() -> GrammarManifest? { grammarManifest }
     func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) { grammarManifest = manifest }
+    func lastSyncedFuriganaManifest() -> FuriganaManifest? { furiganaManifest }
+    func saveLastSyncedFuriganaManifest(_ manifest: FuriganaManifest) { furiganaManifest = manifest }
 }

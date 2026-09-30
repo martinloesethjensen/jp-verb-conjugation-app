@@ -11,6 +11,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
     private let manifestURL = URL(string: "https://raw.githubusercontent.com/example/repo/main/data/manifest.json")!
     private let verbsURL = URL(string: "https://raw.githubusercontent.com/example/repo/main/data/verbs.json")!
     private let grammarURL = URL(string: "https://raw.githubusercontent.com/example/repo/main/data/grammar.json")!
+    private let furiganaURL = URL(string: "https://raw.githubusercontent.com/example/repo/main/data/furigana.json")!
 
     override func tearDown() {
         StubURLProtocol.handler = nil
@@ -23,7 +24,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             return (response, json)
         }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
 
         let manifest = try await fetcher.fetchManifest()
         XCTAssertEqual(manifest, VerbManifest(version: "1.0.0", sha256: "abc"))
@@ -34,7 +35,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
             let response = HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!
             return (response, Data())
         }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
 
         do {
             _ = try await fetcher.fetchManifest()
@@ -46,7 +47,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
 
     func testFetchManifestMapsOfflineURLErrorToOffline() async throws {
         StubURLProtocol.handler = { _ in throw URLError(.notConnectedToInternet) }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
 
         do {
             _ = try await fetcher.fetchManifest()
@@ -61,7 +62,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
         StubURLProtocol.handler = { request in
             (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
         }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
 
         let grammar = try await fetcher.fetchGrammarManifest()
         XCTAssertEqual(grammar, GrammarManifest(version: "2.0.0", sha256: "def"))
@@ -72,7 +73,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
         StubURLProtocol.handler = { request in
             (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
         }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
 
         let grammar = try await fetcher.fetchGrammarManifest()
         XCTAssertNil(grammar)
@@ -84,7 +85,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
         StubURLProtocol.handler = { request in
             (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
         }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
 
         let manifest = try await fetcher.fetchManifest()
         XCTAssertEqual(manifest, VerbManifest(version: "1.1.0", sha256: "abc"))
@@ -96,7 +97,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
             XCTAssertEqual(request.url?.lastPathComponent, "grammar.json")
             return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
         }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
 
         let data = try await fetcher.fetchGrammarData()
         XCTAssertEqual(data, body)
@@ -106,7 +107,7 @@ final class GitHubVerbFetcherTests: XCTestCase {
         StubURLProtocol.handler = { request in
             (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data("nope".utf8))
         }
-        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, session: makeSession())
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
 
         do {
             _ = try await fetcher.fetchGrammarManifest()
@@ -115,6 +116,69 @@ final class GitHubVerbFetcherTests: XCTestCase {
             // expected
         }
     }
+    func testFetchFuriganaManifestReadsTheFuriganaBlock() async throws {
+        let json = Data(#"{"version": "1.2.0", "sha256": "abc", "grammar": {"version": "1.1.0", "sha256": "g"}, "furigana": {"version": "3.0.0", "sha256": "f"}}"#.utf8)
+        StubURLProtocol.handler = { request in
+            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
+        }
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
+
+        let furigana = try await fetcher.fetchFuriganaManifest()
+        XCTAssertEqual(furigana, FuriganaManifest(version: "3.0.0", sha256: "f"))
+        // The other blocks still read as before.
+        let grammar = try await fetcher.fetchGrammarManifest()
+        XCTAssertEqual(grammar, GrammarManifest(version: "1.1.0", sha256: "g"))
+    }
+
+    func testFetchFuriganaManifestIsNilWithoutAFuriganaBlock() async throws {
+        let json = Data(#"{"version": "1.0.0", "sha256": "abc", "grammar": {"version": "1.0.0", "sha256": "g"}}"#.utf8)
+        StubURLProtocol.handler = { request in
+            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
+        }
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
+
+        let furigana = try await fetcher.fetchFuriganaManifest()
+        XCTAssertNil(furigana)
+    }
+
+    /// Builds already installed must keep working once the manifest gains a furigana block.
+    func testVerbAndGrammarManifestsStillDecodeWhenAFuriganaBlockIsPresent() async throws {
+        let json = Data(#"{"version": "1.2.0", "sha256": "abc", "grammar": {"version": "1.1.0", "sha256": "g"}, "furigana": {"version": "3.0.0", "sha256": "f"}}"#.utf8)
+        StubURLProtocol.handler = { request in
+            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, json)
+        }
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
+
+        let manifest = try await fetcher.fetchManifest()
+        XCTAssertEqual(manifest, VerbManifest(version: "1.2.0", sha256: "abc"))
+    }
+
+    func testFetchFuriganaDataRequestsTheFuriganaURL() async throws {
+        let body = Data("furigana-bytes".utf8)
+        StubURLProtocol.handler = { request in
+            XCTAssertEqual(request.url?.lastPathComponent, "furigana.json")
+            return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, body)
+        }
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
+
+        let data = try await fetcher.fetchFuriganaData()
+        XCTAssertEqual(data, body)
+    }
+
+    func testFetchFuriganaManifestMapsAMalformedManifestToMalformedData() async throws {
+        StubURLProtocol.handler = { request in
+            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, Data("nope".utf8))
+        }
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
+
+        do {
+            _ = try await fetcher.fetchFuriganaManifest()
+            XCTFail("expected malformedData")
+        } catch VerbSyncError.malformedData {
+            // expected
+        }
+    }
+
 }
 
 private final class StubURLProtocol: URLProtocol, @unchecked Sendable {

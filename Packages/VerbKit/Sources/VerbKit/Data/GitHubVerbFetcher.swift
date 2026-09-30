@@ -4,12 +4,14 @@ public struct GitHubVerbFetcher: VerbDataFetching {
     private let manifestURL: URL
     private let verbsURL: URL
     private let grammarURL: URL
+    private let furiganaURL: URL
     private let session: URLSession
 
-    public init(manifestURL: URL, verbsURL: URL, grammarURL: URL, session: URLSession = .shared) {
+    public init(manifestURL: URL, verbsURL: URL, grammarURL: URL, furiganaURL: URL, session: URLSession = .shared) {
         self.manifestURL = manifestURL
         self.verbsURL = verbsURL
         self.grammarURL = grammarURL
+        self.furiganaURL = furiganaURL
         self.session = session
     }
 
@@ -39,9 +41,23 @@ public struct GitHubVerbFetcher: VerbDataFetching {
         try await fetchData(from: grammarURL)
     }
 
-    /// Just the part of `manifest.json` that carries the grammar entry.
+    public func fetchFuriganaManifest() async throws -> FuriganaManifest? {
+        let data = try await fetchData(from: manifestURL)
+        do {
+            return try JSONDecoder().decode(ManifestFile.self, from: data).furigana
+        } catch {
+            throw VerbSyncError.malformedData
+        }
+    }
+
+    public func fetchFuriganaData() async throws -> Data {
+        try await fetchData(from: furiganaURL)
+    }
+
+    /// Just the parts of `manifest.json` that carry the optional entries.
     private struct ManifestFile: Decodable {
         let grammar: GrammarManifest?
+        let furigana: FuriganaManifest?
     }
 
     private func fetchData(from url: URL) async throws -> Data {
@@ -72,6 +88,7 @@ public extension GitHubVerbFetcher {
             manifestURL: URL(string: base + "manifest.json")!,
             verbsURL: URL(string: base + "verbs.json")!,
             grammarURL: URL(string: base + "grammar.json")!,
+            furiganaURL: URL(string: base + "furigana.json")!,
             session: session
         )
     }

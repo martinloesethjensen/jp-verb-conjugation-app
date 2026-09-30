@@ -4,4 +4,7 @@ public protocol SyncStateStoring: Sendable {
 
     func lastSyncedGrammarManifest() -> GrammarManifest?
     func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest)
+
+    func lastSyncedFuriganaManifest() -> FuriganaManifest?
+    func saveLastSyncedFuriganaManifest(_ manifest: FuriganaManifest)
 }
