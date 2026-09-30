@@ -61,7 +61,7 @@ struct QuizQuestionView: View {
             Text(question.verb.dict)
                 .font(.system(size: 36, weight: .heavy))
             if let kanji = question.verb.kanji {
-                Text(kanji).font(.title3).foregroundStyle(.secondary)
+                JapaneseText(kanji).font(.title3).foregroundStyle(.secondary)
             }
             Text(question.verb.meaning)
                 .italic()

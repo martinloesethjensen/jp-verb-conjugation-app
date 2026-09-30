@@ -19,7 +19,7 @@ struct VerbRow: View {
                         .font(.title3.weight(.bold))
                         .foregroundStyle(verb.teGroup?.accentColor ?? verb.type.accentColor)
                     if let kanji = verb.kanji {
-                        Text(kanji)
+                        JapaneseText(kanji)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

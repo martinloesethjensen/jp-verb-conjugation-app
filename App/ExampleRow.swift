@@ -12,7 +12,7 @@ struct ExampleRow: View {
             revealed.toggle()
         } label: {
             VStack(alignment: .leading, spacing: 2) {
-                Text(example.jp)
+                JapaneseText(example.jp)
                     .font(.body)
                     .multilineTextAlignment(.leading)
                 Text(revealed ? example.en : "Tap to show English")

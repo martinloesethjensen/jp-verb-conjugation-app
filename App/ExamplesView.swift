@@ -13,7 +13,7 @@ struct ExamplesView: View {
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
-                    Text(example.jp)
+                    JapaneseText(example.jp)
                         .font(.title3)
                     Text(example.en)
                         .font(.subheadline)

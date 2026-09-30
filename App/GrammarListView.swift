@@ -7,7 +7,7 @@ struct GrammarRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(point.title)
+                JapaneseText(point.title)
                     .font(.title3.weight(.bold))
                 Text(point.level.displayName)
                     .font(.caption2.weight(.semibold))
@@ -15,7 +15,7 @@ struct GrammarRow: View {
                     .padding(.vertical, 2)
                     .glassEffect(in: Capsule())
             }
-            Text(point.summary)
+            JapaneseText(point.summary)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)

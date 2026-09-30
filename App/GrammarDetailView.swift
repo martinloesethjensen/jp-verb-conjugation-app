@@ -45,9 +45,9 @@ struct GrammarDetailView: View {
                 .font(.caption.weight(.bold))
                 .padding(.horizontal, 8).padding(.vertical, 2)
                 .glassEffect(in: Capsule())
-            Text(point.title)
+            JapaneseText(point.title)
                 .font(.system(size: 34, weight: .heavy))
-            Text(point.summary)
+            JapaneseText(point.summary)
                 .font(.headline)
                 .foregroundStyle(.secondary)
         }
@@ -79,17 +79,17 @@ struct GrammarDetailView: View {
                     HStack(spacing: 6) {
                         Text(rule.wordClass.displayName).font(.subheadline.weight(.semibold))
                         if let condition = rule.condition {
-                            Text("· \(condition)").font(.subheadline).foregroundStyle(.secondary)
+                            JapaneseText("· \(condition)").font(.subheadline).foregroundStyle(.secondary)
                         }
                     }
-                    Text(rule.pattern).font(.headline)
+                    JapaneseText(rule.pattern).font(.headline)
                     // Examples are " / "-separated; one per line so long
                     // strings never wrap mid-word.
                     ForEach(rule.example.components(separatedBy: " / "), id: \.self) { example in
-                        Text(example).font(.title3)
+                        JapaneseText(example).font(.title3)
                     }
                     if let note = rule.note {
-                        Text(note).font(.footnote).foregroundStyle(.secondary)
+                        JapaneseText(note).font(.footnote).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -103,8 +103,8 @@ struct GrammarDetailView: View {
             sectionHeader("Usages")
             ForEach(Array(point.usages.enumerated()), id: \.offset) { index, usage in
                 card {
-                    Text("\(index + 1). \(usage.heading)").font(.headline)
-                    Text(usage.explanation).font(.subheadline)
+                    JapaneseText("\(index + 1). \(usage.heading)").font(.headline)
+                    JapaneseText(usage.explanation).font(.subheadline)
                     ForEach(Array(usage.examples.enumerated()), id: \.offset) { _, example in
                         Divider()
                         ExampleRow(example: example)
@@ -128,9 +128,9 @@ struct GrammarDetailView: View {
                             .foregroundStyle(.secondary)
                         ForEach(Array(forms.enumerated()), id: \.offset) { _, conjugation in
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(conjugation.form).font(.headline)
+                                JapaneseText(conjugation.form).font(.headline)
                                 if let note = conjugation.note {
-                                    Text(note).font(.footnote).foregroundStyle(.secondary)
+                                    JapaneseText(note).font(.footnote).foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -147,8 +147,8 @@ struct GrammarDetailView: View {
             sectionHeader("Watch out", systemImage: "exclamationmark.triangle")
             ForEach(Array(point.pitfalls.enumerated()), id: \.offset) { _, pitfall in
                 card {
-                    Text(pitfall.heading).font(.headline)
-                    Text(pitfall.explanation).font(.subheadline)
+                    JapaneseText(pitfall.heading).font(.headline)
+                    JapaneseText(pitfall.explanation).font(.subheadline)
                     ForEach(Array(pitfall.examples.enumerated()), id: \.offset) { _, example in
                         Divider()
                         ExampleRow(example: example)
@@ -167,7 +167,11 @@ struct GrammarDetailView: View {
                 Button {
                     openRoute(.grammar(related.id))
                 } label: {
-                    Label(related.title, systemImage: "arrow.right.circle")
+                    Label {
+                        JapaneseText(related.title)
+                    } icon: {
+                        Image(systemName: "arrow.right.circle")
+                    }
                 }
                 .buttonStyle(.glass)
             }

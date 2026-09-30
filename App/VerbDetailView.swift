@@ -29,7 +29,7 @@ struct VerbDetailView: View {
                 if let notes = verb.notes {
                     notesBox(notes)
                 }
-                Text(verb.description)
+                JapaneseText(verb.description)
                     .font(.body)
                 formGroups
             }
@@ -55,7 +55,7 @@ struct VerbDetailView: View {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(verb.dict).font(.system(size: 34, weight: .heavy)).foregroundStyle(accent)
                 if let kanji = verb.kanji {
-                    Text(kanji).font(.title2).foregroundStyle(.secondary)
+                    JapaneseText(kanji).font(.title2).foregroundStyle(.secondary)
                 }
             }
             Text(verb.meaning).font(.headline).foregroundStyle(.secondary).italic()
@@ -78,7 +78,7 @@ struct VerbDetailView: View {
     private func notesBox(_ notes: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "lightbulb")
-            Text(notes).font(.footnote)
+            JapaneseText(notes).font(.footnote)
         }
         .padding(12)
         .glassEffect(in: RoundedRectangle(cornerRadius: 10))
