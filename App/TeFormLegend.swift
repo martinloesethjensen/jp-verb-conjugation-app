@@ -18,8 +18,7 @@ struct TeFormLegend: View {
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .foregroundStyle(group.accentColor)
-                        .glassEffect(.regular.tint(group.accentColor.opacity(0.7)), in: Capsule())
+                        .accentPill(group.accentColor)
                 }
             }
         }
