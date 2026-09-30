@@ -22,16 +22,23 @@ Add a **Grammar** content type to the app, alongside verbs, and use
 
 The original request (んです/なんです, potential-form deep-dive, nuance
 endings, verb auxiliaries) is too large for one spec. It is split into four
-sub-projects, each with its own spec → plan → implementation cycle:
+sub-projects, each with its own spec → plan → implementation cycle (a fifth,
+furigana, was added later):
 
 1. **Grammar foundation + んです/なんです** — this document. Everything else
    reuses its model, sync path and screens.
 2. **Potential form deep-dive** — content, plus the potential form's own
-   conjugation matrix (explicitly out of scope in the rewrite spec).
+   conjugation matrix (explicitly out of scope in the rewrite spec). Specified
+   in [2026-09-30-potential-form-design.md](2026-09-30-potential-form-design.md).
 3. **Nuance endings** — わけ, はず, べき, ものだ, かもしれない (Yokubi
    groups these), and よう/みたい, そう, らしい, ぽい (also grouped there).
 4. **Verb auxiliaries** — ている/てある first, then てしまう/ておく, then
    てみる, ながら, すぎる, やすい/にくい.
+5. **Furigana** — added after sub-project 2's brainstorm. An on-by-default
+   Settings toggle that shows readings above kanji on every screen that shows
+   Japanese. Cross-cutting (it needs a way to store and draw readings), so it
+   gets its own spec; it runs after sub-project 2 so a single pass can annotate
+   all the lesson text and verb examples.
 
 Sub-projects 2–4 are mostly content authoring once this one lands.
 
@@ -195,8 +202,7 @@ iPhone `NavigationSplitView` shows its list until told otherwise, opening a
 lesson also sets the grammar tab's `preferredCompactColumn` to `.detail`;
 otherwise a link to a tab that hasn't been visited yet would land on the list.
 
-**Out of scope for v1:** grammar in the quiz, bookmarks/progress, audio,
-furigana or reading toggles, filter chips.
+furigana or reading toggles (now scheduled as sub-project 5)
 
 ## 4. Lesson content: `n-desu`
 
