@@ -24,3 +24,12 @@ extension TeGroup {
         }
     }
 }
+
+extension View {
+    /// Colour-coded Liquid Glass capsule. The accent colours are all light pastels, so the
+    /// label is fixed near-black (never the accent itself, which vanishes on its own tint).
+    func accentPill(_ accent: Color) -> some View {
+        foregroundStyle(Color.black.opacity(0.85))
+            .glassEffect(.regular.tint(accent.opacity(0.85)), in: Capsule())
+    }
+}

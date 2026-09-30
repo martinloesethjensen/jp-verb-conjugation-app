@@ -10,8 +10,7 @@ struct VerbRow: View {
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .foregroundStyle(verb.type.accentColor)
-                .glassEffect(.regular.tint(verb.type.accentColor.opacity(0.7)), in: Capsule())
+                .accentPill(verb.type.accentColor)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
