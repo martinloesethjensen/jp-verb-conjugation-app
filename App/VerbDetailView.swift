@@ -67,6 +67,7 @@ struct VerbDetailView: View {
             Button("Test this verb", systemImage: "gamecontroller", action: onQuiz)
                 .buttonStyle(.glassProminent)
                 .tint(accent)
+                .foregroundStyle(Color.black.opacity(0.85))
             Link(destination: jishoURL) {
                 Label("Jisho", systemImage: "link")
             }
