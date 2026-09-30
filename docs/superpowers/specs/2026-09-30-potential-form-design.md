@@ -124,9 +124,13 @@ single-form tiles.)
 
 ## 3. The lesson
 
-`id: potential`, title **可能形**, level beginner. Summary: *"Says that someone
+`id: potential` (also exposed as `GrammarPoint.potentialID`, like `nDesuID`),
+title **可能形**, level beginner. Summary: *"The potential form says that someone
 can do something, or that the situation allows it: 食べられる, 飲める, できる.
-It conjugates as a ru-verb."* Lesson text is written independently, not copied
+It conjugates as a ru-verb."* The summary names the form in English on purpose:
+list search matches the title, summary and Japanese example text, and the title
+is only 可能形, so without "potential" in the summary an English search would
+find nothing. Lesson text is written independently, not copied
 from Yokubi; examples use mostly hiragana with kanji where natural.
 
 ### How it forms (`attachment`, all `wordClass: verb`, one row per condition)
