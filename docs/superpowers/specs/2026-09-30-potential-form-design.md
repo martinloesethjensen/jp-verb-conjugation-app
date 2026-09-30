@@ -164,10 +164,9 @@ notes the vowel shifts.
 
 ### Its own conjugations (`conjugations`)
 
-- **Polite:** られます / られません / られました / られませんでした (with
-  れます etc. for u-verbs noted).
+- **Polite:** られます / られません / られました / られませんでした (each row's note gives the u-verb equivalent, for example 飲めます).
 - **Casual:** られる / られない / られた / られなかった, and the て-form
-  られて.
+  られて, which is for linking clauses and giving reasons, not for requests.
 - **Formal:** ことができる / ことができません.
 
 ### Watch out (`pitfalls`)

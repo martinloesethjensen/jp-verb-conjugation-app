@@ -230,16 +230,16 @@
         }
       ],
       "conjugations": [
-        { "form": "〜られます / 〜れます", "register": "polite", "note": "Polite present. A potential verb is itself a ru-verb, so it conjugates like one: drop る and add the ending. The れます form is for u-verbs." },
-        { "form": "〜られません / 〜れません", "register": "polite" },
-        { "form": "〜られました / 〜れました", "register": "polite" },
-        { "form": "〜られませんでした / 〜れませんでした", "register": "polite" },
-        { "form": "〜られる / 〜れる", "register": "casual", "note": "The plain form, which is the potential form itself." },
-        { "form": "〜られない / 〜れない", "register": "casual" },
-        { "form": "〜られた / 〜れた", "register": "casual" },
-        { "form": "〜られなかった / 〜れなかった", "register": "casual" },
-        { "form": "〜られて / 〜れて", "register": "casual", "note": "The て-form: for linking sentences and for requests." },
-        { "form": "〜ことができる", "register": "formal", "note": "Works with any verb. Stiffer, and common in writing." },
+        { "form": "〜られます", "register": "polite", "note": "Polite present. A potential verb is itself a ru-verb, so it conjugates like one: drop る and add the ending. For u-verbs the ending follows the え-sound: 飲めます, 書けます, 話せます." },
+        { "form": "〜られません", "register": "polite", "note": "U-verbs: 飲めません." },
+        { "form": "〜られました", "register": "polite", "note": "U-verbs: 飲めました." },
+        { "form": "〜られませんでした", "register": "polite", "note": "U-verbs: 飲めませんでした." },
+        { "form": "〜られる", "register": "casual", "note": "The plain form, which is the potential form itself. U-verbs: 飲める, 書ける, 話せる." },
+        { "form": "〜られない", "register": "casual", "note": "U-verbs: 飲めない." },
+        { "form": "〜られた", "register": "casual", "note": "U-verbs: 飲めた." },
+        { "form": "〜られなかった", "register": "casual", "note": "U-verbs: 飲めなかった." },
+        { "form": "〜られて", "register": "casual", "note": "The て-form: for linking clauses and giving reasons, as in 会えてうれしいです. It is not used for requests (食べられてください is wrong). U-verbs: 飲めて." },
+        { "form": "〜ことができる", "register": "formal", "note": "Dictionary form + ことができる. Works with any verb. Stiffer, and common in writing." },
         { "form": "〜ことができません", "register": "formal" }
       ],
       "pitfalls": [
@@ -269,7 +269,7 @@
         },
         {
           "heading": "Verbs with no potential",
-          "explanation": "ある has no potential form. ありえる is a separate word meaning \"can happen\", so it can't be used to say you are able to have something. わかる already means \"can be understood\", so it needs none. That is why the app shows no potential section for ある.",
+          "explanation": "ある has no potential form. ありえる is a separate word meaning \"can happen\"; it does not mean \"can have\". わかる already means \"can be understood\", so it needs none. That is why the app shows no potential section for ある.",
           "examples": [
             { "jp": "そんなことはありえない。", "en": "That can't happen." }
           ]
