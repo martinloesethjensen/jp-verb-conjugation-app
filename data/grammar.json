@@ -146,7 +146,136 @@
           ]
         }
       ],
-      "related": []
+      "related": ["potential"]
+    },
+    {
+      "id": "potential",
+      "title": "可能形",
+      "summary": "The potential form says that someone can do something, or that the situation allows it: 食べられる, 飲める, できる. It conjugates as a ru-verb.",
+      "level": "beginner",
+      "usages": [
+        {
+          "heading": "Ability",
+          "explanation": "The person has the skill or knowledge to do it. The thing they can do usually takes が.",
+          "examples": [
+            { "jp": "私は漢字が読めます。", "en": "I can read kanji." },
+            { "jp": "兄は三キロ泳げます。", "en": "My older brother can swim three kilometres." }
+          ]
+        },
+        {
+          "heading": "Possibility and circumstances",
+          "explanation": "This is not about skill: the situation allows it, or doesn't. The negative is the polite way to decline, and with んです it becomes an explanation (see the んです lesson).",
+          "examples": [
+            { "jp": "今日は行けません。", "en": "I can't go today." },
+            { "jp": "この店ではカードが使えます。", "en": "You can use cards at this shop." },
+            { "jp": "明日なら会えます。", "en": "I can meet you tomorrow." }
+          ]
+        },
+        {
+          "heading": "が, を and には",
+          "explanation": "The thing that can be done normally takes が. を is very common in speech and is fine too. The person who can (or can't) often takes には, especially when contrasting with other people.",
+          "examples": [
+            { "jp": "すしが食べられますか。", "en": "Can you eat sushi? (the standard particle)" },
+            { "jp": "すしを食べられますか。", "en": "Can you eat sushi? (common in speech)" },
+            { "jp": "私にはこの漢字が読めません。", "en": "I can't read this kanji. (for me, at least)" }
+          ]
+        },
+        {
+          "heading": "できる and ことができる",
+          "explanation": "できる is the potential of する, and works as a verb of its own: a noun + ができる means being able to do it, or being good at it. ことができる is a more formal way to say \"can\" that works with any verb, and is common in writing and speeches.",
+          "examples": [
+            { "jp": "日本語ができますか。", "en": "Do you speak Japanese?" },
+            { "jp": "泳ぐことができます。", "en": "I can swim. (formal)" },
+            { "jp": "あしたは勉強できません。", "en": "I can't study tomorrow." }
+          ]
+        },
+        {
+          "heading": "見える / 聞こえる vs 見られる / 聞ける",
+          "explanation": "見える and 聞こえる are verbs of their own: something is visible or audible without you trying. 見られる and 聞ける are the potential forms: you have the chance or the ability to watch or listen.",
+          "examples": [
+            { "jp": "富士山が見えます。", "en": "Mt. Fuji is visible from here." },
+            { "jp": "鳥の声が聞こえます。", "en": "I can hear birds singing." },
+            { "jp": "この曲は無料で聞けます。", "en": "You can listen to this song for free." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "Ru-verbs",
+          "pattern": "drop る + られる",
+          "example": "食べる → 食べられる / 見る → 見られる",
+          "note": "For ru-verbs this is identical to the passive form. Context tells them apart (see Watch out)."
+        },
+        {
+          "word_class": "verb",
+          "condition": "U-verbs",
+          "pattern": "change the last kana to its え-sound, then る",
+          "example": "飲む → 飲める / 書く → 書ける / 話す → 話せる / 買う → 買える / 泳ぐ → 泳げる / 待つ → 待てる / 死ぬ → 死ねる / 遊ぶ → 遊べる / 取る → 取れる",
+          "note": "The endings move like this: う→え, く→け, ぐ→げ, す→せ, つ→て, ぬ→ね, ぶ→べ, む→め, る→れ."
+        },
+        {
+          "word_class": "verb",
+          "condition": "する",
+          "pattern": "する → できる",
+          "example": "勉強する → 勉強できる",
+          "note": "できる is a different verb, not する with an ending added."
+        },
+        {
+          "word_class": "verb",
+          "condition": "来る",
+          "pattern": "来る → 来られる",
+          "example": "来る → 来られる",
+          "note": "Written 来られる and read こられる. It looks like the passive too."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜られます / 〜れます", "register": "polite", "note": "Polite present. A potential verb is itself a ru-verb, so it conjugates like one: drop る and add the ending. The れます form is for u-verbs." },
+        { "form": "〜られません / 〜れません", "register": "polite" },
+        { "form": "〜られました / 〜れました", "register": "polite" },
+        { "form": "〜られませんでした / 〜れませんでした", "register": "polite" },
+        { "form": "〜られる / 〜れる", "register": "casual", "note": "The plain form, which is the potential form itself." },
+        { "form": "〜られない / 〜れない", "register": "casual" },
+        { "form": "〜られた / 〜れた", "register": "casual" },
+        { "form": "〜られなかった / 〜れなかった", "register": "casual" },
+        { "form": "〜られて / 〜れて", "register": "casual", "note": "The て-form: for linking sentences and for requests." },
+        { "form": "〜ことができる", "register": "formal", "note": "Works with any verb. Stiffer, and common in writing." },
+        { "form": "〜ことができません", "register": "formal" }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Potential looks like the passive",
+          "explanation": "For ru-verbs and 来る the two forms are spelled the same, so only context tells them apart. U-verbs differ: 飲める is potential and 飲まれる is passive.",
+          "examples": [
+            { "jp": "私は納豆が食べられます。", "en": "I can eat natto. (potential)" },
+            { "jp": "ケーキを妹に食べられた。", "en": "My little sister ate my cake. (passive: the cake \"got eaten\", and I'm not happy about it)" }
+          ]
+        },
+        {
+          "heading": "ら抜き言葉 (colloquial contraction)",
+          "explanation": "Many speakers drop the ら: 食べれる, 起きれる, 来れる. It is very common in speech and is treated as casual or non-standard in writing and exams. It only happens with ru-verbs and 来る; u-verbs never had a ら to drop.",
+          "examples": [
+            { "jp": "朝は早く起きれない。", "en": "I can't get up early. (colloquial)" },
+            { "jp": "朝は早く起きられない。", "en": "I can't get up early. (standard)" }
+          ]
+        },
+        {
+          "heading": "\"Can\" is not \"may\"",
+          "explanation": "The potential says that something is possible or within your ability. To ask for or give permission, use 〜てもいいです instead.",
+          "examples": [
+            { "jp": "ここでは写真が撮れます。", "en": "You can take photos here. (it's possible)" },
+            { "jp": "ここで写真を撮ってもいいです。", "en": "You may take photos here. (permission)" }
+          ]
+        },
+        {
+          "heading": "Verbs with no potential",
+          "explanation": "ある has no potential form. ありえる is a separate word meaning \"can happen\", so it can't be used to say you are able to have something. わかる already means \"can be understood\", so it needs none. That is why the app shows no potential section for ある.",
+          "examples": [
+            { "jp": "そんなことはありえない。", "en": "That can't happen." }
+          ]
+        }
+      ],
+      "related": ["n-desu"]
     }
   ]
 }

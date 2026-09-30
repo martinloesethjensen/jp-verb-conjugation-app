@@ -119,6 +119,9 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     /// The id verb detail pages link to for the んです lesson.
     public static let nDesuID = "n-desu"
 
+    /// The id verb detail pages link to for the potential-form lesson.
+    public static let potentialID = "potential"
+
     public init(
         id: String,
         title: String,

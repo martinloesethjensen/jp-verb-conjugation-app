@@ -27,7 +27,16 @@
         "nd_casual_pos": "するんだ",
         "nd_casual_neg": "しないんだ",
         "nd_casual_past": "したんだ",
-        "nd_casual_past_neg": "しなかったんだ"
+        "nd_casual_past_neg": "しなかったんだ",
+        "potential": "できる",
+        "pot_masu_pos": "できます",
+        "pot_masu_neg": "できません",
+        "pot_masu_past": "できました",
+        "pot_masu_past_neg": "できませんでした",
+        "pot_te": "できて",
+        "pot_short_neg": "できない",
+        "pot_short_past": "できた",
+        "pot_short_past_neg": "できなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちべんきょうします。", "en": "I study every day." },
@@ -68,7 +77,16 @@
         "nd_casual_pos": "くるんだ",
         "nd_casual_neg": "こないんだ",
         "nd_casual_past": "きたんだ",
-        "nd_casual_past_neg": "こなかったんだ"
+        "nd_casual_past_neg": "こなかったんだ",
+        "potential": "こられる",
+        "pot_masu_pos": "こられます",
+        "pot_masu_neg": "こられません",
+        "pot_masu_past": "こられました",
+        "pot_masu_past_neg": "こられませんでした",
+        "pot_te": "こられて",
+        "pot_short_neg": "こられない",
+        "pot_short_past": "こられた",
+        "pot_short_past_neg": "こられなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "バスがもうすぐきます。", "en": "The bus is coming soon." },
@@ -109,7 +127,16 @@
         "nd_casual_pos": "たべるんだ",
         "nd_casual_neg": "たべないんだ",
         "nd_casual_past": "たべたんだ",
-        "nd_casual_past_neg": "たべなかったんだ"
+        "nd_casual_past_neg": "たべなかったんだ",
+        "potential": "たべられる",
+        "pot_masu_pos": "たべられます",
+        "pot_masu_neg": "たべられません",
+        "pot_masu_past": "たべられました",
+        "pot_masu_past_neg": "たべられませんでした",
+        "pot_te": "たべられて",
+        "pot_short_neg": "たべられない",
+        "pot_short_past": "たべられた",
+        "pot_short_past_neg": "たべられなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "あさごはんをたべます。", "en": "I eat breakfast." },
@@ -152,7 +179,16 @@
         "nd_casual_pos": "みるんだ",
         "nd_casual_neg": "みないんだ",
         "nd_casual_past": "みたんだ",
-        "nd_casual_past_neg": "みなかったんだ"
+        "nd_casual_past_neg": "みなかったんだ",
+        "potential": "みられる",
+        "pot_masu_pos": "みられます",
+        "pot_masu_neg": "みられません",
+        "pot_masu_past": "みられました",
+        "pot_masu_past_neg": "みられませんでした",
+        "pot_te": "みられて",
+        "pot_short_neg": "みられない",
+        "pot_short_past": "みられた",
+        "pot_short_past_neg": "みられなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちテレビをみます。", "en": "I watch TV every day." },
@@ -192,7 +228,16 @@
         "nd_casual_pos": "ねるんだ",
         "nd_casual_neg": "ねないんだ",
         "nd_casual_past": "ねたんだ",
-        "nd_casual_past_neg": "ねなかったんだ"
+        "nd_casual_past_neg": "ねなかったんだ",
+        "potential": "ねられる",
+        "pot_masu_pos": "ねられます",
+        "pot_masu_neg": "ねられません",
+        "pot_masu_past": "ねられました",
+        "pot_masu_past_neg": "ねられませんでした",
+        "pot_te": "ねられて",
+        "pot_short_neg": "ねられない",
+        "pot_short_past": "ねられた",
+        "pot_short_past_neg": "ねられなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "じゅういちじにねます。", "en": "I go to sleep at eleven." },
@@ -231,7 +276,16 @@
         "nd_casual_pos": "おきるんだ",
         "nd_casual_neg": "おきないんだ",
         "nd_casual_past": "おきたんだ",
-        "nd_casual_past_neg": "おきなかったんだ"
+        "nd_casual_past_neg": "おきなかったんだ",
+        "potential": "おきられる",
+        "pot_masu_pos": "おきられます",
+        "pot_masu_neg": "おきられません",
+        "pot_masu_past": "おきられました",
+        "pot_masu_past_neg": "おきられませんでした",
+        "pot_te": "おきられて",
+        "pot_short_neg": "おきられない",
+        "pot_short_past": "おきられた",
+        "pot_short_past_neg": "おきられなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しちじにおきます。", "en": "I wake up at seven." },
@@ -269,7 +323,16 @@
         "nd_casual_pos": "みせるんだ",
         "nd_casual_neg": "みせないんだ",
         "nd_casual_past": "みせたんだ",
-        "nd_casual_past_neg": "みせなかったんだ"
+        "nd_casual_past_neg": "みせなかったんだ",
+        "potential": "みせられる",
+        "pot_masu_pos": "みせられます",
+        "pot_masu_neg": "みせられません",
+        "pot_masu_past": "みせられました",
+        "pot_masu_past_neg": "みせられませんでした",
+        "pot_te": "みせられて",
+        "pot_short_neg": "みせられない",
+        "pot_short_past": "みせられた",
+        "pot_short_past_neg": "みせられなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しゃしんをみせます。", "en": "I'll show you a photo." },
@@ -305,7 +368,16 @@
         "nd_casual_pos": "かりるんだ",
         "nd_casual_neg": "かりないんだ",
         "nd_casual_past": "かりたんだ",
-        "nd_casual_past_neg": "かりなかったんだ"
+        "nd_casual_past_neg": "かりなかったんだ",
+        "potential": "かりられる",
+        "pot_masu_pos": "かりられます",
+        "pot_masu_neg": "かりられません",
+        "pot_masu_past": "かりられました",
+        "pot_masu_past_neg": "かりられませんでした",
+        "pot_te": "かりられて",
+        "pot_short_neg": "かりられない",
+        "pot_short_past": "かりられた",
+        "pot_short_past_neg": "かりられなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "としょかんで本をかります。", "en": "I borrow books from the library." },
@@ -342,7 +414,16 @@
         "nd_casual_pos": "かうんだ",
         "nd_casual_neg": "かわないんだ",
         "nd_casual_past": "かったんだ",
-        "nd_casual_past_neg": "かわなかったんだ"
+        "nd_casual_past_neg": "かわなかったんだ",
+        "potential": "かえる",
+        "pot_masu_pos": "かえます",
+        "pot_masu_neg": "かえません",
+        "pot_masu_past": "かえました",
+        "pot_masu_past_neg": "かえませんでした",
+        "pot_te": "かえて",
+        "pot_short_neg": "かえない",
+        "pot_short_past": "かえた",
+        "pot_short_past_neg": "かえなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "スーパーでたまごをかいます。", "en": "I buy eggs at the supermarket." },
@@ -380,7 +461,16 @@
         "nd_casual_pos": "あうんだ",
         "nd_casual_neg": "あわないんだ",
         "nd_casual_past": "あったんだ",
-        "nd_casual_past_neg": "あわなかったんだ"
+        "nd_casual_past_neg": "あわなかったんだ",
+        "potential": "あえる",
+        "pot_masu_pos": "あえます",
+        "pot_masu_neg": "あえません",
+        "pot_masu_past": "あえました",
+        "pot_masu_past_neg": "あえませんでした",
+        "pot_te": "あえて",
+        "pot_short_neg": "あえない",
+        "pot_short_past": "あえた",
+        "pot_short_past_neg": "あえなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "えきでともだちにあいます。", "en": "I'm meeting my friend at the station." },
@@ -416,7 +506,16 @@
         "nd_casual_pos": "まつんだ",
         "nd_casual_neg": "またないんだ",
         "nd_casual_past": "まったんだ",
-        "nd_casual_past_neg": "またなかったんだ"
+        "nd_casual_past_neg": "またなかったんだ",
+        "potential": "まてる",
+        "pot_masu_pos": "まてます",
+        "pot_masu_neg": "まてません",
+        "pot_masu_past": "まてました",
+        "pot_masu_past_neg": "まてませんでした",
+        "pot_te": "まてて",
+        "pot_short_neg": "まてない",
+        "pot_short_past": "まてた",
+        "pot_short_past_neg": "まてなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "えきのまえでまちます。", "en": "I'll wait in front of the station." },
@@ -452,7 +551,16 @@
         "nd_casual_pos": "とるんだ",
         "nd_casual_neg": "とらないんだ",
         "nd_casual_past": "とったんだ",
-        "nd_casual_past_neg": "とらなかったんだ"
+        "nd_casual_past_neg": "とらなかったんだ",
+        "potential": "とれる",
+        "pot_masu_pos": "とれます",
+        "pot_masu_neg": "とれません",
+        "pot_masu_past": "とれました",
+        "pot_masu_past_neg": "とれませんでした",
+        "pot_te": "とれて",
+        "pot_short_neg": "とれない",
+        "pot_short_past": "とれた",
+        "pot_short_past_neg": "とれなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しゃしんをとります。", "en": "I'll take a photo." },
@@ -470,7 +578,7 @@
       "meaning": "to exist (things)",
       "teGroup": "tte",
       "description": "The existential verb for inanimate objects. Irregular negative: ない (not ×あらない).",
-      "notes": "Pair with いる (for living things): 本がある vs 犬がいる.",
+      "notes": "Pair with いる (for living things): 本がある vs 犬がいる. ある has no potential form; ありえる (\"can happen\") is a separate word.",
       "forms": {
         "masu_pos": "あります",
         "masu_neg": "ありません",
@@ -525,7 +633,16 @@
         "nd_casual_pos": "もつんだ",
         "nd_casual_neg": "もたないんだ",
         "nd_casual_past": "もったんだ",
-        "nd_casual_past_neg": "もたなかったんだ"
+        "nd_casual_past_neg": "もたなかったんだ",
+        "potential": "もてる",
+        "pot_masu_pos": "もてます",
+        "pot_masu_neg": "もてません",
+        "pot_masu_past": "もてました",
+        "pot_masu_past_neg": "もてませんでした",
+        "pot_te": "もてて",
+        "pot_short_neg": "もてない",
+        "pot_short_past": "もてた",
+        "pot_short_past_neg": "もてなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "かばんをもちます。", "en": "I'll carry the bag." },
@@ -561,7 +678,16 @@
         "nd_casual_pos": "よむんだ",
         "nd_casual_neg": "よまないんだ",
         "nd_casual_past": "よんだんだ",
-        "nd_casual_past_neg": "よまなかったんだ"
+        "nd_casual_past_neg": "よまなかったんだ",
+        "potential": "よめる",
+        "pot_masu_pos": "よめます",
+        "pot_masu_neg": "よめません",
+        "pot_masu_past": "よめました",
+        "pot_masu_past_neg": "よめませんでした",
+        "pot_te": "よめて",
+        "pot_short_neg": "よめない",
+        "pot_short_past": "よめた",
+        "pot_short_past_neg": "よめなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちしんぶんをよみます。", "en": "I read the newspaper every day." },
@@ -598,7 +724,16 @@
         "nd_casual_pos": "のむんだ",
         "nd_casual_neg": "のまないんだ",
         "nd_casual_past": "のんだんだ",
-        "nd_casual_past_neg": "のまなかったんだ"
+        "nd_casual_past_neg": "のまなかったんだ",
+        "potential": "のめる",
+        "pot_masu_pos": "のめます",
+        "pot_masu_neg": "のめません",
+        "pot_masu_past": "のめました",
+        "pot_masu_past_neg": "のめませんでした",
+        "pot_te": "のめて",
+        "pot_short_neg": "のめない",
+        "pot_short_past": "のめた",
+        "pot_short_past_neg": "のめなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいあさコーヒーをのみます。", "en": "I drink coffee every morning." },
@@ -636,7 +771,16 @@
         "nd_casual_pos": "あそぶんだ",
         "nd_casual_neg": "あそばないんだ",
         "nd_casual_past": "あそんだんだ",
-        "nd_casual_past_neg": "あそばなかったんだ"
+        "nd_casual_past_neg": "あそばなかったんだ",
+        "potential": "あそべる",
+        "pot_masu_pos": "あそべます",
+        "pot_masu_neg": "あそべません",
+        "pot_masu_past": "あそべました",
+        "pot_masu_past_neg": "あそべませんでした",
+        "pot_te": "あそべて",
+        "pot_short_neg": "あそべない",
+        "pot_short_past": "あそべた",
+        "pot_short_past_neg": "あそべなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "こうえんであそびます。", "en": "I play at the park." },
@@ -672,7 +816,16 @@
         "nd_casual_pos": "しぬんだ",
         "nd_casual_neg": "しなないんだ",
         "nd_casual_past": "しんだんだ",
-        "nd_casual_past_neg": "しななかったんだ"
+        "nd_casual_past_neg": "しななかったんだ",
+        "potential": "しねる",
+        "pot_masu_pos": "しねます",
+        "pot_masu_neg": "しねません",
+        "pot_masu_past": "しねました",
+        "pot_masu_past_neg": "しねませんでした",
+        "pot_te": "しねて",
+        "pot_short_neg": "しねない",
+        "pot_short_past": "しねた",
+        "pot_short_past_neg": "しねなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "むしはふゆにしにます。", "en": "Insects die in winter." },
@@ -706,7 +859,16 @@
         "nd_casual_pos": "かくんだ",
         "nd_casual_neg": "かかないんだ",
         "nd_casual_past": "かいたんだ",
-        "nd_casual_past_neg": "かかなかったんだ"
+        "nd_casual_past_neg": "かかなかったんだ",
+        "potential": "かける",
+        "pot_masu_pos": "かけます",
+        "pot_masu_neg": "かけません",
+        "pot_masu_past": "かけました",
+        "pot_masu_past_neg": "かけませんでした",
+        "pot_te": "かけて",
+        "pot_short_neg": "かけない",
+        "pot_short_past": "かけた",
+        "pot_short_past_neg": "かけなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "てがみをかきます。", "en": "I write a letter." },
@@ -743,7 +905,16 @@
         "nd_casual_pos": "きくんだ",
         "nd_casual_neg": "きかないんだ",
         "nd_casual_past": "きいたんだ",
-        "nd_casual_past_neg": "きかなかったんだ"
+        "nd_casual_past_neg": "きかなかったんだ",
+        "potential": "きける",
+        "pot_masu_pos": "きけます",
+        "pot_masu_neg": "きけません",
+        "pot_masu_past": "きけました",
+        "pot_masu_past_neg": "きけませんでした",
+        "pot_te": "きけて",
+        "pot_short_neg": "きけない",
+        "pot_short_past": "きけた",
+        "pot_short_past_neg": "きけなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちおんがくをききます。", "en": "I listen to music every day." },
@@ -779,7 +950,16 @@
         "nd_casual_pos": "いくんだ",
         "nd_casual_neg": "いかないんだ",
         "nd_casual_past": "いったんだ",
-        "nd_casual_past_neg": "いかなかったんだ"
+        "nd_casual_past_neg": "いかなかったんだ",
+        "potential": "いける",
+        "pot_masu_pos": "いけます",
+        "pot_masu_neg": "いけません",
+        "pot_masu_past": "いけました",
+        "pot_masu_past_neg": "いけませんでした",
+        "pot_te": "いけて",
+        "pot_short_neg": "いけない",
+        "pot_short_past": "いけた",
+        "pot_short_past_neg": "いけなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "がっこうにいきます。", "en": "I go to school." },
@@ -819,7 +999,16 @@
         "nd_casual_pos": "いそぐんだ",
         "nd_casual_neg": "いそがないんだ",
         "nd_casual_past": "いそいだんだ",
-        "nd_casual_past_neg": "いそがなかったんだ"
+        "nd_casual_past_neg": "いそがなかったんだ",
+        "potential": "いそげる",
+        "pot_masu_pos": "いそげます",
+        "pot_masu_neg": "いそげません",
+        "pot_masu_past": "いそげました",
+        "pot_masu_past_neg": "いそげませんでした",
+        "pot_te": "いそげて",
+        "pot_short_neg": "いそげない",
+        "pot_short_past": "いそげた",
+        "pot_short_past_neg": "いそげなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "はやくいそぎましょう！", "en": "Let's hurry up!" },
@@ -854,7 +1043,16 @@
         "nd_casual_pos": "およぐんだ",
         "nd_casual_neg": "およがないんだ",
         "nd_casual_past": "およいだんだ",
-        "nd_casual_past_neg": "およがなかったんだ"
+        "nd_casual_past_neg": "およがなかったんだ",
+        "potential": "およげる",
+        "pot_masu_pos": "およげます",
+        "pot_masu_neg": "およげません",
+        "pot_masu_past": "およげました",
+        "pot_masu_past_neg": "およげませんでした",
+        "pot_te": "およげて",
+        "pot_short_neg": "およげない",
+        "pot_short_past": "およげた",
+        "pot_short_past_neg": "およげなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "うみでおよぎます。", "en": "I swim in the sea." },
@@ -889,7 +1087,16 @@
         "nd_casual_pos": "はなすんだ",
         "nd_casual_neg": "はなさないんだ",
         "nd_casual_past": "はなしたんだ",
-        "nd_casual_past_neg": "はなさなかったんだ"
+        "nd_casual_past_neg": "はなさなかったんだ",
+        "potential": "はなせる",
+        "pot_masu_pos": "はなせます",
+        "pot_masu_neg": "はなせません",
+        "pot_masu_past": "はなせました",
+        "pot_masu_past_neg": "はなせませんでした",
+        "pot_te": "はなせて",
+        "pot_short_neg": "はなせない",
+        "pot_short_past": "はなせた",
+        "pot_short_past_neg": "はなせなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "にほんごをすこしはなします。", "en": "I speak a little Japanese." },
@@ -927,7 +1134,16 @@
         "nd_casual_pos": "かえすんだ",
         "nd_casual_neg": "かえさないんだ",
         "nd_casual_past": "かえしたんだ",
-        "nd_casual_past_neg": "かえさなかったんだ"
+        "nd_casual_past_neg": "かえさなかったんだ",
+        "potential": "かえせる",
+        "pot_masu_pos": "かえせます",
+        "pot_masu_neg": "かえせません",
+        "pot_masu_past": "かえせました",
+        "pot_masu_past_neg": "かえせませんでした",
+        "pot_te": "かえせて",
+        "pot_short_neg": "かえせない",
+        "pot_short_past": "かえせた",
+        "pot_short_past_neg": "かえせなかった"
       },
       "examples": [
         { "form": "masu_pos", "jp": "あしたかえします。", "en": "I'll return it tomorrow." },

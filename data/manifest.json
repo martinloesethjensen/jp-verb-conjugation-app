@@ -1,8 +1,8 @@
 {
-  "version": "1.1.0",
-  "sha256": "1ea0408b78db165c9b31bb574b0b242a3201871bac4c3845a1e88aa42965cdaf",
+  "version": "1.2.0",
+  "sha256": "dfa1f82df99bdd61a2c42e2ae405f149beb5a95059ea4097905abcaf5afc1b6e",
   "grammar": {
-    "version": "1.0.0",
-    "sha256": "52564ae50911554f78b900df9c862e396f433d06609cd3ad95e96eda695bd8e2"
+    "version": "1.1.0",
+    "sha256": "9c1a5dec41eabc1ad5e4b8ad23b9528f90a6f7f62c2af0380cf0e946d0958607"
   }
 }
