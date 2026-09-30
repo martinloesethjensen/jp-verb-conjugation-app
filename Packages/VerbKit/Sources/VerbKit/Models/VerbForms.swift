@@ -35,6 +35,26 @@ public struct VerbForms: Codable, Hashable, Sendable {
             .contains { $0 != nil }
     }
 
+    // The potential verb's own conjugations (grammar point `potential`).
+    // `potential` above is the base (plain, present, affirmative) form; these
+    // eight complete the verb's polite / plain / て-form grid.
+    public var potMasuPos: String?
+    public var potMasuNeg: String?
+    public var potMasuPast: String?
+    public var potMasuPastNeg: String?
+    public var potTe: String?
+    public var potShortNeg: String?
+    public var potShortPast: String?
+    public var potShortPastNeg: String?
+
+    /// True when at least one of the nine potential forms (the base
+    /// `potential` included) is populated.
+    public var hasPotentialForms: Bool {
+        [potential, potMasuPos, potMasuNeg, potMasuPast, potMasuPastNeg,
+         potTe, potShortNeg, potShortPast, potShortPastNeg]
+            .contains { $0 != nil }
+    }
+
     public init(
         masuPos: String,
         masuNeg: String,
@@ -61,7 +81,15 @@ public struct VerbForms: Codable, Hashable, Sendable {
         ndCasualPos: String? = nil,
         ndCasualNeg: String? = nil,
         ndCasualPast: String? = nil,
-        ndCasualPastNeg: String? = nil
+        ndCasualPastNeg: String? = nil,
+        potMasuPos: String? = nil,
+        potMasuNeg: String? = nil,
+        potMasuPast: String? = nil,
+        potMasuPastNeg: String? = nil,
+        potTe: String? = nil,
+        potShortNeg: String? = nil,
+        potShortPast: String? = nil,
+        potShortPastNeg: String? = nil
     ) {
         self.masuPos = masuPos
         self.masuNeg = masuNeg
@@ -89,6 +117,14 @@ public struct VerbForms: Codable, Hashable, Sendable {
         self.ndCasualNeg = ndCasualNeg
         self.ndCasualPast = ndCasualPast
         self.ndCasualPastNeg = ndCasualPastNeg
+        self.potMasuPos = potMasuPos
+        self.potMasuNeg = potMasuNeg
+        self.potMasuPast = potMasuPast
+        self.potMasuPastNeg = potMasuPastNeg
+        self.potTe = potTe
+        self.potShortNeg = potShortNeg
+        self.potShortPast = potShortPast
+        self.potShortPastNeg = potShortPastNeg
     }
 
     enum CodingKeys: String, CodingKey {
@@ -118,6 +154,14 @@ public struct VerbForms: Codable, Hashable, Sendable {
         case ndCasualNeg = "nd_casual_neg"
         case ndCasualPast = "nd_casual_past"
         case ndCasualPastNeg = "nd_casual_past_neg"
+        case potMasuPos = "pot_masu_pos"
+        case potMasuNeg = "pot_masu_neg"
+        case potMasuPast = "pot_masu_past"
+        case potMasuPastNeg = "pot_masu_past_neg"
+        case potTe = "pot_te"
+        case potShortNeg = "pot_short_neg"
+        case potShortPast = "pot_short_past"
+        case potShortPastNeg = "pot_short_past_neg"
     }
 
     public subscript(_ key: FormKey) -> String {
