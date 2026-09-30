@@ -7,8 +7,9 @@ from pathlib import Path
 import update_data as ud
 
 
-def verb(dict_form, short_pos, short_neg, short_past, short_past_neg):
+def verb(dict_form, short_pos, short_neg, short_past, short_past_neg, vtype="ru"):
     return {
+        "type": vtype,
         "dict": dict_form,
         "forms": {
             "short_pos": short_pos,
@@ -77,6 +78,116 @@ class NdFormsTests(unittest.TestCase):
         doc["verbs"][0]["forms"]["nd_pos"] = "wrong"
         self.assertTrue(ud.apply_nd_forms(doc))
         self.assertEqual(doc["verbs"][0]["forms"]["nd_pos"], "するんです")
+
+
+def potential_verb(dict_form, vtype):
+    return {"type": vtype, "dict": dict_form, "forms": {}}
+
+
+class PotentialFormsTests(unittest.TestCase):
+    def test_ru_verb_drops_ru_and_adds_rareru(self):
+        self.assertEqual(ud.potential_base(potential_verb("たべる", "ru")), "たべられる")
+        self.assertEqual(ud.potential_base(potential_verb("みる", "ru")), "みられる")
+
+    def test_every_u_verb_ending_moves_to_the_e_row(self):
+        # One verb per ending present in the data.
+        expected = {
+            "のむ": "のめる",      # む → め
+            "かう": "かえる",      # う → え
+            "かく": "かける",      # く → け
+            "およぐ": "およげる",  # ぐ → げ
+            "はなす": "はなせる",  # す → せ
+            "まつ": "まてる",      # つ → て
+            "しぬ": "しねる",      # ぬ → ね
+            "あそぶ": "あそべる",  # ぶ → べ
+            "とる": "とれる",      # る → れ
+        }
+        for dict_form, base in expected.items():
+            with self.subTest(dict_form):
+                self.assertEqual(ud.potential_base(potential_verb(dict_form, "u")), base)
+
+    def test_irregular_verbs(self):
+        self.assertEqual(ud.potential_base(potential_verb("する", "irr.")), "できる")
+        self.assertEqual(ud.potential_base(potential_verb("くる", "irr.")), "こられる")
+
+    def test_verbs_with_no_potential_return_none(self):
+        self.assertIsNone(ud.potential_base(potential_verb("ある", "u")))
+        self.assertEqual(ud.potential_forms(potential_verb("ある", "u")), {})
+
+    def test_unknown_u_verb_ending_raises(self):
+        with self.assertRaises(ValueError):
+            ud.potential_base(potential_verb("いき", "u"))
+
+    def test_unknown_irregular_raises(self):
+        with self.assertRaises(ValueError):
+            ud.potential_base(potential_verb("べんきょうする", "irr."))
+
+    def test_unknown_verb_type_raises(self):
+        with self.assertRaises(ValueError):
+            ud.potential_base(potential_verb("たべる", "weird"))
+
+    def test_full_grid_for_a_ru_verb(self):
+        self.assertEqual(
+            ud.potential_forms(potential_verb("たべる", "ru")),
+            {
+                "potential": "たべられる",
+                "pot_masu_pos": "たべられます",
+                "pot_masu_neg": "たべられません",
+                "pot_masu_past": "たべられました",
+                "pot_masu_past_neg": "たべられませんでした",
+                "pot_te": "たべられて",
+                "pot_short_neg": "たべられない",
+                "pot_short_past": "たべられた",
+                "pot_short_past_neg": "たべられなかった",
+            },
+        )
+
+    def test_full_grid_for_a_u_verb(self):
+        forms = ud.potential_forms(potential_verb("のむ", "u"))
+        self.assertEqual(forms["potential"], "のめる")
+        self.assertEqual(forms["pot_masu_neg"], "のめません")
+        self.assertEqual(forms["pot_te"], "のめて")
+        self.assertEqual(forms["pot_short_past_neg"], "のめなかった")
+
+    def test_full_grid_for_suru_uses_dekiru(self):
+        forms = ud.potential_forms(potential_verb("する", "irr."))
+        self.assertEqual(forms["potential"], "できる")
+        self.assertEqual(forms["pot_masu_past_neg"], "できませんでした")
+        self.assertEqual(forms["pot_short_neg"], "できない")
+
+    def test_full_grid_for_kuru(self):
+        forms = ud.potential_forms(potential_verb("くる", "irr."))
+        self.assertEqual(forms["potential"], "こられる")
+        self.assertEqual(forms["pot_masu_pos"], "こられます")
+        self.assertEqual(forms["pot_short_past"], "こられた")
+
+    def test_apply_sets_all_nine_fields_and_is_idempotent(self):
+        doc = {"verbs": [potential_verb("たべる", "ru")]}
+        self.assertTrue(ud.apply_potential_forms(doc))
+        self.assertEqual(set(doc["verbs"][0]["forms"]), set(ud.POTENTIAL_FIELDS))
+        self.assertFalse(ud.apply_potential_forms(doc))
+
+    def test_apply_repairs_a_wrong_value(self):
+        doc = {"verbs": [potential_verb("たべる", "ru")]}
+        ud.apply_potential_forms(doc)
+        doc["verbs"][0]["forms"]["pot_te"] = "wrong"
+        self.assertTrue(ud.apply_potential_forms(doc))
+        self.assertEqual(doc["verbs"][0]["forms"]["pot_te"], "たべられて")
+
+    def test_apply_removes_stale_fields_for_a_verb_with_no_potential(self):
+        doc = {"verbs": [potential_verb("ある", "u")]}
+        doc["verbs"][0]["forms"]["potential"] = "ありえる"
+        doc["verbs"][0]["forms"]["pot_te"] = "ありえて"
+        self.assertTrue(ud.apply_potential_forms(doc))
+        self.assertEqual(doc["verbs"][0]["forms"], {})
+
+    def test_apply_leaves_unrelated_forms_alone(self):
+        doc = {"verbs": [potential_verb("たべる", "ru")]}
+        doc["verbs"][0]["forms"]["te"] = "たべて"
+        doc["verbs"][0]["forms"]["nd_pos"] = "たべるんです"
+        ud.apply_potential_forms(doc)
+        self.assertEqual(doc["verbs"][0]["forms"]["te"], "たべて")
+        self.assertEqual(doc["verbs"][0]["forms"]["nd_pos"], "たべるんです")
 
 
 class DumpTests(unittest.TestCase):
@@ -168,7 +279,7 @@ class RunTests(unittest.TestCase):
         verbs = {
             "version": "1.0.0",
             "description": "d",
-            "verbs": [verb("する", "する", "しない", "した", "しなかった")],
+            "verbs": [verb("する", "する", "しない", "した", "しなかった", vtype="irr.")],
         }
         (d / "verbs.json").write_text(ud.dump_verbs(verbs), encoding="utf-8")
         (d / "grammar.json").write_text(json.dumps(valid_grammar(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -185,9 +296,23 @@ class RunTests(unittest.TestCase):
         self.assertEqual(code, 0)
         written = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
         self.assertEqual(written["verbs"][0]["forms"]["nd_pos"], "するんです")
+        self.assertEqual(written["verbs"][0]["forms"]["potential"], "できる")
+        self.assertEqual(written["verbs"][0]["forms"]["pot_masu_pos"], "できます")
         manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["sha256"], ud.sha256_hex((d / "verbs.json").read_bytes()))
         self.assertEqual(manifest["grammar"]["sha256"], ud.sha256_hex((d / "grammar.json").read_bytes()))
+
+    def test_unknown_verb_class_fails_cleanly_and_writes_nothing(self):
+        d = self.make_dir()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["type"] = "u"
+        doc["verbs"][0]["dict"] = "いき"  # ends in き, which no u-verb ending maps
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        before = (d / "verbs.json").read_bytes()
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertEqual((d / "verbs.json").read_bytes(), before)
+        self.assertTrue(any("いき" in m for m in messages))
 
     def test_invalid_grammar_blocks_everything_and_writes_nothing(self):
         d = self.make_dir()

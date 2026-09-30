@@ -6,12 +6,15 @@ Run after editing data/verbs.json or data/grammar.json:
     python3 scripts/update_data.py            # rewrite files in place
     python3 scripts/update_data.py --check    # verify only; exit 1 if stale/invalid
 
-It does three things:
+It does four things:
   1. Fills the nd_* (んです / んだ) forms on every verb in verbs.json by
      appending to the verb's plain forms. Deterministic; safe to re-run.
-  2. Validates data/grammar.json (hand-authored) against the schema the
+  2. Fills the nine potential forms (`potential` and the eight pot_* fields)
+     from each verb's class, and removes them for verbs that have none.
+     Deterministic; safe to re-run.
+  3. Validates data/grammar.json (hand-authored) against the schema the
      app decodes. It never generates lesson text.
-  3. Recomputes the SHA-256 of both files into data/manifest.json, bumping
+  4. Recomputes the SHA-256 of both files into data/manifest.json, bumping
      a file's version (minor) when its content changed.
 
 Standard library only.
@@ -38,6 +41,40 @@ ND_FIELDS = [
     ("nd_casual_past_neg", "short_past_neg", ND_CASUAL_SUFFIX),
 ]
 
+# --- Potential form (grammar point `potential`) -----------------------------
+
+# Where each u-verb ending moves to in the え-row. These are the nine endings
+# present in the verb data; a verb ending in anything else is an error, not a
+# guess.
+E_ROW = {
+    "う": "え", "く": "け", "ぐ": "げ", "す": "せ", "つ": "て",
+    "ぬ": "ね", "ぶ": "べ", "む": "め", "る": "れ",
+}
+
+# The two irregular verbs have unrelated potential stems.
+IRREGULAR_POTENTIAL = {"する": "できる", "くる": "こられる"}
+
+# Verbs with no regular potential form. They get no potential fields at all,
+# and any stale ones are removed. This is the only hand-maintained part of the
+# potential step; extend it as verbs are added (for example わかる).
+NO_POTENTIAL = {"ある"}
+
+# A potential verb is itself an ichidan verb, so its other forms are the
+# standard ichidan endings on its stem (the base form minus る), in JSON order.
+POTENTIAL_CONJUGATIONS = [
+    ("pot_masu_pos", "ます"),
+    ("pot_masu_neg", "ません"),
+    ("pot_masu_past", "ました"),
+    ("pot_masu_past_neg", "ませんでした"),
+    ("pot_te", "て"),
+    ("pot_short_neg", "ない"),
+    ("pot_short_past", "た"),
+    ("pot_short_past_neg", "なかった"),
+]
+
+# Every field the potential step owns: the base form plus the eight above.
+POTENTIAL_FIELDS = ["potential"] + [name for name, _ in POTENTIAL_CONJUGATIONS]
+
 LEVELS = {"beginner", "intermediate"}
 WORD_CLASSES = {"verb", "i-adjective", "na-adjective", "noun"}
 REGISTERS = {"polite", "casual", "formal"}
@@ -56,6 +93,59 @@ def apply_nd_forms(verbs_doc):
         for name, value in nd_forms(forms).items():
             if forms.get(name) != value:
                 forms[name] = value
+                changed = True
+    return changed
+
+
+def potential_base(verb):
+    """The potential form (plain, present) of a verb from its class, or None
+    if the verb has no potential. Raises ValueError for a class or ending the
+    rules don't cover, so bad data fails loudly instead of producing a guess."""
+    dict_form = verb["dict"]
+    if dict_form in NO_POTENTIAL:
+        return None
+    kind = verb["type"]
+    if kind == "ru":
+        return dict_form[:-1] + "られる"
+    if kind == "u":
+        last = dict_form[-1]
+        if last not in E_ROW:
+            raise ValueError(f"{dict_form}: no え-row mapping for the u-verb ending '{last}'")
+        return dict_form[:-1] + E_ROW[last] + "る"
+    if kind == "irr.":
+        if dict_form not in IRREGULAR_POTENTIAL:
+            raise ValueError(f"{dict_form}: irregular verb with no known potential form")
+        return IRREGULAR_POTENTIAL[dict_form]
+    raise ValueError(f"{dict_form}: unknown verb type '{kind}'")
+
+
+def potential_forms(verb):
+    """All nine potential forms as {field: value}, or {} if the verb has none."""
+    base = potential_base(verb)
+    if base is None:
+        return {}
+    stem = base[:-1]
+    forms = {"potential": base}
+    for name, ending in POTENTIAL_CONJUGATIONS:
+        forms[name] = stem + ending
+    return forms
+
+
+def apply_potential_forms(verbs_doc):
+    """Set the nine potential fields on every verb in place, and remove them
+    from verbs that have none. The script owns these fields, so a hand-set
+    value is overwritten. Returns True if anything changed."""
+    changed = False
+    for verb in verbs_doc["verbs"]:
+        forms = verb["forms"]
+        wanted = potential_forms(verb)
+        for name in POTENTIAL_FIELDS:
+            if name in wanted:
+                if forms.get(name) != wanted[name]:
+                    forms[name] = wanted[name]
+                    changed = True
+            elif name in forms:
+                del forms[name]
                 changed = True
     return changed
 
@@ -208,6 +298,10 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None):
 
     verbs_doc = json.loads(verbs_path.read_text(encoding="utf-8"))
     apply_nd_forms(verbs_doc)
+    try:
+        apply_potential_forms(verbs_doc)
+    except ValueError as error:
+        return 1, [f"cannot generate potential forms: {error}"]
     verbs_text = dump_verbs(verbs_doc)
     verbs_bytes = verbs_text.encode("utf-8")
 
