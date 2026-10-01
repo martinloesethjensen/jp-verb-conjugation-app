@@ -6,6 +6,7 @@ struct QuizView: View {
     /// Bumped when "Practise missed" starts a fresh quiz, so the timer loop restarts
     /// even when the new quiz's first question has the same index as the old last one.
     @State private var attempt = 0
+    @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
     var onDone: () -> Void
 
     init(questions: [QuizQuestion], onDone: @escaping () -> Void) {
@@ -33,6 +34,11 @@ struct QuizView: View {
                 viewModel.tickTimer()
             }
         }
+        .onChange(of: viewModel.isAnswered) { _, answered in
+            guard answered, speakQuizAnswers, let question = viewModel.currentQuestion else { return }
+            Speaker.shared.speak(question.formString)
+        }
+        .onDisappear { Speaker.shared.stop() }
         // Immersive fullscreen takeover per spec section 10 — hides the
         // home indicator for the duration of the quiz.
         .persistentSystemOverlays(.hidden)
