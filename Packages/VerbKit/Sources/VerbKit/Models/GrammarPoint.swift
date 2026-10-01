@@ -122,6 +122,12 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     /// The id verb detail pages link to for the potential-form lesson.
     public static let potentialID = "potential"
 
+    /// True when the lesson has an attachment rule for verbs. The verb page's
+    /// Grammar section lists exactly these lessons.
+    public var attachesToVerbs: Bool {
+        attachment.contains { $0.wordClass == .verb }
+    }
+
     public init(
         id: String,
         title: String,
@@ -154,5 +160,13 @@ public struct GrammarDataFile: Codable, Sendable {
         self.version = version
         self.description = description
         self.grammar = grammar
+    }
+}
+
+public extension Sequence where Element == GrammarPoint {
+    /// The lessons that attach to verbs, in the order given (the Grammar tab's
+    /// order). Empty until grammar has synced, so callers can hide on empty.
+    var attachingToVerbs: [GrammarPoint] {
+        filter(\.attachesToVerbs)
     }
 }
