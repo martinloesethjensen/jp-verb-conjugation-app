@@ -10,11 +10,18 @@ struct VerbListView: View {
     var onSettings: () -> Void
     @State private var search = ""
     @State private var typeFilter: VerbType?
+    @State private var teFilter: TeGroup?
     @State private var showGuide = false
 
     private var filtered: [Verb] {
-        verbStore.verbs.filter { matchesType($0, filter: typeFilter) && matchesSearch($0, query: search) }
+        verbStore.verbs.filter {
+            matchesType($0, filter: typeFilter)
+                && matchesTeGroup($0, filter: teFilter)
+                && matchesSearch($0, query: search)
+        }
     }
+
+    private var hasFilters: Bool { typeFilter != nil || teFilter != nil }
 
     var body: some View {
         List(selection: $selection) {
@@ -27,21 +34,10 @@ struct VerbListView: View {
                 }
                 .pickerStyle(.segmented)
                 .listRowSeparator(.hidden)
-
-                DisclosureGroup("Verb type guide", isExpanded: $showGuide) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("**Ru-verb (一段):** ends in -eru or -iru. Drop る and add the ending. Exceptions: はいる, かえる, きる look like ru-verbs but are u-verbs.")
-                        Text("**U-verb (五段):** ends in any -u sound. If not -eru/-iru, it's a u-verb.")
-                        Text("**Irregular:** only する and くる (and compounds like べんきょうする).")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
-
-                TeFormLegend()
             }
 
             Section {
+                if filtered.isEmpty { emptyState }
                 ForEach(filtered) { verb in
                     Button {
                         selection = verb
@@ -56,19 +52,36 @@ struct VerbListView: View {
                     .font(.caption)
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            TeFormFilter(selection: $teFilter)
+                .padding(.vertical, 6)
+        }
         .searchable(text: $search, prompt: "Search hiragana, kanji, or English…")
         .navigationTitle("早見表")
-        .overlay {
-            if !search.isEmpty && filtered.isEmpty {
-                ContentUnavailableView.search(text: search)
-            }
-        }
+        .sheet(isPresented: $showGuide) { VerbGuideSheet() }
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Guide", systemImage: "info.circle") { showGuide = true }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button("Random Quiz", systemImage: "gamecontroller", action: onRandomQuiz)
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button("Settings", systemImage: "gearshape", action: onSettings)
+            }
+        }
+    }
+
+    @ViewBuilder private var emptyState: some View {
+        if !search.isEmpty && !hasFilters {
+            ContentUnavailableView.search(text: search)
+        } else {
+            ContentUnavailableView {
+                Label("No verbs match", systemImage: "line.3.horizontal.decrease.circle")
+            } description: {
+                Text(search.isEmpty ? "No verb fits these filters." : "No verb fits “\(search)” with these filters.")
+            } actions: {
+                Button("Clear filters") { typeFilter = nil; teFilter = nil }
             }
         }
     }

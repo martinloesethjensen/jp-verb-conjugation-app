@@ -17,3 +17,8 @@ public func matchesType(_ verb: Verb, filter: VerbType?) -> Bool {
     guard let filter else { return true }
     return verb.type == filter
 }
+
+public func matchesTeGroup(_ verb: Verb, filter: TeGroup?) -> Bool {
+    guard let filter else { return true }
+    return verb.teGroup == filter
+}

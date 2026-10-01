@@ -1,4 +1,4 @@
-public enum TeGroup: String, Codable, Hashable, Sendable {
+public enum TeGroup: String, Codable, Hashable, Sendable, CaseIterable {
     case tte
     case nde
     case ite
