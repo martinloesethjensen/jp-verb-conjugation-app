@@ -10,7 +10,7 @@ quiz topics and the widgets.
 Verbs and grammar lessons get a **JLPT level** (N5 to N1). A new **Levels** section in
 Settings lets the user hide levels. Hidden levels disappear from the lists, the quiz and the
 widgets. Because hiding can make a search look broken, search says when levels are hidden and
-offers a one-tap **All levels** scope that searches everything without changing the setting.
+offers an **All levels** scope in the search bar that searches everything without changing the setting.
 
 Decided in brainstorming: JLPT (not WaniKani) as the scale, and *hide* (not dim). WaniKani
 levels are per kanji, the content is proprietary and would need an account token, so a
@@ -40,13 +40,16 @@ levels N2 and N1 content (the model supports them, there is no data yet).
 
 ## 2. The setting
 
-- Key `visibleJLPTLevels` in the App Group defaults (the app and the widgets read the same
-  suite), stored as a comma-separated string of raw values. Default: all levels.
+- Key `hiddenJLPTLevels` in the App Group defaults (the app and the widgets read the same
+  suite), stored as the *hidden* set, a comma-separated string of raw values. Default: nothing
+  hidden. Storing the hidden set means a level added to the data later (for example N2) shows
+  up automatically instead of being hidden by an older choice.
   `LevelSettings` in VerbKit reads and writes it and answers `isVisible(_ level: JLPTLevel?)`
   (`nil` is always visible), `hiddenCount`, and `summary` (see section 3).
 - Settings > **Levels**: one toggle per level that exists in the data (verbs and grammar
-  combined), so empty N2/N1 toggles do not appear. At least one level must stay on: the last
-  enabled toggle is disabled. A footer explains that hidden levels are left out of lists, the
+  combined), so empty N2/N1 toggles do not appear. At least one level of verbs and of lessons
+  must stay visible: a toggle is disabled when turning it off would leave a dataset with no
+  visible level. A footer explains that hidden levels are left out of lists, the
   quiz and the widgets, and that search can still look at all levels.
 - Changing the setting reloads widget timelines.
 
@@ -98,19 +101,19 @@ When levels are hidden, search must make that obvious and make searching everyth
   `isVisible(nil)`; the last level cannot be turned off; filtering helpers; the real-data files
   all carry a valid `jlpt`; counting hidden matches for the "N more" row.
 - **Simulator:** Settings toggles (including the last-one rule), lists with levels hidden,
-  the scope bar appearing only when something is hidden, All levels search, the "N more" row
-  and empty-state button, the subtitle, quiz and widget picking from visible levels.
+  the scope bar appearing only when something is hidden, All levels search, the "N more" info row
+  and empty-state text, the subtitle, quiz and widget picking from visible levels.
 
 ## Risks
 
 | Risk | Covered by |
 |---|---|
-| Hiding makes search look broken | The scope bar, the "N more" row and the empty-state button |
+| Hiding makes search look broken | The scope bar, the "N more" info row and the empty-state text |
 | Curated levels are wrong | They are provisional and reviewed in the data PR |
 | A data update without `jlpt` hides content | `nil` is always visible |
 | All levels turned off | The last toggle is disabled |
 | Widget picks shift when the setting changes | Documented; the day pick indexes into the visible list |
-| Persistence migration | Optional attribute (lightweight) plus the per-build resync |
+| Persistence migration | Optional attribute (lightweight) plus the per-build resync, which needs a build-number bump (done: build 2) |
 
 ## Files this touches
 
