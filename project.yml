@@ -85,4 +85,6 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_ENTITLEMENTS: Widgets/VerbTableWidgets.entitlements
+        # macOS only loads a sandboxed widget extension.
+        ENABLE_APP_SANDBOX[sdk=macosx*]: YES
         DEVELOPMENT_TEAM: "PUMQYPZ9HK"
