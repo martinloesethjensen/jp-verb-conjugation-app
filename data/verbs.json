@@ -217,7 +217,7 @@
         { "form": "short_neg", "jp": "朝はたべない。", "en": "I don't eat in the morning." },
         { "form": "short_past", "jp": "もうたべた？", "en": "Did you eat already?" },
         { "form": "short_past", "jp": "おいしいものをたべた。", "en": "I ate something delicious." },
-        { "form": "short_past_neg", "jp": "まだたべなかった。", "en": "I haven't eaten yet." }
+        { "form": "short_past_neg", "jp": "あさごはんをたべなかった。", "en": "I didn't eat breakfast." }
       ]
     },
     {
@@ -494,7 +494,7 @@
         { "form": "masu_past", "jp": "せんせいにしゅくだいをみせました。", "en": "I showed my homework to the teacher." },
         { "form": "te", "jp": "みせてください。", "en": "Please show me." },
         { "form": "te", "jp": "パスポートをみせてください。", "en": "Please show me your passport." },
-        { "form": "short_pos", "jp": "ちょっとみせる？", "en": "Can you show me for a sec?" }
+        { "form": "short_pos", "jp": "ともだちにしゃしんをみせる。", "en": "I'll show the photos to my friend." }
       ]
     },
     {
@@ -939,7 +939,7 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "かばんをもちます。", "en": "I'll carry the bag." },
-        { "form": "masu_pos", "jp": "まいにちおべんとうをもってきます。", "en": "I bring my lunch box every day." },
+        { "form": "masu_past", "jp": "ともだちのかばんをもちました。", "en": "I carried my friend's bag." },
         { "form": "te", "jp": "これもってください。", "en": "Please hold this." },
         { "form": "te", "jp": "かさをもっていってください。", "en": "Please take an umbrella with you." },
         { "form": "short_past_neg", "jp": "さいふをもたなかった。", "en": "I didn't bring my wallet." }
@@ -1079,7 +1079,7 @@
         { "form": "masu_past", "jp": "ともだちとおちゃをのみました。", "en": "I had tea with a friend." },
         { "form": "masu_past", "jp": "びょういんでくすりをのみました。", "en": "I took medicine at the hospital." },
         { "form": "te", "jp": "おみずをのんでください。", "en": "Please drink some water." },
-        { "form": "short_past", "jp": "のみすぎた！", "en": "I drank too much!" }
+        { "form": "short_past", "jp": "おみずをたくさんのんだ。", "en": "I drank a lot of water." }
       ]
     },
     {
@@ -1411,7 +1411,7 @@
       "examples": [
         { "form": "masu_pos", "jp": "がっこうにいきます。", "en": "I go to school." },
         { "form": "masu_pos", "jp": "あしたともだちのうちにいきます。", "en": "I'm going to a friend's house tomorrow." },
-        { "form": "masu_neg", "jp": "今日はどこもいきません。", "en": "I'm not going anywhere today." },
+        { "form": "masu_neg", "jp": "今日はどこへもいきません。", "en": "I'm not going anywhere today." },
         { "form": "masu_past", "jp": "にほんにいきました。", "en": "I went to Japan." },
         { "form": "masu_past", "jp": "かぞくといっしょにきょうとにいきました。", "en": "I went to Kyoto with my family." },
         { "form": "te", "jp": "いってきます！", "en": "I'm heading out!" },
@@ -1480,9 +1480,9 @@
         "nagara": "いそぎながら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "はやくいそぎましょう！", "en": "Let's hurry up!" },
+        { "form": "masu_pos", "jp": "じかんがないので、いそぎます。", "en": "I don't have time, so I'll hurry." },
         { "form": "te", "jp": "いそいでください！", "en": "Please hurry!" },
-        { "form": "short_neg", "jp": "いそがなくていいよ。", "en": "No need to hurry." },
+        { "form": "short_neg", "jp": "きょうはいそがない。", "en": "I won't hurry today." },
         { "form": "short_past", "jp": "バスにのるためにいそいだ。", "en": "I hurried to catch the bus." }
       ]
     },
