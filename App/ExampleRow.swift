@@ -24,5 +24,6 @@ struct ExampleRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .textActions(example.jp, translate: true)
     }
 }
