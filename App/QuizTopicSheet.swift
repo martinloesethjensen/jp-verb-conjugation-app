@@ -63,5 +63,6 @@ struct QuizTopicSheet: View {
             }
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 }

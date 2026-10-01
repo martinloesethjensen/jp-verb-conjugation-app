@@ -100,4 +100,15 @@ final class QuizGeneratorTests: XCTestCase {
         XCTAssertEqual(questions.count, 7)
         XCTAssertFalse(questions.contains { ["masu_pos", "masu_neg"].contains($0.form.id) })
     }
+
+    func testEverythingDrawsOnAllFourTopics() throws {
+        let questions = buildQuestions(verbs: try verbs(), topics: all, count: 2000)
+        XCTAssertEqual(Set(questions.map(\.form.topic)), Set(QuizTopic.allCases))
+    }
+
+    func testNoQuestionsForAZeroCountOrNoKinds() throws {
+        XCTAssertTrue(buildQuestions(verbs: try verbs(), topics: all, count: 0).isEmpty)
+        XCTAssertTrue(buildQuestions(verbs: try verbs(), topics: all, count: 5, kinds: []).isEmpty)
+        XCTAssertTrue(buildQuestions(verbs: try verbs(), topics: [], count: 5).isEmpty)
+    }
 }

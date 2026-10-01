@@ -62,13 +62,16 @@ struct QuizQuestionView: View {
                     .multilineTextAlignment(.center)
                 verbBlock
             case .identify:
-                Text("Which form is")
+                Text("Which form is this?")
                     .font(.caption)
                 Text(question.formString)
                     .font(.system(size: 34, weight: .heavy))
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
-                Text("\(question.verb.dict) · \(question.verb.meaning)")
+                // The dictionary form would give the answer away when it is the question.
+                Text(question.verb.dict == question.formString
+                     ? question.verb.meaning
+                     : "\(question.verb.dict) · \(question.verb.meaning)")
                     .italic()
                     .foregroundStyle(.secondary)
             }

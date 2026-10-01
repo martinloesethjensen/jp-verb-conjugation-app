@@ -1,7 +1,6 @@
 /// The 9 conjugation forms every verb is guaranteed to have.
-/// (The 9 additional advanced forms on `VerbForms` are optional and don't
-/// have `FormKey` cases yet — quiz generation and search only need the
-/// guaranteed set. See the spec's data-layer section for why.)
+/// (The other forms on `VerbForms` are optional and have no `FormKey` cases.
+/// The quiz does not use this enum: it reads every form through `QuizForm`.)
 public enum FormKey: String, CaseIterable, Codable, Equatable, Sendable {
     case masuPos = "masu_pos"
     case masuNeg = "masu_neg"
