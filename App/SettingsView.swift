@@ -28,6 +28,12 @@ struct SettingsView: View {
         )
     }
 
+    #if os(macOS)
+    private let settingsApp = "System Settings"
+    #else
+    private let settingsApp = "iOS Settings"
+    #endif
+
     private let questionCountOptions = [5, 10, 15, 20, 30]
 
     var body: some View {
@@ -62,8 +68,8 @@ struct SettingsView: View {
                 Text("Audio")
             } footer: {
                 Text(Speaker.shared.hasJapaneseVoice
-                     ? "Better voices can be downloaded in iOS Settings > Accessibility > Spoken Content."
-                     : "No Japanese voice is installed, so audio is unavailable. Download one in iOS Settings > Accessibility > Spoken Content.")
+                     ? "Better voices can be downloaded in \(settingsApp) > Accessibility > Spoken Content."
+                     : "No Japanese voice is installed, so audio is unavailable. Download one in \(settingsApp) > Accessibility > Spoken Content.")
             }
         }
         .navigationTitle("Settings")

@@ -23,7 +23,7 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     @ObservationIgnored private let synthesizer = AVSpeechSynthesizer()
     @ObservationIgnored private let voice: AVSpeechSynthesisVoice?
 
-    @ObservationIgnored private var currentText: String?
+    @ObservationIgnored private var currentUtterance: AVSpeechUtterance?
 
     var hasJapaneseVoice: Bool { voice != nil }
 
@@ -34,24 +34,32 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
         synthesizer.delegate = self
     }
 
-    func speak(_ text: String) {
+    /// Tapping the text that is already being spoken stops it, unless `restart` is set
+    /// (the quiz always wants the new answer spoken).
+    func speak(_ text: String, restart: Bool = false) {
         guard let spoken = SpeechText.spoken(text), let voice else { return }
-        if synthesizer.isSpeaking, currentText == spoken {
+        if !restart, synthesizer.isSpeaking, currentUtterance?.speechString == spoken {
             stop()
             return
         }
-        stop()
-        currentText = spoken
+        cancelCurrent()
         activateSession()
         let utterance = AVSpeechUtterance(string: spoken)
         utterance.voice = voice
         let raw = UserDefaults.appGroup.string(forKey: "speechSpeed") ?? SpeechSpeed.normal.rawValue
         utterance.rate = (SpeechSpeed(rawValue: raw) ?? .normal).rate
+        currentUtterance = utterance
         synthesizer.speak(utterance)
     }
 
     func stop() {
-        currentText = nil
+        cancelCurrent()
+        deactivateSessionIfIdle()
+    }
+
+    /// Cuts off the previous utterance without releasing the audio session.
+    private func cancelCurrent() {
+        currentUtterance = nil
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
     }
 
@@ -63,20 +71,27 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
         #endif
     }
 
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        let finished = utterance.speechString
-        Task { @MainActor in
-            if Speaker.shared.currentText == finished { Speaker.shared.currentText = nil }
-        }
+    private func deactivateSessionIfIdle() {
         #if os(iOS)
+        guard currentUtterance == nil, !synthesizer.isSpeaking else { return }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         #endif
     }
 
-    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        let cancelled = utterance.speechString
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        nonisolated(unsafe) let finished = utterance
         Task { @MainActor in
-            if Speaker.shared.currentText == cancelled { Speaker.shared.currentText = nil }
+            let speaker = Speaker.shared
+            if speaker.currentUtterance === finished { speaker.currentUtterance = nil }
+            speaker.deactivateSessionIfIdle()
+        }
+    }
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        nonisolated(unsafe) let cancelled = utterance
+        Task { @MainActor in
+            let speaker = Speaker.shared
+            if speaker.currentUtterance === cancelled { speaker.currentUtterance = nil }
         }
     }
 }

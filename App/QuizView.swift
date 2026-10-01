@@ -35,8 +35,12 @@ struct QuizView: View {
             }
         }
         .onChange(of: viewModel.isAnswered) { _, answered in
-            guard answered, speakQuizAnswers, let question = viewModel.currentQuestion else { return }
-            Speaker.shared.speak(question.formString)
+            guard answered else {
+                Speaker.shared.stop()
+                return
+            }
+            guard speakQuizAnswers, let question = viewModel.currentQuestion else { return }
+            Speaker.shared.speak(question.formString, restart: true)
         }
         .onDisappear { Speaker.shared.stop() }
         // Immersive fullscreen takeover per spec section 10 — hides the
