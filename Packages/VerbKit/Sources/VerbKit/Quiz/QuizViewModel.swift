@@ -26,7 +26,10 @@ public final class QuizViewModel {
         selected = choice
         let ok = choice == question.correct
         if ok { score += 1 }
-        results.append(QuizResult(verb: question.verb.dict, form: question.form, correct: question.correct, chosen: choice, ok: ok))
+        results.append(QuizResult(
+            verb: question.verb.dict, formLabel: question.form.label, formString: question.formString,
+            kind: question.kind, correct: question.correct, chosen: choice, ok: ok
+        ))
     }
 
     /// Matches the web app: a timeout flips `timedOut` but does not

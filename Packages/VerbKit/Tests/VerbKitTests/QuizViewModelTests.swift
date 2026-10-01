@@ -8,7 +8,8 @@ final class QuizViewModelTests: XCTestCase {
             forms: VerbForms(masuPos: correct, masuNeg: "x", masuPast: "x", masuPastNeg: "x", te: "x", shortPos: "x", shortNeg: "x", shortPast: "x", shortPastNeg: "x"),
             examples: []
         )
-        return QuizQuestion(verb: verb, form: .masuPos, correct: correct, choices: choices)
+        let form = QuizForm.all.first { $0.id == "masu_pos" }!
+        return QuizQuestion(verb: verb, form: form, kind: .conjugate, formString: correct, correct: correct, choices: choices)
     }
 
     func testChoosingCorrectAnswerIncrementsScore() {
@@ -82,5 +83,13 @@ final class QuizViewModelTests: XCTestCase {
         vm.choose("A")
         vm.tickTimer()
         XCTAssertEqual(vm.timeLeft, 20)
+    }
+
+    func testResultsCarryTheFormLabelAndString() {
+        let vm = QuizViewModel(questions: [makeQuestion(correct: "たべます", choices: ["たべます", "のみます"])])
+        vm.choose("たべます")
+        XCTAssertEqual(vm.results[0].formLabel, "Polite")
+        XCTAssertEqual(vm.results[0].formString, "たべます")
+        XCTAssertEqual(vm.results[0].kind, .conjugate)
     }
 }
