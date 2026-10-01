@@ -36,14 +36,50 @@ final class QuizViewModelTests: XCTestCase {
         XCTAssertEqual(vm.results.count, 1)
     }
 
-    func testTimeoutMarksAnsweredWithoutRecordingResult() {
-        // Matches the web app: a timeout does not append to `results`,
-        // it only flips the answered/timedOut flags.
+    func testTimeoutIsRecordedAsAMiss() {
         let vm = QuizViewModel(questions: [makeQuestion(correct: "たべます", choices: ["たべます", "のみます"])])
         vm.markTimedOut()
         XCTAssertTrue(vm.timedOut)
         XCTAssertTrue(vm.isAnswered)
-        XCTAssertTrue(vm.results.isEmpty)
+        XCTAssertEqual(vm.results.count, 1)
+        XCTAssertTrue(vm.results[0].timedOut)
+        XCTAssertFalse(vm.results[0].ok)
+        XCTAssertEqual(vm.results[0].chosen, "")
+        XCTAssertEqual(vm.score, 0)
+    }
+
+    func testTimingOutTwiceOrAfterAnsweringRecordsOnce() {
+        let vm = QuizViewModel(questions: [makeQuestion(correct: "A", choices: ["A", "B"])])
+        vm.markTimedOut()
+        vm.markTimedOut()
+        XCTAssertEqual(vm.results.count, 1)
+        let other = QuizViewModel(questions: [makeQuestion(correct: "A", choices: ["A", "B"])])
+        other.choose("A")
+        other.markTimedOut()
+        XCTAssertEqual(other.results.count, 1)
+        XCTAssertFalse(other.results[0].timedOut)
+    }
+
+    func testMissedQuestionsAreTheWrongAndTimedOutOnes() {
+        let vm = QuizViewModel(questions: [
+            makeQuestion(correct: "A", choices: ["A", "B", "C"], dict: "1"),
+            makeQuestion(correct: "C", choices: ["C", "D", "E"], dict: "2"),
+            makeQuestion(correct: "F", choices: ["F", "G", "H"], dict: "3"),
+        ])
+        vm.choose("A"); vm.advance()      // right
+        vm.choose("D"); vm.advance()      // wrong
+        vm.markTimedOut(); vm.advance()   // timed out
+        XCTAssertTrue(vm.finished)
+        let missed = vm.missedQuestions
+        XCTAssertEqual(missed.map(\.verb.dict), ["2", "3"])
+        XCTAssertEqual(missed.map { Set($0.choices) }, [["C", "D", "E"], ["F", "G", "H"]])
+        XCTAssertEqual(missed.map(\.correct), ["C", "F"])
+    }
+
+    func testNothingMissedWhenAllCorrect() {
+        let vm = QuizViewModel(questions: [makeQuestion(correct: "A", choices: ["A", "B"])])
+        vm.choose("A"); vm.advance()
+        XCTAssertTrue(vm.missedQuestions.isEmpty)
     }
 
     func testAdvanceMovesToNextQuestionAndResetsState() {

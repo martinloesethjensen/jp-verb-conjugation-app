@@ -32,12 +32,26 @@ public final class QuizViewModel {
         ))
     }
 
-    /// Matches the web app: a timeout flips `timedOut` but does not
-    /// append a `QuizResult` — the end-of-quiz breakdown silently omits
-    /// timed-out questions there, and this ports that faithfully.
+    /// A timeout counts as a miss and is recorded, so the results screen lists it
+    /// (the web app omitted timed-out questions from its breakdown).
     public func markTimedOut() {
-        guard !isAnswered else { return }
+        guard !isAnswered, let question = currentQuestion else { return }
         timedOut = true
+        results.append(QuizResult(
+            verb: question.verb.dict, formLabel: question.form.label, formString: question.formString,
+            kind: question.kind, correct: question.correct, chosen: "", ok: false, timedOut: true
+        ))
+    }
+
+    /// The questions answered wrongly or timed out, with fresh choice order, for
+    /// "Practise missed". Meaningful once the quiz has finished, when every question
+    /// has exactly one result in order.
+    public var missedQuestions: [QuizQuestion] {
+        zip(questions, results).filter { !$0.1.ok }.map { question, _ in
+            var again = question
+            again.choices.shuffle()
+            return again
+        }
     }
 
     public func advance() {

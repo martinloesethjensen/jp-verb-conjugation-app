@@ -4,6 +4,8 @@ import VerbKit
 struct QuizResultsView: View {
     var viewModel: QuizViewModel
     var onDone: () -> Void
+    /// Starts a new quiz from the questions that were missed.
+    var onPractiseMissed: ([QuizQuestion]) -> Void
 
     private var percentage: Int {
         guard !viewModel.questions.isEmpty else { return 0 }
@@ -31,15 +33,20 @@ struct QuizResultsView: View {
                 Text("\(percentage)% correct").foregroundStyle(.secondary)
 
                 VStack(spacing: 0) {
-                    ForEach(Array(viewModel.results.enumerated()), id: \.offset) { _, result in
+                    ForEach(Array(viewModel.results.enumerated()), id: \.offset) { index, result in
+                        if index > 0 { Divider() }
                         resultRow(result)
-                        Divider()
                     }
                 }
                 .glassEffect(in: RoundedRectangle(cornerRadius: 16))
 
-                Button("Back to Table", action: onDone)
-                    .buttonStyle(.glassProminent)
+                let missed = viewModel.missedQuestions
+                if !missed.isEmpty {
+                    Button("Practise missed (\(missed.count))") { onPractiseMissed(missed) }
+                        .buttonStyle(.glassProminent)
+                }
+                Button("Done", action: onDone)
+                    .buttonStyle(.glass)
             }
             .padding()
         }
@@ -47,12 +54,16 @@ struct QuizResultsView: View {
 
     private func resultRow(_ result: QuizResult) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Text(result.ok ? "✅" : "❌")
+            Text(result.timedOut ? "⏰" : (result.ok ? "✅" : "❌"))
             VStack(alignment: .leading, spacing: 2) {
                 // Identify rows list the labels below, so the header shows the form's string.
                 Text("\(result.verb) — \(result.kind == .identify ? result.formString : result.formLabel)")
                     .font(.subheadline.weight(.semibold))
-                if !result.ok {
+                if result.timedOut {
+                    Text("Time's up")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } else if !result.ok {
                     Text("You chose: \(result.chosen)")
                         .font(.caption)
                         .foregroundStyle(.red)
