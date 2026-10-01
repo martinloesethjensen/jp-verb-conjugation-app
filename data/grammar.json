@@ -295,7 +295,7 @@
           "heading": "はず: what was supposed to happen",
           "explanation": "はずだった says that something was expected or planned and did not turn out that way. はずがない (or はずはない) says there is no way it can be true.",
           "examples": [
-            { "jp": "会議は三時のはずでしたが、まだ始まりません。", "en": "The meeting was supposed to be at three, but it hasn't started." },
+            { "jp": "会議は三時からのはずでしたが、まだ始まっていません。", "en": "The meeting was supposed to start at three, but it hasn't started yet." },
             { "jp": "あの人が知らないはずがない。", "en": "There's no way that person doesn't know." }
           ]
         },
@@ -382,9 +382,9 @@
         },
         {
           "heading": "わけ and んです both explain, in different ways",
-          "explanation": "んです offers or asks for a reason for a situation in front of you. わけだ concludes from what you already know that the result is only natural. And わけではない trims a false inference, where んじゃない would deny the whole thing.",
+          "explanation": "んです offers or asks for a reason for a situation in front of you. わけだ concludes from what you already know that the result is only natural. And わけではない denies only one conclusion that someone might draw: \"it's not that...\".",
           "examples": [
-            { "jp": "遅れたのは、電車が止まったんです。", "en": "I was late because the train stopped. (giving a reason)" },
+            { "jp": "遅れたのは、電車が止まったからなんです。", "en": "I was late because the train stopped. (giving a reason)" },
             { "jp": "電車が止まったから、遅れたわけだ。", "en": "The train stopped, so that's why they were late. (drawing a conclusion)" }
           ]
         },
@@ -478,12 +478,14 @@
         },
         {
           "word_class": "i-adjective",
+          "condition": "ものだ",
           "pattern": "plain form + ものだ",
           "example": "早いものだ / 難しいものだ",
           "note": "Used as an exclamation."
         },
         {
           "word_class": "na-adjective",
+          "condition": "ものだ",
           "pattern": "stem + な + ものだ",
           "example": "不思議なものだ / 大変なものだ"
         }
@@ -501,7 +503,7 @@
       "pitfalls": [
         {
           "heading": "べき can sound bossy",
-          "explanation": "べき is a judgement, and it is not a gentle suggestion. To an equal or a superior, use ほうがいい instead (see below), or turn the advice into a question.",
+          "explanation": "べき is a judgement, and it is not a gentle suggestion. For gentler advice, use ほうがいい instead (see below), or turn the advice into a question.",
           "examples": [
             { "jp": "もっと寝たほうがいいですよ。", "en": "You should get more sleep. (softer than 寝るべきです)" }
           ]
@@ -517,7 +519,7 @@
           "heading": "ものだ is not the same as もの",
           "explanation": "もの on its own is a noun for a thing. ものだ is a fixed ending that turns the sentence into a statement of how things are or were, so it never refers to a particular object.",
           "examples": [
-            { "jp": "この本は面白いものです。", "en": "This book is an interesting one. (a thing)" },
+            { "jp": "これは父にもらったものです。", "en": "This is something I got from my father. (a thing)" },
             { "jp": "本は面白いものだ。", "en": "Books are interesting, as a rule. (a general truth)" }
           ]
         }
@@ -633,7 +635,7 @@
         { "form": "〜らしいです", "register": "polite", "note": "Apparently." },
         { "form": "〜みたいだ", "register": "casual", "note": "Before a noun: 〜みたいな. As an adverb: 〜みたいに." },
         { "form": "〜そうだ", "register": "casual", "note": "Looks like, or I hear." },
-        { "form": "〜らしい", "register": "casual", "note": "Apparently. 〜らしくない means \"not like oneself\"." }
+        { "form": "〜らしい", "register": "casual", "note": "Apparently. 〜らしくない means \"not like X\" or \"unbecoming of X\": 彼らしくない." }
       ],
       "pitfalls": [
         {
@@ -656,7 +658,7 @@
           "heading": "ようだ and らしい are not the same",
           "explanation": "ようだ or みたいだ is your own impression, from something you have observed. らしい is for something you have heard or worked out from signs, and so you did not see it yourself.",
           "examples": [
-            { "jp": "窓が開いているようだ。", "en": "The window seems to be open. (you can see it)" },
+            { "jp": "窓が開いているようだ。", "en": "The window seems to be open. (your own impression, for example you feel a draft)" },
             { "jp": "窓が開いているらしい。", "en": "Apparently the window is open. (you were told)" }
           ]
         }
@@ -696,7 +698,7 @@
         },
         {
           "heading": "っぽい and らしい",
-          "explanation": "Both come after a noun. らしい is a praise: it fits what it should be. っぽい only says that it looks like it, and is often a mild criticism.",
+          "explanation": "Both come after a noun. らしい is a compliment: it fits what it should be. っぽい only says that it looks like it, and is often a mild criticism.",
           "examples": [
             { "jp": "子供っぽい考えだ。", "en": "That's a childish idea." },
             { "jp": "子供らしい笑顔ですね。", "en": "What a childlike smile." }
@@ -735,7 +737,7 @@
       "pitfalls": [
         {
           "heading": "It is casual",
-          "explanation": "っぽい belongs to spoken, everyday Japanese. In formal writing, use ような or らしい.",
+          "explanation": "っぽい belongs to spoken, everyday Japanese. Settled words such as 忘れっぽい, 安っぽい and 熱っぽい are fine in writing too, but a new one like 雨っぽい (\"looks like rain\") is casual.",
           "examples": [
             { "jp": "彼の話し方は少し子供っぽい。", "en": "The way he talks is a little childish." }
           ]

@@ -3,10 +3,10 @@
   "sha256": "dfa1f82df99bdd61a2c42e2ae405f149beb5a95059ea4097905abcaf5afc1b6e",
   "grammar": {
     "version": "1.2.0",
-    "sha256": "27119233b1a503cb2bfe626a6fcecbfc0b18599dd2dd3a48d436e61bec968b2b"
+    "sha256": "a79b2461812f092c6044a5c7e0c3983895bb8ecf92c8b2ca231c864a8cd3f89e"
   },
   "furigana": {
     "version": "1.1.0",
-    "sha256": "242e2a779b5de3bad0c4e45584e032dd73b75bcea7df4e6507e9145465a9eab7"
+    "sha256": "6f8010e378c3fdccd43133be0f2b2d8b1b69bcac18b769390600a0416e9e0a4f"
   }
 }
