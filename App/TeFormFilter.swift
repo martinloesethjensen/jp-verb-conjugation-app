@@ -16,10 +16,10 @@ struct TeFormFilter: View {
                     }
                 }
             }
+            // Padding inside the scrolling content, so only the first and last chip
+            // are inset; the scroll view itself spans the full width and never clips.
+            .padding(.horizontal, 20)
         }
-        // Full width, so chips scroll edge to edge; the content margin keeps the
-        // first and last chip off the screen edge when scrolled to either end.
-        .contentMargins(.horizontal, 20, for: .scrollContent)
     }
 
     private func chip(_ title: String, accent: Color?, isOn: Bool, action: @escaping () -> Void) -> some View {
@@ -36,11 +36,12 @@ struct TeFormFilter: View {
 }
 
 private extension View {
+    /// Plain filled capsules: a row of glass capsules draws a shaded band behind them.
     @ViewBuilder func chipBackground(_ accent: Color?) -> some View {
         if let accent {
-            accentPill(accent)
+            foregroundStyle(Color.black.opacity(0.85)).background(accent.opacity(0.85), in: Capsule())
         } else {
-            foregroundStyle(.primary).glassEffect(.regular, in: Capsule())
+            foregroundStyle(.primary).background(.background.secondary, in: Capsule())
         }
     }
 }
