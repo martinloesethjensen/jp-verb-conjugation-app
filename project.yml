@@ -22,6 +22,10 @@ targets:
       properties:
         CFBundleDisplayName: "Verb Table"
         LSRequiresIPhoneOS: true
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.martinloeseth.jpverbconjugation
+            CFBundleURLSchemes:
+              - verbtable
         UILaunchScreen:
           UIImageName: LaunchImage
           UIColorName: LaunchBackground

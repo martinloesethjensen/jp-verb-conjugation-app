@@ -13,6 +13,7 @@ enum AppTab: Hashable {
 struct MainTabView<VerbsTab: View>: View {
     @Environment(VerbStore.self) private var verbStore
     @Binding var verbSelection: Verb?
+    @Binding var incomingRoute: Route?
     @State private var tab: AppTab = .verbs
     @State private var grammarSelection: GrammarPoint?
     /// On iPhone a `NavigationSplitView` shows its list until told
@@ -21,8 +22,9 @@ struct MainTabView<VerbsTab: View>: View {
     @State private var grammarColumn: NavigationSplitViewColumn = .sidebar
     private let verbsTab: VerbsTab
 
-    init(verbSelection: Binding<Verb?>, @ViewBuilder verbsTab: () -> VerbsTab) {
+    init(verbSelection: Binding<Verb?>, incomingRoute: Binding<Route?>, @ViewBuilder verbsTab: () -> VerbsTab) {
         _verbSelection = verbSelection
+        _incomingRoute = incomingRoute
         self.verbsTab = verbsTab()
     }
 
@@ -37,6 +39,11 @@ struct MainTabView<VerbsTab: View>: View {
         }
         .tabViewStyle(.sidebarAdaptable)
         .environment(\.openRoute, OpenRouteAction { open($0) })
+        .onChange(of: incomingRoute, initial: true) { _, route in
+            guard let route else { return }
+            open(route)
+            incomingRoute = nil
+        }
     }
 
     private func open(_ route: Route) {

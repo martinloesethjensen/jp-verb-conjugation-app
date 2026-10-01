@@ -13,6 +13,7 @@ struct RootView: View {
     @State private var quizQuestions: [QuizQuestion]?
     @State private var topicSheetVerbs: [Verb]?
     @State private var pendingQuestions: [QuizQuestion]?
+    @State private var incomingRoute: Route?
 
     private var appearance: AppearanceMode {
         AppearanceMode(rawValue: appearanceModeRaw) ?? .system
@@ -21,7 +22,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if verbStore.hasLocalData {
-                MainTabView(verbSelection: $selection) {
+                MainTabView(verbSelection: $selection, incomingRoute: $incomingRoute) {
                     verbsTab
                 }
             } else {
@@ -29,6 +30,9 @@ struct RootView: View {
                     Task { await verbStore.retryFirstLaunch() }
                 }
             }
+        }
+        .onOpenURL { url in
+            if let route = Route(url: url) { incomingRoute = route }
         }
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)

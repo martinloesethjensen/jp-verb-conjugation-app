@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 import VerbKit
 
 @main
@@ -36,6 +37,7 @@ struct JPVerbConjugationApp: App {
                 .task {
                     networkMonitor.start()
                     await verbStore.start()
+                    WidgetCenter.shared.reloadAllTimelines()
                 }
                 .task {
                     // Independent of the verb sync: furigana is an enhancement.
