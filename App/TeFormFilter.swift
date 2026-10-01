@@ -41,7 +41,7 @@ private extension View {
         if let accent {
             foregroundStyle(Color.black.opacity(0.85)).background(accent.opacity(0.85), in: Capsule())
         } else {
-            foregroundStyle(.primary).background(.background.secondary, in: Capsule())
+            foregroundStyle(.primary).background(Color.primary.opacity(0.1), in: Capsule())
         }
     }
 }
