@@ -375,6 +375,26 @@ class ValidateGrammarTests(unittest.TestCase):
         doc["grammar"][0]["related"] = ["nope"]
         self.assertTrue(any("related" in e for e in ud.validate_grammar(doc)))
 
+    def _two_lessons(self, a_related, b_related):
+        doc = valid_grammar()
+        second = copy.deepcopy(doc["grammar"][0])
+        second["id"] = "other"
+        doc["grammar"][0]["related"] = a_related
+        second["related"] = b_related
+        doc["grammar"].append(second)
+        return doc
+
+    def test_related_links_must_be_mutual(self):
+        doc = self._two_lessons(["other"], [])
+        errors = ud.validate_grammar(doc)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("n-desu", errors[0])
+        self.assertIn("other", errors[0])
+        self.assertIn("mutual", errors[0])
+
+    def test_mutual_related_links_pass(self):
+        self.assertEqual(ud.validate_grammar(self._two_lessons(["other"], ["n-desu"])), [])
+
     def test_pitfall_without_explanation(self):
         doc = valid_grammar()
         doc["grammar"][0]["pitfalls"][0]["explanation"] = ""

@@ -376,6 +376,21 @@ def validate_grammar(doc):
                 errors.append(f"{pid}: conjugation form missing or empty")
             if c.get("register") not in REGISTERS:
                 errors.append(f"{pid}: conjugation register must be one of {sorted(REGISTERS)}")
+
+    by_id = {p.get("id"): p for p in points}
+    for p in points:
+        related = p.get("related")
+        if not isinstance(related, list):
+            continue
+        for other_id in related:
+            other = by_id.get(other_id)
+            if other is None or other_id == p.get("id"):
+                continue  # dangling ids are reported above
+            if p.get("id") not in (other.get("related") or []):
+                errors.append(
+                    f"{p.get('id')}: related '{other_id}', but '{other_id}' does not list "
+                    f"'{p.get('id')}' back (related links must be mutual)"
+                )
     return errors
 
 
