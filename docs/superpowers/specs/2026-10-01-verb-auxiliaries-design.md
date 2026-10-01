@@ -28,7 +28,7 @@ change.
 
 | id | title | level | covers |
 |---|---|---|---|
-| `teiru` | ている・てある | beginner | ている (action in progress, resulting state, habit, experience), てある (a state left by someone's action; transitive verbs only) |
+| `teiru` | ている・てある | beginner | ている (action in progress, resulting state, habits and ongoing situations), てある (a state left by someone's action; transitive verbs only) |
 | `teshimau` | てしまう・ておく | intermediate | てしまう (completion, regret; casual ちゃう/じゃう), ておく (doing in advance, leaving as is) |
 | `temiru` | てみる・ながら | beginner | てみる (try doing), ながら (two things at once; the main action is the second) |
 | `sugiru` | すぎる・やすい・にくい | intermediate | すぎる (too much), やすい (easy to), にくい (hard to) |
@@ -39,8 +39,8 @@ change.
   use `condition` where an ending is narrower (てある: transitive verbs; ている: the
   stative uses).
 - **Contrasts** are the point and go in the Watch-out cards: ている as in progress vs.
-  as a resulting state (結婚している, 知っている); ている vs. てある; てしまう (finished,
-  or regret) vs. ておく (prepare); and the stem before すぎる / やすい / にくい with
+  as a resulting state (結婚している, 知っている); ている vs. てある; てしまう as
+  completion vs. regret, and ておく vs. てある (the action done in advance vs. the state it leaves); and the stem before すぎる / やすい / にくい with
   いい → よすぎる and ない → なさすぎる. 行く + ている ("has gone and is there") gets a
   Watch-out card of its own.
 - **Cross-links**, all mutual: `teiru` ↔ `teshimau`, `teshimau` ↔ `temiru`,
@@ -87,10 +87,11 @@ Grammar section. It is hidden when the verb has no auxiliary forms, and its less
 are hidden until the lessons have synced (the Potential and んです pattern). Inside:
 
 - the nine ている forms as glass tiles, with the labels the other form sections already
-  use, then a **Learn about ている** link;
-- a grid with a row per pair (てしまう, ておく, てみる, すぎる, やすい, にくい) and two
-  columns, Plain and Polite, then a link to each lesson;
-- ながら as a single tile.
+  use;
+- a Plain / Polite grid with a row per form (てしまう, ておく, てみる, ながら, すぎる,
+  やすい, にくい); ながら is a row with an empty Polite cell, not a single tile;
+- the four **Learn about …** links, together after the grid, one per synced lesson
+  (the links stay on ある's page too).
 
 For ある only the stem rows and ながら appear. The Grammar section already lists every
 lesson attaching to verbs, so it picks up the four new lessons by itself. Forms are
@@ -116,6 +117,16 @@ kana, so they use `Text`; lesson titles use `JapaneseText`. Visual direction as 
 | A wrong reading in context | Matcher check before the plan, plus pinned tests |
 | A generated form that is not really used (行く + ている as "has gone") | The Watch-out card; the section shows forms, not claims |
 | A large `verbs.json` diff | Review by structure: only new keys, no existing field changed |
+
+## Known limitations
+
+- **Stale installs:** a build from before this work that syncs the new data stores verbs
+  without the 22 fields and records the manifest as synced, so after upgrading it reports
+  "up to date" and the Auxiliaries section stays hidden until the next `verbs.json`
+  change bumps the manifest. The potential and んです forms have the same exposure; a
+  resync-on-upgrade mechanism is future work.
+- **Generated forms are forms, not claims:** ある gets ありながら and ありやすい, and
+  しぬ gets しにながら, which are valid but unusual as learner examples.
 
 ## Files this touches
 

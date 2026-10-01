@@ -105,8 +105,12 @@ struct AuxiliaryFormsSection: View {
                                 .foregroundStyle(.secondary)
                             Text(row.plain)
                                 .font(.subheadline.weight(.semibold))
-                            Text(row.polite ?? "")
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                            Text(row.polite ?? "—")
                                 .font(.subheadline.weight(.semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
                     }
                 }

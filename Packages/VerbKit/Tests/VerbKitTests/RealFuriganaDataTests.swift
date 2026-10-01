@@ -126,6 +126,8 @@ final class RealFuriganaDataTests: XCTestCase {
         XCTAssertEqual(spelled("話し方"), "はなしかた")              // 話: はな
         XCTAssertEqual(spelled("来ながら"), "きながら")              // 来: き, not こ
         XCTAssertEqual(spelled("来ない"), "こない")
+        XCTAssertEqual(spelled("変えたら"), "かえたら")
+        XCTAssertEqual(spelled("大変"), "たいへん")
         XCTAssertEqual(spelled("友達が来ています"), "ともだちがきています")
         XCTAssertEqual(spelled("行っています"), "いっています")
         XCTAssertEqual(spelled("窓を開けて"), "まどをあけて")
