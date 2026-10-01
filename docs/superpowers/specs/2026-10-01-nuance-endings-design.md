@@ -38,9 +38,11 @@ mostly hiragana with kanji where natural, and reviewed by the maintainer.
   na-adjectives and の after nouns; そう has separate stem-based and plain-form cards
   for its two meanings); usages with examples; the ending's own forms where they
   matter; "Watch out" cards; and `related` links.
-- **Cross-links.** Sibling lessons relate to each other (`certainty` ↔ `appearance`);
-  `obligation` and `certainty` also link to んです and 可能形 where a real contrast
-  exists. Links between sibling lessons must go both ways.
+- **Cross-links.** `certainty` ↔ `appearance`, `certainty` ↔ `obligation`,
+  `appearance` ↔ `ppoi`, and `certainty` ↔ んです (わけ and んです both explain, which
+  is the one real contrast with an existing lesson; 可能形 has none). The んです
+  lesson therefore gains `certainty` in its `related` list. Every link must go both
+  ways, across the whole file.
 - **No model change.** `attachment`, `conjugations`, `pitfalls` and `related` already
   fit these endings.
 
@@ -51,7 +53,8 @@ mostly hiragana with kanji where natural, and reviewed by the maintainer.
 - **`VerbGrammarSection`** (app), last on every verb's detail page, collapsed by default
   and styled like the other sections. Its rows are `VerbStore.grammarPoints` filtered
   through `attachesToVerbs`, in the Grammar tab's existing order: today んです, 可能形
-  and the four new lessons; sub-project 4's lessons join automatically.
+  and the four new lessons (っぽい has a verb rule too, so all six); sub-project 4's
+  lessons join automatically.
 - **Rows** show the title (through `JapaneseText`, so it gets furigana) and the summary
   on one line. Tapping one calls `openRoute(.grammar(id))`, the path the んです and
   Potential links use, so it switches to the Grammar tab and lands on the lesson even
@@ -71,7 +74,7 @@ mostly hiragana with kanji where natural, and reviewed by the maintainer.
 `scripts/update_data.py`; `verbs.json` does not change. The existing guards apply: the
 grammar validator (levels, word classes, registers, `related` ids that exist) and the
 furigana coverage check, which fails and names any kanji run in the new lessons without
-a reading. One new guard: `related` links between sibling lessons must point both ways.
+a reading. One new guard: every `related` link must be mutual, across all lessons.
 
 ### Testing
 
@@ -80,7 +83,7 @@ a reading. One new guard: `related` links between sibling lessons must point bot
   the existing coverage tests still resolve every kanji run.
 - **`attachesToVerbs`** and the section's list logic (filter and order), without UI,
   including "no grammar synced means no section".
-- **Script (Python):** the two-way `related` guard fails with a clear message.
+- **Script (Python):** the mutual-`related` guard fails with a clear message naming both lessons.
 - **Simulator:** the section is collapsed on every verb; a row opens the right lesson
   from a cold start; the longer lesson pages scroll smoothly and look right in light
   and dark.
