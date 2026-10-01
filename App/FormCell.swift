@@ -21,6 +21,7 @@ struct FormCell: View {
         .minimumScaleFactor(0.7)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        .speakOnTap(form)
         .textActions(form)
     }
 }

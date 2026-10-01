@@ -39,6 +39,7 @@ struct VerbDetailView: View {
             .navigationTitle(verb.dict)
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
+                    SpeakButton(text: verb.jishoQuery)
                     Button("Examples", systemImage: "book", action: onExamples)
                     if let jishoURL {
                         Link(destination: jishoURL) {
@@ -81,6 +82,7 @@ struct VerbDetailView: View {
                 if let kanji = verb.kanji {
                     JapaneseText(kanji).font(.title2).foregroundStyle(.secondary)
                 }
+                SpeakButton(text: verb.jishoQuery)
             }
             Text(verb.meaning).font(.headline).foregroundStyle(.secondary).italic()
         }

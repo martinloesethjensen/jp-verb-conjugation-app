@@ -8,20 +8,24 @@ struct ExamplesView: View {
     var body: some View {
         NavigationStack {
             List(verb.examples, id: \.self) { example in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(formLabel(example.form))
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                    JapaneseText(example.jp)
-                        .font(.title3)
-                    Text(example.en)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(formLabel(example.form))
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                        JapaneseText(example.jp)
+                            .font(.title3)
+                        Text(example.en)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .textActions(example.jp, translate: true)
+                    SpeakButton(text: example.jp)
                 }
-                .padding(.vertical, 4)
-                .contentShape(Rectangle())
-                .textActions(example.jp, translate: true)
             }
             .navigationTitle("\(verb.dict) — Examples")
             .toolbar {
