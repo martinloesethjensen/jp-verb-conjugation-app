@@ -128,6 +128,8 @@ struct VerbDetailView: View {
             if verb.forms.hasNdForms {
                 NdesuFormsSection(forms: verb.forms)
             }
+
+            VerbGrammarSection()
         }
     }
 }
