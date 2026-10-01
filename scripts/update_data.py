@@ -80,6 +80,54 @@ POTENTIAL_CONJUGATIONS = [
 # Every field the potential step owns: the base form plus the eight above.
 POTENTIAL_FIELDS = ["potential"] + [name for name, _ in POTENTIAL_CONJUGATIONS]
 
+# --- Verb auxiliaries (grammar points `teiru`, `teshimau`, `temiru`, `sugiru`) ---
+
+# Verbs that take none of the て-form auxiliaries (ている, てしまう, ておく,
+# てみる): they get no such fields, and any stale ones are removed. They keep
+# the stem-based forms. This is the only hand-maintained part of the step;
+# extend it as verbs are added (for example いる).
+NO_TE_AUXILIARIES = {"ある"}
+
+# ている is the one auxiliary conjugated in full: the verb's て-form plus いる
+# conjugated as an ichidan verb, in JSON order.
+TEIRU_CONJUGATIONS = [
+    ("teiru", "いる"),
+    ("teiru_neg", "いない"),
+    ("teiru_past", "いた"),
+    ("teiru_past_neg", "いなかった"),
+    ("teiru_masu_pos", "います"),
+    ("teiru_masu_neg", "いません"),
+    ("teiru_masu_past", "いました"),
+    ("teiru_masu_past_neg", "いませんでした"),
+    ("teiru_te", "いて"),
+]
+
+# Plain and polite forms of the other て-form auxiliaries.
+TE_AUXILIARIES = [
+    ("teshimau", "しまう"),
+    ("teshimau_polite", "しまいます"),
+    ("teoku", "おく"),
+    ("teoku_polite", "おきます"),
+    ("temiru", "みる"),
+    ("temiru_polite", "みます"),
+]
+
+# The ます-stem auxiliaries: すぎる and the two i-adjective endings get a plain
+# and a polite form, ながら a single form.
+STEM_AUXILIARIES = [
+    ("sugiru", "すぎる"),
+    ("sugiru_polite", "すぎます"),
+    ("yasui", "やすい"),
+    ("yasui_polite", "やすいです"),
+    ("nikui", "にくい"),
+    ("nikui_polite", "にくいです"),
+    ("nagara", "ながら"),
+]
+
+TE_AUXILIARY_FIELDS = [name for name, _ in TEIRU_CONJUGATIONS + TE_AUXILIARIES]
+STEM_AUXILIARY_FIELDS = [name for name, _ in STEM_AUXILIARIES]
+AUXILIARY_FIELDS = TE_AUXILIARY_FIELDS + STEM_AUXILIARY_FIELDS
+
 # --- Furigana (readings above kanji) ----------------------------------------
 
 # A reading key may be followed by at most this many kana that select the
@@ -154,6 +202,51 @@ def apply_potential_forms(verbs_doc):
         forms = verb["forms"]
         wanted = potential_forms(verb)
         for name in POTENTIAL_FIELDS:
+            if name in wanted:
+                if forms.get(name) != wanted[name]:
+                    forms[name] = wanted[name]
+                    changed = True
+            elif name in forms:
+                del forms[name]
+                changed = True
+    return changed
+
+
+def masu_stem(verb):
+    """The ます-stem: `masu_pos` minus ます (たべ, のみ, し, き). Raises ValueError
+    if the verb has no usable `masu_pos`."""
+    masu = verb["forms"].get("masu_pos")
+    if not isinstance(masu, str) or not masu.endswith("ます") or masu == "ます":
+        raise ValueError(f"{verb['dict']}: masu_pos must end in ます, got {masu!r}")
+    return masu[:-2]
+
+
+def auxiliary_forms(verb):
+    """All auxiliary forms for a verb as {field: value}. Verbs in
+    NO_TE_AUXILIARIES get only the stem-based ones. Raises ValueError for a
+    verb without the form it needs, so bad data fails loudly."""
+    stem = masu_stem(verb)
+    forms = {}
+    if verb["dict"] not in NO_TE_AUXILIARIES:
+        te = verb["forms"].get("te")
+        if not isinstance(te, str) or not te:
+            raise ValueError(f"{verb['dict']}: no te form to build the auxiliaries from")
+        for name, ending in TEIRU_CONJUGATIONS + TE_AUXILIARIES:
+            forms[name] = te + ending
+    for name, ending in STEM_AUXILIARIES:
+        forms[name] = stem + ending
+    return forms
+
+
+def apply_auxiliary_forms(verbs_doc):
+    """Set the auxiliary fields on every verb in place, and remove the ones a
+    verb must not have. The script owns these fields, so a hand-set value is
+    overwritten. Returns True if anything changed."""
+    changed = False
+    for verb in verbs_doc["verbs"]:
+        forms = verb["forms"]
+        wanted = auxiliary_forms(verb)
+        for name in AUXILIARY_FIELDS:
             if name in wanted:
                 if forms.get(name) != wanted[name]:
                     forms[name] = wanted[name]
@@ -487,6 +580,10 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         apply_potential_forms(verbs_doc)
     except ValueError as error:
         return 1, [f"cannot generate potential forms: {error}"]
+    try:
+        apply_auxiliary_forms(verbs_doc)
+    except ValueError as error:
+        return 1, [f"cannot generate auxiliary forms: {error}"]
     problems = check_coverage(verbs_doc, grammar_doc, readings)
     if problems:
         return 1, capped("kanji without a reading in furigana.json:", problems)

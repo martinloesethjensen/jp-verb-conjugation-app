@@ -95,6 +95,10 @@ def potential_verb(dict_form, vtype):
     return {"type": vtype, "dict": dict_form, "forms": {}}
 
 
+def aux_verb(dict_form, te, masu_pos):
+    return {"type": "u", "dict": dict_form, "forms": {"te": te, "masu_pos": masu_pos}}
+
+
 class PotentialFormsTests(unittest.TestCase):
     def test_ru_verb_drops_ru_and_adds_rareru(self):
         self.assertEqual(ud.potential_base(potential_verb("たべる", "ru")), "たべられる")
@@ -199,6 +203,117 @@ class PotentialFormsTests(unittest.TestCase):
         ud.apply_potential_forms(doc)
         self.assertEqual(doc["verbs"][0]["forms"]["te"], "たべて")
         self.assertEqual(doc["verbs"][0]["forms"]["nd_pos"], "たべるんです")
+
+
+class AuxiliaryFormsTests(unittest.TestCase):
+    def test_masu_stem_drops_masu(self):
+        self.assertEqual(ud.masu_stem(aux_verb("たべる", "たべて", "たべます")), "たべ")
+        self.assertEqual(ud.masu_stem(aux_verb("のむ", "のんで", "のみます")), "のみ")
+        self.assertEqual(ud.masu_stem(aux_verb("する", "して", "します")), "し")
+        self.assertEqual(ud.masu_stem(aux_verb("くる", "きて", "きます")), "き")
+
+    def test_masu_stem_rejects_a_missing_or_malformed_masu_pos(self):
+        for masu in (None, "", "ます", "たべる"):
+            with self.subTest(masu):
+                verb = aux_verb("たべる", "たべて", "x")
+                verb["forms"]["masu_pos"] = masu
+                with self.assertRaises(ValueError):
+                    ud.masu_stem(verb)
+
+    def test_full_set_for_a_ru_verb(self):
+        self.assertEqual(
+            ud.auxiliary_forms(aux_verb("たべる", "たべて", "たべます")),
+            {
+                "teiru": "たべている",
+                "teiru_neg": "たべていない",
+                "teiru_past": "たべていた",
+                "teiru_past_neg": "たべていなかった",
+                "teiru_masu_pos": "たべています",
+                "teiru_masu_neg": "たべていません",
+                "teiru_masu_past": "たべていました",
+                "teiru_masu_past_neg": "たべていませんでした",
+                "teiru_te": "たべていて",
+                "teshimau": "たべてしまう",
+                "teshimau_polite": "たべてしまいます",
+                "teoku": "たべておく",
+                "teoku_polite": "たべておきます",
+                "temiru": "たべてみる",
+                "temiru_polite": "たべてみます",
+                "sugiru": "たべすぎる",
+                "sugiru_polite": "たべすぎます",
+                "yasui": "たべやすい",
+                "yasui_polite": "たべやすいです",
+                "nikui": "たべにくい",
+                "nikui_polite": "たべにくいです",
+                "nagara": "たべながら",
+            },
+        )
+
+    def test_u_verbs_use_their_te_form_and_stem(self):
+        forms = ud.auxiliary_forms(aux_verb("のむ", "のんで", "のみます"))
+        self.assertEqual(forms["teiru"], "のんでいる")
+        self.assertEqual(forms["teshimau"], "のんでしまう")
+        self.assertEqual(forms["sugiru"], "のみすぎる")
+        self.assertEqual(forms["nagara"], "のみながら")
+        forms = ud.auxiliary_forms(aux_verb("いく", "いって", "いきます"))
+        self.assertEqual(forms["teiru"], "いっている")
+        self.assertEqual(forms["nikui"], "いきにくい")
+
+    def test_irregular_verbs_need_no_special_case(self):
+        forms = ud.auxiliary_forms(aux_verb("する", "して", "します"))
+        self.assertEqual(forms["teiru"], "している")
+        self.assertEqual(forms["sugiru"], "しすぎる")
+        forms = ud.auxiliary_forms(aux_verb("くる", "きて", "きます"))
+        self.assertEqual(forms["teiru_masu_pos"], "きています")
+        self.assertEqual(forms["sugiru"], "きすぎる")
+
+    def test_a_verb_in_the_exception_list_keeps_only_the_stem_forms(self):
+        forms = ud.auxiliary_forms(aux_verb("ある", "あって", "あります"))
+        self.assertEqual(set(forms), set(ud.STEM_AUXILIARY_FIELDS))
+        self.assertEqual(forms["sugiru"], "ありすぎる")
+        self.assertEqual(forms["nagara"], "ありながら")
+
+    def test_a_missing_te_form_raises(self):
+        verb = aux_verb("たべる", "x", "たべます")
+        del verb["forms"]["te"]
+        with self.assertRaises(ValueError):
+            ud.auxiliary_forms(verb)
+
+    def test_an_excepted_verb_does_not_need_a_te_form(self):
+        verb = aux_verb("ある", "x", "あります")
+        del verb["forms"]["te"]
+        self.assertIn("sugiru", ud.auxiliary_forms(verb))
+
+    def test_apply_sets_all_22_fields_and_is_idempotent(self):
+        doc = {"verbs": [aux_verb("たべる", "たべて", "たべます")]}
+        self.assertEqual(len(ud.AUXILIARY_FIELDS), 22)
+        self.assertTrue(ud.apply_auxiliary_forms(doc))
+        self.assertTrue(set(ud.AUXILIARY_FIELDS) <= set(doc["verbs"][0]["forms"]))
+        self.assertFalse(ud.apply_auxiliary_forms(doc))
+
+    def test_apply_repairs_a_wrong_value(self):
+        doc = {"verbs": [aux_verb("たべる", "たべて", "たべます")]}
+        ud.apply_auxiliary_forms(doc)
+        doc["verbs"][0]["forms"]["nagara"] = "wrong"
+        self.assertTrue(ud.apply_auxiliary_forms(doc))
+        self.assertEqual(doc["verbs"][0]["forms"]["nagara"], "たべながら")
+
+    def test_apply_removes_stale_te_fields_for_an_excepted_verb(self):
+        doc = {"verbs": [aux_verb("ある", "あって", "あります")]}
+        doc["verbs"][0]["forms"]["teiru"] = "あっている"
+        doc["verbs"][0]["forms"]["temiru"] = "あってみる"
+        self.assertTrue(ud.apply_auxiliary_forms(doc))
+        forms = doc["verbs"][0]["forms"]
+        self.assertNotIn("teiru", forms)
+        self.assertNotIn("temiru", forms)
+        self.assertIn("sugiru", forms)
+
+    def test_apply_leaves_unrelated_forms_alone(self):
+        doc = {"verbs": [aux_verb("たべる", "たべて", "たべます")]}
+        doc["verbs"][0]["forms"]["potential"] = "たべられる"
+        ud.apply_auxiliary_forms(doc)
+        self.assertEqual(doc["verbs"][0]["forms"]["te"], "たべて")
+        self.assertEqual(doc["verbs"][0]["forms"]["potential"], "たべられる")
 
 
 class FuriganaScanTests(unittest.TestCase):
@@ -478,6 +593,7 @@ class RunTests(unittest.TestCase):
             "description": "d",
             "verbs": [verb("する", "する", "しない", "した", "しなかった", vtype="irr.")],
         }
+        verbs["verbs"][0]["forms"].update({"te": "して", "masu_pos": "します"})
         (d / "verbs.json").write_text(ud.dump_verbs(verbs), encoding="utf-8")
         (d / "grammar.json").write_text(json.dumps(valid_grammar(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (d / "furigana.json").write_text(json.dumps(valid_furigana(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -496,6 +612,8 @@ class RunTests(unittest.TestCase):
         self.assertEqual(written["verbs"][0]["forms"]["nd_pos"], "するんです")
         self.assertEqual(written["verbs"][0]["forms"]["potential"], "できる")
         self.assertEqual(written["verbs"][0]["forms"]["pot_masu_pos"], "できます")
+        self.assertEqual(written["verbs"][0]["forms"]["teiru"], "している")
+        self.assertEqual(written["verbs"][0]["forms"]["sugiru"], "しすぎる")
         manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["sha256"], ud.sha256_hex((d / "verbs.json").read_bytes()))
         self.assertEqual(manifest["grammar"]["sha256"], ud.sha256_hex((d / "grammar.json").read_bytes()))
@@ -510,6 +628,18 @@ class RunTests(unittest.TestCase):
         code, messages = ud.run(d)
         self.assertEqual(code, 1)
         self.assertTrue(any("猫" in m for m in messages))
+        for name, content in before.items():
+            self.assertEqual((d / name).read_bytes(), content)
+
+    def test_a_verb_without_a_te_form_fails_cleanly_and_writes_nothing(self):
+        d = self.make_dir()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        del doc["verbs"][0]["forms"]["te"]
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        before = {n: (d / n).read_bytes() for n in ("verbs.json", "manifest.json")}
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("auxiliary" in m and "する" in m for m in messages))
         for name, content in before.items():
             self.assertEqual((d / name).read_bytes(), content)
 
