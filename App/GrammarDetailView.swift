@@ -46,10 +46,12 @@ struct GrammarDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(point.level.displayName)
-                .font(.caption.weight(.bold))
-                .padding(.horizontal, 8).padding(.vertical, 2)
-                .glassEffect(in: Capsule())
+            if let level = point.jlpt {
+                Text(level.displayName)
+                    .font(.caption.weight(.bold))
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .glassEffect(in: Capsule())
+            }
             JapaneseText(point.title)
                 .font(.system(size: 34, weight: .heavy))
             JapaneseText(point.summary)

@@ -1,8 +1,3 @@
-public enum GrammarLevel: String, Codable, Hashable, Sendable {
-    case beginner
-    case intermediate
-}
-
 /// Word classes a grammar ending can attach to. Deliberately separate
 /// from `VerbType`, which classifies verbs only.
 public enum WordClass: String, Codable, Hashable, Sendable {
@@ -109,7 +104,7 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     public var id: String
     public var title: String
     public var summary: String
-    public var level: GrammarLevel
+    public var jlpt: JLPTLevel?
     public var usages: [GrammarUsage]
     public var attachment: [AttachmentRule]
     public var conjugations: [GrammarConjugation]
@@ -132,7 +127,7 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         id: String,
         title: String,
         summary: String,
-        level: GrammarLevel,
+        jlpt: JLPTLevel? = nil,
         usages: [GrammarUsage],
         attachment: [AttachmentRule],
         conjugations: [GrammarConjugation],
@@ -142,7 +137,7 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         self.id = id
         self.title = title
         self.summary = summary
-        self.level = level
+        self.jlpt = jlpt
         self.usages = usages
         self.attachment = attachment
         self.conjugations = conjugations

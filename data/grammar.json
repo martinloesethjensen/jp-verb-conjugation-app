@@ -6,7 +6,7 @@
       "id": "n-desu",
       "title": "んです",
       "summary": "Marks a sentence as explanation, context or reason. Use んです after verbs and い-adjectives, and なんです after nouns and な-adjectives.",
-      "level": "beginner",
+      "jlpt": "N4",
       "usages": [
         {
           "heading": "Asking for or giving a reason",
@@ -152,7 +152,7 @@
       "id": "potential",
       "title": "可能形",
       "summary": "The potential form says that someone can do something, or that the situation allows it: 食べられる, 飲める, できる. It conjugates as a ru-verb.",
-      "level": "beginner",
+      "jlpt": "N4",
       "usages": [
         {
           "heading": "Ability",
@@ -281,7 +281,7 @@
       "id": "certainty",
       "title": "はず・かもしれない・わけ",
       "summary": "Three ways to say how things stand: はず (I expect so, because it makes sense), かもしれない (maybe), and わけ (that is how it works out). All three come after a plain form.",
-      "level": "intermediate",
+      "jlpt": "N3",
       "usages": [
         {
           "heading": "はず: what you expect",
@@ -403,7 +403,7 @@
       "id": "obligation",
       "title": "べき・ものだ",
       "summary": "べき says what someone should do, as advice or a moral judgement. ものだ states how things are in general, or remembers how things used to be.",
-      "level": "intermediate",
+      "jlpt": "N3",
       "usages": [
         {
           "heading": "べき: what someone should do",
@@ -530,7 +530,7 @@
       "id": "appearance",
       "title": "よう・みたい・そう・らしい",
       "summary": "Four ways to talk about what you see, hear or infer: ようだ and みたいだ (it seems, like), そうだ (it looks like, or I hear), and らしい (apparently, or typical of).",
-      "level": "intermediate",
+      "jlpt": "N3",
       "usages": [
         {
           "heading": "ようだ and みたいだ: it seems",
@@ -669,7 +669,7 @@
       "id": "ppoi",
       "title": "っぽい",
       "summary": "っぽい adds the feel of something: -ish, like, or prone to. It attaches to nouns, verb stems and い-adjective stems, and the result is an い-adjective.",
-      "level": "intermediate",
+      "jlpt": "N2",
       "usages": [
         {
           "heading": "-ish: it has the look or feel of",
@@ -756,7 +756,7 @@
       "id": "teiru",
       "title": "ている・てある",
       "summary": "ている describes an action in progress, or a state that results from an action: 食べている (is eating), 結婚している (is married). てある describes a state that someone left behind on purpose: 窓が開けてある.",
-      "level": "beginner",
+      "jlpt": "N5",
       "usages": [
         {
           "heading": "In progress",
@@ -858,7 +858,7 @@
       "id": "teshimau",
       "title": "てしまう・ておく",
       "summary": "てしまう says that something is completely done, or that it happened and you regret it. ておく says that you do something in advance, or leave something as it is.",
-      "level": "intermediate",
+      "jlpt": "N4",
       "usages": [
         {
           "heading": "てしまう: done completely",
@@ -949,7 +949,7 @@
       "id": "temiru",
       "title": "てみる・ながら",
       "summary": "てみる means \"try doing it and see\". ながら joins two actions that happen at the same time, and the second one is the main action.",
-      "level": "beginner",
+      "jlpt": "N4",
       "usages": [
         {
           "heading": "てみる: try it and see",
@@ -1037,7 +1037,7 @@
       "id": "sugiru",
       "title": "すぎる・やすい・にくい",
       "summary": "All three attach to the ます-stem, and すぎる also attaches to adjectives. すぎる means \"too much\", やすい means \"easy to\", and にくい means \"hard to\". The first becomes a ru-verb, and the other two become い-adjectives.",
-      "level": "intermediate",
+      "jlpt": "N4",
       "usages": [
         {
           "heading": "すぎる: too much",

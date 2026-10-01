@@ -29,7 +29,7 @@ def valid_grammar():
                 "id": "n-desu",
                 "title": "んです",
                 "summary": "s",
-                "level": "beginner",
+                "jlpt": "N5",
                 "usages": [
                     {"heading": "h", "explanation": "e", "examples": [{"jp": "あ", "en": "a"}]}
                 ],
@@ -465,10 +465,15 @@ class ValidateGrammarTests(unittest.TestCase):
     def test_valid_document_has_no_errors(self):
         self.assertEqual(ud.validate_grammar(valid_grammar()), [])
 
-    def test_bad_level(self):
+    def test_bad_jlpt(self):
         doc = valid_grammar()
-        doc["grammar"][0]["level"] = "expert"
-        self.assertTrue(any("level" in e for e in ud.validate_grammar(doc)))
+        doc["grammar"][0]["jlpt"] = "expert"
+        self.assertTrue(any("jlpt" in e for e in ud.validate_grammar(doc)))
+
+    def test_missing_jlpt(self):
+        doc = valid_grammar()
+        del doc["grammar"][0]["jlpt"]
+        self.assertTrue(any("jlpt" in e for e in ud.validate_grammar(doc)))
 
     def test_bad_word_class(self):
         doc = valid_grammar()
@@ -683,16 +688,35 @@ class RunTests(unittest.TestCase):
         self.assertEqual((d / "verbs.json").read_bytes(), before)
         self.assertTrue(any("いき" in m for m in messages))
 
+    def test_invalid_verb_jlpt_blocks_everything_and_writes_nothing(self):
+        d = self.make_dir()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["jlpt"] = "expert"
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        before = (d / "verbs.json").read_bytes()
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertEqual((d / "verbs.json").read_bytes(), before)
+        self.assertTrue(any("jlpt" in m for m in messages))
+
+    def test_valid_verb_jlpt_is_accepted(self):
+        d = self.make_dir()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["jlpt"] = "N4"
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        code, _ = ud.run(d)
+        self.assertEqual(code, 0)
+
     def test_invalid_grammar_blocks_everything_and_writes_nothing(self):
         d = self.make_dir()
         bad = valid_grammar()
-        bad["grammar"][0]["level"] = "expert"
+        bad["grammar"][0]["jlpt"] = "expert"
         (d / "grammar.json").write_text(json.dumps(bad), encoding="utf-8")
         before = (d / "verbs.json").read_bytes()
         code, messages = ud.run(d)
         self.assertEqual(code, 1)
         self.assertEqual((d / "verbs.json").read_bytes(), before)
-        self.assertTrue(any("level" in m for m in messages))
+        self.assertTrue(any("jlpt" in m for m in messages))
 
 
 if __name__ == "__main__":

@@ -14,13 +14,8 @@ extension WordClass {
     }
 }
 
-extension GrammarLevel {
-    var displayName: String {
-        switch self {
-        case .beginner: return "Beginner"
-        case .intermediate: return "Intermediate"
-        }
-    }
+extension JLPTLevel {
+    var displayName: String { rawValue }
 }
 
 extension GrammarRegister {

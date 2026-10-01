@@ -107,7 +107,7 @@ final class RealPotentialDataTests: XCTestCase {
         let points = try loadGrammar()
         let potential = try XCTUnwrap(points.first { $0.id == GrammarPoint.potentialID })
         XCTAssertEqual(potential.title, "可能形")
-        XCTAssertEqual(potential.level, .beginner)
+        XCTAssertEqual(potential.jlpt, .n4)
         XCTAssertEqual(potential.usages.count, 5)
         XCTAssertEqual(potential.attachment.count, 4)
         XCTAssertEqual(potential.pitfalls.count, 4)

@@ -9,11 +9,13 @@ struct GrammarRow: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 JapaneseText(point.title)
                     .font(.title3.weight(.bold))
-                Text(point.level.displayName)
-                    .font(.caption2.weight(.semibold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .glassEffect(in: Capsule())
+                if let level = point.jlpt {
+                    Text(level.displayName)
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .glassEffect(in: Capsule())
+                }
             }
             JapaneseText(point.summary)
                 .font(.caption)

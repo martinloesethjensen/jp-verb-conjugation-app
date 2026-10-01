@@ -11,6 +11,9 @@ public final class VerbEntity {
     public var verbDescription: String
     public var notes: String?
     public var teGroup: String?
+    /// JLPT level raw value ("N5"…"N1"); nil when the verb has none. The default
+    /// lets rows saved before this existed migrate.
+    public var jlpt: String? = nil
     /// Position in the source file, so the list keeps its authored order (a
     /// SwiftData fetch is otherwise unordered). The default lets rows saved before
     /// this existed migrate; the next sync rewrites them with real positions.
@@ -64,6 +67,7 @@ public final class VerbEntity {
         verbDescription: String,
         notes: String?,
         teGroup: String?,
+        jlpt: String? = nil,
         forms: VerbForms,
         examples: [VerbExample],
         sortOrder: Int = 0
@@ -77,6 +81,7 @@ public final class VerbEntity {
         self.verbDescription = verbDescription
         self.notes = notes
         self.teGroup = teGroup
+        self.jlpt = jlpt
         self.formsData = (try? JSONEncoder().encode(forms)) ?? Data()
         self.examplesData = (try? JSONEncoder().encode(examples)) ?? Data()
     }
@@ -104,6 +109,7 @@ public extension VerbEntity {
             verbDescription: verb.description,
             notes: verb.notes,
             teGroup: verb.teGroup?.rawValue,
+            jlpt: verb.jlpt?.rawValue,
             forms: verb.forms,
             examples: verb.examples,
             sortOrder: sortOrder
@@ -125,6 +131,7 @@ public extension VerbEntity {
             description: verbDescription,
             notes: notes,
             teGroup: resolvedTeGroup,
+            jlpt: jlpt.flatMap { JLPTLevel(rawValue: $0) },
             forms: forms,
             examples: examples
         )

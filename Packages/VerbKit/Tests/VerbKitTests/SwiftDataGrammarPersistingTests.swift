@@ -11,7 +11,7 @@ final class SwiftDataGrammarPersistingTests: XCTestCase {
 
     private func makePoint(id: String) -> GrammarPoint {
         GrammarPoint(
-            id: id, title: id, summary: "s", level: .beginner,
+            id: id, title: id, summary: "s", jlpt: .n5,
             usages: [], attachment: [], conjugations: [], pitfalls: [], related: []
         )
     }

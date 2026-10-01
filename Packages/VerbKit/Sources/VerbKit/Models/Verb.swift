@@ -7,6 +7,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
     public var description: String
     public var notes: String?
     public var teGroup: TeGroup?
+    public var jlpt: JLPTLevel?
     public var forms: VerbForms
     public var examples: [VerbExample]
 
@@ -21,6 +22,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
         description: String,
         notes: String? = nil,
         teGroup: TeGroup? = nil,
+        jlpt: JLPTLevel? = nil,
         forms: VerbForms,
         examples: [VerbExample]
     ) {
@@ -32,6 +34,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
         self.description = description
         self.notes = notes
         self.teGroup = teGroup
+        self.jlpt = jlpt
         self.forms = forms
         self.examples = examples
     }

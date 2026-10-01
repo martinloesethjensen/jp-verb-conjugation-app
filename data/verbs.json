@@ -10,6 +10,7 @@
       "meaning": "to do",
       "description": "The most common irregular verb. Attaches to nouns to make compound verbs (e.g. べんきょうする, そうじする).",
       "notes": "Compounds like べんきょうする, うんどうする, and りょうりする all follow する's conjugation pattern.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "します",
         "masu_neg": "しません",
@@ -82,6 +83,7 @@
       "meaning": "to come",
       "description": "The second irregular verb in Japanese. Its stem changes dramatically across conjugations.",
       "notes": "Often used with て-form patterns: もってくる (bring), かえってくる (come back).",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "きます",
         "masu_neg": "きません",
@@ -154,6 +156,7 @@
       "meaning": "to eat",
       "description": "A fundamental ru-verb. Drop the final る and add your ending.",
       "notes": "て-form たべて is used in sequences like たべてから (after eating).",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "たべます",
         "masu_neg": "たべません",
@@ -228,6 +231,7 @@
       "meaning": "to see / watch",
       "description": "A core ru-verb meaning both 'to see' and 'to watch'. Also used in Vてみる (to try doing).",
       "notes": "みてみる (try watching/looking) is common. Can also mean 'to look at' depending on context.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "みます",
         "masu_neg": "みません",
@@ -299,6 +303,7 @@
       "meaning": "to sleep",
       "description": "A ru-verb for sleeping or going to bed.",
       "notes": "Often used with time expressions: 十一時にねます.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "ねます",
         "masu_neg": "ねません",
@@ -369,6 +374,7 @@
       "meaning": "to wake up / get up",
       "description": "A ru-verb meaning to wake up or get out of bed.",
       "notes": "Paired naturally with ねる. Common in schedules: ろくじにおきます.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "おきます",
         "masu_neg": "おきません",
@@ -438,6 +444,7 @@
       "meaning": "to show",
       "description": "A ru-verb meaning to show or display something to someone.",
       "notes": "みせてください is one of the most practical request phrases for travel and shopping.",
+      "jlpt": "N4",
       "forms": {
         "masu_pos": "みせます",
         "masu_neg": "みせません",
@@ -505,6 +512,7 @@
       "meaning": "to borrow",
       "description": "A ru-verb meaning to borrow or rent.",
       "notes": "Antonym: かえす (to return). Pair: としょかんで本をかります / 本をかえします.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "かります",
         "masu_neg": "かりません",
@@ -573,6 +581,7 @@
       "teGroup": "tte",
       "description": "A u-verb ending in う. The negative short form uses the special わ stem (かわない).",
       "notes": "Negative short stem is わ: かわない (not ×かあない). This applies to all う-ending u-verbs.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "かいます",
         "masu_neg": "かいません",
@@ -642,6 +651,7 @@
       "teGroup": "tte",
       "description": "A u-verb ending in う. Takes に to mark the person met.",
       "notes": "Use に for the person you meet: ともだちにあう.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "あいます",
         "masu_neg": "あいません",
@@ -709,6 +719,7 @@
       "teGroup": "tte",
       "description": "A u-verb ending in つ. て-form is まって, also the casual imperative 'wait!'",
       "notes": "まって！ is extremely common in everyday speech. Formal request: まってください.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "まちます",
         "masu_neg": "まちません",
@@ -776,6 +787,7 @@
       "teGroup": "tte",
       "description": "A u-verb ending in る (not a ru-verb!). Stem change: と+り (masu), と+った (past).",
       "notes": "Also means 'to take a photo' (しゃしんをとる) and 'to pass something' (しおをとる).",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "とります",
         "masu_neg": "とりません",
@@ -843,6 +855,7 @@
       "teGroup": "tte",
       "description": "The existential verb for inanimate objects. Irregular negative: ない (not ×あらない).",
       "notes": "Pair with いる (for living things): 本がある vs 犬がいる. ある has no potential form; ありえる (\"can happen\") is a separate word.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "あります",
         "masu_neg": "ありません",
@@ -887,6 +900,7 @@
       "teGroup": "tte",
       "description": "A u-verb ending in つ. Conjugates identically to まつ.",
       "notes": "Used in もっていく (take along) and もってくる (bring here).",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "もちます",
         "masu_neg": "もちません",
@@ -954,6 +968,7 @@
       "teGroup": "nde",
       "description": "A u-verb ending in む. Part of the む/ぶ/ぬ group using んで/んだ て-form.",
       "notes": "よんで is both the て-form and a casual command 'read it!'",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "よみます",
         "masu_neg": "よみません",
@@ -1022,6 +1037,7 @@
       "teGroup": "nde",
       "description": "A u-verb ending in む. Used for drinking beverages and taking medicine.",
       "notes": "のんで is used in casual requests. Also used for swallowing pills.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "のみます",
         "masu_neg": "のみません",
@@ -1091,6 +1107,7 @@
       "teGroup": "nde",
       "description": "A u-verb ending in ぶ. Covers playing and hanging out with friends.",
       "notes": "あそびにいく (go to hang out) is a very natural phrase.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "あそびます",
         "masu_neg": "あそびません",
@@ -1158,6 +1175,7 @@
       "teGroup": "nde",
       "description": "A u-verb ending in ぬ — the only common ぬ-ending verb in modern Japanese.",
       "notes": "Often used hyperbolically: おなかすいてしぬ (starving to death).",
+      "jlpt": "N4",
       "forms": {
         "masu_pos": "しにます",
         "masu_neg": "しにません",
@@ -1223,6 +1241,7 @@
       "teGroup": "ite",
       "description": "A u-verb ending in く. Conjugates with the いて/いた pattern.",
       "notes": "Covers handwriting and typing. Common phrase: なまえをかいてください.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "かきます",
         "masu_neg": "かきません",
@@ -1291,6 +1310,7 @@
       "teGroup": "ite",
       "description": "A u-verb ending in く. Means 'to listen' (を) or 'to ask' (に) depending on particle.",
       "notes": "きく can mean both 'listen' (おんがくをきく) and 'ask' (せんせいにきく).",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "ききます",
         "masu_neg": "ききません",
@@ -1358,6 +1378,7 @@
       "teGroup": "ite",
       "description": "A く-ending u-verb with an exception: て-form is いって (not ×いいて). The only く-verb exception.",
       "notes": "Extremely common: いってきます (I'm heading out). Also used in V+にいく (go to do something).",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "いきます",
         "masu_neg": "いきません",
@@ -1429,6 +1450,7 @@
       "teGroup": "ide",
       "description": "A u-verb ending in ぐ. Uses the voiced て-form いで/いだ.",
       "notes": "いそいで！ is the casual imperative 'hurry up!'",
+      "jlpt": "N4",
       "forms": {
         "masu_pos": "いそぎます",
         "masu_neg": "いそぎません",
@@ -1495,6 +1517,7 @@
       "teGroup": "ide",
       "description": "A u-verb ending in ぐ. Shares the いで/いだ て-form with いそぐ.",
       "notes": "Don't forget the voiced で (not て) — a common beginner mistake.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "およぎます",
         "masu_neg": "およぎません",
@@ -1561,6 +1584,7 @@
       "teGroup": "shite",
       "description": "A u-verb ending in す. The す group always uses して/した for て-form.",
       "notes": "Contrast with いう (to say) — はなす implies a longer exchange.",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "はなします",
         "masu_neg": "はなしません",
@@ -1630,6 +1654,7 @@
       "teGroup": "shite",
       "description": "A u-verb ending in す. Means to give something back. Antonym of かりる (to borrow).",
       "notes": "Pair with かりる for borrowing/returning vocabulary.",
+      "jlpt": "N4",
       "forms": {
         "masu_pos": "かえします",
         "masu_neg": "かえしません",

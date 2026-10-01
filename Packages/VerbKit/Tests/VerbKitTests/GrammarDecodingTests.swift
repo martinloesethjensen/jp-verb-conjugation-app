@@ -11,7 +11,7 @@ final class GrammarDecodingTests: XCTestCase {
           "id": "n-desu",
           "title": "んです",
           "summary": "Explanatory ending.",
-          "level": "beginner",
+          "jlpt": "N5",
           "usages": [
             {
               "heading": "Giving a reason",
@@ -50,7 +50,7 @@ final class GrammarDecodingTests: XCTestCase {
         XCTAssertEqual(file.grammar.count, 1)
         let point = file.grammar[0]
         XCTAssertEqual(point.id, "n-desu")
-        XCTAssertEqual(point.level, .beginner)
+        XCTAssertEqual(point.jlpt, .n5)
         XCTAssertEqual(point.usages[0].examples[0].jp, "頭が痛いんです。")
         XCTAssertEqual(point.related, [])
     }

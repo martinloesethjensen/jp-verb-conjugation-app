@@ -49,12 +49,13 @@ struct GrammarWidgetView: View {
     private var isRectangular: Bool { false }
     #endif
 
-    private func accent(_ level: GrammarLevel) -> Color {
-        level == .beginner ? Self.beginner : Self.intermediate
+    private func accent(_ level: JLPTLevel?) -> Color {
+        guard let level else { return Self.beginner }
+        return level <= .n4 ? Self.beginner : Self.intermediate
     }
 
-    private func levelName(_ level: GrammarLevel) -> String {
-        level == .beginner ? "Beginner" : "Intermediate"
+    private func levelName(_ level: JLPTLevel?) -> String {
+        level?.rawValue ?? ""
     }
 
     @ViewBuilder private func content(for point: GrammarPoint) -> some View {
@@ -87,8 +88,8 @@ struct GrammarWidgetView: View {
                 .font(.title3.weight(.heavy))
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-                .foregroundStyle(accent(point.level))
-            Text(levelName(point.level)).font(.caption2).foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(accent(point.jlpt))
+            Text(levelName(point.jlpt)).font(.caption2).foregroundStyle(.white.opacity(0.6))
             Text(point.summary).font(.caption).foregroundStyle(.white.opacity(0.85)).lineLimit(3)
             Spacer(minLength: 0)
         }
@@ -100,7 +101,7 @@ extension GrammarPoint {
     /// Shown in the widget gallery and as the placeholder before real data loads.
     static let sample = GrammarPoint(
         id: "n-desu", title: "〜んです", summary: "Explains or asks for the reason behind something.",
-        level: .beginner,
+        jlpt: .n4,
         usages: [GrammarUsage(heading: "Explaining", explanation: "", examples: [GrammarExample(jp: "どうしたんですか。", en: "What happened?")])],
         attachment: [], conjugations: [], pitfalls: [], related: [])
 }

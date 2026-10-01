@@ -19,11 +19,11 @@ final class RealNuanceDataTests: XCTestCase {
 
     private let nuanceIDs = ["certainty", "obligation", "appearance", "ppoi"]
 
-    func testTheFourLessonsExistAsIntermediate() throws {
+    func testTheFourLessonsExistWithTheirCuratedLevels() throws {
         let points = try loadGrammar()
         for id in nuanceIDs {
             let lesson = try XCTUnwrap(points.first { $0.id == id }, id)
-            XCTAssertEqual(lesson.level, .intermediate, id)
+            XCTAssertEqual(lesson.jlpt, id == "ppoi" ? .n2 : .n3, id)
             XCTAssertFalse(lesson.usages.isEmpty, id)
             XCTAssertFalse(lesson.pitfalls.isEmpty, id)
         }

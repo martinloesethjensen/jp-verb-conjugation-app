@@ -7,7 +7,7 @@ final class GrammarVerbLessonsTests: XCTestCase {
             id: id,
             title: id,
             summary: "s",
-            level: .intermediate,
+            jlpt: .n3,
             usages: [],
             attachment: classes.map { AttachmentRule(wordClass: $0, pattern: "p", example: "e") },
             conjugations: [],

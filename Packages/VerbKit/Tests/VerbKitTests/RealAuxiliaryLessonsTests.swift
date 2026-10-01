@@ -18,13 +18,13 @@ final class RealAuxiliaryLessonsTests: XCTestCase {
 
     func testTheFourLessonsExistWithTheAgreedLevels() throws {
         let points = try loadGrammar()
-        let expected: [(String, GrammarLevel)] = [
-            ("teiru", .beginner), ("teshimau", .intermediate),
-            ("temiru", .beginner), ("sugiru", .intermediate),
+        let expected: [(String, JLPTLevel)] = [
+            ("teiru", .n5), ("teshimau", .n4),
+            ("temiru", .n4), ("sugiru", .n4),
         ]
         for (id, level) in expected {
             let lesson = try XCTUnwrap(points.first { $0.id == id }, id)
-            XCTAssertEqual(lesson.level, level, id)
+            XCTAssertEqual(lesson.jlpt, level, id)
             XCTAssertFalse(lesson.usages.isEmpty, id)
             XCTAssertFalse(lesson.pitfalls.isEmpty, id)
             XCTAssertTrue(lesson.attachesToVerbs, id)

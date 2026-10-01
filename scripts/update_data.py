@@ -137,7 +137,7 @@ MAX_PROBLEMS_SHOWN = 20
 KEY_PATTERN = re.compile("^[一-鿿々]+[ぁ-ゖ]{0,%d}$" % MAX_OKURIGANA_IN_KEY)
 READING_PATTERN = re.compile("^[ぁ-ゖー]+$")
 
-LEVELS = {"beginner", "intermediate"}
+JLPT_LEVELS = {"N5", "N4", "N3", "N2", "N1"}
 WORD_CLASSES = {"verb", "i-adjective", "na-adjective", "noun"}
 REGISTERS = {"polite", "casual", "formal"}
 
@@ -367,6 +367,15 @@ def check_coverage(verbs_doc, grammar_doc, readings):
     return problems
 
 
+def check_verb_jlpt(verbs_doc):
+    """A verb's jlpt is optional, but when present it must be N5..N1."""
+    return [
+        f"{v.get('dict', '<no dict>')}: jlpt must be one of {sorted(JLPT_LEVELS)}"
+        for v in verbs_doc.get("verbs", [])
+        if "jlpt" in v and v["jlpt"] not in JLPT_LEVELS
+    ]
+
+
 def check_verb_kanji(verbs_doc, readings):
     """Each verb's `kanji` must spell out its kana `dict` form."""
     problems = []
@@ -411,8 +420,8 @@ def validate_grammar(doc):
         for key in ("id", "title", "summary"):
             if not isinstance(p.get(key), str) or not p[key]:
                 errors.append(f"{pid}: {key} missing or empty")
-        if p.get("level") not in LEVELS:
-            errors.append(f"{pid}: level must be one of {sorted(LEVELS)}")
+        if p.get("jlpt") not in JLPT_LEVELS:
+            errors.append(f"{pid}: jlpt must be one of {sorted(JLPT_LEVELS)}")
         for related in p.get("related", []):
             if related not in ids:
                 errors.append(f"{pid}: related id '{related}' does not exist")
@@ -575,6 +584,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     readings = furigana_doc["readings"]
 
     verbs_doc = json.loads(verbs_path.read_text(encoding="utf-8"))
+    problems = check_verb_jlpt(verbs_doc)
+    if problems:
+        return 1, capped("verbs.json has an invalid jlpt level:", problems)
     apply_nd_forms(verbs_doc)
     try:
         apply_potential_forms(verbs_doc)
