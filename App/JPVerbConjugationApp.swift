@@ -37,6 +37,10 @@ struct JPVerbConjugationApp: App {
                 .task {
                     networkMonitor.start()
                     await verbStore.start()
+                }
+                // Any change to the verb data (first sync, Try Again, network-return retry,
+                // a later update) refreshes the widgets.
+                .onChange(of: verbStore.verbs) {
                     WidgetCenter.shared.reloadAllTimelines()
                 }
                 .task {
