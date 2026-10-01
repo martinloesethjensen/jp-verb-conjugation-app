@@ -86,23 +86,7 @@ struct VerbDetailView: View {
 
     private var formGroups: some View {
         VStack(alignment: .leading, spacing: 16) {
-            FormGroupSection(title: "Polite", forms: [
-                ("ます (polite +)", verb.forms.masuPos),
-                ("ません (polite −)", verb.forms.masuNeg),
-                ("ました (polite past +)", verb.forms.masuPast),
-                ("ませんでした (polite past −)", verb.forms.masuPastNeg),
-            ], defaultExpanded: true)
-
-            FormGroupSection(title: "Plain", forms: [
-                ("short (present +)", verb.forms.shortPos),
-                ("short (present −)", verb.forms.shortNeg),
-                ("short (past +)", verb.forms.shortPast),
-                ("short (past −)", verb.forms.shortPastNeg),
-            ], defaultExpanded: true)
-
-            FormGroupSection(title: "て-form", forms: [
-                ("て-form", verb.forms.te),
-            ], defaultExpanded: true)
+            VerbFormsCard(verb: verb)
 
             if verb.forms.hasPotentialForms {
                 PotentialFormsSection(forms: verb.forms)
