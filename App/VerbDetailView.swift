@@ -10,8 +10,8 @@ struct VerbDetailView: View {
         verb.teGroup?.accentColor ?? verb.type.accentColor
     }
 
-    private var jishoURL: URL {
-        TextLookupURL.jisho(verb.dict)!
+    private var jishoURL: URL? {
+        TextLookupURL.jisho(verb.dict)
     }
 
     var body: some View {
@@ -76,8 +76,10 @@ struct VerbDetailView: View {
                 .buttonStyle(.glassProminent)
                 .tint(accent)
                 .foregroundStyle(Color.black.opacity(0.85))
-            Link(destination: jishoURL) {
-                Label("Jisho", systemImage: "link")
+            if let jishoURL {
+                Link(destination: jishoURL) {
+                    Label("Jisho", systemImage: "link")
+                }
             }
         }
         .buttonStyle(.glass)
