@@ -113,7 +113,7 @@ and it works the same in dark mode.
 `FormSplit.split(_ form: String, from dict: String) -> (stem: String, ending: String)`
 in VerbKit returns the longest common prefix with the kana dictionary form and the
 rest. It is pure and unit-tested. `FormCell` renders it as one `Text` from two styled
-pieces (`Text + Text`), so it wraps and scales like ordinary text. It applies only to
+pieces (string interpolation of two styled `Text`s), so it wraps and scales like ordinary text. It applies only to
 form cells in the tables; headers, captions, previews and lesson text are unchanged.
 
 ## 3. Implementation, testing and rollout

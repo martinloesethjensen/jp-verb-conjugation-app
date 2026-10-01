@@ -1,8 +1,8 @@
 import SwiftUI
 import VerbKit
 
-/// The extended groups as rows that push their own page, each previewing one
-/// form. A row is left out when the verb has none of that group's forms.
+/// The extended groups as rows that push their own page, each previewing the
+/// first form that exists. A row is left out when the verb has none of the group's forms.
 struct MoreRowsCard: View {
     let verb: Verb
     @Environment(VerbStore.self) private var verbStore
@@ -13,24 +13,35 @@ struct MoreRowsCard: View {
         var id: VerbSubPage { page }
     }
 
+    private func firstForm(_ forms: [String?]) -> String? {
+        forms.compactMap { $0 }.first
+    }
+
     private var rows: [Row] {
         let f = verb.forms
         var rows: [Row] = []
-        if f.hasPotentialForms, let preview = f.potential {
-            rows.append(Row(page: .potential, preview: preview))
-        }
-        if f.hasNdForms, let preview = f.ndPos {
-            rows.append(Row(page: .nDesu, preview: preview))
-        }
-        if f.hasAuxiliaryForms, let preview = f.teiru ?? f.nagara {
-            rows.append(Row(page: .auxiliaries, preview: preview))
-        }
-        if f.hasAdvancedForms, let preview = f.volitional ?? f.tai ?? f.imperative {
-            rows.append(Row(page: .advanced, preview: preview))
+        let groups: [(VerbSubPage, String?)] = [
+            (.potential, firstForm([f.potential, f.potMasuPos, f.potMasuNeg, f.potMasuPast,
+                                    f.potMasuPastNeg, f.potTe, f.potShortNeg, f.potShortPast,
+                                    f.potShortPastNeg])),
+            (.nDesu, firstForm([f.ndPos, f.ndNeg, f.ndPast, f.ndPastNeg, f.ndCasualPos,
+                                f.ndCasualNeg, f.ndCasualPast, f.ndCasualPastNeg])),
+            (.auxiliaries, firstForm([f.teiru, f.teiruNeg, f.teiruPast, f.teiruPastNeg,
+                                      f.teiruMasuPos, f.teiruMasuNeg, f.teiruMasuPast,
+                                      f.teiruMasuPastNeg, f.teiruTe, f.teshimau, f.teshimauPolite,
+                                      f.teoku, f.teokuPolite, f.temiru, f.temiruPolite,
+                                      f.sugiru, f.sugiruPolite, f.yasui, f.yasuiPolite,
+                                      f.nikui, f.nikuiPolite, f.nagara])),
+            (.advanced, firstForm([f.volitional, f.passive, f.causative, f.causativePassive,
+                                   f.conditionalBa, f.conditionalTara, f.imperative, f.tai])),
+        ]
+        for (page, preview) in groups {
+            if let preview { rows.append(Row(page: page, preview: preview)) }
         }
         let lessonCount = verbStore.grammarPoints.attachingToVerbs.count
         if lessonCount > 0 {
-            rows.append(Row(page: .lessons, preview: "\(lessonCount) lessons"))
+            rows.append(Row(page: .lessons,
+                            preview: lessonCount == 1 ? "1 lesson" : "\(lessonCount) lessons"))
         }
         return rows
     }

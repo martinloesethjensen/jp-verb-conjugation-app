@@ -12,8 +12,7 @@ struct FormCell: View {
         let split = FormSplit.split(form, from: dict)
         Group {
             if split.hasEnding {
-                Text(split.stem).fontWeight(.regular).foregroundStyle(.secondary)
-                    + Text(split.ending).fontWeight(.bold).foregroundStyle(.primary)
+                Text("\(Text(split.stem).fontWeight(.regular).foregroundStyle(.secondary))\(Text(split.ending).fontWeight(.bold).foregroundStyle(.primary))")
             } else {
                 Text(form)
             }
