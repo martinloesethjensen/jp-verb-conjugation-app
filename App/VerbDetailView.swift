@@ -11,7 +11,7 @@ struct VerbDetailView: View {
     }
 
     private var jishoURL: URL? {
-        TextLookupURL.jisho(verb.dict)
+        TextLookupURL.jisho(verb.jishoQuery)
     }
 
     var body: some View {
@@ -33,6 +33,16 @@ struct VerbDetailView: View {
                 .padding()
             }
             .navigationTitle(verb.dict)
+            .toolbar {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button("Examples", systemImage: "book", action: onExamples)
+                    if let jishoURL {
+                        Link(destination: jishoURL) {
+                            Label("Jisho", systemImage: "link")
+                        }
+                    }
+                }
+            }
             .navigationDestination(for: VerbSubPage.self) { page in
                 switch page {
                 case .potential: PotentialPage(verb: verb)
@@ -70,19 +80,11 @@ struct VerbDetailView: View {
     }
 
     private var actions: some View {
-        HStack(spacing: 10) {
-            Button("Examples", systemImage: "book", action: onExamples)
-            Button("Test this verb", systemImage: "gamecontroller", action: onQuiz)
-                .buttonStyle(.glassProminent)
-                .tint(accent)
-                .foregroundStyle(Color.black.opacity(0.85))
-            if let jishoURL {
-                Link(destination: jishoURL) {
-                    Label("Jisho", systemImage: "link")
-                }
-            }
-        }
-        .buttonStyle(.glass)
+        Button("Test this verb", systemImage: "gamecontroller", action: onQuiz)
+            .buttonStyle(.glassProminent)
+            .controlSize(.small)
+            .tint(accent)
+            .foregroundStyle(Color.black.opacity(0.85))
     }
 
     private func notesBox(_ notes: String) -> some View {
