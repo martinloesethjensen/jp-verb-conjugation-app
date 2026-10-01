@@ -11,6 +11,10 @@ public final class VerbEntity {
     public var verbDescription: String
     public var notes: String?
     public var teGroup: String?
+    /// Position in the source file, so the list keeps its authored order (a
+    /// SwiftData fetch is otherwise unordered). The default lets rows saved before
+    /// this existed migrate; the next sync rewrites them with real positions.
+    public var sortOrder: Int = 0
 
     // `forms`/`examples` are stored as JSON `Data` rather than as native
     // `VerbForms`/`[VerbExample]` attributes. In this SwiftData build,
@@ -61,8 +65,10 @@ public final class VerbEntity {
         notes: String?,
         teGroup: String?,
         forms: VerbForms,
-        examples: [VerbExample]
+        examples: [VerbExample],
+        sortOrder: Int = 0
     ) {
+        self.sortOrder = sortOrder
         self.dict = dict
         self.type = type
         self.label = label
@@ -88,7 +94,7 @@ private extension VerbForms {
 }
 
 public extension VerbEntity {
-    convenience init(_ verb: Verb) {
+    convenience init(_ verb: Verb, sortOrder: Int = 0) {
         self.init(
             dict: verb.dict,
             type: verb.type.rawValue,
@@ -99,7 +105,8 @@ public extension VerbEntity {
             notes: verb.notes,
             teGroup: verb.teGroup?.rawValue,
             forms: verb.forms,
-            examples: verb.examples
+            examples: verb.examples,
+            sortOrder: sortOrder
         )
     }
 

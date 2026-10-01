@@ -21,8 +21,10 @@ public enum TextLookupURL {
     }
 
     /// DeepL's translator, Japanese to English. The text rides in the fragment.
+    /// DeepL splits the fragment at a `/` even when it is percent-encoded and drops
+    /// everything after it, so a slash becomes the fullwidth `／`, which it keeps.
     public static func deepL(_ text: String) -> URL? {
-        encoded(text).flatMap { URL(string: "https://www.deepl.com/translator#ja/en/" + $0) }
+        encoded(text.replacingOccurrences(of: "/", with: "／")).flatMap { URL(string: "https://www.deepl.com/translator#ja/en/" + $0) }
     }
 
     /// Google Translate, Japanese to English.

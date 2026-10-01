@@ -32,10 +32,12 @@ final class TextLookupURLTests: XCTestCase {
 
     func testCharactersThatCouldChangeTheShapeOfTheURLAreEscaped() {
         let text = "a/b?c#d%e&f g=h"
-        for url in [TextLookupURL.jisho(text), TextLookupURL.deepL(text), TextLookupURL.google(text)] {
+        for url in [TextLookupURL.jisho(text), TextLookupURL.google(text)] {
             let string = url?.absoluteString ?? ""
             XCTAssertTrue(string.contains("a%2Fb%3Fc%23d%25e%26f%20g%3Dh"), string)
         }
+        // DeepL gets a fullwidth slash instead (see DeepLSlashTests).
+        XCTAssertTrue(TextLookupURL.deepL(text)?.absoluteString.contains("a%EF%BC%8Fb%3Fc%23d%25e%26f%20g%3Dh") == true)
     }
 
     func testUnreservedAsciiIsLeftAlone() {
@@ -62,5 +64,19 @@ final class TextLookupURLTests: XCTestCase {
 
     func testSurroundingWhitespaceIsTrimmed() {
         XCTAssertEqual(TextLookupURL.jisho("  食べる \n")?.absoluteString, "https://jisho.org/search/" + taberu)
+    }
+}
+
+final class DeepLSlashTests: XCTestCase {
+    func testDeepLKeepsTheWholeTextByUsingAFullwidthSlash() {
+        XCTAssertEqual(
+            TextLookupURL.deepL("猫/犬")?.absoluteString,
+            "https://www.deepl.com/translator#ja/en/%E7%8C%AB%EF%BC%8F%E7%8A%AC"
+        )
+    }
+
+    func testJishoAndGoogleStillEncodeTheSlashAsIs() {
+        XCTAssertEqual(TextLookupURL.jisho("猫/犬")?.absoluteString, "https://jisho.org/search/%E7%8C%AB%2F%E7%8A%AC")
+        XCTAssertTrue(TextLookupURL.google("猫/犬")!.absoluteString.contains("%E7%8C%AB%2F%E7%8A%AC"))
     }
 }

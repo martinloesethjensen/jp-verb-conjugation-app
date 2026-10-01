@@ -19,6 +19,7 @@ struct FormCell: View {
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .textActions(form)
     }
