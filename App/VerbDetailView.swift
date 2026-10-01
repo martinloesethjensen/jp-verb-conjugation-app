@@ -22,20 +22,33 @@ struct VerbDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-                actions
-                if let notes = verb.notes {
-                    notesBox(notes)
+        // The detail column of a split view does not push navigation links by
+        // itself, so the page owns a stack. Keyed on the verb, so choosing
+        // another verb returns to the main page.
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    header
+                    actions
+                    if let notes = verb.notes {
+                        notesBox(notes)
+                    }
+                    JapaneseText(verb.description)
+                        .font(.body)
+                    formGroups
                 }
-                JapaneseText(verb.description)
-                    .font(.body)
-                formGroups
+                .padding()
             }
-            .padding()
+            .navigationTitle(verb.dict)
+            .navigationDestination(for: VerbSubPage.self) { page in
+                switch page {
+                case .potential: PotentialPage(verb: verb)
+                case .nDesu: NdesuPage(verb: verb)
+                case .auxiliaries, .advanced, .lessons: EmptyView()
+                }
+            }
         }
-        .navigationTitle(verb.dict)
+        .id(verb.id)
     }
 
     private var header: some View {
@@ -88,9 +101,7 @@ struct VerbDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             VerbFormsCard(verb: verb)
 
-            if verb.forms.hasPotentialForms {
-                PotentialFormsSection(forms: verb.forms)
-            }
+            MoreRowsCard(verb: verb)
 
             if hasAdvancedForms {
                 FormGroupSection(
@@ -107,10 +118,6 @@ struct VerbDetailView: View {
                     ].compactMap { label, value in value.map { (label, $0) } },
                     defaultExpanded: false
                 )
-            }
-
-            if verb.forms.hasNdForms {
-                NdesuFormsSection(forms: verb.forms)
             }
 
             if verb.forms.hasAuxiliaryForms {
