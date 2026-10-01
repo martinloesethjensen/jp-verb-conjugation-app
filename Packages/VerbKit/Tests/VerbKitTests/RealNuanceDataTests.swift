@@ -52,10 +52,11 @@ final class RealNuanceDataTests: XCTestCase {
     }
 
     func testEveryLessonAttachingToVerbsShowsInTheVerbPageList() throws {
-        // All six lessons have a verb rule; the list keeps the file's order.
+        // All ten lessons have a verb rule; the list keeps the file's order.
         XCTAssertEqual(
             try loadGrammar().attachingToVerbs.map(\.id),
-            ["n-desu", "potential", "certainty", "obligation", "appearance", "ppoi"]
+            ["n-desu", "potential", "certainty", "obligation", "appearance", "ppoi",
+             "teiru", "teshimau", "temiru", "sugiru"]
         )
     }
 }

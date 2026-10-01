@@ -663,7 +663,7 @@
           ]
         }
       ],
-      "related": ["certainty", "ppoi"]
+      "related": ["certainty", "ppoi", "sugiru"]
     },
     {
       "id": "ppoi",
@@ -751,6 +751,389 @@
         }
       ],
       "related": ["appearance"]
+    },
+    {
+      "id": "teiru",
+      "title": "ている・てある",
+      "summary": "ている describes an action in progress, or a state that results from an action: 食べている (is eating), 結婚している (is married). てある describes a state that someone left behind on purpose: 窓が開けてある.",
+      "level": "beginner",
+      "usages": [
+        {
+          "heading": "In progress",
+          "explanation": "After a verb of an action that takes time, ている says that the action is going on now.",
+          "examples": [
+            { "jp": "今、ご飯を食べています。", "en": "I'm eating a meal now." },
+            { "jp": "雨が降っています。", "en": "It's raining." }
+          ]
+        },
+        {
+          "heading": "A state that results",
+          "explanation": "After a verb that describes a change (結婚する, 知る, 持つ), ている does not mean that the change is happening. It describes the state you are in after it.",
+          "examples": [
+            { "jp": "田中さんは結婚しています。", "en": "Mr. Tanaka is married." },
+            { "jp": "あの人を知っていますか。", "en": "Do you know that person?" },
+            { "jp": "私は車を持っています。", "en": "I have a car." }
+          ]
+        },
+        {
+          "heading": "Habits and ongoing situations",
+          "explanation": "ている also describes something you do regularly, or a situation that has been going on for some time.",
+          "examples": [
+            { "jp": "毎朝、走っています。", "en": "I run every morning." },
+            { "jp": "兄は会社で働いています。", "en": "My older brother works at a company." },
+            { "jp": "私は京都に住んでいます。", "en": "I live in Kyoto." }
+          ]
+        },
+        {
+          "heading": "てある: a state someone left",
+          "explanation": "てある says that someone did something on purpose and the result is still there. The thing that was affected is the subject, usually marked with が (or は), and the verb is one that takes an object.",
+          "examples": [
+            { "jp": "窓が開けてあります。", "en": "The window has been opened. (someone did it, and it is still open)" },
+            { "jp": "机の上にメモが置いてある。", "en": "A note has been left on the desk." },
+            { "jp": "ホテルはもう予約してあります。", "en": "The hotel has already been booked." }
+          ]
+        },
+        {
+          "heading": "ている or てある?",
+          "explanation": "ている describes a state without saying who caused it, and てある says that a person did it deliberately, often to be ready for something. Compare an intransitive verb with ている and a transitive verb with てある.",
+          "examples": [
+            { "jp": "ドアが開いている。", "en": "The door is open." },
+            { "jp": "ドアが開けてある。", "en": "The door has been left open. (someone did it on purpose)" }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "Most verbs",
+          "pattern": "て-form + いる",
+          "example": "食べる → 食べている / 飲む → 飲んでいる / 書く → 書いている / 買う → 買っている / する → している / 来る → 来ている",
+          "note": "The て-form comes from the verb as usual, and いる then conjugates like any ru-verb. In speech the い is often dropped: 食べてる. Verbs of existence and ability, such as ある and できる, are the exceptions."
+        },
+        {
+          "word_class": "verb",
+          "condition": "Verbs that take an object",
+          "pattern": "て-form + ある",
+          "example": "開ける → 開けてある / 書く → 書いてある / 置く → 置いてある / 予約する → 予約してある",
+          "note": "Only verbs that take an object. An intransitive verb such as 開く uses ている instead: 開いている."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜ています", "register": "polite", "note": "Polite present. 〜ていました for the past, 〜ていません for the negative." },
+        { "form": "〜ていました", "register": "polite" },
+        { "form": "〜ていません", "register": "polite", "note": "Negative. 〜ていませんでした for the past negative." },
+        { "form": "〜ている", "register": "casual", "note": "Plain present. Often shortened to 〜てる in speech." },
+        { "form": "〜ていた", "register": "casual", "note": "Plain past." },
+        { "form": "〜ていない", "register": "casual", "note": "Plain negative. 〜ていなかった for the past negative." },
+        { "form": "〜てあります", "register": "polite", "note": "Polite. 〜てありません is the negative and 〜てありました the past." },
+        { "form": "〜てある", "register": "casual", "note": "Plain. Its negative is 〜てない, which is spelled like the spoken form of 〜ていない." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "行っている and 来ている",
+          "explanation": "With 行く and 来る, ている does not mean that the person is on the way. It describes the state after getting there: gone, or come.",
+          "examples": [
+            { "jp": "田中さんは今、大阪に行っています。", "en": "Mr. Tanaka has gone to Osaka. (and is there now)" },
+            { "jp": "友達が来ています。", "en": "My friend has come. (and is here)" }
+          ]
+        },
+        {
+          "heading": "Knowing, and the negative",
+          "explanation": "知っている means \"to know\", but its negative is 知らない (or 知りません), and not 知っていない.",
+          "examples": [
+            { "jp": "あの人のことは知りません。", "en": "I don't know that person." }
+          ]
+        },
+        {
+          "heading": "てある needs a verb that takes an object",
+          "explanation": "てある cannot follow a verb such as 開く or 始まる, because nobody does that to something. 窓が開けてある is right, and 窓が開いてある is not. To describe the state without a person behind it, use ている.",
+          "examples": [
+            { "jp": "窓が開けてあります。", "en": "The window has been opened. (by someone)" }
+          ]
+        }
+      ],
+      "related": ["teshimau"]
+    },
+    {
+      "id": "teshimau",
+      "title": "てしまう・ておく",
+      "summary": "てしまう says that something is completely done, or that it happened and you regret it. ておく says that you do something in advance, or leave something as it is.",
+      "level": "intermediate",
+      "usages": [
+        {
+          "heading": "てしまう: done completely",
+          "explanation": "After a verb, てしまう says that the action is finished, done and out of the way.",
+          "examples": [
+            { "jp": "宿題はもう全部やってしまいました。", "en": "I've already finished all of my homework." },
+            { "jp": "この本は昨日、全部読んでしまった。", "en": "I finished the whole book yesterday." }
+          ]
+        },
+        {
+          "heading": "てしまう: regret",
+          "explanation": "When something happened that you did not want, てしまう adds the feeling of \"oh no\" or \"I'm sorry\".",
+          "examples": [
+            { "jp": "財布を忘れてしまった。", "en": "Oh no, I forgot my wallet." },
+            { "jp": "大事な書類をなくしてしまいました。", "en": "Unfortunately, I lost an important document." }
+          ]
+        },
+        {
+          "heading": "Casual ちゃう and じゃう",
+          "explanation": "In casual speech てしまう shrinks to ちゃう, and でしまう shrinks to じゃう. The past forms are ちゃった and じゃった.",
+          "examples": [
+            { "jp": "あ、全部食べちゃった。", "en": "Oops, I ate it all." },
+            { "jp": "ジュースを飲んじゃった。", "en": "I drank the juice. (and I shouldn't have)" }
+          ]
+        },
+        {
+          "heading": "ておく: getting ready",
+          "explanation": "ておく says that you do something now so that things are ready for later.",
+          "examples": [
+            { "jp": "旅行の前に、ホテルを予約しておきます。", "en": "Before the trip, I'll book a hotel." },
+            { "jp": "友達が来る前に、部屋を掃除しておく。", "en": "I'll clean the room before my friend comes." }
+          ]
+        },
+        {
+          "heading": "ておく: leaving as it is",
+          "explanation": "ておく also says that you leave something in the state it is in. In requests it is very common, with ください.",
+          "examples": [
+            { "jp": "窓は開けておいてください。", "en": "Please leave the window open." },
+            { "jp": "電気はつけておく。", "en": "I'll leave the light on." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "Any verb",
+          "pattern": "て-form + しまう / おく",
+          "example": "食べてしまう / 飲んでしまう / 書いてしまう / してしまう / 予約しておく / 書いておく",
+          "note": "The same て-form as for ている. In casual speech: 食べちゃう, 飲んじゃう (しまう), and 書いとく, 読んどく (おく)."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜てしまいます", "register": "polite", "note": "Polite present. 〜てしまいました for the past." },
+        { "form": "〜ておきます", "register": "polite", "note": "Polite present. 〜ておきました for the past." },
+        { "form": "〜てしまう", "register": "casual", "note": "Plain. 〜てしまった for the past. The negative 〜てしまわない is rare, mostly in 〜てしまわないように." },
+        { "form": "〜ちゃう", "register": "casual", "note": "Spoken form of 〜てしまう (〜じゃう after で). 〜ちゃった for the past." },
+        { "form": "〜ておく", "register": "casual", "note": "Plain. 〜ておいた for the past, and 〜ておかない for the negative." },
+        { "form": "〜とく", "register": "casual", "note": "Spoken form of 〜ておく (〜どく after で)." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Completion or regret?",
+          "explanation": "The same ending can mean either, and the situation tells you which. Finishing something you set out to do is completion, and something that simply happens to you is usually regret.",
+          "examples": [
+            { "jp": "宿題を全部やってしまったから、遊びに行ける。", "en": "I've got all my homework done, so I can go out. (completion)" },
+            { "jp": "夏休みが終わってしまった。", "en": "The summer vacation is over, sadly. (regret)" }
+          ]
+        },
+        {
+          "heading": "ておく or てある?",
+          "explanation": "ておく is the action, done in advance by a person. てある is the state that it leaves. Both can describe the same hotel booking.",
+          "examples": [
+            { "jp": "ホテルを予約しておきました。", "en": "I booked the hotel in advance." },
+            { "jp": "ホテルは予約してあります。", "en": "The hotel is booked." }
+          ]
+        },
+        {
+          "heading": "ちゃう is casual",
+          "explanation": "ちゃう, じゃう and とく are spoken forms. Use てしまう and ておく when writing, or when speaking politely.",
+          "examples": [
+            { "jp": "宿題を忘れてしまいました。", "en": "I forgot my homework. (polite)" }
+          ]
+        }
+      ],
+      "related": ["teiru", "temiru"]
+    },
+    {
+      "id": "temiru",
+      "title": "てみる・ながら",
+      "summary": "てみる means \"try doing it and see\". ながら joins two actions that happen at the same time, and the second one is the main action.",
+      "level": "beginner",
+      "usages": [
+        {
+          "heading": "てみる: try it and see",
+          "explanation": "てみる says that you do something to find out what it is like. The みる comes from 見る, but as a helper it is written in hiragana.",
+          "examples": [
+            { "jp": "この料理を食べてみてください。", "en": "Please try this dish." },
+            { "jp": "このシャツを着てみてもいいですか。", "en": "May I try this shirt on?" }
+          ]
+        },
+        {
+          "heading": "Trying, and wanting to try",
+          "explanation": "In the past, てみた says that you tried. てみたい says that you want to try.",
+          "examples": [
+            { "jp": "日本語で話してみました。", "en": "I tried speaking in Japanese." },
+            { "jp": "新しいレストランに行ってみたいです。", "en": "I want to try going to the new restaurant." }
+          ]
+        },
+        {
+          "heading": "ながら: two things at once",
+          "explanation": "ながら joins two actions that one person does at the same time. The action before ながら is the background, and the action at the end is the main one.",
+          "examples": [
+            { "jp": "音楽を聞きながら、勉強します。", "en": "I study while listening to music." },
+            { "jp": "歩きながら、電話をしています。", "en": "I'm talking on the phone while walking." }
+          ]
+        },
+        {
+          "heading": "Which action is the main one",
+          "explanation": "Swapping the two actions swaps what you are emphasizing, so choose the order by what you want to say.",
+          "examples": [
+            { "jp": "テレビを見ながらご飯を食べる。", "en": "I eat while watching television. (eating is the main thing)" },
+            { "jp": "ご飯を食べながらテレビを見る。", "en": "I watch television while eating. (watching is the main thing)" }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "てみる",
+          "pattern": "て-form + みる",
+          "example": "食べる → 食べてみる / 飲む → 飲んでみる / 書く → 書いてみる / する → してみる / 来る → 来てみる",
+          "note": "みる then conjugates like any ru-verb: 食べてみます, 食べてみた, 食べてみない."
+        },
+        {
+          "word_class": "verb",
+          "condition": "ながら",
+          "pattern": "ます-stem + ながら",
+          "example": "食べる → 食べながら / 飲む → 飲みながら / 書く → 書きながら / する → しながら / 歌う → 歌いながら",
+          "note": "The stem is the ます form without ます (食べ, 飲み, 書き, し, 歌い). ながら does not conjugate."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜てみます", "register": "polite", "note": "Polite present. 〜てみました for the past." },
+        { "form": "〜てみたいです", "register": "polite", "note": "\"I want to try.\"" },
+        { "form": "〜てみる", "register": "casual", "note": "Plain. 〜てみた for the past, and 〜てみない for the negative." },
+        { "form": "〜てみたい", "register": "casual", "note": "\"I want to try.\"" },
+        { "form": "〜ながら", "register": "polite", "note": "Does not change: it is used as it is in polite speech, and the tense and the politeness come from the main verb at the end." },
+        { "form": "〜ながら", "register": "casual", "note": "The same in casual speech; the tense comes from the main verb at the end." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "ながら needs one person doing both",
+          "explanation": "Both actions must be done by the same person, and both must be ongoing. For two people at the same time, use 間 (as in ている間): 私が料理をしている間、彼はテレビを見ていた. For one action after another, use the て-form.",
+          "examples": [
+            { "jp": "彼は歌いながら歩いている。", "en": "He is walking while singing." }
+          ]
+        },
+        {
+          "heading": "The tense is on the last verb",
+          "explanation": "ながら itself has no tense, so the whole sentence takes its tense from the final verb.",
+          "examples": [
+            { "jp": "昨日は音楽を聞きながら、勉強した。", "en": "Yesterday I studied while listening to music." }
+          ]
+        },
+        {
+          "heading": "Written in hiragana",
+          "explanation": "In this use, write みる in hiragana: 食べてみる, and not 食べて見る. 見る on its own means \"to see\", and the hiragana みる marks the helper.",
+          "examples": [
+            { "jp": "もう一度、やってみます。", "en": "I'll try it once more." }
+          ]
+        }
+      ],
+      "related": ["teshimau", "sugiru"]
+    },
+    {
+      "id": "sugiru",
+      "title": "すぎる・やすい・にくい",
+      "summary": "All three attach to the ます-stem, and すぎる also attaches to adjectives. すぎる means \"too much\", やすい means \"easy to\", and にくい means \"hard to\". The first becomes a ru-verb, and the other two become い-adjectives.",
+      "level": "intermediate",
+      "usages": [
+        {
+          "heading": "すぎる: too much",
+          "explanation": "After a verb stem, すぎる says that someone does something too much.",
+          "examples": [
+            { "jp": "昨日は食べすぎました。", "en": "I ate too much yesterday." },
+            { "jp": "飲みすぎると、頭が痛くなります。", "en": "If you drink too much, you get a headache." }
+          ]
+        },
+        {
+          "heading": "すぎる after adjectives",
+          "explanation": "すぎる also follows an adjective, and then it means \"too\". An い-adjective drops the い, and a な-adjective drops な.",
+          "examples": [
+            { "jp": "この本は難しすぎる。", "en": "This book is too difficult." },
+            { "jp": "この部屋は静かすぎて、落ち着かない。", "en": "This room is too quiet, and I can't relax." }
+          ]
+        },
+        {
+          "heading": "やすい: easy to, and apt to",
+          "explanation": "After a verb stem, やすい says that something is easy to do. It can also say that something tends to happen.",
+          "examples": [
+            { "jp": "この靴は歩きやすいです。", "en": "These shoes are easy to walk in." },
+            { "jp": "私は風邪をひきやすいです。", "en": "I catch colds easily." }
+          ]
+        },
+        {
+          "heading": "にくい: hard to",
+          "explanation": "After a verb stem, にくい says that something is hard to do.",
+          "examples": [
+            { "jp": "この漢字は読みにくいです。", "en": "This kanji is hard to read." },
+            { "jp": "この箸は使いにくい。", "en": "These chopsticks are hard to use." }
+          ]
+        },
+        {
+          "heading": "Becoming easier or harder",
+          "explanation": "やすい and にくい are い-adjectives, so they conjugate like one: やすくなる, にくくない, やすかった.",
+          "examples": [
+            { "jp": "ペンを変えたら、字が書きやすくなった。", "en": "After I changed pens, writing got easier." },
+            { "jp": "この道は歩きにくくなかった。", "en": "This road wasn't hard to walk on." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "Any verb",
+          "pattern": "ます-stem + すぎる / やすい / にくい",
+          "example": "食べる → 食べすぎる / 飲む → 飲みやすい / 読む → 読みにくい / する → しすぎる / 来る → きすぎる",
+          "note": "The stem is the ます form without ます (食べ, 飲み, し, き)."
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "stem (drop い) + すぎる",
+          "example": "高い → 高すぎる / 難しい → 難しすぎる",
+          "note": "いい becomes よすぎる. The negative ない (and 〜くない) becomes なさすぎる: 味がなさすぎる. Adjectives that merely end in ない are regular: 少ない → 少なすぎる, 危ない → 危なすぎる."
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "stem + すぎる",
+          "example": "静か → 静かすぎる / 元気 → 元気すぎる"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜すぎます", "register": "polite", "note": "Polite present. 〜すぎました for the past. すぎる is a ru-verb." },
+        { "form": "〜やすいです", "register": "polite", "note": "\"Easy to.\" 〜やすくないです for the negative." },
+        { "form": "〜にくいです", "register": "polite", "note": "\"Hard to.\" 〜にくくないです for the negative." },
+        { "form": "〜すぎる", "register": "casual", "note": "Plain. 〜すぎた for the past, and 〜すぎない for the negative." },
+        { "form": "〜やすい", "register": "casual", "note": "An い-adjective: 〜やすかった, 〜やすくない, 〜やすくて." },
+        { "form": "〜にくい", "register": "casual", "note": "An い-adjective: 〜にくかった, 〜にくくない, 〜にくくて." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "いい and ない before すぎる",
+          "explanation": "With すぎる, いい becomes よすぎる and ない becomes なさすぎる, and neither is attached as it is.",
+          "examples": [
+            { "jp": "このスープは味がなさすぎる。", "en": "This soup has far too little flavour." },
+            { "jp": "この条件はよすぎる。", "en": "These terms are too good. (too good to be true)" }
+          ]
+        },
+        {
+          "heading": "すぎる is usually a complaint",
+          "explanation": "The basic meaning is \"too much\", so even with a word that is normally good it is usually a complaint: この部屋はきれいすぎて落ち着かない. In casual speech it is also used as strong praise, as in このケーキ、おいしすぎる！",
+          "examples": [
+            { "jp": "この部屋はきれいすぎて、落ち着かない。", "en": "This room is so clean that I can't relax." },
+            { "jp": "このケーキ、おいしすぎる！", "en": "This cake is way too good! (praise)" }
+          ]
+        },
+        {
+          "heading": "やすい is not 安い",
+          "explanation": "The word for \"cheap\", 安い, sounds the same as やすい. After a verb stem it is the helper, which you write in hiragana: 書きやすい (easy to write), and not 書き安い.",
+          "examples": [
+            { "jp": "この辞書は使いやすくて、安い。", "en": "This dictionary is easy to use, and cheap." }
+          ]
+        }
+      ],
+      "related": ["temiru", "appearance"]
     }
   ]
 }

@@ -108,6 +108,40 @@ final class RealFuriganaDataTests: XCTestCase {
         XCTAssertEqual(spelled("可能形"), "かのうけい")
     }
 
+    /// Pinned readings for the keys whose answer depends on what follows the kanji
+    /// (the coverage check only fails on a missing reading, never on a wrong one).
+    func testReadingsThatDependOnWhatFollows() throws {
+        let dictionary = try loadDictionary()
+        func spelled(_ text: String) -> String {
+            dictionary.units(for: text).map { $0.reading ?? $0.text }.joined()
+        }
+        XCTAssertEqual(spelled("家に着いた"), "いえについた")        // 着: つ
+        XCTAssertEqual(spelled("服を着ています"), "ふくをきています")  // 着: き
+        XCTAssertEqual(spelled("着てみて"), "きてみて")
+        XCTAssertEqual(spelled("着なさい"), "きなさい")
+        XCTAssertEqual(spelled("落ち着かない"), "おちつかない")
+        XCTAssertEqual(spelled("駅に出る"), "えきにでる")            // 出: で
+        XCTAssertEqual(spelled("声を出す"), "こえをだす")            // 出: だ
+        XCTAssertEqual(spelled("話ですね"), "はなしですね")          // 話: はなし (the noun)
+        XCTAssertEqual(spelled("話し方"), "はなしかた")              // 話: はな
+        XCTAssertEqual(spelled("来ながら"), "きながら")              // 来: き, not こ
+        XCTAssertEqual(spelled("来ない"), "こない")
+        XCTAssertEqual(spelled("友達が来ています"), "ともだちがきています")
+        XCTAssertEqual(spelled("行っています"), "いっています")
+        XCTAssertEqual(spelled("窓を開けて"), "まどをあけて")
+        XCTAssertEqual(spelled("ドアが開いている"), "ドアがあいている")
+        XCTAssertEqual(spelled("机の上に"), "つくえのうえに")        // 上: うえ
+        XCTAssertEqual(spelled("上手"), "じょうず")
+        XCTAssertEqual(spelled("お金"), "おかね")
+        XCTAssertEqual(spelled("ご飯"), "ごはん")
+        XCTAssertEqual(spelled("歩きやすい"), "あるきやすい")
+        XCTAssertEqual(spelled("使いにくい"), "つかいにくい")
+        XCTAssertEqual(spelled("少ない"), "すくない")                // 少: すく (少し stays すこし)
+        XCTAssertEqual(spelled("少し"), "すこし")
+        XCTAssertEqual(spelled("私が料理をしている間、彼は"), "わたしがりょうりをしているあいだ、かれは")
+        XCTAssertEqual(spelled("間違える"), "まちがえる")
+    }
+
     func testTheManifestFuriganaHashMatchesTheFile() throws {
         let manifestData = try Data(contentsOf: dataURL("manifest.json"))
         let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: manifestData) as? [String: Any])
