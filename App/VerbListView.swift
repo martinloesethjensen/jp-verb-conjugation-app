@@ -20,7 +20,7 @@ struct VerbListView: View {
 
     private var settings: LevelSettings { LevelSettings(rawValue: hiddenLevelsRaw) }
     private var availableLevels: Set<JLPTLevel> {
-        verbStore.verbs.levels().union(verbStore.grammarPoints.levels())
+        verbStore.verbs.levels()
     }
     private var levelsHidden: Bool { settings.anyHidden(among: availableLevels) }
     private var effectiveSettings: LevelSettings { scope == .mine ? settings : LevelSettings() }

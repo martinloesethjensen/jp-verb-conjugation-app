@@ -35,7 +35,7 @@ struct GrammarListView: View {
 
     private var settings: LevelSettings { LevelSettings(rawValue: hiddenLevelsRaw) }
     private var availableLevels: Set<JLPTLevel> {
-        verbStore.verbs.levels().union(verbStore.grammarPoints.levels())
+        verbStore.grammarPoints.levels()
     }
     private var levelsHidden: Bool { settings.anyHidden(among: availableLevels) }
     private var summary: String { settings.summary(among: availableLevels) ?? "" }
