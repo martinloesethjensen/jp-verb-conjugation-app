@@ -11,6 +11,8 @@ struct RootView: View {
     @State private var showingExamples = false
     @State private var showingSettings = false
     @State private var quizQuestions: [QuizQuestion]?
+    @State private var topicSheetVerbs: [Verb]?
+    @State private var pendingQuestions: [QuizQuestion]?
 
     private var appearance: AppearanceMode {
         AppearanceMode(rawValue: appearanceModeRaw) ?? .system
@@ -41,7 +43,7 @@ struct RootView: View {
         NavigationSplitView {
             VerbListView(
                 selection: $selection,
-                onRandomQuiz: { quizQuestions = buildQuestions(verbs: verbStore.verbs, count: quizQuestionCount) },
+                onRandomQuiz: { topicSheetVerbs = verbStore.verbs },
                 onSettings: { showingSettings = true }
             )
         } detail: {
@@ -49,7 +51,7 @@ struct RootView: View {
                 VerbDetailView(
                     verb: selection,
                     onExamples: { showingExamples = true },
-                    onQuiz: { quizQuestions = buildQuestions(verbs: [selection], count: min(quizQuestionCount, 9)) }
+                    onQuiz: { topicSheetVerbs = [selection] }
                 )
             } else {
                 ContentUnavailableView("Select a Verb", systemImage: "text.book.closed")
@@ -70,6 +72,24 @@ struct RootView: View {
                     }
             }
         }
+        .sheet(isPresented: topicSheetBinding, onDismiss: {
+            if let pendingQuestions {
+                quizQuestions = pendingQuestions
+                self.pendingQuestions = nil
+            }
+        }) {
+            if let topicSheetVerbs {
+                QuizTopicSheet(
+                    verbs: topicSheetVerbs,
+                    onStart: { verbs, topics in
+                        let questions = buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount)
+                        pendingQuestions = questions.isEmpty ? nil : questions
+                        self.topicSheetVerbs = nil
+                    },
+                    onCancel: { self.topicSheetVerbs = nil }
+                )
+            }
+        }
         #if os(iOS)
         .fullScreenCover(isPresented: quizPresentationBinding) {
             if let quizQuestions {
@@ -84,6 +104,13 @@ struct RootView: View {
             }
         }
         #endif
+    }
+
+    private var topicSheetBinding: Binding<Bool> {
+        Binding(
+            get: { topicSheetVerbs != nil },
+            set: { isPresented in if !isPresented { topicSheetVerbs = nil } }
+        )
     }
 
     private var quizPresentationBinding: Binding<Bool> {

@@ -49,8 +49,13 @@ struct QuizResultsView: View {
         HStack(alignment: .top, spacing: 12) {
             Text(result.ok ? "✅" : "❌")
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(result.verb) — \(formLabels[result.form] ?? "")")
+                Text("\(result.verb) — \(result.formLabel)")
                     .font(.subheadline.weight(.semibold))
+                if result.kind == .identify {
+                    Text(result.formString)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if !result.ok {
                     Text("You chose: \(result.chosen)")
                         .font(.caption)

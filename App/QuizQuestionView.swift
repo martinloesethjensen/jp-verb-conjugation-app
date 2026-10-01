@@ -55,9 +55,33 @@ struct QuizQuestionView: View {
 
     private var promptCard: some View {
         VStack(spacing: 8) {
-            Text(.init("What is the **\(formLabels[question.form] ?? "")** form of…"))
-                .font(.caption)
-                .multilineTextAlignment(.center)
+            switch question.kind {
+            case .conjugate:
+                Text(.init("What is the **\(question.form.label)** form of…"))
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                verbBlock
+            case .identify:
+                Text("Which form is")
+                    .font(.caption)
+                Text(question.formString)
+                    .font(.system(size: 34, weight: .heavy))
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                Text("\(question.verb.dict) · \(question.verb.meaning)")
+                    .italic()
+                    .foregroundStyle(.secondary)
+            }
+            Text("⏱ \(viewModel.timeLeft)s")
+                .font(.headline)
+                .foregroundStyle(timerColor)
+        }
+        .padding()
+        .glassEffect(in: RoundedRectangle(cornerRadius: 20))
+    }
+
+    private var verbBlock: some View {
+        VStack(spacing: 8) {
             Text(question.verb.dict)
                 .font(.system(size: 36, weight: .heavy))
             if let kanji = question.verb.kanji {
@@ -66,12 +90,7 @@ struct QuizQuestionView: View {
             Text(question.verb.meaning)
                 .italic()
                 .foregroundStyle(.secondary)
-            Text("⏱ \(viewModel.timeLeft)s")
-                .font(.headline)
-                .foregroundStyle(timerColor)
         }
-        .padding()
-        .glassEffect(in: RoundedRectangle(cornerRadius: 20))
     }
 
     private var timerColor: Color {
@@ -92,6 +111,9 @@ struct QuizQuestionView: View {
             HStack {
                 Image(systemName: shapeSymbols[index % shapeSymbols.count])
                 Text(choice)
+                    .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(3)
                 if viewModel.isAnswered && isCorrect { Image(systemName: "checkmark") }
                 if viewModel.isAnswered && isSelected && !isCorrect { Image(systemName: "xmark") }
             }
