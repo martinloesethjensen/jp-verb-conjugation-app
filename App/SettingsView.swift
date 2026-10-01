@@ -18,6 +18,8 @@ struct SettingsView: View {
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
+    @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
+    @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
 
     private var appearanceMode: Binding<AppearanceMode> {
         Binding(
@@ -48,6 +50,20 @@ struct SettingsView: View {
                         Text("\(count)").tag(count)
                     }
                 }
+            }
+            Section {
+                Toggle("Speak after quiz answers", isOn: $speakQuizAnswers)
+                Picker("Speed", selection: $speechSpeedRaw) {
+                    ForEach(SpeechSpeed.allCases) { speed in
+                        Text(speed.label).tag(speed.rawValue)
+                    }
+                }
+            } header: {
+                Text("Audio")
+            } footer: {
+                Text(Speaker.shared.hasJapaneseVoice
+                     ? "Better voices can be downloaded in iOS Settings > Accessibility > Spoken Content."
+                     : "No Japanese voice is installed, so audio is unavailable. Download one in iOS Settings > Accessibility > Spoken Content.")
             }
         }
         .navigationTitle("Settings")
