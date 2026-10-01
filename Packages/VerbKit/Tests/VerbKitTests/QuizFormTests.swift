@@ -78,4 +78,14 @@ final class QuizFormTests: XCTestCase {
         XCTAssertEqual(all.map(\.topic), QuizTopic.allCases)
         XCTAssertEqual(all.first { $0.topic == .basic }?.count, 25 * 9)
     }
+
+    /// Every field holds its own JSON key, so a form wired to the wrong field
+    /// (say masu_neg reading masuPast) cannot pass.
+    func testEveryFormReadsTheFieldWithItsOwnKey() throws {
+        let object = Dictionary(uniqueKeysWithValues: QuizForm.all.map { ($0.id, $0.id) })
+        let forms = try JSONDecoder().decode(VerbForms.self, from: JSONSerialization.data(withJSONObject: object))
+        for form in QuizForm.all {
+            XCTAssertEqual(form.value(in: forms), form.id, form.id)
+        }
+    }
 }
