@@ -46,4 +46,27 @@ final class VerbSearchTests: XCTestCase {
         XCTAssertTrue(matchesType(taberu, filter: .ru))
         XCTAssertFalse(matchesType(taberu, filter: .u))
     }
+
+    func testMatchesRomajiDictionaryForm() {
+        XCTAssertTrue(matchesSearch(taberu, query: "taberu"))
+        XCTAssertTrue(matchesSearch(taberu, query: "TABERU"))
+    }
+
+    func testMatchesRomajiConjugatedForm() {
+        XCTAssertTrue(matchesSearch(taberu, query: "tabemashita"))
+        XCTAssertTrue(matchesSearch(taberu, query: "tabenakatta"))
+    }
+
+    func testMatchesPartialRomaji() {
+        XCTAssertTrue(matchesSearch(taberu, query: "tab"))
+        XCTAssertTrue(matchesSearch(taberu, query: "tabesh"))   // "sh" is dropped, leaving たべ
+    }
+
+    func testRomajiNoMatch() {
+        XCTAssertFalse(matchesSearch(taberu, query: "nomu"))
+    }
+
+    func testEnglishMeaningStillMatchesOnRawText() {
+        XCTAssertTrue(matchesSearch(taberu, query: "eat"))
+    }
 }

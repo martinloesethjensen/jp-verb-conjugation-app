@@ -30,4 +30,22 @@ final class GrammarSearchTests: XCTestCase {
     func testNoMatch() {
         XCTAssertFalse(matchesGrammarSearch(nDesu, query: "はず"))
     }
+
+    func testMatchesRomajiTitle() {
+        XCTAssertTrue(matchesGrammarSearch(nDesu, query: "ndesu"))
+    }
+
+    func testMatchesRomajiJapaneseExample() {
+        // The example is 頭が痛いんです。 Romaji becomes hiragana, so only the kana part can match.
+        XCTAssertTrue(matchesGrammarSearch(nDesu, query: "indesu"))
+        XCTAssertTrue(matchesGrammarSearch(nDesu, query: "i n desu"))   // spaces are ignored
+    }
+
+    func testRomajiCannotMatchKanjiInExample() {
+        XCTAssertFalse(matchesGrammarSearch(nDesu, query: "atama ga itai"))
+    }
+
+    func testRomajiNoMatchInGrammar() {
+        XCTAssertFalse(matchesGrammarSearch(nDesu, query: "hazu"))
+    }
 }

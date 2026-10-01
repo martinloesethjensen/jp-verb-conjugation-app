@@ -10,6 +10,13 @@ public func matchesSearch(_ verb: Verb, query: String) -> Bool {
     for key in FormKey.allCases where verb.forms[key].contains(trimmed) {
         return true
     }
+    if let converted = Romaji.toHiragana(trimmed) {
+        let kana = converted.filter { !$0.isWhitespace }   // "atama ga itai" -> あたまがいたい
+        if verb.dict.contains(kana) { return true }
+        for key in FormKey.allCases where verb.forms[key].contains(kana) {
+            return true
+        }
+    }
     return false
 }
 
