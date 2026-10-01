@@ -22,6 +22,13 @@ struct VerbRow: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
+                    if let level = verb.jlpt {
+                        Text(level.displayName)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .glassEffect(in: Capsule())
+                    }
                 }
                 Text(verb.meaning)
                     .font(.caption)

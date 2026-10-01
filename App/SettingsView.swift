@@ -1,4 +1,5 @@
 import SwiftUI
+import VerbKit
 
 enum AppearanceMode: String, CaseIterable, Identifiable, Hashable {
     case system, light, dark
@@ -15,11 +16,29 @@ enum AppearanceMode: String, CaseIterable, Identifiable, Hashable {
 }
 
 struct SettingsView: View {
+    @Environment(VerbStore.self) private var verbStore
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
     @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
+    @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
+
+    /// The levels present in the verb and grammar data, N5 first.
+    private var availableLevels: [JLPTLevel] {
+        Set(verbStore.verbs.levels()).union(verbStore.grammarPoints.levels()).sorted()
+    }
+
+    private func visibleBinding(for level: JLPTLevel) -> Binding<Bool> {
+        Binding(
+            get: { LevelSettings(rawValue: hiddenLevelsRaw).isVisible(level) },
+            set: { visible in
+                var settings = LevelSettings(rawValue: hiddenLevelsRaw)
+                if visible { settings.hidden.remove(level) } else { settings.hidden.insert(level) }
+                hiddenLevelsRaw = settings.rawValue
+            }
+        )
+    }
 
     private var appearanceMode: Binding<AppearanceMode> {
         Binding(
@@ -49,6 +68,20 @@ struct SettingsView: View {
             }
             Section("Reading") {
                 Toggle("Show furigana", isOn: $showFurigana)
+            }
+            if !availableLevels.isEmpty {
+                let settings = LevelSettings(rawValue: hiddenLevelsRaw)
+                let available = Set(availableLevels)
+                Section {
+                    ForEach(availableLevels, id: \.self) { level in
+                        Toggle(level.displayName, isOn: visibleBinding(for: level))
+                            .disabled(settings.isVisible(level) && !settings.canHide(level, among: available))
+                    }
+                } header: {
+                    Text("Levels")
+                } footer: {
+                    Text("Hidden levels are left out of lists, the quiz and the widgets. Search can still look at all levels.")
+                }
             }
             Section("Quiz") {
                 Picker("Number of questions", selection: $quizQuestionCount) {

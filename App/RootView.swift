@@ -60,7 +60,7 @@ struct RootView: View {
             VerbListView(
                 selection: $selection,
                 showGuide: $showingGuide,
-                onRandomQuiz: { topicSheetVerbs = verbStore.verbs },
+                onRandomQuiz: { topicSheetVerbs = verbStore.verbs.visible(in: LevelSettings.load()) },
                 onSettings: { showingSettings = true }
             )
         } detail: {

@@ -8,6 +8,7 @@ struct JPVerbConjugationApp: App {
     @State private var networkMonitor: NetworkMonitor
     @State private var verbStore: VerbStore
     @State private var furiganaStore: FuriganaStore
+    @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     init() {
         let container = Self.makeModelContainer()
@@ -46,6 +47,9 @@ struct JPVerbConjugationApp: App {
                 .onChange(of: verbStore.grammarPoints) {
                     WidgetCenter.shared.reloadAllTimelines()
                 }
+                .onChange(of: hiddenLevelsRaw) {
+                    WidgetCenter.shared.reloadAllTimelines()
+                }
                 .task {
                     // Independent of the verb sync: furigana is an enhancement.
                     await furiganaStore.start()
@@ -54,6 +58,7 @@ struct JPVerbConjugationApp: App {
         #if os(macOS)
         Settings {
             SettingsView()
+                .environment(verbStore)
         }
         #endif
     }
