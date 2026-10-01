@@ -11,8 +11,7 @@ struct VerbDetailView: View {
     }
 
     private var jishoURL: URL {
-        let encoded = verb.dict.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? verb.dict
-        return URL(string: "https://jisho.org/search/\(encoded)")!
+        TextLookupURL.jisho(verb.dict)!
     }
 
     var body: some View {
