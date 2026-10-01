@@ -55,6 +55,39 @@ public struct VerbForms: Codable, Hashable, Sendable {
             .contains { $0 != nil }
     }
 
+    // Auxiliary forms (grammar points `teiru`, `teshimau`, `temiru`, `sugiru`):
+    // generated from the verb's て-form and ます-stem by scripts/update_data.py.
+    // ている is conjugated in full; the other て-form auxiliaries and すぎる,
+    // やすい, にくい have a plain and a polite form; ながら has one.
+    public var teiru: String?
+    public var teiruNeg: String?
+    public var teiruPast: String?
+    public var teiruPastNeg: String?
+    public var teiruMasuPos: String?
+    public var teiruMasuNeg: String?
+    public var teiruMasuPast: String?
+    public var teiruMasuPastNeg: String?
+    public var teiruTe: String?
+    public var teshimau: String?
+    public var teshimauPolite: String?
+    public var teoku: String?
+    public var teokuPolite: String?
+    public var temiru: String?
+    public var temiruPolite: String?
+    public var sugiru: String?
+    public var sugiruPolite: String?
+    public var yasui: String?
+    public var yasuiPolite: String?
+    public var nikui: String?
+    public var nikuiPolite: String?
+    public var nagara: String?
+
+    /// True when at least one auxiliary form is populated.
+    public var hasAuxiliaryForms: Bool {
+        [teiru, teiruNeg, teiruPast, teiruPastNeg, teiruMasuPos, teiruMasuNeg, teiruMasuPast, teiruMasuPastNeg, teiruTe, teshimau, teshimauPolite, teoku, teokuPolite, temiru, temiruPolite, sugiru, sugiruPolite, yasui, yasuiPolite, nikui, nikuiPolite, nagara]
+            .contains { $0 != nil }
+    }
+
     public init(
         masuPos: String,
         masuNeg: String,
@@ -89,7 +122,29 @@ public struct VerbForms: Codable, Hashable, Sendable {
         potTe: String? = nil,
         potShortNeg: String? = nil,
         potShortPast: String? = nil,
-        potShortPastNeg: String? = nil
+        potShortPastNeg: String? = nil,
+        teiru: String? = nil,
+        teiruNeg: String? = nil,
+        teiruPast: String? = nil,
+        teiruPastNeg: String? = nil,
+        teiruMasuPos: String? = nil,
+        teiruMasuNeg: String? = nil,
+        teiruMasuPast: String? = nil,
+        teiruMasuPastNeg: String? = nil,
+        teiruTe: String? = nil,
+        teshimau: String? = nil,
+        teshimauPolite: String? = nil,
+        teoku: String? = nil,
+        teokuPolite: String? = nil,
+        temiru: String? = nil,
+        temiruPolite: String? = nil,
+        sugiru: String? = nil,
+        sugiruPolite: String? = nil,
+        yasui: String? = nil,
+        yasuiPolite: String? = nil,
+        nikui: String? = nil,
+        nikuiPolite: String? = nil,
+        nagara: String? = nil
     ) {
         self.masuPos = masuPos
         self.masuNeg = masuNeg
@@ -125,6 +180,28 @@ public struct VerbForms: Codable, Hashable, Sendable {
         self.potShortNeg = potShortNeg
         self.potShortPast = potShortPast
         self.potShortPastNeg = potShortPastNeg
+        self.teiru = teiru
+        self.teiruNeg = teiruNeg
+        self.teiruPast = teiruPast
+        self.teiruPastNeg = teiruPastNeg
+        self.teiruMasuPos = teiruMasuPos
+        self.teiruMasuNeg = teiruMasuNeg
+        self.teiruMasuPast = teiruMasuPast
+        self.teiruMasuPastNeg = teiruMasuPastNeg
+        self.teiruTe = teiruTe
+        self.teshimau = teshimau
+        self.teshimauPolite = teshimauPolite
+        self.teoku = teoku
+        self.teokuPolite = teokuPolite
+        self.temiru = temiru
+        self.temiruPolite = temiruPolite
+        self.sugiru = sugiru
+        self.sugiruPolite = sugiruPolite
+        self.yasui = yasui
+        self.yasuiPolite = yasuiPolite
+        self.nikui = nikui
+        self.nikuiPolite = nikuiPolite
+        self.nagara = nagara
     }
 
     enum CodingKeys: String, CodingKey {
@@ -162,6 +239,28 @@ public struct VerbForms: Codable, Hashable, Sendable {
         case potShortNeg = "pot_short_neg"
         case potShortPast = "pot_short_past"
         case potShortPastNeg = "pot_short_past_neg"
+        case teiru
+        case teiruNeg = "teiru_neg"
+        case teiruPast = "teiru_past"
+        case teiruPastNeg = "teiru_past_neg"
+        case teiruMasuPos = "teiru_masu_pos"
+        case teiruMasuNeg = "teiru_masu_neg"
+        case teiruMasuPast = "teiru_masu_past"
+        case teiruMasuPastNeg = "teiru_masu_past_neg"
+        case teiruTe = "teiru_te"
+        case teshimau
+        case teshimauPolite = "teshimau_polite"
+        case teoku
+        case teokuPolite = "teoku_polite"
+        case temiru
+        case temiruPolite = "temiru_polite"
+        case sugiru
+        case sugiruPolite = "sugiru_polite"
+        case yasui
+        case yasuiPolite = "yasui_polite"
+        case nikui
+        case nikuiPolite = "nikui_polite"
+        case nagara
     }
 
     public subscript(_ key: FormKey) -> String {
