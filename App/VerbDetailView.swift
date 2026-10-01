@@ -129,6 +129,10 @@ struct VerbDetailView: View {
                 NdesuFormsSection(forms: verb.forms)
             }
 
+            if verb.forms.hasAuxiliaryForms {
+                AuxiliaryFormsSection(forms: verb.forms)
+            }
+
             VerbGrammarSection()
         }
     }
