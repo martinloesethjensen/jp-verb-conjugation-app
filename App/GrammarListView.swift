@@ -30,9 +30,26 @@ struct GrammarListView: View {
     @Environment(VerbStore.self) private var verbStore
     @Binding var selection: GrammarPoint?
     @State private var search = ""
+    @State private var scope: LevelScope = .mine
+    @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
-    private var filtered: [GrammarPoint] {
-        verbStore.grammarPoints.filter { matchesGrammarSearch($0, query: search) }
+    private var settings: LevelSettings { LevelSettings(rawValue: hiddenLevelsRaw) }
+    private var availableLevels: Set<JLPTLevel> {
+        verbStore.verbs.levels().union(verbStore.grammarPoints.levels())
+    }
+    private var levelsHidden: Bool { settings.anyHidden(among: availableLevels) }
+    private var summary: String { settings.summary(among: availableLevels) ?? "" }
+
+    private func matching(in levels: LevelSettings) -> [GrammarPoint] {
+        verbStore.grammarPoints.visible(in: levels).filter { matchesGrammarSearch($0, query: search) }
+    }
+
+    private var filtered: [GrammarPoint] { matching(in: scope == .mine ? settings : LevelSettings()) }
+
+    /// Matches hidden by the level setting, for the current search.
+    private var hiddenMatchCount: Int {
+        guard scope == .mine, levelsHidden, !search.isEmpty else { return 0 }
+        return matching(in: LevelSettings()).count - filtered.count
     }
 
     var body: some View {
@@ -50,9 +67,15 @@ struct GrammarListView: View {
                 .buttonStyle(.plain)
                 .tag(point)
             }
+            if !filtered.isEmpty && hiddenMatchCount > 0 {
+                HiddenMatchesRow(count: hiddenMatchCount) { scope = .all }
+            }
         }
         .searchable(text: $search, prompt: "Search grammar…")
+        .levelScopeBar(isActive: levelsHidden, scope: $scope)
+        .onChange(of: search) { if search.isEmpty { scope = .mine } }
         .navigationTitle("Grammar")
+        .navigationSubtitle(scope == .mine ? summary : "")
         .toolbar {
             ToolbarItem(placement: .secondaryAction) {
                 ReportProblemButton(item: "")
@@ -71,7 +94,11 @@ struct GrammarListView: View {
                     .buttonStyle(.glassProminent)
                 }
             } else if filtered.isEmpty {
-                ContentUnavailableView.search(text: search)
+                if hiddenMatchCount > 0 {
+                    NoMatchInLevelsView(summary: summary, hiddenCount: hiddenMatchCount) { scope = .all }
+                } else {
+                    ContentUnavailableView.search(text: search)
+                }
             }
         }
     }

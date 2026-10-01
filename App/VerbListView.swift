@@ -15,16 +15,33 @@ struct VerbListView: View {
     /// True once the filters block has scrolled off screen, which is when the
     /// back-to-top button appears.
     @State private var filtersOffscreen = false
+    @State private var scope: LevelScope = .mine
+    @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
+
+    private var settings: LevelSettings { LevelSettings(rawValue: hiddenLevelsRaw) }
+    private var availableLevels: Set<JLPTLevel> {
+        verbStore.verbs.levels().union(verbStore.grammarPoints.levels())
+    }
+    private var levelsHidden: Bool { settings.anyHidden(among: availableLevels) }
+    private var effectiveSettings: LevelSettings { scope == .mine ? settings : LevelSettings() }
 
 
     private static let filtersID = "filters"
 
-    private var filtered: [Verb] {
-        verbStore.verbs.filter {
+    private func matching(in levels: LevelSettings) -> [Verb] {
+        verbStore.verbs.visible(in: levels).filter {
             matchesType($0, filter: typeFilter)
                 && matchesTeGroup($0, filter: teFilter)
                 && matchesSearch($0, query: search)
         }
+    }
+
+    private var filtered: [Verb] { matching(in: effectiveSettings) }
+
+    /// Matches hidden by the level setting, for the current search and filters.
+    private var hiddenMatchCount: Int {
+        guard scope == .mine, levelsHidden, !search.isEmpty else { return 0 }
+        return matching(in: LevelSettings()).count - filtered.count
     }
 
     private var hasFilters: Bool { typeFilter != nil || teFilter != nil }
@@ -42,6 +59,7 @@ struct VerbListView: View {
         case .u?: parts.append("U-verbs")
         case nil: break
         }
+        if scope == .mine, let levels = settings.summary(among: availableLevels) { parts.append(levels) }
         return parts.joined(separator: " · ")
     }
 
@@ -75,7 +93,16 @@ struct VerbListView: View {
                 }
 
                 Section {
-                    if filtered.isEmpty { emptyState }
+                    if filtered.isEmpty {
+                        if hiddenMatchCount > 0 {
+                            NoMatchInLevelsView(
+                                summary: settings.summary(among: availableLevels) ?? "",
+                                hiddenCount: hiddenMatchCount
+                            ) { scope = .all }
+                        } else {
+                            emptyState
+                        }
+                    }
                     ForEach(filtered) { verb in
                         Button {
                             selection = verb
@@ -85,12 +112,17 @@ struct VerbListView: View {
                         .buttonStyle(.plain)
                         .tag(verb)
                     }
+                    if !filtered.isEmpty && hiddenMatchCount > 0 {
+                        HiddenMatchesRow(count: hiddenMatchCount) { scope = .all }
+                    }
                 } footer: {
                     Link("Suggest a verb", destination: githubSuggestVerbURL)
                         .font(.caption)
                 }
             }
             .searchable(text: $search, prompt: "Search hiragana, kanji, romaji, or English…")
+            .levelScopeBar(isActive: levelsHidden, scope: $scope)
+            .onChange(of: search) { if search.isEmpty { scope = .mine } }
             #if os(iOS)
             .listSectionSpacing(.compact)
             // The search field collapses to a button in the navigation bar, so search
