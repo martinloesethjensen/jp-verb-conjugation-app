@@ -17,7 +17,9 @@ final class QuizGeneratorTests: XCTestCase {
     }
 
     func testOnlyTheChosenTopicsAreAsked() throws {
-        for question in buildQuestions(verbs: try verbs(), topics: [.potential, .nDesu], count: 60) {
+        let questions = buildQuestions(verbs: try verbs(), topics: [.potential, .nDesu], count: 60)
+        XCTAssertEqual(questions.count, 60)
+        for question in questions {
             XCTAssertTrue([QuizTopic.potential, .nDesu].contains(question.form.topic))
         }
     }
@@ -31,7 +33,9 @@ final class QuizGeneratorTests: XCTestCase {
     }
 
     func testConjugateQuestionsAskForTheFormsString() throws {
-        for question in buildQuestions(verbs: try verbs(), topics: all, count: 60, kinds: [.conjugate]) {
+        let questions = buildQuestions(verbs: try verbs(), topics: all, count: 60, kinds: [.conjugate])
+        XCTAssertEqual(questions.count, 60)
+        for question in questions {
             XCTAssertEqual(question.kind, .conjugate)
             XCTAssertEqual(question.correct, question.form.value(in: question.verb.forms))
             XCTAssertEqual(question.formString, question.correct)
@@ -43,18 +47,23 @@ final class QuizGeneratorTests: XCTestCase {
         let sameVerbLabels: (Verb, Set<QuizTopic>) -> Set<String> = { verb, topics in
             Set(QuizForm.available(in: verb.forms, topics: topics).map(\.form.label))
         }
-        for question in buildQuestions(verbs: try verbs(), topics: all, count: 60, kinds: [.identify]) {
+        let chosen: Set<QuizTopic> = [.potential]
+        let questions = buildQuestions(verbs: try verbs(), topics: chosen, count: 60, kinds: [.identify])
+        XCTAssertEqual(questions.count, 60)
+        for question in questions {
             XCTAssertEqual(question.kind, .identify)
             XCTAssertEqual(question.correct, question.form.label)
             XCTAssertEqual(question.formString, question.form.value(in: question.verb.forms))
-            // every choice is a label of this verb's own forms
-            XCTAssertTrue(Set(question.choices).isSubset(of: sameVerbLabels(question.verb, all)))
+            // every choice is a label of this verb's own forms in the chosen topic only
+            XCTAssertTrue(Set(question.choices).isSubset(of: sameVerbLabels(question.verb, chosen)))
         }
     }
 
     func testChoicesAreDistinctContainTheAnswerOnceAndAreTwoToFour() throws {
         for kinds in [[QuizQuestionKind.conjugate], [.identify]] {
-            for question in buildQuestions(verbs: try verbs(), topics: all, count: 200, kinds: kinds) {
+            let questions = buildQuestions(verbs: try verbs(), topics: all, count: 200, kinds: kinds)
+            XCTAssertEqual(questions.count, 200)
+            for question in questions {
                 XCTAssertEqual(Set(question.choices).count, question.choices.count)
                 XCTAssertEqual(question.choices.filter { $0 == question.correct }.count, 1)
                 XCTAssertTrue((2...4).contains(question.choices.count), "\(question.choices)")
@@ -82,5 +91,13 @@ final class QuizGeneratorTests: XCTestCase {
             XCTAssertEqual(question.choices.count, 4)
             XCTAssertEqual(question.form.topic, .basic)
         }
+    }
+
+    func testAFormSharingItsStringWithAnotherIsNeverAsked() throws {
+        var taberu = try XCTUnwrap(try verbs().first { $0.dict == "たべる" })
+        taberu.forms.masuNeg = taberu.forms.masuPos // two forms, one string: two right answers
+        let questions = buildQuestions(verbs: [taberu], topics: [.basic], count: 100)
+        XCTAssertEqual(questions.count, 7)
+        XCTAssertFalse(questions.contains { ["masu_pos", "masu_neg"].contains($0.form.id) })
     }
 }
