@@ -127,7 +127,7 @@ final class RealPotentialDataTests: XCTestCase {
         let potential = try XCTUnwrap(points.first { $0.id == GrammarPoint.potentialID })
         let nDesu = try XCTUnwrap(points.first { $0.id == GrammarPoint.nDesuID })
         XCTAssertEqual(potential.related, [GrammarPoint.nDesuID])
-        XCTAssertEqual(nDesu.related, [GrammarPoint.potentialID])
+        XCTAssertTrue(nDesu.related.contains(GrammarPoint.potentialID))
     }
 
     func testLessonIsFoundBySearchingItsJapaneseAndEnglish() throws {

@@ -146,7 +146,7 @@
           ]
         }
       ],
-      "related": ["potential"]
+      "related": ["potential", "certainty"]
     },
     {
       "id": "potential",
@@ -276,6 +276,479 @@
         }
       ],
       "related": ["n-desu"]
+    },
+    {
+      "id": "certainty",
+      "title": "はず・かもしれない・わけ",
+      "summary": "Three ways to say how things stand: はず (I expect so, because it makes sense), かもしれない (maybe), and わけ (that is how it works out). All three come after a plain form.",
+      "level": "intermediate",
+      "usages": [
+        {
+          "heading": "はず: what you expect",
+          "explanation": "はず says that, going by what you know, something should be the case. It is a judgement from reasons, not a hunch, so it is stronger than かもしれない.",
+          "examples": [
+            { "jp": "田中さんはもう家に着いたはずです。", "en": "Mr. Tanaka should have arrived home by now." },
+            { "jp": "この道を行けば、駅に出るはずだ。", "en": "If you go this way, you should come out at the station." }
+          ]
+        },
+        {
+          "heading": "はず: what was supposed to happen",
+          "explanation": "はずだった says that something was expected or planned and did not turn out that way. はずがない (or はずはない) says there is no way it can be true.",
+          "examples": [
+            { "jp": "会議は三時のはずでしたが、まだ始まりません。", "en": "The meeting was supposed to be at three, but it hasn't started." },
+            { "jp": "あの人が知らないはずがない。", "en": "There's no way that person doesn't know." }
+          ]
+        },
+        {
+          "heading": "かもしれない: maybe",
+          "explanation": "かもしれない says that something is possible, with no claim about how likely. Polite speech uses かもしれません, and in casual speech it often shrinks to かも.",
+          "examples": [
+            { "jp": "明日は雨が降るかもしれない。", "en": "It might rain tomorrow." },
+            { "jp": "山田さんは来ないかもしれません。", "en": "Mr. Yamada may not come." },
+            { "jp": "これ、ちょっと高いかも。", "en": "This might be a bit expensive." }
+          ]
+        },
+        {
+          "heading": "わけ: that is how it works out",
+          "explanation": "わけ (訳) means a reason or a line of reasoning. 〜わけだ says that something follows naturally from what you already know, like \"no wonder\" or \"so that's why\".",
+          "examples": [
+            { "jp": "毎日練習しているから、上手なわけだ。", "en": "He practises every day, so no wonder he's good." },
+            { "jp": "なるほど、だから眠いわけですね。", "en": "I see, so that's why you're sleepy." }
+          ]
+        },
+        {
+          "heading": "わけがない and わけではない",
+          "explanation": "わけがない says that something cannot be so. わけではない does not deny the whole sentence but one conclusion that someone might draw, and so it means \"it's not that...\".",
+          "examples": [
+            { "jp": "そんなに早く終わるわけがない。", "en": "There's no way it'll be over that quickly." },
+            { "jp": "嫌いなわけではありません。ただ、時間がないんです。", "en": "It's not that I dislike it. I just don't have the time." },
+            { "jp": "お酒が飲めないわけじゃないよ。", "en": "It's not that I can't drink." }
+          ]
+        },
+        {
+          "heading": "How sure are you?",
+          "explanation": "In order of confidence: かもしれない is a possibility, はず is an expectation backed by reasons, and 〜に違いない is close to certain. わけ is different: it does not guess at all but shows that a result follows from what you know.",
+          "examples": [
+            { "jp": "雨が降るかもしれない。", "en": "It might rain. (possible)" },
+            { "jp": "雨が降るはずだ。天気予報でそう言っていた。", "en": "It should rain. The forecast said so. (expected)" }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "pattern": "plain form + はず / かもしれない / わけ",
+          "example": "行くはず / 行かないはず / 行ったはず / 行かなかったはず",
+          "note": "The same plain forms (present and past, positive and negative) come before all three. The polite ます form never does."
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "plain form + はず / かもしれない / わけ",
+          "example": "高いはず / 高くないはず / 高かったはず"
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "stem + な + はず / わけ; stem + かもしれない",
+          "example": "静かなはず / 静かなわけ / 静かかもしれない",
+          "note": "かもしれない takes the bare stem. はず and わけ take な, as before any noun."
+        },
+        {
+          "word_class": "noun",
+          "pattern": "noun + の + はず; noun + かもしれない; noun + な + わけ",
+          "example": "学生のはず / 学生かもしれない / 学生なわけがない",
+          "note": "かもしれない takes the bare noun. In the present, だ is dropped: 学生だかもしれない is wrong."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜はずです", "register": "polite", "note": "Polite present. 〜はずでした for the past (\"was supposed to\")." },
+        { "form": "〜はずがありません", "register": "polite", "note": "\"There is no way.\" 〜はずはありません is the same." },
+        { "form": "〜かもしれません", "register": "polite", "note": "Polite maybe." },
+        { "form": "〜わけです", "register": "polite", "note": "\"It follows that...\"" },
+        { "form": "〜わけではありません", "register": "polite", "note": "\"It's not that...\"" },
+        { "form": "〜はずだ", "register": "casual", "note": "Plain present. 〜はずだった for the past." },
+        { "form": "〜はずがない", "register": "casual" },
+        { "form": "〜かもしれない", "register": "casual", "note": "Often shortened to かも, or かもね when talking with a friend." },
+        { "form": "〜わけだ", "register": "casual" },
+        { "form": "〜わけがない", "register": "casual", "note": "\"No way.\"" },
+        { "form": "〜わけじゃない", "register": "casual", "note": "The spoken form of わけではない." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "かもしれない takes no だ",
+          "explanation": "Before かもしれない, a noun or na-adjective stays bare. 学生だかもしれない and 静かだかもしれない are wrong; say 学生かもしれない and 静かかもしれない.",
+          "examples": [
+            { "jp": "あの人は先生かもしれません。", "en": "That person might be a teacher." }
+          ]
+        },
+        {
+          "heading": "わけ and んです both explain, in different ways",
+          "explanation": "んです offers or asks for a reason for a situation in front of you. わけだ concludes from what you already know that the result is only natural. And わけではない trims a false inference, where んじゃない would deny the whole thing.",
+          "examples": [
+            { "jp": "遅れたのは、電車が止まったんです。", "en": "I was late because the train stopped. (giving a reason)" },
+            { "jp": "電車が止まったから、遅れたわけだ。", "en": "The train stopped, so that's why they were late. (drawing a conclusion)" }
+          ]
+        },
+        {
+          "heading": "わけにはいかない",
+          "explanation": "This is a fixed phrase meaning \"I cannot, for some reason\", often a duty or a social rule. 行かないわけにはいかない means \"I can't not go\", that is, \"I have to go\".",
+          "examples": [
+            { "jp": "明日は大事な会議だから、休むわけにはいかない。", "en": "Tomorrow is an important meeting, so I can't take the day off." },
+            { "jp": "友達の結婚式だから、行かないわけにはいかない。", "en": "It's a friend's wedding, so I can't not go." }
+          ]
+        }
+      ],
+      "related": ["appearance", "obligation", "n-desu"]
+    },
+    {
+      "id": "obligation",
+      "title": "べき・ものだ",
+      "summary": "べき says what someone should do, as advice or a moral judgement. ものだ states how things are in general, or remembers how things used to be.",
+      "level": "intermediate",
+      "usages": [
+        {
+          "heading": "べき: what someone should do",
+          "explanation": "Put べき after the dictionary form of a verb, then だ or です. It is a judgement about right and wrong, so it can sound strong.",
+          "examples": [
+            { "jp": "もっと野菜を食べるべきだ。", "en": "You should eat more vegetables." },
+            { "jp": "約束は守るべきです。", "en": "Promises should be kept." }
+          ]
+        },
+        {
+          "heading": "べきではない: what someone should not do",
+          "explanation": "べきではない (or べきじゃない in speech) says that something should not be done.",
+          "examples": [
+            { "jp": "ここで大きな声を出すべきではありません。", "en": "You shouldn't raise your voice here." },
+            { "jp": "人の悪口を言うべきじゃない。", "en": "You shouldn't speak ill of others." }
+          ]
+        },
+        {
+          "heading": "べきだった: should have",
+          "explanation": "In the past, べきだった says that something should have been done and wasn't. It carries regret or blame.",
+          "examples": [
+            { "jp": "もっと早く言うべきだった。", "en": "I should have said so sooner." },
+            { "jp": "昨日、休むべきでした。", "en": "I should have rested yesterday." }
+          ]
+        },
+        {
+          "heading": "ものだ: how things are",
+          "explanation": "ものだ presents something as a general truth or as human nature. The sentence is about people or things in general, not about one case.",
+          "examples": [
+            { "jp": "人は誰でも間違えるものです。", "en": "Everyone makes mistakes." },
+            { "jp": "子供は遊ぶものだ。", "en": "Children play. (that's what they do)" }
+          ]
+        },
+        {
+          "heading": "ものだ: remembering",
+          "explanation": "With the past plain form and a word like よく, ものだ looks back on something that used to happen again and again.",
+          "examples": [
+            { "jp": "子供のころ、よくこの川で泳いだものだ。", "en": "When I was little, I used to swim in this river all the time." },
+            { "jp": "学生のころは、毎日友達と遊んだものです。", "en": "When I was a student, I would play with my friends every day." }
+          ]
+        },
+        {
+          "heading": "ものだ: feeling",
+          "explanation": "After an adjective, ものだ turns the sentence into an exclamation, often with ね.",
+          "examples": [
+            { "jp": "時間がたつのは早いものですね。", "en": "Time really does fly, doesn't it." },
+            { "jp": "人の気持ちとは不思議なものだ。", "en": "How strange people's feelings are." }
+          ]
+        },
+        {
+          "heading": "ものではない: it isn't done",
+          "explanation": "ものではない after a verb says that something is not the done thing. It is common when scolding or advising.",
+          "examples": [
+            { "jp": "人の悪口を言うものではありません。", "en": "One shouldn't speak ill of others." },
+            { "jp": "夜遅くに電話をかけるものではない。", "en": "You shouldn't phone people late at night." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "pattern": "dictionary form + べき",
+          "example": "食べるべき / 行くべき / 守るべき",
+          "note": "する has two forms: するべき and すべき, which mean the same. The negative uses べきではない and does not change the verb: 食べるべきではない."
+        },
+        {
+          "word_class": "verb",
+          "condition": "General statements and memories",
+          "pattern": "plain form + ものだ",
+          "example": "忘れるものだ / 忘れたものだ",
+          "note": "The present form states a general truth. The past た-form recalls how things used to be."
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "plain form + ものだ",
+          "example": "早いものだ / 難しいものだ",
+          "note": "Used as an exclamation."
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "stem + な + ものだ",
+          "example": "不思議なものだ / 大変なものだ"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜べきです", "register": "polite", "note": "\"Should.\" 〜べきでした is \"should have\"." },
+        { "form": "〜べきではありません", "register": "polite", "note": "\"Should not.\"" },
+        { "form": "〜ものです", "register": "polite", "note": "Polite ものだ. 〜ものでした for memories." },
+        { "form": "〜ものではありません", "register": "polite", "note": "\"It isn't done.\"" },
+        { "form": "〜べきだ", "register": "casual", "note": "Plain \"should\". 〜べきだった is \"should have\"." },
+        { "form": "〜べきじゃない", "register": "casual", "note": "The spoken form of べきではない." },
+        { "form": "〜ものだ", "register": "casual" },
+        { "form": "〜ものではない", "register": "casual", "note": "Also 〜ものじゃない in speech." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "べき can sound bossy",
+          "explanation": "べき is a judgement, and it is not a gentle suggestion. To an equal or a superior, use ほうがいい instead (see below), or turn the advice into a question.",
+          "examples": [
+            { "jp": "もっと寝たほうがいいですよ。", "en": "You should get more sleep. (softer than 寝るべきです)" }
+          ]
+        },
+        {
+          "heading": "べき needs the dictionary form",
+          "explanation": "The ます form and the past form do not come before べき. To say \"should have\", move the tense onto だ: 行くべきだった, not 行ったべき.",
+          "examples": [
+            { "jp": "もっと勉強するべきだった。", "en": "I should have studied more." }
+          ]
+        },
+        {
+          "heading": "ものだ is not the same as もの",
+          "explanation": "もの on its own is a noun for a thing. ものだ is a fixed ending that turns the sentence into a statement of how things are or were, so it never refers to a particular object.",
+          "examples": [
+            { "jp": "この本は面白いものです。", "en": "This book is an interesting one. (a thing)" },
+            { "jp": "本は面白いものだ。", "en": "Books are interesting, as a rule. (a general truth)" }
+          ]
+        }
+      ],
+      "related": ["certainty"]
+    },
+    {
+      "id": "appearance",
+      "title": "よう・みたい・そう・らしい",
+      "summary": "Four ways to talk about what you see, hear or infer: ようだ and みたいだ (it seems, like), そうだ (it looks like, or I hear), and らしい (apparently, or typical of).",
+      "level": "intermediate",
+      "usages": [
+        {
+          "heading": "ようだ and みたいだ: it seems",
+          "explanation": "Use ようだ when you judge from what you can see, hear or feel yourself. みたいだ means the same and is more casual.",
+          "examples": [
+            { "jp": "誰かいるようです。", "en": "It seems someone is there." },
+            { "jp": "外は寒いみたいだ。", "en": "It seems cold outside." }
+          ]
+        },
+        {
+          "heading": "Like something else",
+          "explanation": "The same words also mean \"like\". The adverb is ように, and before a noun it is ような or みたいな.",
+          "examples": [
+            { "jp": "あの人は子供のように笑う。", "en": "He laughs like a child." },
+            { "jp": "夢みたいな話ですね。", "en": "It sounds like a dream." }
+          ]
+        },
+        {
+          "heading": "そう: it looks like",
+          "explanation": "After a stem, そう says how something looks or that it is about to happen. It is your impression, and not something you were told.",
+          "examples": [
+            { "jp": "このケーキはおいしそうです。", "en": "This cake looks delicious." },
+            { "jp": "今にも雨が降りそうだ。", "en": "It looks like it's going to rain at any moment." }
+          ]
+        },
+        {
+          "heading": "そう: I hear",
+          "explanation": "After a plain form, そうだ passes on something you heard. It is hearsay and does not mean you can see it yourself.",
+          "examples": [
+            { "jp": "明日は雨が降るそうです。", "en": "I hear it's going to rain tomorrow." },
+            { "jp": "田中さんは来ないそうだ。", "en": "I hear Mr. Tanaka isn't coming." }
+          ]
+        },
+        {
+          "heading": "らしい: apparently",
+          "explanation": "らしい also reports what you have heard or worked out, and often implies some evidence. It is less direct than ようだ.",
+          "examples": [
+            { "jp": "山田さんは風邪をひいたらしい。", "en": "Apparently Mr. Yamada caught a cold." },
+            { "jp": "駅の前に新しい店ができるらしいです。", "en": "I hear a new shop is opening in front of the station." }
+          ]
+        },
+        {
+          "heading": "らしい: typical of",
+          "explanation": "After a noun, らしい can instead describe what is typical of it. It is a compliment: it fits what it should be.",
+          "examples": [
+            { "jp": "今日は春らしい天気ですね。", "en": "It's spring-like weather today." },
+            { "jp": "学生らしい服を着なさい。", "en": "Wear clothes that suit a student." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "Seems, hearsay",
+          "pattern": "plain form + ようだ / みたいだ / らしい / そうだ (hearsay)",
+          "example": "行くようだ / 行ったみたいだ / 行かないらしい / 行くそうだ",
+          "note": "These four all take the plain form. The polite ます form never comes before them."
+        },
+        {
+          "word_class": "verb",
+          "condition": "Looks like",
+          "pattern": "ます stem + そうだ",
+          "example": "食べ + そうだ → 食べそうだ / 降り + そうだ → 降りそうだ",
+          "note": "This is the \"it looks like\" そう. Compare 食べるそうだ (I hear he eats)."
+        },
+        {
+          "word_class": "i-adjective",
+          "condition": "Seems, hearsay",
+          "pattern": "plain form + ようだ / みたいだ / らしい / そうだ (hearsay)",
+          "example": "高いようだ / 高いみたいだ / 高いらしい / 高いそうだ"
+        },
+        {
+          "word_class": "i-adjective",
+          "condition": "Looks like",
+          "pattern": "stem (drop い) + そうだ",
+          "example": "おいしい → おいしそう / 高い → 高そう",
+          "note": "いい becomes よさそう and ない becomes なさそう."
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "stem + な + よう; stem + みたい; stem + らしい; stem + だそうだ",
+          "example": "静かなようだ / 静かみたいだ / 静からしい / 静かだそうだ",
+          "note": "ようだ takes な, みたいだ and らしい take the bare stem, and the hearsay そうだ keeps だ."
+        },
+        {
+          "word_class": "na-adjective",
+          "condition": "Looks like",
+          "pattern": "stem + そうだ",
+          "example": "元気 → 元気そう / 好き → 好きそう",
+          "note": "\"Looks like\"."
+        },
+        {
+          "word_class": "noun",
+          "pattern": "noun + の + よう; noun + みたい; noun + らしい; noun + だそうだ",
+          "example": "子供のようだ / 子供みたいだ / 子供らしい / 子供だそうだ",
+          "note": "ようだ takes の, みたいだ and らしい take the bare noun, and the hearsay そうだ keeps だ. 子供らしい can also mean \"childlike\"."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜ようです", "register": "polite", "note": "Before a noun: 〜ような. As an adverb: 〜ように." },
+        { "form": "〜そうです", "register": "polite", "note": "Looks like, or I hear. Before a noun, the \"looks like\" one is 〜そうな: おいしそうなケーキ." },
+        { "form": "〜らしいです", "register": "polite", "note": "Apparently." },
+        { "form": "〜みたいだ", "register": "casual", "note": "Before a noun: 〜みたいな. As an adverb: 〜みたいに." },
+        { "form": "〜そうだ", "register": "casual", "note": "Looks like, or I hear." },
+        { "form": "〜らしい", "register": "casual", "note": "Apparently. 〜らしくない means \"not like oneself\"." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Two meanings of そう",
+          "explanation": "The same two syllables mean different things depending on what they attach to. On a stem they describe how it looks to you, and on a plain form they report hearsay.",
+          "examples": [
+            { "jp": "あの店のラーメンはおいしそうです。", "en": "That shop's ramen looks delicious. (you can see it)" },
+            { "jp": "あの店のラーメンはおいしいそうです。", "en": "I hear that shop's ramen is delicious. (somebody told you)" }
+          ]
+        },
+        {
+          "heading": "いい and ない before そう",
+          "explanation": "With そう (\"looks like\"), いい becomes よさそう and ない becomes なさそう, and neither is attached as it is. This is a very common mistake.",
+          "examples": [
+            { "jp": "今日は天気がよさそうです。", "en": "The weather looks good today." },
+            { "jp": "時間がなさそうですね。", "en": "You don't look like you have time." }
+          ]
+        },
+        {
+          "heading": "ようだ and らしい are not the same",
+          "explanation": "ようだ or みたいだ is your own impression, from something you have observed. らしい is for something you have heard or worked out from signs, and so you did not see it yourself.",
+          "examples": [
+            { "jp": "窓が開いているようだ。", "en": "The window seems to be open. (you can see it)" },
+            { "jp": "窓が開いているらしい。", "en": "Apparently the window is open. (you were told)" }
+          ]
+        }
+      ],
+      "related": ["certainty", "ppoi"]
+    },
+    {
+      "id": "ppoi",
+      "title": "っぽい",
+      "summary": "っぽい adds the feel of something: -ish, like, or prone to. It attaches to nouns, verb stems and い-adjective stems, and the result is an い-adjective.",
+      "level": "intermediate",
+      "usages": [
+        {
+          "heading": "-ish: it has the look or feel of",
+          "explanation": "After a noun, っぽい says that something is like it or looks like it. After a colour, it means a bit of that colour.",
+          "examples": [
+            { "jp": "このスープは水っぽい。", "en": "This soup is watery." },
+            { "jp": "黒っぽい服を着ています。", "en": "I'm wearing blackish clothes." },
+            { "jp": "今日はちょっと熱っぽいです。", "en": "I feel a bit feverish today." }
+          ]
+        },
+        {
+          "heading": "Prone to",
+          "explanation": "After the ます stem of a verb, っぽい says that someone does something easily or often. It is mostly used with a handful of verbs.",
+          "examples": [
+            { "jp": "父は忘れっぽいです。", "en": "My father is forgetful." },
+            { "jp": "弟は飽きっぽい。", "en": "My little brother gets bored easily." }
+          ]
+        },
+        {
+          "heading": "Slightly, and not in a good way",
+          "explanation": "After an い-adjective stem, っぽい often gives a slightly negative impression, such as cheap-looking.",
+          "examples": [
+            { "jp": "この時計は安っぽく見える。", "en": "This watch looks cheap." },
+            { "jp": "安っぽいおもちゃを買ってしまった。", "en": "I ended up buying a cheap-looking toy." }
+          ]
+        },
+        {
+          "heading": "っぽい and らしい",
+          "explanation": "Both come after a noun. らしい is a praise: it fits what it should be. っぽい only says that it looks like it, and is often a mild criticism.",
+          "examples": [
+            { "jp": "子供っぽい考えだ。", "en": "That's a childish idea." },
+            { "jp": "子供らしい笑顔ですね。", "en": "What a childlike smile." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "noun",
+          "pattern": "noun + っぽい",
+          "example": "水っぽい / 子供っぽい / 白っぽい",
+          "note": "Colours and states are common: 黒っぽい, 赤っぽい, 熱っぽい."
+        },
+        {
+          "word_class": "verb",
+          "pattern": "ます stem + っぽい",
+          "example": "忘れ + っぽい → 忘れっぽい / 飽き + っぽい → 飽きっぽい / 怒り + っぽい → 怒りっぽい",
+          "note": "Only some verbs take it, so learn the common ones as vocabulary."
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "stem (drop い) + っぽい",
+          "example": "安い → 安っぽい",
+          "note": "Only a few adjectives take it."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜っぽいです", "register": "polite", "note": "Polite present." },
+        { "form": "〜っぽくないです", "register": "polite", "note": "Negative. Also 〜っぽくありません." },
+        { "form": "〜っぽい", "register": "casual", "note": "It is an い-adjective, so it conjugates as one." },
+        { "form": "〜っぽくない", "register": "casual", "note": "Negative." },
+        { "form": "〜っぽかった", "register": "casual", "note": "Past." },
+        { "form": "〜っぽくて", "register": "casual", "note": "て-form, for joining sentences." },
+        { "form": "〜っぽく", "register": "casual", "note": "Adverb: 子供っぽく話す." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "It is casual",
+          "explanation": "っぽい belongs to spoken, everyday Japanese. In formal writing, use ような or らしい.",
+          "examples": [
+            { "jp": "彼の話し方は少し子供っぽい。", "en": "The way he talks is a little childish." }
+          ]
+        },
+        {
+          "heading": "It is an い-adjective",
+          "explanation": "After you add っぽい, the whole word conjugates like any い-adjective: 子供っぽくない, 子供っぽかった, 子供っぽくて.",
+          "examples": [
+            { "jp": "そのドレスはあまり安っぽくないですね。", "en": "That dress doesn't look very cheap." }
+          ]
+        }
+      ],
+      "related": ["appearance"]
     }
   ]
 }
