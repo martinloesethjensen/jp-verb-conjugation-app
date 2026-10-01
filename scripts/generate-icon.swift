@@ -52,12 +52,37 @@ func blob(_ ctx: CGContext, at center: CGPoint, radius: CGFloat, hex: UInt32, al
 }
 
 /// The aurora, laid out in unit coordinates (0,0 bottom-left to 1,1 top-right) of `rect`.
-func aurora(_ ctx: CGContext, in rect: CGRect) {
+func aurora(_ ctx: CGContext, in rect: CGRect, variant: Variant = .standard) {
     func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * rect.width, y: rect.minY + y * rect.height) }
     let r = min(rect.width, rect.height)
-    blob(ctx, at: p(0.22, 0.80), radius: r * 0.60, hex: 0x8A5BFF)   // violet, top left
-    blob(ctx, at: p(0.84, 0.74), radius: r * 0.54, hex: 0x23D5C3)   // teal, top right
-    blob(ctx, at: p(0.50, 0.08), radius: r * 0.58, hex: 0xFF5FA2, alpha: 0.9)   // pink, bottom
+    let c = variant.blobColors, k = variant.blobStrength
+    blob(ctx, at: p(0.22, 0.80), radius: r * 0.60, hex: c[0], alpha: k)         // top left
+    blob(ctx, at: p(0.84, 0.74), radius: r * 0.54, hex: c[1], alpha: k)         // top right
+    blob(ctx, at: p(0.50, 0.08), radius: r * 0.58, hex: c[2], alpha: 0.9 * k)   // bottom
+}
+
+/// The three looks iOS asks for: the normal icon, the dark-mode icon (deeper, calmer)
+/// and the tinted icon (monochrome, so the system can tint it with any colour).
+enum Variant {
+    case standard, dark, tinted
+
+    var background: UInt32 {
+        switch self {
+        case .standard: return 0x0B1026
+        case .dark: return 0x05070F
+        case .tinted: return 0x101010
+        }
+    }
+    var blobColors: [UInt32] {
+        self == .tinted ? [0xFFFFFF, 0xFFFFFF, 0xFFFFFF] : [0x8A5BFF, 0x23D5C3, 0xFF5FA2]
+    }
+    var blobStrength: CGFloat {
+        switch self {
+        case .standard: return 1
+        case .dark: return 0.62
+        case .tinted: return 0.34
+        }
+    }
 }
 
 func tilePath(_ rect: CGRect) -> CGPath {
@@ -137,13 +162,13 @@ func glassTile(_ ctx: CGContext, rect: CGRect) {
 
 // MARK: iOS icon: full-bleed 1024 square (the system applies the corner mask).
 
-func iosIcon() -> CGContext {
+func iosIcon(_ variant: Variant = .standard) -> CGContext {
     let size = 1024
     let ctx = makeContext(size, size)
     let full = CGRect(x: 0, y: 0, width: size, height: size)
-    ctx.setFillColor(color(0x0B1026))
+    ctx.setFillColor(color(variant.background))
     ctx.fill(full)
-    aurora(ctx, in: full)
+    aurora(ctx, in: full, variant: variant)
     glassTile(ctx, rect: CGRect(x: 1024 * 0.20, y: 1024 * 0.20, width: 1024 * 0.60, height: 1024 * 0.60))
     return ctx
 }
@@ -216,6 +241,8 @@ func launchImage(scale: Int) -> CGContext {
 
 let iconSet = assets.appendingPathComponent("AppIcon.appiconset")
 try write(iosIcon(), to: iconSet.appendingPathComponent("icon-1024.png"))
+try write(iosIcon(.dark), to: iconSet.appendingPathComponent("icon-1024-dark.png"))
+try write(iosIcon(.tinted), to: iconSet.appendingPathComponent("icon-1024-tinted.png"))
 
 let mac = macIcon()
 for (name, px) in [

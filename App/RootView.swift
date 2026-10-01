@@ -32,7 +32,10 @@ struct RootView: View {
         }
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
-        .preferredColorScheme(appearance.colorScheme)
+        // Applied to the windows rather than with preferredColorScheme: see AppearanceApplier.
+        .onChange(of: appearanceModeRaw, initial: true) { _, _ in
+            AppearanceApplier.apply(appearance)
+        }
     }
 
     /// The existing Verbs experience — moved here unchanged, including the

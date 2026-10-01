@@ -12,14 +12,6 @@ enum AppearanceMode: String, CaseIterable, Identifiable, Hashable {
         case .dark: return "Dark"
         }
     }
-
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .system: return nil
-        case .light: return .light
-        case .dark: return .dark
-        }
-    }
 }
 
 struct SettingsView: View {
