@@ -5,6 +5,7 @@ import VerbKit
 /// form. A row is left out when the verb has none of that group's forms.
 struct MoreRowsCard: View {
     let verb: Verb
+    @Environment(VerbStore.self) private var verbStore
 
     private struct Row: Identifiable {
         let page: VerbSubPage
@@ -20,6 +21,16 @@ struct MoreRowsCard: View {
         }
         if f.hasNdForms, let preview = f.ndPos {
             rows.append(Row(page: .nDesu, preview: preview))
+        }
+        if f.hasAuxiliaryForms, let preview = f.teiru ?? f.nagara {
+            rows.append(Row(page: .auxiliaries, preview: preview))
+        }
+        if f.hasAdvancedForms, let preview = f.volitional ?? f.tai ?? f.imperative {
+            rows.append(Row(page: .advanced, preview: preview))
+        }
+        let lessonCount = verbStore.grammarPoints.attachingToVerbs.count
+        if lessonCount > 0 {
+            rows.append(Row(page: .lessons, preview: "\(lessonCount) lessons"))
         }
         return rows
     }

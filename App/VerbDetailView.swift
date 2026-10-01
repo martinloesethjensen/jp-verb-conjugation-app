@@ -15,12 +15,6 @@ struct VerbDetailView: View {
         return URL(string: "https://jisho.org/search/\(encoded)")!
     }
 
-    private var hasAdvancedForms: Bool {
-        let f = verb.forms
-        return [f.volitional, f.passive, f.causative, f.causativePassive, f.conditionalBa, f.conditionalTara, f.imperative, f.tai]
-            .contains { $0 != nil }
-    }
-
     var body: some View {
         // The detail column of a split view does not push navigation links by
         // itself, so the page owns a stack. Keyed on the verb, so choosing
@@ -44,7 +38,9 @@ struct VerbDetailView: View {
                 switch page {
                 case .potential: PotentialPage(verb: verb)
                 case .nDesu: NdesuPage(verb: verb)
-                case .auxiliaries, .advanced, .lessons: EmptyView()
+                case .auxiliaries: AuxiliariesPage(verb: verb)
+                case .advanced: AdvancedPage(verb: verb)
+                case .lessons: VerbLessonsPage()
                 }
             }
         }
@@ -100,31 +96,7 @@ struct VerbDetailView: View {
     private var formGroups: some View {
         VStack(alignment: .leading, spacing: 16) {
             VerbFormsCard(verb: verb)
-
             MoreRowsCard(verb: verb)
-
-            if hasAdvancedForms {
-                FormGroupSection(
-                    title: "Advanced",
-                    forms: [
-                        ("Volitional", verb.forms.volitional),
-                        ("Passive", verb.forms.passive),
-                        ("Causative", verb.forms.causative),
-                        ("Causative-passive", verb.forms.causativePassive),
-                        ("Conditional (ば)", verb.forms.conditionalBa),
-                        ("Conditional (たら)", verb.forms.conditionalTara),
-                        ("Imperative", verb.forms.imperative),
-                        ("たい (want to)", verb.forms.tai),
-                    ].compactMap { label, value in value.map { (label, $0) } },
-                    defaultExpanded: false
-                )
-            }
-
-            if verb.forms.hasAuxiliaryForms {
-                AuxiliaryFormsSection(forms: verb.forms)
-            }
-
-            VerbGrammarSection()
         }
     }
 }
