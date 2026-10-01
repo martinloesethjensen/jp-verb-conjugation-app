@@ -297,7 +297,7 @@ public enum Romaji {
 
     func testMatchesPartialRomaji() {
         XCTAssertTrue(matchesSearch(taberu, query: "tab"))
-        XCTAssertTrue(matchesSearch(taberu, query: "tabesh") == false)
+        XCTAssertTrue(matchesSearch(taberu, query: "tabesh"))   // "sh" is dropped, leaving たべ
     }
 
     func testRomajiNoMatch() {
@@ -308,8 +308,6 @@ public enum Romaji {
         XCTAssertTrue(matchesSearch(taberu, query: "eat"))
     }
 ```
-
-(`"tabesh"` converts to たべ, which is a substring of たべる, so it matches; fix the assertion to `XCTAssertTrue(matchesSearch(taberu, query: "tabesh"))` — partial endings are dropped, so the match narrows to たべ.)
 
 Append to `GrammarSearchTests`:
 
@@ -621,7 +619,7 @@ public extension Route {
         }
 ```
 
-(`initial: true` covers a cold launch from a widget tap: the link arrives before the tabs exist, and the route is waiting when they appear. If the verb data has not loaded yet, `open` does nothing, so also keep the route until the store has data: `guard let route, verbStore.hasLocalData else { return }` and add `.onChange(of: verbStore.verbs.count) { … }` that retries — implement the retry only if `hasLocalData` is not already true when `MainTabView` first appears; `RootView` only shows `MainTabView` when `hasLocalData` is true, so the simple form above is enough. Say in the report which you verified.)
+(`initial: true` covers a cold launch from a widget tap: the link arrives before the tabs exist, and the route is waiting when they appear. `RootView` only shows `MainTabView` once the store has data, so `open` can always resolve the verb; a link to an unknown id is simply ignored.)
 
 - [ ] **Step 3: Reload after sync.** `JPVerbConjugationApp`: `import WidgetKit`; after `await verbStore.start()` in the first `.task` add `WidgetCenter.shared.reloadAllTimelines()`.
 
