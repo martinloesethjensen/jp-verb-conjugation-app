@@ -38,11 +38,14 @@ today. Then two cards:
   present −, past +, past −, and て-form (a single value, in the Plain column). It
   replaces the Polite, Plain and て-form collapsibles. Always open, with no
   disclosure arrows.
-- **More card.** One row for each of **Potential**, **んです**, **Auxiliaries** and
-  **Grammar**, with a preview form on the right (たべられる, たべるんです, たべている,
+- **More card.** One row for each of **Potential**, **んです**, **Auxiliaries**,
+  **Advanced** and **Grammar**, with a preview form on the right (たべられる, たべるんです, たべている,
   "10 lessons") and a chevron.
 
-A row is hidden when the verb has no such forms, so ある has no Potential row and its
+A row is hidden when the verb has no such forms (the **Advanced** row, for the optional
+volitional, passive, causative, conditional, imperative and たい forms, never shows
+today because no verb in the data has them; keeping it keeps that code path alive),
+so ある has no Potential row and its
 Auxiliaries page shows only the stem rows and ながら. The Grammar row hides until
 grammar has synced.
 
@@ -57,6 +60,7 @@ links:
 - **Auxiliaries:** the ている table, then a second table with a row per auxiliary
   (てしまう, ておく, てみる, ながら, すぎる, やすい, にくい; ながら has no Polite value),
   then the four lesson links.
+- **Advanced:** a one-column table of whichever of those forms the verb has.
 - **Grammar:** a plain list of the lessons that attach to verbs (as today's Grammar
   section), one row each, opening the lesson through `openRoute`.
 
@@ -65,10 +69,11 @@ Each lesson link stays hidden until that lesson has synced. The links still call
 
 ### Navigation mechanics
 
-The Verbs tab is a `NavigationSplitView`; on iPad and macOS the detail column does not
-push `NavigationLink`s by itself. The verb detail therefore gets its own
+The Verbs tab is a `NavigationSplitView`. A plain `NavigationLink` in its detail column
+does not push (checked on iPhone while building this: the tap does nothing), so the verb
+detail gets its own
 `NavigationStack` with a `navigationDestination(for: VerbSubPage.self)`.
-`VerbSubPage` is a small enum (`potential`, `nDesu`, `auxiliaries`, `lessons`). The
+`VerbSubPage` is a small enum (`potential`, `nDesu`, `auxiliaries`, `advanced`, `lessons`). The
 stack is keyed on the verb's id, so choosing another verb returns to the main page. On
 iPhone it is one more level of the stack.
 
@@ -98,7 +103,8 @@ weight, secondary grey. What changed is the **ending**: bold, primary.
 
 - たべる → たべ**られる**, たべ**ます**, たべ**ている**
 - のむ → の**める**, の**みます**, の**んでいる**
-- No shared prefix (くる → き**ます**, する → **できる**): the whole form is bold.
+- No shared prefix (くる → **きます**, する → **します**, **できる**): the whole form is
+  bold. (する starts with す, so even します shares nothing with it.)
 - Identical to the dictionary form (the Plain present): normal, no emphasis.
 
 No colour and no underline, so nothing reads as a link (the ru-verb accent is blue),
@@ -118,8 +124,9 @@ form cells in the tables; headers, captions, previews and lesson text are unchan
 - **App:** `FormTable`, `FormCell`, `VerbFormsCard`, `MoreRowsCard`, `VerbSubPage`,
   and the pages `PotentialPage`, `NdesuPage`, `AuxiliariesPage`, `VerbLessonsPage`.
 - **Retired** once their content has moved: `FormGroupSection`, `PotentialFormsSection`,
-  `NdesuFormsSection`, `AuxiliaryFormsSection`, `VerbGrammarSection`. `formLabels`
-  shrinks to the short row labels. `VerbDetailView` is rewritten around the two cards.
+  `NdesuFormsSection`, `AuxiliaryFormsSection`, `VerbGrammarSection`. `formLabels` stays
+  as it is, because the quiz uses it; the tables carry their own short row labels.
+  `VerbDetailView` is rewritten around the two cards.
 - **Not touched:** the quiz, the Examples sheet, the lessons, the data and the scripts.
 
 ### Behaviour that must survive
@@ -157,8 +164,8 @@ build and not what older builds see.
 ## Files this touches
 
 - **New:** the VerbKit and app pieces above, and tests.
-- **Edited, patch-style on top of the latest `main`:** `VerbDetailView.swift`,
-  `FormLabels.swift`, `RootView.swift` only if the detail's stack needs wiring there.
+- **Edited, patch-style on top of the latest `main`:** `VerbDetailView.swift` only
+  (the detail stack lives there, so `RootView.swift` and `FormLabels.swift` are unchanged).
 - **Deleted:** the five retired section views.
 
 ## Not in this redesign
