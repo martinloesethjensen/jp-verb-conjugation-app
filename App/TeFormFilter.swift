@@ -18,7 +18,8 @@ struct TeFormFilter: View {
             }
             // Padding inside the scrolling content, so only the first and last chip
             // are inset; the scroll view itself spans the full width and never clips.
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
         }
     }
 

@@ -12,6 +12,12 @@ struct VerbListView: View {
     @State private var typeFilter: VerbType?
     @State private var teFilter: TeGroup?
     @State private var showGuide = false
+    /// True once the filters block has scrolled off screen, which is when the
+    /// back-to-top button appears.
+    @State private var filtersOffscreen = false
+
+
+    private static let filtersID = "filters"
 
     private var filtered: [Verb] {
         verbStore.verbs.filter {
@@ -23,41 +29,95 @@ struct VerbListView: View {
 
     private var hasFilters: Bool { typeFilter != nil || teFilter != nil }
 
-    var body: some View {
-        List(selection: $selection) {
-            Section {
-                Picker("Type", selection: $typeFilter) {
-                    Text("All").tag(VerbType?.none)
-                    Text("Irregular").tag(VerbType?.some(.irregular))
-                    Text("Ru-verbs").tag(VerbType?.some(.ru))
-                    Text("U-verbs").tag(VerbType?.some(.u))
-                }
-                .pickerStyle(.segmented)
-                .listRowSeparator(.hidden)
-            }
+    /// "って · Ru-verbs": which filters are on, shown under the title so they stay
+    /// visible after the filters themselves have scrolled away. Empty when none is on.
+    private var filterSummary: String {
+        var parts: [String] = []
+        if let teFilter, let rule = TeFormRule.all.first(where: { $0.group == teFilter }) {
+            parts.append(rule.result)
+        }
+        switch typeFilter {
+        case .irregular?: parts.append("Irregular")
+        case .ru?: parts.append("Ru-verbs")
+        case .u?: parts.append("U-verbs")
+        case nil: break
+        }
+        return parts.joined(separator: " · ")
+    }
 
-            Section {
-                if filtered.isEmpty { emptyState }
-                ForEach(filtered) { verb in
-                    Button {
-                        selection = verb
-                    } label: {
-                        VerbRow(verb: verb)
-                    }
-                    .buttonStyle(.plain)
-                    .tag(verb)
+    var body: some View {
+        ScrollViewReader { proxy in
+            List(selection: $selection) {
+                Section {
+                    // The filters scroll with the list, so nothing is pinned over the rows.
+                    TeFormFilter(selection: $teFilter)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .id(Self.filtersID)
+                        .onAppear { filtersOffscreen = false }
+                        .onDisappear { filtersOffscreen = true }
                 }
-            } footer: {
-                Link("Suggest a verb", destination: githubSuggestVerbURL)
-                    .font(.caption)
+                #if os(iOS)
+                // No section margin, so the chip row spans the full width and never clips.
+                .listSectionMargins(.horizontal, 0)
+                #endif
+
+                Section {
+                    Picker("Type", selection: $typeFilter) {
+                        Text("All").tag(VerbType?.none)
+                        Text("Irregular").tag(VerbType?.some(.irregular))
+                        Text("Ru-verbs").tag(VerbType?.some(.ru))
+                        Text("U-verbs").tag(VerbType?.some(.u))
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowSeparator(.hidden)
+                }
+
+                Section {
+                    if filtered.isEmpty { emptyState }
+                    ForEach(filtered) { verb in
+                        Button {
+                            selection = verb
+                        } label: {
+                            VerbRow(verb: verb)
+                        }
+                        .buttonStyle(.plain)
+                        .tag(verb)
+                    }
+                } footer: {
+                    Link("Suggest a verb", destination: githubSuggestVerbURL)
+                        .font(.caption)
+                }
             }
+            .searchable(text: $search, prompt: "Search hiragana, kanji, or English…")
+            #if os(iOS)
+            .listSectionSpacing(.compact)
+            // The search field collapses to a button in the navigation bar, so search
+            // stays one tap away however far the list has scrolled.
+            .searchToolbarBehavior(.minimize)
+            .overlay(alignment: .bottomTrailing) {
+                if filtersOffscreen {
+                    Button {
+                        withAnimation { proxy.scrollTo(Self.filtersID, anchor: .top) }
+                    } label: {
+                        Label("Back to top", systemImage: "arrow.up")
+                            .labelStyle(.iconOnly)
+                            .font(.headline)
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 12)
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .animation(.smooth, value: filtersOffscreen)
+            #endif
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            TeFormFilter(selection: $teFilter)
-                .padding(.vertical, 6)
-        }
-        .searchable(text: $search, prompt: "Search hiragana, kanji, or English…")
         .navigationTitle("早見表")
+        .navigationSubtitle(filterSummary)
         .sheet(isPresented: $showGuide) { VerbGuideSheet() }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
