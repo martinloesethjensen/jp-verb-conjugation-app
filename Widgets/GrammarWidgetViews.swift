@@ -18,8 +18,6 @@ struct GrammarWidgetView: View {
     }
 
     private static let navy = Color(red: 0.043, green: 0.063, blue: 0.149)
-    private static let beginner = Color(red: 0.176, green: 0.831, blue: 0.749)
-    private static let intermediate = Color(red: 0.655, green: 0.545, blue: 0.980)
 
     @ViewBuilder private var background: some View {
         if isHome {
@@ -50,8 +48,14 @@ struct GrammarWidgetView: View {
     #endif
 
     private func accent(_ level: JLPTLevel?) -> Color {
-        guard let level else { return Self.beginner }
-        return level <= .n4 ? Self.beginner : Self.intermediate
+        switch level {
+        case .n5: Color(red: 0.176, green: 0.831, blue: 0.749)
+        case .n4: Color(red: 0.486, green: 0.831, blue: 0.992)
+        case .n3: Color(red: 0.655, green: 0.545, blue: 0.980)
+        case .n2: Color(red: 0.992, green: 0.792, blue: 0.243)
+        case .n1: Color(red: 0.973, green: 0.443, blue: 0.400)
+        case nil: .white.opacity(0.8)
+        }
     }
 
     private func levelName(_ level: JLPTLevel?) -> String {

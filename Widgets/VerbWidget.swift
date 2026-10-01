@@ -48,7 +48,10 @@ struct VerbProvider: AppIntentTimelineProvider {
 
     @MainActor
     private func choose(for configuration: VerbWidgetIntent, at date: Date) -> Verb? {
-        let verbs = VerbLoader.verbs()
+        let allVerbs = VerbLoader.verbs()
+        // Day and random picks use the visible levels; never fall back to the empty state because of levels.
+        let visible = allVerbs.visible(in: LevelSettings.load())
+        let verbs = visible.isEmpty ? allVerbs : visible
         switch configuration.mode {
         case .verbOfTheDay:
             return VerbPick.verbOfTheDay(verbs: verbs, on: date)
@@ -56,7 +59,7 @@ struct VerbProvider: AppIntentTimelineProvider {
             var generator = SystemRandomNumberGenerator()
             return VerbPick.randomVerb(verbs: verbs, using: &generator)
         case .pick:
-            if let id = configuration.verb?.id, let verb = verbs.first(where: { $0.id == id }) {
+            if let id = configuration.verb?.id, let verb = allVerbs.first(where: { $0.id == id }) {
                 return verb
             }
             return VerbPick.verbOfTheDay(verbs: verbs, on: date)

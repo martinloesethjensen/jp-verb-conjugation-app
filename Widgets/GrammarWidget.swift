@@ -48,7 +48,10 @@ struct GrammarProvider: AppIntentTimelineProvider {
 
     @MainActor
     private func choose(for configuration: GrammarWidgetIntent, at date: Date) -> GrammarPoint? {
-        let points = GrammarLoader.points()
+        let allPoints = GrammarLoader.points()
+        // Day and random picks use the visible levels; never fall back to the empty state because of levels.
+        let visible = allPoints.visible(in: LevelSettings.load())
+        let points = visible.isEmpty ? allPoints : visible
         switch configuration.mode {
         case .lessonOfTheDay:
             return DailyPick.element(of: points, on: date)
@@ -56,7 +59,7 @@ struct GrammarProvider: AppIntentTimelineProvider {
             var generator = SystemRandomNumberGenerator()
             return DailyPick.random(of: points, using: &generator)
         case .pick:
-            if let id = configuration.lesson?.id, let point = points.first(where: { $0.id == id }) {
+            if let id = configuration.lesson?.id, let point = allPoints.first(where: { $0.id == id }) {
                 return point
             }
             return DailyPick.element(of: points, on: date)
