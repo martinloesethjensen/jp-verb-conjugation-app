@@ -6,12 +6,12 @@ private let githubSuggestVerbURL = URL(string: "https://github.com/martinloeseth
 struct VerbListView: View {
     @Environment(VerbStore.self) private var verbStore
     @Binding var selection: Verb?
+    @Binding var showGuide: Bool
     var onRandomQuiz: () -> Void
     var onSettings: () -> Void
     @State private var search = ""
     @State private var typeFilter: VerbType?
     @State private var teFilter: TeGroup?
-    @State private var showGuide = false
     /// True once the filters block has scrolled off screen, which is when the
     /// back-to-top button appears.
     @State private var filtersOffscreen = false

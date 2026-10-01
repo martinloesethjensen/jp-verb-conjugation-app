@@ -10,6 +10,7 @@ struct RootView: View {
     @State private var selection: Verb?
     @State private var showingExamples = false
     @State private var showingSettings = false
+    @State private var showingGuide = false
     @State private var quizQuestions: [QuizQuestion]?
     @State private var topicSheetVerbs: [Verb]?
     @State private var pendingQuestions: [QuizQuestion]?
@@ -32,7 +33,15 @@ struct RootView: View {
             }
         }
         .onOpenURL { url in
-            if let route = Route(url: url) { incomingRoute = route }
+            guard let route = Route(url: url) else { return }
+            // Anything presented over the list would hide the page the link opens.
+            showingExamples = false
+            showingSettings = false
+            showingGuide = false
+            topicSheetVerbs = nil
+            pendingQuestions = nil
+            quizQuestions = nil
+            incomingRoute = route
         }
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
@@ -50,6 +59,7 @@ struct RootView: View {
         NavigationSplitView {
             VerbListView(
                 selection: $selection,
+                showGuide: $showingGuide,
                 onRandomQuiz: { topicSheetVerbs = verbStore.verbs },
                 onSettings: { showingSettings = true }
             )
