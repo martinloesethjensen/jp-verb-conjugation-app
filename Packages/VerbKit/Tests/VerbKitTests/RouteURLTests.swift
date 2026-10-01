@@ -31,4 +31,15 @@ final class RouteURLTests: XCTestCase {
             XCTAssertNil(Route(url: url), text)
         }
     }
+
+    func testSchemeAndHostAreCaseInsensitive() throws {
+        let url = try XCTUnwrap(URL(string: "VERBTABLE://VERB/x"))
+        XCTAssertEqual(Route(url: url), .verb("x"))
+    }
+
+    func testRejectsGrammarWithoutId() throws {
+        for text in ["verbtable://grammar", "verbtable://grammar/"] {
+            XCTAssertNil(Route(url: try XCTUnwrap(URL(string: text))), text)
+        }
+    }
 }

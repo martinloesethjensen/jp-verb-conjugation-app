@@ -21,7 +21,7 @@ public extension Route {
 
     /// nil for anything that is not one of this app's links.
     init?(url: URL) {
-        guard url.scheme == Self.urlScheme, let host = url.host else { return nil }
+        guard url.scheme?.lowercased() == Self.urlScheme, let host = url.host?.lowercased() else { return nil }
         let path = url.path   // already percent-decoded
         guard path.hasPrefix("/"), path.count > 1 else { return nil }
         let id = String(path.dropFirst())

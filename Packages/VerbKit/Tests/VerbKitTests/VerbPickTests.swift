@@ -60,4 +60,33 @@ final class VerbPickTests: XCTestCase {
             XCTAssertNotNil(picked.flatMap { verbs.contains($0) ? $0 : nil })
         }
     }
+
+    func testDeviceCalendarDoesNotChangeThePick() {
+        let zone = TimeZone(identifier: "Europe/Copenhagen")!
+        let instant = date(5)
+        for id in [Calendar.Identifier.gregorian, .buddhist, .japanese, .islamicCivil] {
+            var other = Calendar(identifier: id)
+            other.timeZone = zone
+            var greg = Calendar(identifier: .gregorian)
+            greg.timeZone = zone
+            XCTAssertEqual(
+                VerbPick.verbOfTheDay(verbs: verbs, on: instant, calendar: other),
+                VerbPick.verbOfTheDay(verbs: verbs, on: instant, calendar: greg),
+                "\(id)"
+            )
+        }
+    }
+
+    func testDstDayKeepsOneVerbAndNextDayAdvances() throws {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Europe/Copenhagen")!
+        func at(_ day: Int, _ hour: Int, _ minute: Int) -> Date {
+            cal.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
+        }
+        let early = try XCTUnwrap(VerbPick.verbOfTheDay(verbs: verbs, on: at(25, 0, 30), calendar: cal))
+        let late = try XCTUnwrap(VerbPick.verbOfTheDay(verbs: verbs, on: at(25, 23, 30), calendar: cal))
+        let next = try XCTUnwrap(VerbPick.verbOfTheDay(verbs: verbs, on: at(26, 0, 30), calendar: cal))
+        XCTAssertEqual(early, late)
+        XCTAssertEqual(verbs.firstIndex(of: next), (verbs.firstIndex(of: early)! + 1) % verbs.count)
+    }
 }
