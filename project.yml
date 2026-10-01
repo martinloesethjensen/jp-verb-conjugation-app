@@ -23,6 +23,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: "Verb Table"
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
         CFBundleURLTypes:
           - CFBundleURLName: dev.martinloeseth.jpverbconjugation
@@ -69,6 +71,8 @@ targets:
       path: Widgets/Info.plist
       properties:
         CFBundleDisplayName: "Verb Table"
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
