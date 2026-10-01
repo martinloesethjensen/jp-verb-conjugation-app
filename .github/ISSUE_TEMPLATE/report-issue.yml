@@ -1,0 +1,47 @@
+name: Report a problem
+description: Something is wrong with a verb, a grammar lesson or the app
+title: "[REPORT] "
+labels: ["report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the app! The fields marked as prefilled come from the app,
+        so you only need to describe what is wrong.
+
+  - type: input
+    id: item
+    attributes:
+      label: Which verb, lesson or screen?
+      description: Prefilled when you report from a verb or lesson page. Otherwise name the verb, the lesson, the screen, or write "app".
+      placeholder: "e.g. Verb: たべる (食べる), Lesson: 可能形, Quiz screen"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of problem is it?
+      options:
+        - "A wrong conjugation or reading"
+        - "A wrong or unnatural translation or example"
+        - "A lesson explanation that is unclear or incorrect"
+        - "A problem with the app (a crash, a layout problem, something that does not work)"
+        - "Something else"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong, and what should it be?
+      description: Quote the text you see and, if you know it, the correct form or wording. A source such as jisho.org helps.
+      placeholder: "e.g. The polite past of 行く shows いきした. It should be いきました."
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Prefilled by the app. Leave as it is.

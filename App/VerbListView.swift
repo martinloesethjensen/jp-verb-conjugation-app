@@ -67,6 +67,9 @@ struct VerbListView: View {
                 Button("Random Quiz", systemImage: "gamecontroller", action: onRandomQuiz)
             }
             ToolbarItem(placement: .secondaryAction) {
+                ReportProblemButton(item: "")
+            }
+            ToolbarItem(placement: .secondaryAction) {
                 Button("Settings", systemImage: "gearshape", action: onSettings)
             }
         }

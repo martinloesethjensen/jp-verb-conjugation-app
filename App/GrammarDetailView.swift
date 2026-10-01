@@ -34,6 +34,11 @@ struct GrammarDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .navigationTitle(point.title)
+        .toolbar {
+            ToolbarItem(placement: .secondaryAction) {
+                ReportProblemButton(item: "Lesson: \(point.title) (\(point.id))")
+            }
+        }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif

@@ -10,6 +10,10 @@ struct VerbDetailView: View {
         verb.teGroup?.accentColor ?? verb.type.accentColor
     }
 
+    private var reportItem: String {
+        "Verb: " + verb.dict + (verb.kanji.map { " (\($0))" } ?? "")
+    }
+
     private var jishoURL: URL? {
         TextLookupURL.jisho(verb.jishoQuery)
     }
@@ -41,6 +45,9 @@ struct VerbDetailView: View {
                             Label("Jisho", systemImage: "link")
                         }
                     }
+                }
+                ToolbarItem(placement: .secondaryAction) {
+                    ReportProblemButton(item: reportItem)
                 }
             }
             .navigationDestination(for: VerbSubPage.self) { page in

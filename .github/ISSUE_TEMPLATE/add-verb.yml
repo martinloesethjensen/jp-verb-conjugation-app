@@ -6,8 +6,11 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for contributing! Please fill in the conjugation forms as completely as possible.
+        Thanks for contributing! Please fill in the nine conjugation forms below as completely as possible.
         The maintainers will verify accuracy before merging.
+
+        You do **not** need to write the んです, potential (可能形) or auxiliary forms (ている, てしまう,
+        てみる, すぎる, …). The app generates those from the forms below.
 
   - type: input
     id: dict
@@ -41,7 +44,7 @@ body:
       description: What type of verb is this?
       options:
         - "ru — ru-verb (一段動詞, ends in -eru or -iru)"
-        - "u — u-verb (五段動詞, all others)"
+        - "u — u-verb (五段動詞, all others, including look-alikes such as はいる, かえる, きる)"
         - "irr. — irregular (する or くる only)"
     validations:
       required: true
@@ -67,19 +70,43 @@ body:
       label: Conjugation Forms
       description: Fill in every form. Check a Japanese dictionary (e.g. jisho.org) if unsure.
       value: |
-        | Form                        | Value |
-        |-----------------------------|-------|
-        | ます (polite present +)      |       |
-        | ません (polite present −)    |       |
-        | ました (polite past +)       |       |
-        | ませんでした (polite past −) |       |
-        | て-form                     |       |
-        | short present +             |       |
-        | short present − (ない-form) |       |
-        | short past +                |       |
-        | short past −                |       |
+        | Form                          | Value |
+        |-------------------------------|-------|
+        | Polite (ます)                  |       |
+        | Polite · negative (ません)     |       |
+        | Polite · past (ました)         |       |
+        | Polite · past · negative (ませんでした) |       |
+        | て-form                       |       |
+        | Plain (dictionary form)       |       |
+        | Plain · negative (ない)        |       |
+        | Plain · past (た)              |       |
+        | Plain · past · negative (なかった) |       |
     validations:
       required: true
+
+  - type: dropdown
+    id: potential
+    attributes:
+      label: Potential form (可能形)
+      description: The app generates the potential form from the verb's class. Does that give the right result for this verb?
+      options:
+        - "Yes — a regular potential form exists"
+        - "No — the verb has no potential form (like ある)"
+        - "It has an irregular potential form (give it in the usage notes)"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: readings
+    attributes:
+      label: Readings for any kanji you use (optional)
+      description: |
+        Every kanji that appears in the verb, description, notes or examples needs a reading, or the
+        data cannot be published. List each as `kanji = reading`, one per line.
+      placeholder: |
+        食 = た
+        朝 = あさ
 
   - type: textarea
     id: description
@@ -103,7 +130,8 @@ body:
       label: Example Sentences (optional)
       description: |
         Provide 2–5 example sentences. One per block, Japanese on one line, English on the next.
-        Indicate which conjugation form each example uses.
+        Indicate which of the nine conjugation forms each example uses. Write natural English, not a
+        word-for-word gloss: learners can send examples to a translation app from the verb page.
       placeholder: |
         Form: masu_pos
         JP: あさごはんをたべます。

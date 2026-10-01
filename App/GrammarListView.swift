@@ -51,6 +51,11 @@ struct GrammarListView: View {
         }
         .searchable(text: $search, prompt: "Search grammar…")
         .navigationTitle("Grammar")
+        .toolbar {
+            ToolbarItem(placement: .secondaryAction) {
+                ReportProblemButton(item: "")
+            }
+        }
         .overlay {
             if !verbStore.hasGrammar {
                 ContentUnavailableView {
