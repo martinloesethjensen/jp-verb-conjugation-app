@@ -68,7 +68,7 @@ struct GrammarListView: View {
                 .tag(point)
             }
             if !filtered.isEmpty && hiddenMatchCount > 0 {
-                HiddenMatchesRow(count: hiddenMatchCount) { scope = .all }
+                HiddenMatchesRow(count: hiddenMatchCount)
             }
         }
         .searchable(text: $search, prompt: "Search grammar…")
@@ -95,7 +95,7 @@ struct GrammarListView: View {
                 }
             } else if filtered.isEmpty {
                 if hiddenMatchCount > 0 {
-                    NoMatchInLevelsView(summary: summary, hiddenCount: hiddenMatchCount) { scope = .all }
+                    NoMatchInLevelsView(summary: summary, hiddenCount: hiddenMatchCount)
                 } else {
                     ContentUnavailableView.search(text: search)
                 }

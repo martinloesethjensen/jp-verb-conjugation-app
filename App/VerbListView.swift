@@ -98,7 +98,7 @@ struct VerbListView: View {
                             NoMatchInLevelsView(
                                 summary: settings.summary(among: availableLevels) ?? "",
                                 hiddenCount: hiddenMatchCount
-                            ) { scope = .all }
+                            )
                         } else {
                             emptyState
                         }
@@ -113,7 +113,7 @@ struct VerbListView: View {
                         .tag(verb)
                     }
                     if !filtered.isEmpty && hiddenMatchCount > 0 {
-                        HiddenMatchesRow(count: hiddenMatchCount) { scope = .all }
+                        HiddenMatchesRow(count: hiddenMatchCount)
                     }
                 } footer: {
                     Link("Suggest a verb", destination: githubSuggestVerbURL)

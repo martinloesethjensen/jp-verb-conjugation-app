@@ -30,18 +30,18 @@ extension View {
     }
 }
 
-/// Last row of a result list: items in hidden levels also match the search.
+/// Last row of a result list: items in hidden levels also match the search. Info only; the scope is
+/// changed by the user through the search scope bar.
 struct HiddenMatchesRow: View {
     let count: Int
-    let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Text("\(count) more in hidden levels — **Search all levels**")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .buttonStyle(.plain)
+        Text(count == 1
+             ? "1 more in a hidden level. Switch to All levels in the bar above."
+             : "\(count) more in hidden levels. Switch to All levels in the bar above.")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .selectionDisabled()
     }
 }
 
@@ -49,15 +49,12 @@ struct HiddenMatchesRow: View {
 struct NoMatchInLevelsView: View {
     let summary: String
     let hiddenCount: Int
-    let action: () -> Void
 
     var body: some View {
         ContentUnavailableView {
             Label("No match in \(summary)", systemImage: "magnifyingglass")
         } description: {
-            Text("\(hiddenCount) in other levels")
-        } actions: {
-            Button("All levels", action: action)
+            Text("\(hiddenCount) in other levels. Switch to All levels in the bar above.")
         }
     }
 }
