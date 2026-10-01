@@ -33,8 +33,10 @@ would be a large piece of work and would replace the layout built for furigana.
 - **Open in Jisho** opens `https://jisho.org/search/<text>` in the browser, like the
   verb page's Jisho button.
 - **Apple Translate** opens the system translation sheet over the app, so the user
-  stays in place. It translates on device and may ask to download the Japanese
-  language pack the first time.
+  stays in place. The sheet asks for its own consent first (found while building this):
+  the text is sent to Apple to be translated unless offline translation is chosen in
+  Settings, and the first offline use may download the Japanese language pack. The app
+  sends nothing itself.
 - **DeepL** and **Google Translate** open with the sentence filled in, Japanese to
   English: in their app if it handles the link, otherwise on the website. Nothing is
   sent anywhere until the user taps one of them.
@@ -101,7 +103,7 @@ older builds see.
 | Risk | Covered by |
 |---|---|
 | Long-press clashes with the tap or with scrolling in a `List` or `ScrollView` | Simulator checks on all three surfaces |
-| The Apple sheet needs the language pack, or behaves differently on macOS | The system handles the prompt; iPhone checked, macOS noted as unverified |
+| The Apple sheet asks for consent, needs the language pack, or behaves differently on macOS | The system handles the prompt (checked on iPhone: the sheet opens with its consent screen); macOS noted as unverified |
 | DeepL or Google change their URL format | Unit tests pin the format; the links degrade to the website |
 | The DeepL fragment mis-encodes unusual characters | The stricter encoding and its tests |
 
