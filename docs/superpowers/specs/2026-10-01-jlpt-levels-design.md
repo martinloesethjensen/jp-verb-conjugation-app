@@ -70,15 +70,18 @@ When levels are hidden, search must make that obvious and make searching everyth
 
 - Both lists use SwiftUI search scopes: `.searchScopes($scope)` with two scopes, **My levels**
   (default) and **All levels**, shown under the search field while searching. The scope bar only
-  appears when at least one level is hidden.
+  appears when at least one level that exists in *that list's* data is hidden.
 - **My levels** matches within visible levels. **All levels** matches everything. The scope is a
   per-search choice: it does not change the setting, and it resets to My levels when the search
   field is dismissed.
-- When a search in My levels finds results but hidden levels also match, the list ends with a
-  row: "N more in hidden levels — Search all levels" (tapping switches the scope).
-- When My levels finds nothing but All levels would, the empty state says so
-  ("No match in N5–N4. 3 in other levels") with a **Search all levels** button; this replaces the
-  plain "No results" message.
+- When a search in My levels finds results but hidden levels also match, the list ends with an
+  info row: "N more in hidden levels. Switch to All levels in the bar above."
+- When My levels finds nothing but All levels would, the empty state says so ("No match in
+  N5–N4", "3 in other levels. Switch to All levels in the bar above."); this replaces the plain
+  "No results" message.
+- The hints are information only. A button that set the scope in code left the native scope bar
+  highlighting the old scope (SwiftUI does not push a programmatic change into the bar), so the
+  scope is only ever changed by the user through the bar.
 - Search with scope All levels shows the level badge on each row, so hidden-level items are
   recognisable.
 - Verb rows get a small level badge (as grammar rows already have) so levels are visible
