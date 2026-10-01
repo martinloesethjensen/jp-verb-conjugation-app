@@ -23,6 +23,8 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     @ObservationIgnored private let synthesizer = AVSpeechSynthesizer()
     @ObservationIgnored private let voice: AVSpeechSynthesisVoice?
 
+    @ObservationIgnored private var currentText: String?
+
     var hasJapaneseVoice: Bool { voice != nil }
 
     override init() {
@@ -34,7 +36,12 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
 
     func speak(_ text: String) {
         guard let spoken = SpeechText.spoken(text), let voice else { return }
+        if synthesizer.isSpeaking, currentText == spoken {
+            stop()
+            return
+        }
         stop()
+        currentText = spoken
         activateSession()
         let utterance = AVSpeechUtterance(string: spoken)
         utterance.voice = voice
@@ -44,6 +51,7 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     func stop() {
+        currentText = nil
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
     }
 
@@ -56,8 +64,19 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        let finished = utterance.speechString
+        Task { @MainActor in
+            if Speaker.shared.currentText == finished { Speaker.shared.currentText = nil }
+        }
         #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         #endif
+    }
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        let cancelled = utterance.speechString
+        Task { @MainActor in
+            if Speaker.shared.currentText == cancelled { Speaker.shared.currentText = nil }
+        }
     }
 }
