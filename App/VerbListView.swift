@@ -25,7 +25,6 @@ struct VerbListView: View {
     private var levelsHidden: Bool { settings.anyHidden(among: availableLevels) }
     private var effectiveSettings: LevelSettings { scope == .mine ? settings : LevelSettings() }
 
-
     private static let filtersID = "filters"
 
     private func matching(in levels: LevelSettings) -> [Verb] {
