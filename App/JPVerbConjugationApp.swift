@@ -43,6 +43,9 @@ struct JPVerbConjugationApp: App {
                 .onChange(of: verbStore.verbs) {
                     WidgetCenter.shared.reloadAllTimelines()
                 }
+                .onChange(of: verbStore.grammarPoints) {
+                    WidgetCenter.shared.reloadAllTimelines()
+                }
                 .task {
                     // Independent of the verb sync: furigana is an enhancement.
                     await furiganaStore.start()

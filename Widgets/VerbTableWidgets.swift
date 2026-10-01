@@ -5,5 +5,6 @@ import WidgetKit
 struct VerbTableWidgets: WidgetBundle {
     var body: some Widget {
         VerbTableWidget()
+        GrammarRuleWidget()
     }
 }
