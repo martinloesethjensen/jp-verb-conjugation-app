@@ -62,4 +62,25 @@ final class LevelSettingsTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: "hiddenJLPTLevels"), "N4,N1")
         XCTAssertEqual(LevelSettings.load(from: defaults).hidden, [.n4, .n1])
     }
+
+    func testSummaryIsEmptyWhenEverythingAvailableIsHidden() {
+        XCTAssertEqual(LevelSettings(hidden: [.n5, .n4]).summary(among: [.n5, .n4]), "")
+    }
+
+    func testCanHideWithEmptyAvailableSetIsTrue() {
+        XCTAssertTrue(LevelSettings().canHide(.n5, among: []))
+    }
+
+    func testCanHideAmongEachDataset() {
+        let verbs: Set<JLPTLevel> = [.n5, .n4]
+        let grammar: Set<JLPTLevel> = [.n5, .n4, .n3, .n2]
+        let none = LevelSettings()
+        XCTAssertTrue(none.canHide(.n5, amongEach: [verbs, grammar]))
+        let n5Hidden = LevelSettings(hidden: [.n5])
+        XCTAssertFalse(n5Hidden.canHide(.n4, amongEach: [verbs, grammar]))
+        XCTAssertTrue(n5Hidden.canHide(.n3, amongEach: [verbs, grammar]))
+        XCTAssertTrue(none.canHide(.n5, amongEach: [verbs, []]))
+        XCTAssertTrue(none.canHide(.n3, amongEach: [[.n5], grammar]))
+        XCTAssertFalse(none.canHide(.n5, amongEach: [[.n5], grammar]))
+    }
 }

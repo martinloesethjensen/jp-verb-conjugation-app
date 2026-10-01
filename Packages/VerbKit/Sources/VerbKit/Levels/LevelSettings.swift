@@ -37,6 +37,12 @@ public struct LevelSettings: Equatable, Sendable {
         return !remaining.isEmpty || !available.contains(level)
     }
 
+    /// False when hiding `level` would leave any non-empty dataset (each a set of levels present in it)
+    /// without a visible level. Empty datasets and datasets not containing `level` never block.
+    public func canHide(_ level: JLPTLevel, amongEach datasets: [Set<JLPTLevel>]) -> Bool {
+        datasets.allSatisfy { canHide(level, among: $0) }
+    }
+
     /// Describes the visible levels among `available`, best first (N5 first); nil when nothing among
     /// `available` is hidden. Visible levels that are consecutive among ALL FIVE JLPT levels
     /// (N5, N4, N3, N2, N1) form a range with an en dash ("N5–N4"); a level that exists in the JLPT but

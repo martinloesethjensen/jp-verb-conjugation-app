@@ -71,16 +71,16 @@ struct SettingsView: View {
             }
             if !availableLevels.isEmpty {
                 let settings = LevelSettings(rawValue: hiddenLevelsRaw)
-                let available = Set(availableLevels)
+                let datasets = [verbStore.verbs.levels(), verbStore.grammarPoints.levels()]
                 Section {
                     ForEach(availableLevels, id: \.self) { level in
                         Toggle(level.displayName, isOn: visibleBinding(for: level))
-                            .disabled(settings.isVisible(level) && !settings.canHide(level, among: available))
+                            .disabled(settings.isVisible(level) && !settings.canHide(level, amongEach: datasets))
                     }
                 } header: {
                     Text("Levels")
                 } footer: {
-                    Text("Hidden levels are left out of lists, the quiz and the widgets. Search can still look at all levels.")
+                    Text("Hidden levels are left out of lists, the quiz and the widgets. Search can still look at all levels. At least one level of verbs and of lessons stays visible.")
                 }
             }
             Section("Quiz") {
