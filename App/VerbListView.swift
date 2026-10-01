@@ -90,7 +90,7 @@ struct VerbListView: View {
                         .font(.caption)
                 }
             }
-            .searchable(text: $search, prompt: "Search hiragana, kanji, or English…")
+            .searchable(text: $search, prompt: "Search hiragana, kanji, romaji, or English…")
             #if os(iOS)
             .listSectionSpacing(.compact)
             // The search field collapses to a button in the navigation bar, so search
