@@ -21,7 +21,7 @@ struct VerbEntry: TimelineEntry {
 
 struct VerbProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> VerbEntry {
-        VerbEntry(date: .now, verb: nil)
+        VerbEntry(date: .now, verb: .sample)
     }
 
     func snapshot(for configuration: VerbWidgetIntent, in context: Context) async -> VerbEntry {
@@ -35,7 +35,10 @@ struct VerbProvider: AppIntentTimelineProvider {
         switch configuration.mode {
         case .verbOfTheDay:
             let midnight = calendar.nextDate(after: now, matching: DateComponents(hour: 0, minute: 0), matchingPolicy: .nextTime) ?? now.addingTimeInterval(3600)
-            return Timeline(entries: [entry], policy: .after(midnight))
+            let nextMidnight = calendar.nextDate(after: midnight, matching: DateComponents(hour: 0, minute: 0), matchingPolicy: .nextTime) ?? midnight.addingTimeInterval(24 * 3600)
+            // The second entry lands exactly at midnight with the next day's verb.
+            let tomorrow = VerbEntry(date: midnight, verb: await choose(for: configuration, at: midnight))
+            return Timeline(entries: [entry, tomorrow], policy: .after(nextMidnight))
         case .random:
             return Timeline(entries: [entry], policy: .after(now.addingTimeInterval(3 * 3600)))
         case .pick:

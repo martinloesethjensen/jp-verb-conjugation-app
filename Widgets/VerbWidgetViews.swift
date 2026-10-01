@@ -103,16 +103,19 @@ struct VerbWidgetView: View {
     }
 }
 
-#if DEBUG
-private let sampleVerb = Verb(
-    type: .ru, label: "Ichidan", dict: "たべる", kanji: "食べる", meaning: "to eat", description: "",
-    forms: VerbForms(
-        masuPos: "たべます", masuNeg: "たべません", masuPast: "たべました", masuPastNeg: "たべませんでした",
-        te: "たべて", shortPos: "たべる", shortNeg: "たべない", shortPast: "たべた", shortPastNeg: "たべなかった",
-        potential: "たべられる"),
-    examples: [])
+extension Verb {
+    /// Shown in the widget gallery and as the placeholder before real data loads.
+    static let sample = Verb(
+        type: .ru, label: "Ichidan", dict: "たべる", kanji: "食べる", meaning: "to eat", description: "",
+        forms: VerbForms(
+            masuPos: "たべます", masuNeg: "たべません", masuPast: "たべました", masuPastNeg: "たべませんでした",
+            te: "たべて", shortPos: "たべる", shortNeg: "たべない", shortPast: "たべた", shortPastNeg: "たべなかった",
+            potential: "たべられる"),
+        examples: [])
+}
 
-private let sampleProvider = VerbEntry(date: .now, verb: sampleVerb)
+#if DEBUG
+private let sampleProvider = VerbEntry(date: .now, verb: .sample)
 
 #Preview("Small", as: .systemSmall) {
     VerbTableWidget()
