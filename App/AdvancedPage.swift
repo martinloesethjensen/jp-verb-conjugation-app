@@ -2,8 +2,8 @@ import SwiftUI
 import VerbKit
 
 /// The optional advanced forms (volitional, passive, causative, conditionals,
-/// imperative, たい). No verb in the data has them yet, so the row that opens
-/// this page stays hidden until one does.
+/// imperative, たい), generated into the data by scripts/update_data.py. The row that opens
+/// this page stays hidden for a verb that has none (ある has only some).
 struct AdvancedPage: View {
     let verb: Verb
 

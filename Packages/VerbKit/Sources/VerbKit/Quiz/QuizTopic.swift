@@ -1,6 +1,6 @@
 /// What a quiz can practise. "Everything" is not a topic: it is all of them at once.
 public enum QuizTopic: String, CaseIterable, Sendable {
-    case basic, potential, nDesu, auxiliaries
+    case basic, potential, nDesu, auxiliaries, otherForms
 
     public var title: String {
         switch self {
@@ -8,6 +8,7 @@ public enum QuizTopic: String, CaseIterable, Sendable {
         case .potential: return "Potential"
         case .nDesu: return "んです"
         case .auxiliaries: return "Auxiliaries"
+        case .otherForms: return "More forms"
         }
     }
 }
