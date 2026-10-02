@@ -53,7 +53,7 @@ struct GrammarDetailView: View {
                     .glassEffect(in: Capsule())
             }
             JapaneseText(point.title)
-                .font(.system(size: 34, weight: .heavy))
+                .font(.largeTitle.weight(.heavy))
             JapaneseText(point.summary)
                 .font(.headline)
                 .foregroundStyle(.secondary)

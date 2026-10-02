@@ -49,7 +49,8 @@ struct QuizQuestionView: View {
             Text("\(viewModel.index + 1) / \(viewModel.questions.count)")
                 .font(.headline)
             Spacer()
-            Text("⭐ \(viewModel.score)")
+            Label("\(viewModel.score)", systemImage: "star.fill")
+                .accessibilityLabel("Score \(viewModel.score)")
         }
     }
 
@@ -65,7 +66,7 @@ struct QuizQuestionView: View {
                 Text("Which form is this?")
                     .font(.caption)
                 Text(question.formString)
-                    .font(.system(size: 34, weight: .heavy))
+                    .font(.largeTitle.weight(.heavy))
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                 // The dictionary form would give the answer away when it is the question.
@@ -75,7 +76,7 @@ struct QuizQuestionView: View {
                     .italic()
                     .foregroundStyle(.secondary)
             }
-            Text("⏱ \(viewModel.timeLeft)s")
+            Label("\(viewModel.timeLeft)s", systemImage: viewModel.timeLeft > 5 ? "timer" : "exclamationmark.timer")
                 .font(.headline)
                 .foregroundStyle(timerColor)
         }
@@ -86,7 +87,7 @@ struct QuizQuestionView: View {
     private var verbBlock: some View {
         VStack(spacing: 8) {
             Text(question.verb.dict)
-                .font(.system(size: 36, weight: .heavy))
+                .font(.largeTitle.weight(.heavy))
             if let kanji = question.verb.kanji {
                 JapaneseText(kanji).font(.title3).foregroundStyle(.secondary)
             }
@@ -131,11 +132,11 @@ struct QuizQuestionView: View {
     private var feedback: some View {
         Group {
             if viewModel.timedOut {
-                Text("⏰ Time's up!")
+                Label("Time's up!", systemImage: "alarm")
             } else if viewModel.selected == question.correct {
-                Text("🎉 Correct!")
+                Label("Correct!", systemImage: "checkmark.circle.fill")
             } else {
-                Text("❌ The answer was: \(question.correct)")
+                Label("The answer was: \(question.correct)", systemImage: "xmark.circle.fill")
             }
         }
         .font(.headline)
