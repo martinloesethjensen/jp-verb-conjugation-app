@@ -76,7 +76,7 @@ final class QuizFormTests: XCTestCase {
         XCTAssertEqual(choices.first { $0.topic == .basic }?.count, 9)
         let all = QuizTopic.choices(for: try RealVerbs.load())
         XCTAssertEqual(all.map(\.topic), QuizTopic.allCases)
-        XCTAssertEqual(all.first { $0.topic == .basic }?.count, 25 * 9)
+        XCTAssertEqual(all.first { $0.topic == .basic }?.count, try RealVerbs.load().count * 9)
     }
 
     /// Every field holds its own JSON key, so a form wired to the wrong field

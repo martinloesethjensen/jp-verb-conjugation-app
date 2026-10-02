@@ -86,7 +86,7 @@ final class QuizGeneratorTests: XCTestCase {
     func testBasicConjugateKeepsTheOldBehaviour() throws {
         // Distractors are the verb's other basic forms first, never the answer itself.
         let questions = buildQuestions(verbs: try verbs(), topics: [.basic], count: 1000, kinds: [.conjugate])
-        XCTAssertEqual(questions.count, 25 * 9)
+        XCTAssertEqual(questions.count, try verbs().count * 9)
         for question in questions {
             XCTAssertEqual(question.choices.count, 4)
             XCTAssertEqual(question.form.topic, .basic)
