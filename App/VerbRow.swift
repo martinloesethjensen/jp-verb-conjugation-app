@@ -16,7 +16,7 @@ struct VerbRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(verb.dict)
                         .font(.title3.weight(.bold))
-                        .foregroundStyle(verb.teGroup?.accentColor ?? verb.type.accentColor)
+                        .foregroundStyle(.primary)
                     if let kanji = verb.kanji {
                         JapaneseText(kanji)
                             .font(.subheadline)

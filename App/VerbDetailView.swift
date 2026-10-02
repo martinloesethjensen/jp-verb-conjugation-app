@@ -74,11 +74,13 @@ struct VerbDetailView: View {
                 if let teGroup = verb.teGroup {
                     Text(teGroup.rawValue)
                         .font(.caption)
-                        .foregroundStyle(teGroup.accentColor)
+                        .foregroundStyle(.secondary)
+                    Circle().fill(teGroup.accentColor).frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
                 }
             }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(verb.dict).font(.system(size: 34, weight: .heavy)).foregroundStyle(accent)
+                Text(verb.dict).font(.largeTitle.weight(.heavy)).foregroundStyle(.primary)
                 if let kanji = verb.kanji {
                     JapaneseText(kanji).font(.title2).foregroundStyle(.secondary)
                 }
