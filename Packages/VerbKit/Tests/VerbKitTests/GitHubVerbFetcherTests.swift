@@ -203,4 +203,20 @@ private final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     }
 
     override func stopLoading() {}
+
+    func testFetchRejectsAnOversizedResponse() async throws {
+        let big = Data(count: GitHubVerbFetcher.maxResponseBytes + 1)
+        StubURLProtocol.handler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, big)
+        }
+        let fetcher = GitHubVerbFetcher(manifestURL: manifestURL, verbsURL: verbsURL, grammarURL: grammarURL, furiganaURL: furiganaURL, session: makeSession())
+
+        do {
+            _ = try await fetcher.fetchVerbData()
+            XCTFail("expected malformedData")
+        } catch VerbSyncError.malformedData {
+            // expected
+        }
+    }
 }

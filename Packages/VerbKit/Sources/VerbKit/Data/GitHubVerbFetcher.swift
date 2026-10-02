@@ -60,11 +60,23 @@ public struct GitHubVerbFetcher: VerbDataFetching {
         let furigana: FuriganaManifest?
     }
 
+    /// The data files are under 100 KB; anything near this is not one of ours.
+    static let maxResponseBytes = 5 * 1024 * 1024
+
     private func fetchData(from url: URL) async throws -> Data {
-        let data: Data
-        let response: URLResponse
+        var data = Data()
         do {
-            (data, response) = try await session.data(from: url)
+            let (bytes, response) = try await session.bytes(from: url)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                throw VerbSyncError.serverUnreachable
+            }
+            if response.expectedContentLength > Int64(Self.maxResponseBytes) {
+                throw VerbSyncError.malformedData
+            }
+            for try await byte in bytes {
+                data.append(byte)
+                if data.count > Self.maxResponseBytes { throw VerbSyncError.malformedData }
+            }
         } catch let urlError as URLError {
             switch urlError.code {
             case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
@@ -72,9 +84,6 @@ public struct GitHubVerbFetcher: VerbDataFetching {
             default:
                 throw VerbSyncError.serverUnreachable
             }
-        }
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw VerbSyncError.serverUnreachable
         }
         return data
     }
