@@ -15,4 +15,12 @@ public enum SpeechText {
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
+
+    /// The file name (without extension) of the recorded clip for already-cleaned
+    /// text: the first 16 hex digits of its UTF-8 SHA-256. `scripts/generate_audio.py`
+    /// computes the same name, so a clip is found by its text and a text with no clip
+    /// falls back to the system voice.
+    public static func clipName(for spoken: String) -> String {
+        String(sha256Hex(of: Data(spoken.utf8)).prefix(16))
+    }
 }
