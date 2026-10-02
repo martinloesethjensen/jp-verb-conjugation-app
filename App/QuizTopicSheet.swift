@@ -22,8 +22,15 @@ struct QuizTopicSheet: View {
     }
 
     @State private var choice: Choice = .everything
+    @State private var favouritesOnly = false
+    @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
 
-    private var choices: [QuizTopicChoice] { QuizTopic.choices(for: verbs) }
+    private var favouriteVerbs: [Verb] { FavouriteVerbs(rawValue: favouritesRaw).filter(verbs) }
+
+    /// The verbs the quiz draws from: only the starred ones when that is switched on.
+    private var quizVerbs: [Verb] { favouritesOnly ? favouriteVerbs : verbs }
+
+    private var choices: [QuizTopicChoice] { QuizTopic.choices(for: quizVerbs) }
 
     private var selection: QuizSelection {
         switch choice {
@@ -48,6 +55,12 @@ struct QuizTopicSheet: View {
                     }
                     row(title: "Everything", detail: Self.formsText(choices.reduce(0) { $0 + $1.count }), choice: .everything)
                 }
+                // Only worth offering when there is a choice to make: some, but not all, verbs starred.
+                if !favouriteVerbs.isEmpty && favouriteVerbs.count < verbs.count {
+                    Section {
+                        Toggle("Favourites only (\(favouriteVerbs.count))", isOn: $favouritesOnly)
+                    }
+                }
             }
             .navigationTitle("Quiz")
             #if os(iOS)
@@ -58,7 +71,7 @@ struct QuizTopicSheet: View {
                     Button("Cancel", action: onCancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Start") { onStart(verbs, selection) }
+                    Button("Start") { onStart(quizVerbs, selection) }
                 }
             }
         }
