@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import WidgetKit
+import os
 import VerbKit
 
 @main
@@ -73,13 +74,19 @@ struct JPVerbConjugationApp: App {
     /// crashing if the App Group container is unavailable — this can
     /// only happen from a signing/entitlement misconfiguration, which is
     /// a dev-time bug per the spec, not a scenario to build recovery UI
-    /// for. One console log is enough.
+    /// for. One log line is enough. If even the in-memory store can't be
+    /// created there is nothing left to run on, so that still stops the app.
     private static func makeModelContainer() -> ModelContainer {
         do {
             return try VerbModelContainer.make()
         } catch {
-            print("⚠️ VerbModelContainer.make() failed (\(error)); falling back to an in-memory store. Check the App Group entitlement and DEVELOPMENT_TEAM in project.yml.")
-            return try! VerbModelContainer.makeInMemory()
+            Logger(subsystem: "dev.martinloeseth.jpverbconjugation", category: "persistence")
+                .error("VerbModelContainer.make() failed (\(error, privacy: .private)); falling back to an in-memory store. Check the App Group entitlement and DEVELOPMENT_TEAM in project.yml.")
+            do {
+                return try VerbModelContainer.makeInMemory()
+            } catch {
+                fatalError("Could not create even an in-memory model container: \(error)")
+            }
         }
     }
 }

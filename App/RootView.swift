@@ -35,7 +35,9 @@ struct RootView: View {
             }
         }
         .onOpenURL { url in
-            guard let route = Route(url: url) else { return }
+            guard let route = Route(url: url),
+                  route.resolve(verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints) != nil
+            else { return }   // links from outside the app must not dismiss anything for a target that doesn't exist
             // Anything presented over the list would hide the page the link opens.
             showingExamples = false
             showingSettings = false
