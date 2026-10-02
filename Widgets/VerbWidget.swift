@@ -47,13 +47,16 @@ struct VerbProvider: AppIntentTimelineProvider {
     }
 
     /// Verbs with at least one weak pair, in their original order; the full pool when off or nothing is weak.
-    /// Reads the history read-only.
+    /// Only attempts before the start of `date`'s day count, so the pool (and so the verb of the
+    /// day) is fixed for the whole day however many quizzes are played, and the midnight entry
+    /// sees yesterday's full history. Reads the history read-only.
     @MainActor
-    private func favouredPool(_ verbs: [Verb], favour: Bool) -> [Verb] {
+    private func favouredPool(_ verbs: [Verb], favour: Bool, at date: Date) -> [Verb] {
         guard favour, let container = try? VerbModelContainer.make() else { return verbs }
         let persisting = SwiftDataQuizHistoryPersisting(modelContext: ModelContext(container))
         let attempts = (try? persisting.loadAll()) ?? []
-        let weak = Set(QuizProgress(attempts: attempts).weakPairs(among: Set(verbs.map(\.dict))).map(\.verb))
+        let settled = attempts.before(startOfDayOf: date)
+        let weak = Set(QuizProgress(attempts: settled, now: date).weakPairs(among: Set(verbs.map(\.dict))).map(\.verb))
         let weakVerbs = verbs.filter { weak.contains($0.dict) }
         return weakVerbs.isEmpty ? verbs : weakVerbs
     }
@@ -64,7 +67,7 @@ struct VerbProvider: AppIntentTimelineProvider {
         // Day and random picks use the visible levels; never fall back to the empty state because of levels.
         let visible = allVerbs.visible(in: LevelSettings.load())
         let verbs = visible.isEmpty ? allVerbs : visible
-        let pool = configuration.mode == .pick ? verbs : favouredPool(verbs, favour: configuration.favourMisses)
+        let pool = configuration.mode == .pick ? verbs : favouredPool(verbs, favour: configuration.favourMisses, at: date)
         switch configuration.mode {
         case .verbOfTheDay:
             return VerbPick.verbOfTheDay(verbs: pool, on: date)

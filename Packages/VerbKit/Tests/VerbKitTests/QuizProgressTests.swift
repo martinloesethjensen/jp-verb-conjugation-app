@@ -279,4 +279,18 @@ final class QuizProgressTests: XCTestCase {
         XCTAssertEqual(p.last7Days.map(\.answered), [0, 0, 0, 0, 1, 1, 1])
         for d in p.last7Days { XCTAssertEqual(d.day, cal.startOfDay(for: d.day)) }
     }
+
+    // MARK: attempts before the start of a day
+
+    func testBeforeStartOfDayKeepsYesterdayEveningAndDropsToday() {
+        let cal = calendar("Europe/Copenhagen")
+        func a(_ d: Int, _ h: Int, _ m: Int) -> QuizAttempt {
+            QuizAttempt(verb: "食べる", formID: "te", kind: .conjugate, outcome: .wrong, date: date(cal, 2026, 6, d, h, m))
+        }
+        let late = a(14, 23, 59), early = a(15, 0, 1), midnight = a(15, 0, 0)
+        let kept = [late, early, midnight].before(startOfDayOf: date(cal, 2026, 6, 15, 9), calendar: cal)
+        XCTAssertEqual(kept, [late])
+        // The midnight entry (date = midnight) sees yesterday's whole history.
+        XCTAssertEqual([late, early].before(startOfDayOf: midnight.date, calendar: cal), [late])
+    }
 }

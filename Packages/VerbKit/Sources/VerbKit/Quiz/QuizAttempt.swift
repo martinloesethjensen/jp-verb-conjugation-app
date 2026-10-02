@@ -29,3 +29,12 @@ public struct QuizAttempt: Equatable, Sendable, Identifiable {
         self.date = date
     }
 }
+
+public extension Sequence where Element == QuizAttempt {
+    /// Attempts dated before the start of `date`'s day. A widget uses this so a day's
+    /// weak-verb pool stays fixed while the day's quizzes are recorded.
+    func before(startOfDayOf date: Date, calendar: Calendar = .current) -> [QuizAttempt] {
+        let cutoff = calendar.startOfDay(for: date)
+        return filter { $0.date < cutoff }
+    }
+}
