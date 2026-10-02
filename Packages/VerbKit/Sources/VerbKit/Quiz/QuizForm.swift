@@ -94,5 +94,15 @@ public struct QuizForm: Hashable, Sendable {
         make("nikui", .auxiliaries, name: "にくい", register: "plain") { $0.nikui },
         make("nikui_polite", .auxiliaries, name: "にくい", register: "polite") { $0.nikuiPolite },
         make("nagara", .auxiliaries, name: "ながら", register: nil) { $0.nagara },
+
+        // More forms: one string each.
+        make("volitional", .otherForms, name: "Volitional", register: nil) { $0.volitional },
+        make("passive", .otherForms, name: "Passive", register: nil) { $0.passive },
+        make("causative", .otherForms, name: "Causative", register: nil) { $0.causative },
+        make("causative_passive", .otherForms, name: "Causative-passive", register: nil) { $0.causativePassive },
+        make("conditional_ba", .otherForms, name: "Conditional (ば)", register: nil) { $0.conditionalBa },
+        make("conditional_tara", .otherForms, name: "Conditional (たら)", register: nil) { $0.conditionalTara },
+        make("imperative", .otherForms, name: "Imperative", register: nil) { $0.imperative },
+        make("tai", .otherForms, name: "たい (want to)", register: nil) { $0.tai },
     ]
 }

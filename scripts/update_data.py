@@ -12,6 +12,8 @@ It does six things:
   2. Fills the nine potential forms (`potential` and the eight pot_* fields)
      from each verb's class, and removes them for verbs that have none.
      Deterministic; safe to re-run.
+     Likewise the eight other conjugations (volitional, passive, causative,
+     causative-passive, ば and たら conditionals, imperative, たい).
   3. Validates data/grammar.json (hand-authored) against the schema the
      app decodes. It never generates lesson text.
   4. Validates data/furigana.json (hand-authored), then checks that every
@@ -79,6 +81,87 @@ POTENTIAL_CONJUGATIONS = [
 
 # Every field the potential step owns: the base form plus the eight above.
 POTENTIAL_FIELDS = ["potential"] + [name for name, _ in POTENTIAL_CONJUGATIONS]
+
+# --- Other conjugations: volitional, passive, causative, causative-passive,
+# conditionals (ば / たら), imperative and たい ---------------------------------
+
+A_ROW = {"う": "わ", "く": "か", "ぐ": "が", "す": "さ", "つ": "た", "ぬ": "な", "ぶ": "ば", "む": "ま", "る": "ら"}
+I_ROW = {"う": "い", "く": "き", "ぐ": "ぎ", "す": "し", "つ": "ち", "ぬ": "に", "ぶ": "び", "む": "み", "る": "り"}
+O_ROW = {"う": "お", "く": "こ", "ぐ": "ご", "す": "そ", "つ": "と", "ぬ": "の", "ぶ": "ぼ", "む": "も", "る": "ろ"}
+
+# Every field this step owns, in JSON order.
+OTHER_FORM_FIELDS = [
+    "volitional", "passive", "causative", "causative_passive",
+    "conditional_ba", "conditional_tara", "imperative", "tai",
+]
+
+# Irregular verbs, spelled out: only する and くる.
+IRREGULAR_OTHER_FORMS = {
+    "する": ["しよう", "される", "させる", "させられる", "すれば", "したら", "しろ", "したい"],
+    "くる": ["こよう", "こられる", "こさせる", "こさせられる", "くれば", "きたら", "こい", "きたい"],
+}
+
+# Verbs that only have some of these forms; the rest are removed. The existential ある
+# has no passive, causative or imperative. Extend as verbs are added.
+PARTIAL_OTHER_FORMS = {"ある": {"volitional", "conditional_ba", "conditional_tara", "tai"}}
+
+
+def other_forms(verb):
+    """The eight other conjugations as {field: value}, built from the verb's class and its
+    plain past (for たら). Raises ValueError for a class or ending the rules don't cover."""
+    dict_form = verb["dict"]
+    kind = verb["type"]
+    past = verb["forms"].get("short_past")
+    if not isinstance(past, str) or not past:
+        raise ValueError(f"{dict_form}: no short_past to build the たら form from")
+    if kind == "irr.":
+        if dict_form not in IRREGULAR_OTHER_FORMS:
+            raise ValueError(f"{dict_form}: irregular verb with no known conjugations")
+        values = dict(zip(OTHER_FORM_FIELDS, IRREGULAR_OTHER_FORMS[dict_form]))
+    elif kind == "ru":
+        stem = dict_form[:-1]
+        values = {
+            "volitional": stem + "よう", "passive": stem + "られる", "causative": stem + "させる",
+            "causative_passive": stem + "させられる", "conditional_ba": stem + "れば",
+            "conditional_tara": past + "ら", "imperative": stem + "ろ", "tai": stem + "たい",
+        }
+    elif kind == "u":
+        last = dict_form[-1]
+        if last not in E_ROW:
+            raise ValueError(f"{dict_form}: no conjugation rules for the u-verb ending '{last}'")
+        stem = dict_form[:-1]
+        values = {
+            "volitional": stem + O_ROW[last] + "う", "passive": stem + A_ROW[last] + "れる",
+            "causative": stem + A_ROW[last] + "せる", "causative_passive": stem + A_ROW[last] + "せられる",
+            "conditional_ba": stem + E_ROW[last] + "ば", "conditional_tara": past + "ら",
+            "imperative": stem + E_ROW[last], "tai": stem + I_ROW[last] + "たい",
+        }
+        if dict_form == "ある":
+            values["tai"] = "ありたい"
+            values["volitional"] = "あろう"
+    else:
+        raise ValueError(f"{dict_form}: unknown verb type '{kind}'")
+    keep = PARTIAL_OTHER_FORMS.get(dict_form)
+    return {name: value for name, value in values.items() if keep is None or name in keep}
+
+
+def apply_other_forms(verbs_doc):
+    """Set the eight fields on every verb in place and remove the ones a verb must not have.
+    The script owns these fields. Returns True if anything changed."""
+    changed = False
+    for verb in verbs_doc["verbs"]:
+        forms = verb["forms"]
+        wanted = other_forms(verb)
+        for name in OTHER_FORM_FIELDS:
+            if name in wanted:
+                if forms.get(name) != wanted[name]:
+                    forms[name] = wanted[name]
+                    changed = True
+            elif name in forms:
+                del forms[name]
+                changed = True
+    return changed
+
 
 # --- Verb auxiliaries (grammar points `teiru`, `teshimau`, `temiru`, `sugiru`) ---
 
@@ -596,6 +679,10 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         apply_auxiliary_forms(verbs_doc)
     except ValueError as error:
         return 1, [f"cannot generate auxiliary forms: {error}"]
+    try:
+        apply_other_forms(verbs_doc)
+    except ValueError as error:
+        return 1, [f"cannot generate the other conjugations: {error}"]
     problems = check_coverage(verbs_doc, grammar_doc, readings)
     if problems:
         return 1, capped("kanji without a reading in furigana.json:", problems)
