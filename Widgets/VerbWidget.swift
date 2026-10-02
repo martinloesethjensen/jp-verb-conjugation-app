@@ -46,18 +46,31 @@ struct VerbProvider: AppIntentTimelineProvider {
         }
     }
 
+    /// Verbs with at least one weak pair, in their original order; the full pool when off or nothing is weak.
+    /// Reads the history read-only.
+    @MainActor
+    private func favouredPool(_ verbs: [Verb], favour: Bool) -> [Verb] {
+        guard favour, let container = try? VerbModelContainer.make() else { return verbs }
+        let persisting = SwiftDataQuizHistoryPersisting(modelContext: ModelContext(container))
+        let attempts = (try? persisting.loadAll()) ?? []
+        let weak = Set(QuizProgress(attempts: attempts).weakPairs(among: Set(verbs.map(\.dict))).map(\.verb))
+        let weakVerbs = verbs.filter { weak.contains($0.dict) }
+        return weakVerbs.isEmpty ? verbs : weakVerbs
+    }
+
     @MainActor
     private func choose(for configuration: VerbWidgetIntent, at date: Date) -> Verb? {
         let allVerbs = VerbLoader.verbs()
         // Day and random picks use the visible levels; never fall back to the empty state because of levels.
         let visible = allVerbs.visible(in: LevelSettings.load())
         let verbs = visible.isEmpty ? allVerbs : visible
+        let pool = configuration.mode == .pick ? verbs : favouredPool(verbs, favour: configuration.favourMisses)
         switch configuration.mode {
         case .verbOfTheDay:
-            return VerbPick.verbOfTheDay(verbs: verbs, on: date)
+            return VerbPick.verbOfTheDay(verbs: pool, on: date)
         case .random:
             var generator = SystemRandomNumberGenerator()
-            return VerbPick.randomVerb(verbs: verbs, using: &generator)
+            return VerbPick.randomVerb(verbs: pool, using: &generator)
         case .pick:
             if let id = configuration.verb?.id, let verb = allVerbs.first(where: { $0.id == id }) {
                 return verb

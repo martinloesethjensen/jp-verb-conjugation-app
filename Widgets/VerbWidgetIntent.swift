@@ -52,11 +52,14 @@ struct VerbWidgetIntent: WidgetConfigurationIntent {
     @Parameter(title: "Verb")
     var verb: VerbChoice?
 
+    @Parameter(title: "Favour verbs I miss", default: false)
+    var favourMisses: Bool
+
     static var parameterSummary: some ParameterSummary {
         When(\.$mode, .equalTo, VerbWidgetMode.pick) {
             Summary("\(\.$mode) \(\.$verb)")
         } otherwise: {
-            Summary("\(\.$mode)")
+            Summary("\(\.$mode) \(\.$favourMisses)")
         }
     }
 }
