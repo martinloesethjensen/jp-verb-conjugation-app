@@ -2,13 +2,20 @@ import SwiftUI
 import VerbKit
 
 /// Asks what to practise before a quiz starts. Rows are the topics the verbs in
-/// play have forms in, plus Everything.
+/// play have forms in, plus Everything and, first, the pairs answered wrongly before.
+enum QuizSelection {
+    case topics(Set<QuizTopic>)
+    case weakSpots
+}
+
 struct QuizTopicSheet: View {
     let verbs: [Verb]
-    var onStart: ([Verb], Set<QuizTopic>) -> Void
+    let weakSpotCount: Int
+    var onStart: ([Verb], QuizSelection) -> Void
     var onCancel: () -> Void
 
     private enum Choice: Hashable {
+        case weakSpots
         case everything
         case topic(QuizTopic)
     }
@@ -17,10 +24,11 @@ struct QuizTopicSheet: View {
 
     private var choices: [QuizTopicChoice] { QuizTopic.choices(for: verbs) }
 
-    private var selectedTopics: Set<QuizTopic> {
+    private var selection: QuizSelection {
         switch choice {
-        case .everything: return Set(choices.map(\.topic))
-        case .topic(let topic): return [topic]
+        case .weakSpots: return .weakSpots
+        case .everything: return .topics(Set(choices.map(\.topic)))
+        case .topic(let topic): return .topics([topic])
         }
     }
 
@@ -28,10 +36,16 @@ struct QuizTopicSheet: View {
         NavigationStack {
             List {
                 Section("Practise") {
+                    row(
+                        title: "Weak spots",
+                        detail: weakSpotCount > 0 ? "\(weakSpotCount) pairs" : "Answer some questions first",
+                        choice: .weakSpots,
+                        enabled: weakSpotCount > 0
+                    )
                     ForEach(choices, id: \.topic) { item in
-                        row(title: item.topic.title, count: item.count, choice: .topic(item.topic))
+                        row(title: item.topic.title, detail: "\(item.count) forms", choice: .topic(item.topic))
                     }
-                    row(title: "Everything", count: choices.reduce(0) { $0 + $1.count }, choice: .everything)
+                    row(title: "Everything", detail: "\(choices.reduce(0) { $0 + $1.count }) forms", choice: .everything)
                 }
             }
             .navigationTitle("Quiz")
@@ -43,26 +57,27 @@ struct QuizTopicSheet: View {
                     Button("Cancel", action: onCancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Start") { onStart(verbs, selectedTopics) }
+                    Button("Start") { onStart(verbs, selection) }
                 }
             }
         }
         .presentationDetents([.medium])
     }
 
-    private func row(title: String, count: Int, choice value: Choice) -> some View {
+    private func row(title: String, detail: String, choice value: Choice, enabled: Bool = true) -> some View {
         Button {
             choice = value
         } label: {
             HStack {
-                Text(title)
+                Text(title).foregroundStyle(enabled ? .primary : .secondary)
                 Spacer()
-                Text("\(count) forms").foregroundStyle(.secondary)
+                Text(detail).foregroundStyle(.secondary)
                 Image(systemName: choice == value ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(choice == value ? Color.accentColor : Color.secondary)
             }
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
         .contentShape(Rectangle())
     }
 }

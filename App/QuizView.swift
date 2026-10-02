@@ -1,5 +1,6 @@
 import SwiftUI
 import VerbKit
+import WidgetKit
 
 struct QuizView: View {
     @State private var viewModel: QuizViewModel
@@ -7,10 +8,12 @@ struct QuizView: View {
     /// even when the new quiz's first question has the same index as the old last one.
     @State private var attempt = 0
     @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
+    private let recorder: (QuizAttempt) -> Void
     var onDone: () -> Void
 
-    init(questions: [QuizQuestion], onDone: @escaping () -> Void) {
-        _viewModel = State(initialValue: QuizViewModel(questions: questions))
+    init(questions: [QuizQuestion], recorder: @escaping (QuizAttempt) -> Void, onDone: @escaping () -> Void) {
+        _viewModel = State(initialValue: QuizViewModel(questions: questions, recorder: recorder))
+        self.recorder = recorder
         self.onDone = onDone
     }
 
@@ -18,7 +21,7 @@ struct QuizView: View {
         Group {
             if viewModel.finished {
                 QuizResultsView(viewModel: viewModel, onDone: onDone) { missed in
-                    viewModel = QuizViewModel(questions: missed)
+                    viewModel = QuizViewModel(questions: missed, recorder: recorder)
                     attempt += 1
                 }
             } else if let question = viewModel.currentQuestion {
@@ -42,7 +45,14 @@ struct QuizView: View {
             guard speakQuizAnswers, let question = viewModel.currentQuestion else { return }
             Speaker.shared.speak(question.formString, restart: true)
         }
-        .onDisappear { Speaker.shared.stop() }
+        // The widgets show weak spots, so refresh them when the quiz ends or is left early.
+        .onChange(of: viewModel.finished) { _, finished in
+            if finished { WidgetCenter.shared.reloadAllTimelines() }
+        }
+        .onDisappear {
+            Speaker.shared.stop()
+            WidgetCenter.shared.reloadAllTimelines()
+        }
         // Immersive fullscreen takeover per spec section 10 — hides the
         // home indicator for the duration of the quiz.
         .persistentSystemOverlays(.hidden)
