@@ -28,6 +28,7 @@ struct GrammarRow: View {
 
 struct GrammarListView: View {
     @Environment(VerbStore.self) private var verbStore
+    @Environment(\.furiganaDictionary) private var furigana
     @Binding var selection: GrammarPoint?
     var onSettings: () -> Void
     @State private var search = ""
@@ -43,7 +44,7 @@ struct GrammarListView: View {
     private var summary: String { settings.summary(among: availableLevels) ?? "" }
 
     private func matching(in levels: LevelSettings) -> [GrammarPoint] {
-        verbStore.grammarPoints.visible(in: levels).filter { matchesGrammarSearch($0, query: search) }
+        verbStore.grammarPoints.visible(in: levels).filter { matchesGrammarSearch($0, query: search, furigana: furigana) }
     }
 
     private var filtered: [GrammarPoint] { matching(in: scope == .mine ? settings : LevelSettings()) }
