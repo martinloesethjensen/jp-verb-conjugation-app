@@ -1,12 +1,3 @@
-/// Word classes a grammar ending can attach to. Deliberately separate
-/// from `VerbType`, which classifies verbs only.
-public enum WordClass: String, Codable, Hashable, Sendable {
-    case verb
-    case iAdjective = "i-adjective"
-    case naAdjective = "na-adjective"
-    case noun
-}
-
 public enum GrammarRegister: String, Codable, Hashable, Sendable {
     case polite
     case casual

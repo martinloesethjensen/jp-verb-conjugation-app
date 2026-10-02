@@ -8,6 +8,7 @@ import update_data as ud
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
+FORMS_JSON = ud.DEFAULT_FORMS_PATH
 QUIZ_FORM_SWIFT = ROOT / "Packages/VerbKit/Sources/VerbKit/Quiz/QuizForm.swift"
 
 
@@ -104,11 +105,11 @@ class CheckVerbFormsTests(unittest.TestCase):
 class RealDataTests(unittest.TestCase):
     def test_data_is_up_to_date(self):
         """The golden check: regenerating the repo's data changes nothing."""
-        code, messages = ud.run(DATA, check=True)
+        code, messages = ud.run(DATA, check=True, forms_path=FORMS_JSON)
         self.assertEqual((code, messages), (0, ["data is up to date"]))
 
     def test_forms_json_is_the_generated_catalogue(self):
-        self.assertEqual((DATA / "forms.json").read_text(encoding="utf-8"), ud.dump_forms())
+        self.assertEqual(FORMS_JSON.read_text(encoding="utf-8"), ud.dump_forms())
 
     def test_every_verb_key_is_known_and_in_catalogue_order(self):
         verbs = json.loads((DATA / "verbs.json").read_text(encoding="utf-8"))["verbs"]

@@ -20,7 +20,7 @@ It does seven things:
      run, so new content cannot ship without furigana.
   5. Recomputes the SHA-256 of all three files into data/manifest.json,
      bumping a file's version (minor) when its content changed.
-  6. Writes data/forms.json, the catalogue of conjugation forms declared in
+  6. Writes forms.json (into the VerbKit package), the catalogue of conjugation forms declared in
      scripts/form_catalogue.py (the one place a form id is defined), and
      checks every form id verbs.json uses against it. forms.json is bundled
      with the app, not synced, so it has no manifest entry.
@@ -593,14 +593,23 @@ def capped(heading, problems):
     return lines
 
 
-def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None):
-    """Returns (exit_code, messages)."""
+# forms.json is bundled with the app (read through Bundle.module), so it lives
+# in the package, not in data/. `run` skips it when no path is given.
+DEFAULT_FORMS_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "Packages/VerbKit/Sources/VerbKit/Resources/forms.json"
+)
+
+
+def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
+        forms_path=None):
+    """Returns (exit_code, messages). `forms_path` is where forms.json is
+    written and checked; None leaves it alone."""
     data_dir = Path(data_dir)
     verbs_path = data_dir / "verbs.json"
     grammar_path = data_dir / "grammar.json"
     furigana_path = data_dir / "furigana.json"
     manifest_path = data_dir / "manifest.json"
-    forms_path = data_dir / "forms.json"
     messages = []
 
     problems = form_catalogue.problems()
@@ -657,8 +666,10 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     stale = []
     if verbs_path.read_bytes() != verbs_bytes:
         stale.append("data/verbs.json")
-    if not forms_path.exists() or forms_path.read_text(encoding="utf-8") != forms_text:
-        stale.append("data/forms.json")
+    if forms_path is not None:
+        forms_path = Path(forms_path)
+        if not forms_path.exists() or forms_path.read_text(encoding="utf-8") != forms_text:
+            stale.append("forms.json")
     if manifest_path.read_text(encoding="utf-8") != manifest_text:
         stale.append("data/manifest.json")
 
@@ -670,9 +681,10 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     if "data/verbs.json" in stale:
         verbs_path.write_bytes(verbs_bytes)
         messages.append("updated data/verbs.json")
-    if "data/forms.json" in stale:
+    if "forms.json" in stale:
+        forms_path.parent.mkdir(parents=True, exist_ok=True)
         forms_path.write_text(forms_text, encoding="utf-8")
-        messages.append("updated data/forms.json")
+        messages.append(f"updated {forms_path.name}")
     if "data/manifest.json" in stale:
         manifest_path.write_text(manifest_text, encoding="utf-8")
         messages.append(
@@ -691,8 +703,11 @@ def main(argv=None):
     parser.add_argument("--verbs-version", help="force the verbs.json manifest version")
     parser.add_argument("--grammar-version", help="force the grammar.json manifest version")
     parser.add_argument("--furigana-version", help="force the furigana.json manifest version")
+    parser.add_argument("--forms-path", default=str(DEFAULT_FORMS_PATH),
+                        help="where to write the form catalogue (forms.json)")
     args = parser.parse_args(argv)
-    code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version, args.furigana_version)
+    code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
+                         args.furigana_version, forms_path=args.forms_path)
     for line in messages:
         print(line)
     return code

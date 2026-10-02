@@ -275,9 +275,11 @@ nouns, not because they are missing.
   from `te` and the stem). The engine resolves dependencies, applies the lemma-keyed
   exception tables, writes `forms` in catalogue order, and fails when a required form
   has no rule.
-- **The catalogue is generated output.** The script writes `forms.json` (catalogue only,
-  no data), so Python is the single source and Swift never re-declares ids. `--check`
-  covers it like `verbs.json` and the manifest.
+- **The catalogue is generated output.** `scripts/form_catalogue.py` declares the forms;
+  the script writes `forms.json` (catalogue only, no data) into the VerbKit package
+  (`Sources/VerbKit/Resources/forms.json`, bundled, not synced and not in `data/`), so
+  Python is the single source and Swift never re-declares ids. `--check` covers it like
+  `verbs.json` and the manifest.
 - **Files.** Recommended: `adjectives.json` (i + na) and `nouns.json`, one schema, one
   optional manifest block each. They share generator rules (na and noun share the
   copula) but not a file, so the name is honest and each ships independently. Merging
