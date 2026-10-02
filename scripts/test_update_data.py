@@ -1,4 +1,5 @@
 import copy
+import argparse
 import json
 import tempfile
 import unittest
@@ -527,6 +528,32 @@ class ValidateGrammarTests(unittest.TestCase):
 
 
 class ManifestTests(unittest.TestCase):
+    def test_ref_pins_every_entry(self):
+        result = ud.build_manifest({"version": "1.0.0", "sha256": "x"}, b"v", b"g", furigana_bytes=b"f", ref="data-v1")
+        self.assertEqual(result["ref"], "data-v1")
+        self.assertEqual(result["grammar"]["ref"], "data-v1")
+        self.assertEqual(result["furigana"]["ref"], "data-v1")
+
+    def test_no_ref_means_no_ref_key(self):
+        result = ud.build_manifest({"version": "1.0.0", "sha256": "x"}, b"v", b"g", furigana_bytes=b"f")
+        self.assertNotIn("ref", result)
+        self.assertNotIn("ref", result["grammar"])
+
+    def test_an_old_ref_is_kept_only_while_the_file_is_unchanged(self):
+        existing = {
+            "version": "1.0.0", "sha256": ud.sha256_hex(b"v"), "ref": "data-v1",
+            "grammar": {"version": "1.0.0", "sha256": "old", "ref": "data-v1"},
+        }
+        result = ud.build_manifest(existing, b"v", b"g")
+        self.assertEqual(result["ref"], "data-v1")          # verbs unchanged: tag still has them
+        self.assertNotIn("ref", result["grammar"])           # grammar changed: the tag is stale
+
+    def test_valid_ref_rejects_anything_that_could_change_a_url(self):
+        for bad in ["../x", "a/b", "a?b", "a#b", "-x", "", ".x", "a b", "a" * 65]:
+            with self.assertRaises(argparse.ArgumentTypeError, msg=bad):
+                ud.valid_ref(bad)
+        self.assertEqual(ud.valid_ref("data-v1.2_3"), "data-v1.2_3")
+
     def test_unchanged_files_keep_versions(self):
         existing = {
             "version": "1.2.0",

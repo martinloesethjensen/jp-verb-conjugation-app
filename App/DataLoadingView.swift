@@ -90,6 +90,11 @@ struct DataLoadingView: View {
                 "exclamationmark.triangle", "Something Went Wrong",
                 "The downloaded verb data couldn't be read. Please try again."
             )
+        case .untrusted:
+            return (
+                "lock.trianglebadge.exclamationmark", "Couldn't Verify the Data",
+                "The downloaded verb data couldn't be verified, so it wasn't used. Please try again later."
+            )
         }
     }
 }
