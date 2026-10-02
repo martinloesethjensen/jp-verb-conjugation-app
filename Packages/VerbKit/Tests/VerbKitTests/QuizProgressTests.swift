@@ -263,4 +263,20 @@ final class QuizProgressTests: XCTestCase {
         XCTAssertEqual(p.last7Days.count, 7)
         XCTAssertEqual(p.last7Days.map(\.answered), Array(repeating: 0, count: 7))
     }
+
+    // MARK: time zones where local midnight is skipped
+
+    /// America/Santiago springs forward at 00:00 on 2026-09-06, so that day starts at 01:00.
+    func testStreakAndLast7DaysSurviveSkippedMidnight() {
+        let cal = calendar("America/Santiago")
+        let now = date(cal, 2026, 9, 6, 12)
+        func a(_ d: Int) -> QuizAttempt {
+            QuizAttempt(verb: "食べる", formID: "te", kind: .conjugate, outcome: .correct, date: date(cal, 2026, 9, d, 12))
+        }
+        let p = QuizProgress(attempts: [a(4), a(5), a(6)], calendar: cal, now: now)
+        XCTAssertEqual(p.currentStreak, 3)
+        XCTAssertEqual(p.bestStreak, 3)
+        XCTAssertEqual(p.last7Days.map(\.answered), [0, 0, 0, 0, 1, 1, 1])
+        for d in p.last7Days { XCTAssertEqual(d.day, cal.startOfDay(for: d.day)) }
+    }
 }

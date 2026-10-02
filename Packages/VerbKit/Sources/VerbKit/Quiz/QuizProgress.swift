@@ -42,9 +42,6 @@ public struct WeakForm: Equatable, Sendable {
 public struct QuizProgress: Sendable {
     private static let window = 5
 
-    private let calendar: Calendar
-    private let now: Date
-    private let attempts: [QuizAttempt]
 
     public let weakPairs: [WeakPair]
     public let currentStreak: Int
@@ -54,12 +51,10 @@ public struct QuizProgress: Sendable {
     public let last7Days: [DayCount]
     public let weakestVerbs: [WeakVerb]
     public let weakestForms: [WeakForm]
-    public var hasHistory: Bool { !attempts.isEmpty }
+    public let hasHistory: Bool
 
     public init(attempts: [QuizAttempt], calendar: Calendar = .current, now: Date = Date()) {
-        self.attempts = attempts
-        self.calendar = calendar
-        self.now = now
+        hasHistory = !attempts.isEmpty
 
         // Weakness.
         struct Key: Hashable { let verb: String; let formID: String }
@@ -104,7 +99,7 @@ public struct QuizProgress: Sendable {
         var best = 0, run = 0
         var previous: Date?
         for day in sortedDays {
-            if let p = previous, calendar.date(byAdding: .day, value: 1, to: p) == day {
+            if let p = previous, Self.shifted(p, by: 1, calendar) == day {
                 run += 1
             } else {
                 run = 1
@@ -115,16 +110,16 @@ public struct QuizProgress: Sendable {
         bestStreak = best
 
         let today = calendar.startOfDay(for: now)
-        var cursor: Date? = perDay[today] != nil ? today : calendar.date(byAdding: .day, value: -1, to: today)
+        var cursor: Date? = perDay[today] != nil ? today : Self.shifted(today, by: -1, calendar)
         var current = 0
         while let day = cursor, perDay[day] != nil {
             current += 1
-            cursor = calendar.date(byAdding: .day, value: -1, to: day)
+            cursor = Self.shifted(day, by: -1, calendar)
         }
         currentStreak = current
 
         last7Days = (0..<7).reversed().compactMap { back in
-            calendar.date(byAdding: .day, value: -back, to: today).map {
+            Self.shifted(today, by: -back, calendar).map {
                 DayCount(day: $0, answered: perDay[$0] ?? 0)
             }
         }
@@ -145,6 +140,12 @@ public struct QuizProgress: Sendable {
             .map { WeakForm(formID: $0.key, label: labels[$0.key] ?? $0.key, weakness: $0.value) }
             .sorted { $0.weakness != $1.weakness ? $0.weakness > $1.weakness : $0.formID < $1.formID }
             .prefix(5).map { $0 }
+    }
+
+    /// The start of the day `days` away from `day`. Re-anchored with `startOfDay` because
+    /// in zones where a DST change skips local midnight, adding a day lands on 01:00.
+    private static func shifted(_ day: Date, by days: Int, _ calendar: Calendar) -> Date? {
+        calendar.date(byAdding: .day, value: days, to: day).map { calendar.startOfDay(for: $0) }
     }
 
     /// The weak pairs whose verb is in `verbs`, in the same order.
