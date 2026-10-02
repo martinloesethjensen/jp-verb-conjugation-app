@@ -144,10 +144,10 @@ struct RootView: View {
     private func questions(for selection: QuizSelection, verbs: [Verb]) -> [QuizQuestion] {
         switch selection {
         case .topics(let topics):
-            return buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount)
+            return buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount, kinds: QuizQuestionKind.allCases)
         case .weakSpots:
             // Takes the first N buildable pairs in rank order, then shuffles the quiz.
-            return buildQuestions(pairs: weakPairs(in: verbs), among: verbs, count: quizQuestionCount).shuffled()
+            return buildQuestions(pairs: weakPairs(in: verbs), among: verbs, count: quizQuestionCount, kinds: QuizQuestionKind.allCases).shuffled()
         }
     }
 

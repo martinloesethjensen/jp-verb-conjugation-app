@@ -3,6 +3,10 @@
 ///
 /// - Conjugate: the choices are conjugated strings. Distractors are the same verb's
 ///   other forms in the topics first, then the same form of other verbs.
+/// - Fill in: an example sentence of the verb for that form, with the form blanked.
+///   The choices are conjugated strings; distractors are the same verb's other
+///   forms in the topics. Only used for entries with an example whose sentence
+///   contains the form string exactly, so other kinds are used otherwise.
 /// - Identify: the choices are form labels. Distractors are labels of the same
 ///   verb's other forms in the topics.
 ///
@@ -80,7 +84,12 @@ private func makeQuestion(
 
     let sameVerb = QuizForm.available(in: entry.verb.forms, topics: topics)
         .filter { $0.form != entry.form }
-    let kind = kinds.randomElement()!
+    // A fill-in question needs an example sentence that contains the form string.
+    let example = entry.verb.examples.first {
+        $0.form.rawValue == entry.form.id && $0.jp.contains(entry.value)
+    }
+    let usable = kinds.filter { $0 != .fillIn || example != nil }
+    guard let kind = usable.randomElement() else { return nil }
 
     let correct: String
     let distractors: [String]
@@ -99,6 +108,9 @@ private func makeQuestion(
                 .filter { seen.insert($0).inserted }
                 .prefix(3)
         )
+    case .fillIn:
+        correct = entry.value
+        distractors = pick(sameVerb.map(\.value).filter { $0 != correct })
     case .identify:
         correct = entry.form.label
         distractors = pick(sameVerb.map(\.form.label).filter { $0 != correct })
@@ -107,6 +119,14 @@ private func makeQuestion(
     guard !distractors.isEmpty else { return nil }
     return QuizQuestion(
         verb: entry.verb, form: entry.form, kind: kind, formString: entry.value,
-        correct: correct, choices: ([correct] + distractors).shuffled()
+        correct: correct, choices: ([correct] + distractors).shuffled(),
+        sentence: kind == .fillIn ? example.map { blanked($0.jp, replacing: entry.value) } : nil,
+        translation: kind == .fillIn ? example?.en : nil
     )
+}
+
+/// `sentence` with the first occurrence of `form` replaced by the blank.
+private func blanked(_ sentence: String, replacing form: String) -> String {
+    guard let range = sentence.range(of: form) else { return sentence }
+    return sentence.replacingCharacters(in: range, with: QuizQuestion.blank)
 }
