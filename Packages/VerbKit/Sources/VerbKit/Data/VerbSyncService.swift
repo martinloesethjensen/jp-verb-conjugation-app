@@ -30,6 +30,7 @@ public struct VerbSyncService: Sendable {
     /// trigger a re-fetch.
     public func sync() async throws -> VerbSyncResult {
         let manifest = try await fetcher.fetchManifest()
+        try rejectRollback(of: manifest.version)
         if let last = syncState.lastSyncedManifest(), last == manifest {
             return .upToDate
         }
@@ -54,5 +55,15 @@ public struct VerbSyncService: Sendable {
     /// the verbs that came with it — see `sync()`'s documentation.
     public func confirmSynced(_ manifest: VerbManifest) {
         syncState.saveLastSyncedManifest(manifest)
+        syncState.saveHighestAcceptedVersion(manifest.version, for: "verbs")
+    }
+
+    /// A validly signed manifest can still be an old one replayed. Refuse any version
+    /// older than the highest this device has accepted.
+    private func rejectRollback(of version: String) throws {
+        if let highest = syncState.highestAcceptedVersion(for: "verbs"),
+           DataVersion.isOlder(version, than: highest) {
+            throw VerbSyncError.untrusted
+        }
     }
 }

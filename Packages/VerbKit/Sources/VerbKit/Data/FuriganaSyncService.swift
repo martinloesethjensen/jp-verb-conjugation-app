@@ -31,6 +31,7 @@ public struct FuriganaSyncService: Sendable {
         guard let manifest = try await fetcher.fetchFuriganaManifest() else {
             return .upToDate
         }
+        try rejectRollback(of: manifest.version)
         if let last = syncState.lastSyncedFuriganaManifest(), last == manifest {
             return .upToDate
         }
@@ -55,5 +56,15 @@ public struct FuriganaSyncService: Sendable {
     /// persisted.
     public func confirmSynced(_ manifest: FuriganaManifest) {
         syncState.saveLastSyncedFuriganaManifest(manifest)
+        syncState.saveHighestAcceptedVersion(manifest.version, for: "furigana")
+    }
+
+    /// A validly signed manifest can still be an old one replayed. Refuse any version
+    /// older than the highest this device has accepted.
+    private func rejectRollback(of version: String) throws {
+        if let highest = syncState.highestAcceptedVersion(for: "furigana"),
+           DataVersion.isOlder(version, than: highest) {
+            throw VerbSyncError.untrusted
+        }
     }
 }
