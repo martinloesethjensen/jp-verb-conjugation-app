@@ -6,6 +6,8 @@ struct QuizQuestionView: View {
     let question: QuizQuestion
     var onDone: () -> Void
 
+    @State private var confirmingQuit = false
+
     private let shapeSymbols = ["triangle.fill", "diamond.fill", "circle.fill", "square.fill"]
     private let choiceColors: [Color] = [.red, .blue, .yellow, .green]
 
@@ -26,20 +28,34 @@ struct QuizQuestionView: View {
                 }
                 if viewModel.isAnswered {
                     feedback
-                    Button(viewModel.index + 1 >= viewModel.questions.count ? "See Results →" : "Next →") {
-                        viewModel.advance()
-                    }
-                    .buttonStyle(.glassProminent)
                 }
             }
             .padding()
+        }
+        // Pinned so the button doesn't move below the fold as feedback appears.
+        .safeAreaInset(edge: .bottom) {
+            if viewModel.isAnswered {
+                Button(viewModel.index + 1 >= viewModel.questions.count ? "See Results" : "Next",
+                       systemImage: "arrow.right") {
+                    viewModel.advance()
+                }
+                .labelStyle(.titleAndIcon)
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+            }
+        }
+        .confirmationDialog("Quit this quiz?", isPresented: $confirmingQuit, titleVisibility: .visible) {
+            Button("Quit quiz", role: .destructive, action: onDone)
+            Button("Keep going", role: .cancel) {}
         }
     }
 
     private var header: some View {
         HStack {
             Button {
-                onDone()
+                confirmingQuit = true
             } label: {
                 Image(systemName: "xmark")
             }
