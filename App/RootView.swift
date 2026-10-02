@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreSpotlight
 import VerbKit
 
 struct RootView: View {
@@ -23,9 +24,11 @@ struct RootView: View {
     @State private var pendingQuestions: [QuizQuestion]?
     @State private var incomingRoute: Route?
 
-    /// What a link or tapped notification opens.
+    /// What a link opens: a verb or lesson page, or a quiz (from Siri and Shortcuts).
     private func open(_ url: URL) {
-        guard let route = Route(url: url) else { return }
+        let quizLink = QuizLink(url: url)
+        let route = Route(url: url)
+        guard quizLink != nil || route != nil else { return }
         // Anything presented over the list would hide the page the link opens.
         showingExamples = false
         showingSettings = false
@@ -34,7 +37,14 @@ struct RootView: View {
         topicSheetVerbs = nil
         pendingQuestions = nil
         quizQuestions = nil
-        incomingRoute = route
+        if let quizLink {
+            let verbs = verbStore.verbs.visible(in: LevelSettings.load())
+            let topics = quizLink.topic.map { Set([$0]) } ?? Set(QuizTopic.allCases)
+            let questions = buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount, kinds: QuizQuestionKind.allCases)
+            if !questions.isEmpty { quizQuestions = questions }
+        } else {
+            incomingRoute = route
+        }
     }
 
     private var appearance: AppearanceMode {
@@ -64,6 +74,13 @@ struct RootView: View {
         .task(id: ReminderRefresh(verbs: verbStore.verbs, enabled: reminderEnabled, minutes: reminderMinutes, hiddenLevels: hiddenLevelsRaw, phase: scenePhase == .active)) {
             guard scenePhase == .active else { return }
             await ReminderScheduler.refresh(verbs: verbStore.verbs)
+        }
+        .onContinueUserActivity(CSSearchableItemActionType) { activity in
+            if let url = SpotlightIndexer.url(from: activity) { open(url) }
+        }
+        // Keep Spotlight in step with the data (replaces the whole index, so only when ids change).
+        .task(id: verbStore.verbs.map(\.id) + verbStore.grammarPoints.map(\.id)) {
+            await SpotlightIndexer.index(verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints)
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack {
