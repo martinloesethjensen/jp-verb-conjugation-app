@@ -21,15 +21,38 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     static let shared = Speaker()
 
     @ObservationIgnored private let synthesizer = AVSpeechSynthesizer()
-    @ObservationIgnored private let voice: AVSpeechSynthesisVoice?
 
     @ObservationIgnored private var currentUtterance: AVSpeechUtterance?
 
-    var hasJapaneseVoice: Bool { voice != nil }
+    static let voiceDefaultsKey = "speechVoiceID"
+
+    var hasJapaneseVoice: Bool { !Self.japaneseVoices().isEmpty }
+
+    /// Installed Japanese voices, best quality first. Read fresh each time so voices
+    /// downloaded while the app is running show up.
+    static func japaneseVoices() -> [AVSpeechSynthesisVoice] {
+        AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language == "ja-JP" }
+            .sorted { ($0.quality.rawValue, $1.name) > ($1.quality.rawValue, $0.name) }
+    }
+
+    static func qualityLabel(_ voice: AVSpeechSynthesisVoice) -> String {
+        switch voice.quality {
+        case .premium: return "Premium"
+        case .enhanced: return "Enhanced"
+        default: return "Default"
+        }
+    }
+
+    /// The voice chosen in Settings, or the best installed one when none is chosen
+    /// (or the chosen one has since been removed).
+    private func resolvedVoice() -> AVSpeechSynthesisVoice? {
+        let voices = Self.japaneseVoices()
+        let chosen = UserDefaults.appGroup.string(forKey: Self.voiceDefaultsKey) ?? ""
+        return voices.first { $0.identifier == chosen } ?? voices.first
+    }
 
     override init() {
-        let japanese = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "ja-JP" }
-        voice = japanese.max { $0.quality.rawValue < $1.quality.rawValue }
         super.init()
         synthesizer.delegate = self
     }
@@ -37,7 +60,7 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     /// Tapping the text that is already being spoken stops it, unless `restart` is set
     /// (the quiz always wants the new answer spoken).
     func speak(_ text: String, restart: Bool = false) {
-        guard let spoken = SpeechText.spoken(text), let voice else { return }
+        guard let spoken = SpeechText.spoken(text), let voice = resolvedVoice() else { return }
         if !restart, synthesizer.isSpeaking, currentUtterance?.speechString == spoken {
             stop()
             return
