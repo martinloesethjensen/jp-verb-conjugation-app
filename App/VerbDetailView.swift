@@ -27,12 +27,12 @@ struct VerbDetailView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     header
                     actions
-                    if let notes = verb.notes {
-                        notesBox(notes)
-                    }
                     JapaneseText(verb.description)
                         .font(.body)
                     formGroups
+                    if let notes = verb.notes {
+                        notesBox(notes)
+                    }
                 }
                 .padding()
             }
@@ -84,7 +84,6 @@ struct VerbDetailView: View {
                 if let kanji = verb.kanji {
                     JapaneseText(kanji).font(.title2).foregroundStyle(.secondary)
                 }
-                SpeakButton(text: verb.jishoQuery)
             }
             Text(verb.meaning).font(.headline).foregroundStyle(.secondary).italic()
         }
@@ -93,7 +92,7 @@ struct VerbDetailView: View {
     private var actions: some View {
         Button("Test this verb", systemImage: "gamecontroller", action: onQuiz)
             .buttonStyle(.glassProminent)
-            .controlSize(.small)
+            .controlSize(.large)
             .tint(accent)
             .foregroundStyle(Color.black.opacity(0.85))
     }
