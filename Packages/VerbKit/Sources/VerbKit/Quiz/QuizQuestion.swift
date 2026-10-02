@@ -1,4 +1,4 @@
-public enum QuizQuestionKind: Sendable {
+public enum QuizQuestionKind: String, Sendable {
     /// Given a verb and a form's name, pick the conjugated string.
     case conjugate
     /// Given a conjugated string, pick the name of its form.
