@@ -77,3 +77,19 @@ shows a short "No Japanese voice installed" note.
   tests.
 - **Edited:** `FormCell.swift`, `VerbDetailView.swift`, `ExampleRow.swift`,
   `ExamplesView.swift`, `QuizView.swift`, `SettingsView.swift`.
+
+## Addendum: recorded clips
+
+Recorded native-quality audio is now supported alongside the system voice.
+
+- `scripts/generate_audio.py` collects every string the app speaks (verb dictionary
+  forms, all conjugated forms, verb and lesson example sentences), cleans it as
+  `SpeechText.spoken` does, and synthesizes one `App/Audio/<name>.mp3` per text with
+  Amazon Polly or Google Cloud TTS. `<name>` is `SpeechText.clipName`, the first 16
+  hex digits of the SHA-256 of the cleaned text, so re-runs only generate what is
+  missing. `--dry-run`, `--check`, `--samples N` and `--prune` are available.
+- `Speaker` plays the clip when one is bundled and the voice setting is Automatic.
+  Text without a clip (for example verbs added later through the data update) and
+  any specific voice chosen in Settings use the system voice.
+- Slow speed plays clips at 0.75x with `AVAudioPlayer`.
+- Check the provider's terms before shipping generated audio.

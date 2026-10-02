@@ -57,6 +57,17 @@ struct SettingsView: View {
     private let settingsApp = "iOS Settings"
     #endif
 
+    private var audioFooter: String {
+        let download = "Download voices in \(settingsApp) > Accessibility > Spoken Content"
+        if Speaker.hasRecordedAudio {
+            return "Automatic plays recorded audio where there is some and the best installed voice for anything else. Pick a voice to use it for everything. \(download)."
+        }
+        if Speaker.shared.hasJapaneseVoice {
+            return "Enhanced and Premium voices sound much more natural. \(download), then pick one here."
+        }
+        return "No Japanese voice is installed, so audio is unavailable. \(download)."
+    }
+
     private let questionCountOptions = [5, 10, 15, 20, 30]
 
     var body: some View {
@@ -116,19 +127,20 @@ struct SettingsView: View {
                 let voices = Speaker.japaneseVoices()
                 if !voices.isEmpty {
                     Picker("Voice", selection: $speechVoiceID) {
-                        Text("Automatic (best installed)").tag("")
+                        Text(Speaker.hasRecordedAudio ? "Automatic (recorded audio)" : "Automatic (best installed)").tag("")
                         ForEach(voices, id: \.identifier) { voice in
                             Text("\(voice.name) (\(Speaker.qualityLabel(voice)))").tag(voice.identifier)
                         }
                     }
-                    Button("Play sample") { Speaker.shared.speak("こんにちは。日本語を勉強しています。", restart: true) }
+                    Button("Play sample") {
+                        // A real verb, so Automatic plays its recorded clip when there is one.
+                        Speaker.shared.speak(verbStore.verbs.first?.jishoQuery ?? "こんにちは", restart: true)
+                    }
                 }
             } header: {
                 Text("Audio")
             } footer: {
-                Text(Speaker.shared.hasJapaneseVoice
-                     ? "Enhanced and Premium voices sound much more natural. Download them in \(settingsApp) > Accessibility > Spoken Content, then pick one here."
-                     : "No Japanese voice is installed, so audio is unavailable. Download one in \(settingsApp) > Accessibility > Spoken Content.")
+                Text(audioFooter)
             }
         }
         .navigationTitle("Settings")
