@@ -66,7 +66,13 @@ the old one and ship that build; once enough users have updated, sign with the n
 drop the old key. If the private key is **compromised**, ship a build with only the new key
 immediately: until users update, an attacker holding the old key can still sign.
 
+## CI
+
+`.github/workflows/data.yml` runs the script tests, `update_data.py --check` and
+`sign_manifest.py verify` when `data/` or `scripts/` change. It fails until the public key is in the app
+and `manifest.sig` is committed (first-time setup above), and again whenever a manifest change is
+pushed unsigned. To block merges on it, make the `data` check required in branch protection.
+
 ## Related, not done here
 
 - Branch and tag protection on GitHub (option A) is still to do; it protects the tags in step 2.
-- A CI job running `scripts/sign_manifest.py verify` on pushes would catch an unsigned manifest early.
