@@ -8,6 +8,11 @@ struct RootView: View {
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
+    @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
+    @AppStorage(ReminderScheduler.minutesKey, store: .appGroup) private var reminderMinutes = ReminderScheduler.defaultMinutes
+    @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var reminderRouter = ReminderRouter.shared
     @State private var selection: Verb?
     @State private var showingExamples = false
     @State private var showingSettings = false
@@ -17,6 +22,20 @@ struct RootView: View {
     @State private var topicSheetVerbs: [Verb]?
     @State private var pendingQuestions: [QuizQuestion]?
     @State private var incomingRoute: Route?
+
+    /// What a link or tapped notification opens.
+    private func open(_ url: URL) {
+        guard let route = Route(url: url) else { return }
+        // Anything presented over the list would hide the page the link opens.
+        showingExamples = false
+        showingSettings = false
+        showingGuide = false
+        showingProgress = false
+        topicSheetVerbs = nil
+        pendingQuestions = nil
+        quizQuestions = nil
+        incomingRoute = route
+    }
 
     private var appearance: AppearanceMode {
         AppearanceMode(rawValue: appearanceModeRaw) ?? .system
@@ -34,17 +53,16 @@ struct RootView: View {
                 }
             }
         }
-        .onOpenURL { url in
-            guard let route = Route(url: url) else { return }
-            // Anything presented over the list would hide the page the link opens.
-            showingExamples = false
-            showingSettings = false
-            showingGuide = false
-            showingProgress = false
-            topicSheetVerbs = nil
-            pendingQuestions = nil
-            quizQuestions = nil
-            incomingRoute = route
+        .onOpenURL { open($0) }
+        .onChange(of: reminderRouter.pendingURL) { _, url in
+            guard let url else { return }
+            reminderRouter.pendingURL = nil
+            open(url)
+        }
+        // Keep the next days of reminders current: the pick depends on the verbs and levels.
+        .task(id: ReminderRefresh(verbs: verbStore.verbs, enabled: reminderEnabled, minutes: reminderMinutes, hiddenLevels: hiddenLevelsRaw, phase: scenePhase == .active)) {
+            guard scenePhase == .active else { return }
+            await ReminderScheduler.refresh(verbs: verbStore.verbs)
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack {
@@ -164,4 +182,13 @@ struct RootView: View {
             set: { isPresented in if !isPresented { quizQuestions = nil } }
         )
     }
+}
+
+/// Everything that changes which reminders should exist; `.task(id:)` reruns when it changes.
+private struct ReminderRefresh: Equatable {
+    var verbs: [Verb]
+    var enabled: Bool
+    var minutes: Int
+    var hiddenLevels: String
+    var phase: Bool
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import WidgetKit
+import UserNotifications
 import VerbKit
 
 @main
@@ -12,6 +13,7 @@ struct JPVerbConjugationApp: App {
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     init() {
+        UNUserNotificationCenter.current().delegate = ReminderRouter.shared
         let container = Self.makeModelContainer()
         let context = ModelContext(container)
         let fetcher = GitHubVerbFetcher.githubMain()
