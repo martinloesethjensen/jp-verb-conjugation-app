@@ -1,0 +1,34 @@
+name: Project
+
+on:
+  pull_request:
+    paths:
+      - "project.yml"
+      - "scripts/check_project.py"
+      - "App/**"
+      - "Widgets/**"
+      - ".github/workflows/project.yml"
+  push:
+    branches: [main]
+    paths:
+      - "project.yml"
+      - "scripts/check_project.py"
+      - ".github/workflows/project.yml"
+
+concurrency:
+  group: project-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  config:
+    name: Check project.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: python3 scripts/check_project.py

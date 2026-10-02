@@ -1,0 +1,36 @@
+name: Data
+
+on:
+  pull_request:
+    paths:
+      - "data/**"
+      - "scripts/**"
+      - ".github/workflows/data.yml"
+  push:
+    branches: [main]
+    paths:
+      - "data/**"
+      - "scripts/**"
+      - ".github/workflows/data.yml"
+
+concurrency:
+  group: data-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate published data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Check data, furigana and manifest are up to date
+        run: python3 scripts/update_data.py --check
+      - name: Run script tests
+        working-directory: scripts
+        run: python3 -m unittest test_update_data
