@@ -24,6 +24,7 @@ struct SettingsView: View {
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
+    @AppStorage(Speaker.voiceDefaultsKey, store: .appGroup) private var speechVoiceID = ""
     @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
@@ -55,6 +56,17 @@ struct SettingsView: View {
     #else
     private let settingsApp = "iOS Settings"
     #endif
+
+    private var audioFooter: String {
+        let download = "Download voices in \(settingsApp) > Accessibility > Spoken Content"
+        if Speaker.hasRecordedAudio {
+            return "Automatic plays recorded audio where there is some and the best installed voice for anything else. Pick a voice to use it for everything. \(download)."
+        }
+        if Speaker.shared.hasJapaneseVoice {
+            return "Enhanced and Premium voices sound much more natural. \(download), then pick one here."
+        }
+        return "No Japanese voice is installed, so audio is unavailable. \(download)."
+    }
 
     private let questionCountOptions = [5, 10, 15, 20, 30]
 
@@ -112,12 +124,23 @@ struct SettingsView: View {
                         Text(speed.label).tag(speed.rawValue)
                     }
                 }
+                let voices = Speaker.japaneseVoices()
+                if !voices.isEmpty {
+                    Picker("Voice", selection: $speechVoiceID) {
+                        Text(Speaker.hasRecordedAudio ? "Automatic (recorded audio)" : "Automatic (best installed)").tag("")
+                        ForEach(voices, id: \.identifier) { voice in
+                            Text("\(voice.name) (\(Speaker.qualityLabel(voice)))").tag(voice.identifier)
+                        }
+                    }
+                    Button("Play sample") {
+                        // A real verb, so Automatic plays its recorded clip when there is one.
+                        Speaker.shared.speak(verbStore.verbs.first?.jishoQuery ?? "こんにちは", restart: true)
+                    }
+                }
             } header: {
                 Text("Audio")
             } footer: {
-                Text(Speaker.shared.hasJapaneseVoice
-                     ? "Better voices can be downloaded in \(settingsApp) > Accessibility > Spoken Content."
-                     : "No Japanese voice is installed, so audio is unavailable. Download one in \(settingsApp) > Accessibility > Spoken Content.")
+                Text(audioFooter)
             }
         }
         .navigationTitle("Settings")
