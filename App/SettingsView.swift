@@ -1,5 +1,6 @@
 import SwiftUI
 import VerbKit
+import WidgetKit
 
 enum AppearanceMode: String, CaseIterable, Identifiable, Hashable {
     case system, light, dark
@@ -17,6 +18,8 @@ enum AppearanceMode: String, CaseIterable, Identifiable, Hashable {
 
 struct SettingsView: View {
     @Environment(VerbStore.self) private var verbStore
+    @Environment(QuizHistoryStore.self) private var quizHistory
+    @State private var confirmingReset = false
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
@@ -89,6 +92,18 @@ struct SettingsView: View {
                         Text("\(count)").tag(count)
                     }
                 }
+                Button("Reset quiz history", role: .destructive) { confirmingReset = true }
+                    .confirmationDialog(
+                        "Delete all saved quiz results? This clears your streak and weak spots.",
+                        isPresented: $confirmingReset,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Reset", role: .destructive) {
+                            quizHistory.reset()
+                            WidgetCenter.shared.reloadAllTimelines()
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    }
             }
             Section {
                 Toggle("Speak after quiz answers", isOn: $speakQuizAnswers)

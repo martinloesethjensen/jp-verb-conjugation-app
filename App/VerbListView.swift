@@ -7,6 +7,7 @@ struct VerbListView: View {
     @Environment(VerbStore.self) private var verbStore
     @Binding var selection: Verb?
     @Binding var showGuide: Bool
+    var onProgress: () -> Void
     var onRandomQuiz: () -> Void
     var onSettings: () -> Void
     @State private var search = ""
@@ -153,6 +154,9 @@ struct VerbListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Guide", systemImage: "info.circle") { showGuide = true }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button("Progress", systemImage: "chart.bar", action: onProgress)
             }
             ToolbarItem(placement: .primaryAction) {
                 Button("Random Quiz", systemImage: "gamecontroller", action: onRandomQuiz)

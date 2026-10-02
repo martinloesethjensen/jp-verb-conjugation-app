@@ -12,6 +12,7 @@ struct RootView: View {
     @State private var showingExamples = false
     @State private var showingSettings = false
     @State private var showingGuide = false
+    @State private var showingProgress = false
     @State private var quizQuestions: [QuizQuestion]?
     @State private var topicSheetVerbs: [Verb]?
     @State private var pendingQuestions: [QuizQuestion]?
@@ -39,6 +40,7 @@ struct RootView: View {
             showingExamples = false
             showingSettings = false
             showingGuide = false
+            showingProgress = false
             topicSheetVerbs = nil
             pendingQuestions = nil
             quizQuestions = nil
@@ -61,6 +63,7 @@ struct RootView: View {
             VerbListView(
                 selection: $selection,
                 showGuide: $showingGuide,
+                onProgress: { showingProgress = true },
                 onRandomQuiz: { topicSheetVerbs = verbStore.verbs.visible(in: LevelSettings.load()) },
                 onSettings: { showingSettings = true }
             )
@@ -80,6 +83,7 @@ struct RootView: View {
                 ExamplesView(verb: selection)
             }
         }
+        .sheet(isPresented: $showingProgress) { QuizProgressView() }
         .sheet(isPresented: $showingSettings) {
             NavigationStack {
                 SettingsView()
