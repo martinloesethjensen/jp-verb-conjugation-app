@@ -17,6 +17,9 @@ struct VerbListView: View {
     /// back-to-top button appears.
     @State private var filtersOffscreen = false
     @State private var scope: LevelScope = .mine
+    @FocusState private var searchFocused: Bool
+    @State private var scrolledAwayFromTop = false
+    @State private var scrollToTop: (() -> Void)?
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     private var settings: LevelSettings { LevelSettings(rawValue: hiddenLevelsRaw) }
@@ -104,14 +107,17 @@ struct VerbListView: View {
                         .font(.caption)
                 }
             }
-            .searchable(text: $search, prompt: "Search hiragana, kanji, romaji, or English…")
+            .inlineSearch(text: $search, prompt: "Search verbs…", focused: $searchFocused)
             .levelScopeBar(isActive: levelsHidden, scope: $scope)
             .onChange(of: search) { if search.isEmpty { scope = .mine } }
+            .onAppear { scrollToTop = { withAnimation { proxy.scrollTo(Self.filtersID, anchor: .top) } } }
             #if os(iOS)
             .listSectionSpacing(.compact)
-            // The search field collapses to a button in the navigation bar, so search
-            // stays one tap away however far the list has scrolled.
-            .searchToolbarBehavior(.minimize)
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top > 44
+            } action: { _, scrolled in
+                scrolledAwayFromTop = scrolled
+            }
             .overlay(alignment: .bottomTrailing) {
                 if filtersOffscreen {
                     Button {
@@ -136,20 +142,32 @@ struct VerbListView: View {
         .navigationSubtitle(filterSummary)
         .sheet(isPresented: $showGuide) { VerbGuideSheet() }
         .toolbar {
+            #if os(iOS)
+            if scrolledAwayFromTop {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Search", systemImage: "magnifyingglass") {
+                        scrollToTop?()
+                        searchFocused = true
+                    }
+                }
+            }
+            #endif
             ToolbarItem(placement: .primaryAction) {
-                Button("Guide", systemImage: "info.circle") { showGuide = true }
+                // The toolbar drops a Label's title, so the text is spelled out to keep "Quiz" visible.
+                Button(action: onRandomQuiz) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "gamecontroller")
+                        Text("Quiz")
+                    }
+                }
             }
             ToolbarItem(placement: .primaryAction) {
-                Button("Progress", systemImage: "chart.bar", action: onProgress)
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button("Random Quiz", systemImage: "gamecontroller", action: onRandomQuiz)
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                ReportProblemButton(item: "")
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Button("Settings", systemImage: "gearshape", action: onSettings)
+                Menu("More", systemImage: "ellipsis") {
+                    Button("Progress", systemImage: "chart.bar", action: onProgress)
+                    Button("Guide", systemImage: "info.circle") { showGuide = true }
+                    Button("Settings", systemImage: "gearshape", action: onSettings)
+                    ReportProblemButton(item: "")
+                }
             }
         }
     }
