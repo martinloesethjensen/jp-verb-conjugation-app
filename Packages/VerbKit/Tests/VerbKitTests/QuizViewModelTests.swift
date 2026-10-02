@@ -128,4 +128,49 @@ final class QuizViewModelTests: XCTestCase {
         XCTAssertEqual(vm.results[0].formString, "たべます")
         XCTAssertEqual(vm.results[0].kind, .conjugate)
     }
+
+    // MARK: recorder
+
+    func testRecorderGetsOneAttemptPerChoiceWithOutcome() {
+        var attempts: [QuizAttempt] = []
+        let date = Date(timeIntervalSince1970: 1_000)
+        let vm = QuizViewModel(
+            questions: [
+                makeQuestion(correct: "A", choices: ["A", "B"], dict: "v1"),
+                makeQuestion(correct: "A", choices: ["A", "B"], dict: "v2"),
+                makeQuestion(correct: "A", choices: ["A", "B"], dict: "v3"),
+            ],
+            recorder: { attempts.append($0) }, now: { date }
+        )
+        vm.choose("A")
+        vm.choose("B")
+        XCTAssertEqual(attempts.count, 1)
+        vm.advance()
+        vm.choose("B")
+        vm.advance()
+        vm.markTimedOut()
+        vm.markTimedOut()
+        XCTAssertEqual(attempts.map(\.outcome), [.correct, .wrong, .timedOut])
+        XCTAssertEqual(attempts.map(\.verb), ["v1", "v2", "v3"])
+        XCTAssertEqual(attempts.map(\.formID), ["masu_pos", "masu_pos", "masu_pos"])
+        XCTAssertEqual(attempts.map(\.kind), [.conjugate, .conjugate, .conjugate])
+        XCTAssertEqual(attempts.map(\.date), [date, date, date])
+    }
+
+    func testTimeoutAfterChoosingRecordsNothingMore() {
+        var attempts: [QuizAttempt] = []
+        let vm = QuizViewModel(
+            questions: [makeQuestion(correct: "A", choices: ["A", "B"])],
+            recorder: { attempts.append($0) }
+        )
+        vm.choose("A")
+        vm.markTimedOut()
+        XCTAssertEqual(attempts.count, 1)
+    }
+
+    func testNoRecorderStillWorksAndResultsCarryFormID() {
+        let vm = QuizViewModel(questions: [makeQuestion(correct: "A", choices: ["A", "B"])])
+        vm.choose("A")
+        XCTAssertEqual(vm.results[0].formID, "masu_pos")
+    }
 }

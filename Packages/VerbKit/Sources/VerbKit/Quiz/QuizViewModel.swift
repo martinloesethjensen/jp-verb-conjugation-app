@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 @Observable
@@ -17,8 +18,25 @@ public final class QuizViewModel {
 
     public var isAnswered: Bool { selected != nil || timedOut }
 
-    public init(questions: [QuizQuestion]) {
+    private let recorder: ((QuizAttempt) -> Void)?
+    private let now: () -> Date
+
+    /// `recorder` is called once per answered or timed-out question.
+    public init(
+        questions: [QuizQuestion],
+        recorder: ((QuizAttempt) -> Void)? = nil,
+        now: @escaping () -> Date = Date.init
+    ) {
         self.questions = questions
+        self.recorder = recorder
+        self.now = now
+    }
+
+    private func record(_ question: QuizQuestion, _ outcome: QuizOutcome) {
+        recorder?(QuizAttempt(
+            verb: question.verb.dict, formID: question.form.id, kind: question.kind,
+            outcome: outcome, date: now()
+        ))
     }
 
     public func choose(_ choice: String) {
@@ -27,9 +45,10 @@ public final class QuizViewModel {
         let ok = choice == question.correct
         if ok { score += 1 }
         results.append(QuizResult(
-            verb: question.verb.dict, formLabel: question.form.label, formString: question.formString,
+            verb: question.verb.dict, formLabel: question.form.label, formID: question.form.id, formString: question.formString,
             kind: question.kind, correct: question.correct, chosen: choice, ok: ok
         ))
+        record(question, ok ? .correct : .wrong)
     }
 
     /// A timeout counts as a miss and is recorded, so the results screen lists it
@@ -38,9 +57,10 @@ public final class QuizViewModel {
         guard !isAnswered, let question = currentQuestion else { return }
         timedOut = true
         results.append(QuizResult(
-            verb: question.verb.dict, formLabel: question.form.label, formString: question.formString,
+            verb: question.verb.dict, formLabel: question.form.label, formID: question.form.id, formString: question.formString,
             kind: question.kind, correct: question.correct, chosen: "", ok: false, timedOut: true
         ))
+        record(question, .timedOut)
     }
 
     /// The questions answered wrongly or timed out, with fresh choice order, for
