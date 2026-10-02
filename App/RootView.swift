@@ -25,7 +25,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if verbStore.hasLocalData {
-                MainTabView(verbSelection: $selection, incomingRoute: $incomingRoute) {
+                MainTabView(verbSelection: $selection, incomingRoute: $incomingRoute, onSettings: { showingSettings = true }) {
                     verbsTab
                 }
             } else {
@@ -45,6 +45,16 @@ struct RootView: View {
             pendingQuestions = nil
             quizQuestions = nil
             incomingRoute = route
+        }
+        .sheet(isPresented: $showingSettings) {
+            NavigationStack {
+                SettingsView()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showingSettings = false }
+                        }
+                    }
+            }
         }
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
@@ -84,16 +94,6 @@ struct RootView: View {
             }
         }
         .sheet(isPresented: $showingProgress) { QuizProgressView() }
-        .sheet(isPresented: $showingSettings) {
-            NavigationStack {
-                SettingsView()
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { showingSettings = false }
-                        }
-                    }
-            }
-        }
         .sheet(isPresented: topicSheetBinding, onDismiss: {
             if let pendingQuestions {
                 quizQuestions = pendingQuestions

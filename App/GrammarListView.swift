@@ -29,8 +29,10 @@ struct GrammarRow: View {
 struct GrammarListView: View {
     @Environment(VerbStore.self) private var verbStore
     @Binding var selection: GrammarPoint?
+    var onSettings: () -> Void
     @State private var search = ""
     @State private var scope: LevelScope = .mine
+    @FocusState private var searchFocused: Bool
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     private var settings: LevelSettings { LevelSettings(rawValue: hiddenLevelsRaw) }
@@ -71,14 +73,17 @@ struct GrammarListView: View {
                 HiddenMatchesRow(count: hiddenMatchCount)
             }
         }
-        .searchable(text: $search, prompt: "Search grammar…")
+        .inlineSearch(text: $search, prompt: "Search grammar…", focused: $searchFocused)
         .levelScopeBar(isActive: levelsHidden, scope: $scope)
         .onChange(of: search) { if search.isEmpty { scope = .mine } }
         .navigationTitle("Grammar")
         .navigationSubtitle(scope == .mine ? summary : "")
         .toolbar {
-            ToolbarItem(placement: .secondaryAction) {
-                ReportProblemButton(item: "")
+            ToolbarItem(placement: .primaryAction) {
+                Menu("More", systemImage: "ellipsis") {
+                    Button("Settings", systemImage: "gearshape", action: onSettings)
+                    ReportProblemButton(item: "")
+                }
             }
         }
         .overlay {
