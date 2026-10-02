@@ -17,8 +17,9 @@ struct FormCell: View {
                 Text(form)
             }
         }
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        // Wrap rather than shrink: long forms stay at the reader's text size.
+        .lineLimit(2)
+        .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .speakOnTap(form)

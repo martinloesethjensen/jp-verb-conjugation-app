@@ -9,7 +9,7 @@ struct VerbGuideSheet: View {
         NavigationStack {
             List {
                 Section("Reading the list") {
-                    Text("The pill shows a verb's type. The verb's name takes the colour of its て-form group, so verbs that make the same て-form share a colour. Ru-verbs and irregulars have no such group, so their names take the type colour.")
+                    Text("The pill shows a verb's type. The dot beside the name shows its て-form group, so verbs that make the same て-form share a colour. Ru-verbs and irregulars have no such group, so they have no dot.")
                 }
                 Section("Verb types") {
                     typeRow(.ru, "Ru-verb (一段)", "Ends in -eru or -iru. Drop る and add the ending. Exceptions: はいる, かえる, きる look like ru-verbs but are u-verbs.")
