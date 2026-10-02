@@ -28,7 +28,7 @@ struct TypeFilterChip: View {
         } label: {
             HStack(spacing: 4) {
                 Text(selection?.filterTitle ?? "Type")
-                Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+                Image(systemName: "chevron.down").font(.caption2.weight(.bold)).accessibilityHidden(true)
             }
             .font(.callout.weight(selection == nil ? .semibold : .bold))
             .padding(.horizontal, 12)
@@ -37,5 +37,8 @@ struct TypeFilterChip: View {
             .overlay { if selection != nil { Capsule().strokeBorder(Color.primary, lineWidth: 2) } }
         }
         .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .accessibilityLabel("Type")
+        .accessibilityValue(selection?.filterTitle ?? "All")
     }
 }

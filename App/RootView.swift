@@ -64,9 +64,9 @@ struct RootView: View {
         }
     }
 
-    /// The existing Verbs experience — moved here unchanged, including the
-    /// sheets and quiz presentation chained onto it — so `MainTabView`
-    /// can host it as one tab.
+    /// The Verbs experience, including the sheets and quiz presentation chained
+    /// onto it, so `MainTabView` can host it as one tab. The Settings sheet lives
+    /// on the root instead, so the Grammar tab can open it too.
     @ViewBuilder
     private var verbsTab: some View {
         NavigationSplitView {

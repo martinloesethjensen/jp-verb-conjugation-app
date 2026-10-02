@@ -156,7 +156,7 @@ struct VerbListView: View {
                 // The toolbar drops a Label's title, so the text is spelled out to keep "Quiz" visible.
                 Button(action: onRandomQuiz) {
                     HStack(spacing: 4) {
-                        Image(systemName: "gamecontroller")
+                        Image(systemName: "gamecontroller").accessibilityHidden(true)
                         Text("Quiz")
                     }
                 }
