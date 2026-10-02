@@ -1,14 +1,16 @@
 import SwiftUI
 import VerbKit
 
-/// Single-select chips that filter the list by て-form group. Tapping the chosen
-/// chip again goes back to All.
+/// Filter chips: a Type menu, then single-select て-form groups. Tapping the chosen
+/// group again goes back to All.
 struct TeFormFilter: View {
+    @Binding var type: VerbType?
     @Binding var selection: TeGroup?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                TypeFilterChip(selection: $type)
                 chip("All", accent: nil, isOn: selection == nil) { selection = nil }
                 ForEach(TeFormRule.all, id: \.group) { rule in
                     chip(rule.result, accent: rule.group.accentColor, isOn: selection == rule.group) {
@@ -36,7 +38,7 @@ struct TeFormFilter: View {
     }
 }
 
-private extension View {
+extension View {
     /// Plain filled capsules: a row of glass capsules draws a shaded band behind them.
     @ViewBuilder func chipBackground(_ accent: Color?) -> some View {
         if let accent {

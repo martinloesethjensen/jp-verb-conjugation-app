@@ -53,12 +53,7 @@ struct VerbListView: View {
         if let teFilter, let rule = TeFormRule.all.first(where: { $0.group == teFilter }) {
             parts.append(rule.result)
         }
-        switch typeFilter {
-        case .irregular?: parts.append("Irregular")
-        case .ru?: parts.append("Ru-verbs")
-        case .u?: parts.append("U-verbs")
-        case nil: break
-        }
+        if let typeFilter { parts.append(typeFilter.filterTitle) }
         if scope == .mine, let levels = settings.summary(among: availableLevels) { parts.append(levels) }
         return parts.joined(separator: " · ")
     }
@@ -68,7 +63,7 @@ struct VerbListView: View {
             List(selection: $selection) {
                 Section {
                     // The filters scroll with the list, so nothing is pinned over the rows.
-                    TeFormFilter(selection: $teFilter)
+                    TeFormFilter(type: $typeFilter, selection: $teFilter)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -80,17 +75,6 @@ struct VerbListView: View {
                 // No section margin, so the chip row spans the full width and never clips.
                 .listSectionMargins(.horizontal, 0)
                 #endif
-
-                Section {
-                    Picker("Type", selection: $typeFilter) {
-                        Text("All").tag(VerbType?.none)
-                        Text("Irregular").tag(VerbType?.some(.irregular))
-                        Text("Ru-verbs").tag(VerbType?.some(.ru))
-                        Text("U-verbs").tag(VerbType?.some(.u))
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowSeparator(.hidden)
-                }
 
                 Section {
                     if filtered.isEmpty {
