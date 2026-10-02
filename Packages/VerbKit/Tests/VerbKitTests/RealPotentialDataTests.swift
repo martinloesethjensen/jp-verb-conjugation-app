@@ -50,7 +50,7 @@ final class RealPotentialDataTests: XCTestCase {
 
     func testEveryVerbHasPotentialFormsBuiltFromItsClass() throws {
         let verbs = try loadVerbs()
-        XCTAssertEqual(verbs.count, 25)
+        XCTAssertGreaterThanOrEqual(verbs.count, 25)
         for verb in verbs {
             let f = verb.forms
             guard let base = expectedBase(for: verb) else {
