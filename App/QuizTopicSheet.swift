@@ -1,13 +1,14 @@
 import SwiftUI
 import VerbKit
 
-/// Asks what to practise before a quiz starts. Rows are the topics the verbs in
-/// play have forms in, plus Everything and, first, the pairs answered wrongly before.
+/// What the topic sheet reports: some topics, or the pairs answered wrongly before.
 enum QuizSelection {
     case topics(Set<QuizTopic>)
     case weakSpots
 }
 
+/// Asks what to practise before a quiz starts. Rows are the topics the verbs in
+/// play have forms in, plus Everything and, first, Weak spots.
 struct QuizTopicSheet: View {
     let verbs: [Verb]
     let weakSpotCount: Int
@@ -38,14 +39,14 @@ struct QuizTopicSheet: View {
                 Section("Practise") {
                     row(
                         title: "Weak spots",
-                        detail: weakSpotCount > 0 ? "\(weakSpotCount) pairs" : "Answer some questions first",
+                        detail: weakSpotCount > 0 ? "\(weakSpotCount) \(weakSpotCount == 1 ? "pair" : "pairs")" : "Answer some questions first",
                         choice: .weakSpots,
                         enabled: weakSpotCount > 0
                     )
                     ForEach(choices, id: \.topic) { item in
-                        row(title: item.topic.title, detail: "\(item.count) forms", choice: .topic(item.topic))
+                        row(title: item.topic.title, detail: Self.formsText(item.count), choice: .topic(item.topic))
                     }
-                    row(title: "Everything", detail: "\(choices.reduce(0) { $0 + $1.count }) forms", choice: .everything)
+                    row(title: "Everything", detail: Self.formsText(choices.reduce(0) { $0 + $1.count }), choice: .everything)
                 }
             }
             .navigationTitle("Quiz")
@@ -62,6 +63,10 @@ struct QuizTopicSheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+
+    private static func formsText(_ count: Int) -> String {
+        "\(count) \(count == 1 ? "form" : "forms")"
     }
 
     private func row(title: String, detail: String, choice value: Choice, enabled: Bool = true) -> some View {
