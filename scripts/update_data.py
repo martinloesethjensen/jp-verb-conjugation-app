@@ -6,7 +6,7 @@ Run after editing data/verbs.json or data/grammar.json:
     python3 scripts/update_data.py            # rewrite files in place
     python3 scripts/update_data.py --check    # verify only; exit 1 if stale/invalid
 
-It does six things:
+It does seven things:
   1. Fills the nd_* (んです / んだ) forms on every verb in verbs.json by
      appending to the verb's plain forms. Deterministic; safe to re-run.
   2. Fills the nine potential forms (`potential` and the eight pot_* fields)
@@ -22,7 +22,11 @@ It does six things:
      run, so new content cannot ship without furigana.
   5. Recomputes the SHA-256 of all three files into data/manifest.json,
      bumping a file's version (minor) when its content changed.
-  6. With --check, verifies all of the above without writing anything.
+  6. Writes data/forms.json, the catalogue of conjugation forms declared in
+     scripts/form_catalogue.py (the one place a form id is defined), and
+     checks every form id verbs.json uses against it. forms.json is bundled
+     with the app, not synced, so it has no manifest entry.
+  7. With --check, verifies all of the above without writing anything.
 
 Standard library only.
 """
@@ -32,6 +36,8 @@ import json
 import re
 import sys
 from pathlib import Path
+
+import form_catalogue
 
 ND_SUFFIX = "んです"
 ND_CASUAL_SUFFIX = "んだ"
@@ -79,8 +85,9 @@ POTENTIAL_CONJUGATIONS = [
     ("pot_short_past_neg", "なかった"),
 ]
 
-# Every field the potential step owns: the base form plus the eight above.
-POTENTIAL_FIELDS = ["potential"] + [name for name, _ in POTENTIAL_CONJUGATIONS]
+# Every field the potential step owns: the base form plus the eight above. The
+# ids come from the form catalogue; the tables above only hold the endings.
+POTENTIAL_FIELDS = form_catalogue.ids("verb", family="potential")
 
 # --- Other conjugations: volitional, passive, causative, causative-passive,
 # conditionals (ば / たら), imperative and たい ---------------------------------
@@ -209,7 +216,7 @@ STEM_AUXILIARIES = [
 
 TE_AUXILIARY_FIELDS = [name for name, _ in TEIRU_CONJUGATIONS + TE_AUXILIARIES]
 STEM_AUXILIARY_FIELDS = [name for name, _ in STEM_AUXILIARIES]
-AUXILIARY_FIELDS = TE_AUXILIARY_FIELDS + STEM_AUXILIARY_FIELDS
+AUXILIARY_FIELDS = form_catalogue.ids("verb", family="auxiliary")
 
 # --- Furigana (readings above kanji) ----------------------------------------
 
@@ -472,6 +479,31 @@ def check_verb_kanji(verbs_doc, readings):
     return problems
 
 
+def check_verb_forms(verbs_doc):
+    """Problems with the form ids a verb or example uses: an id the catalogue
+    does not know, or one that does not apply to verbs. Whether a verb has the
+    forms it needs is checked by the generators and the app's data tests."""
+    problems = []
+    for verb in verbs_doc["verbs"]:
+        name = verb.get("dict", "?")
+        for key in verb.get("forms", {}):
+            spec = form_catalogue.spec(key)
+            if spec is None:
+                problems.append(f"{name}: unknown form '{key}'")
+            elif "verb" not in spec.applies_to:
+                problems.append(f"{name}: form '{key}' does not apply to verbs")
+        for example in verb.get("examples", []):
+            spec = form_catalogue.spec(example.get("form"))
+            if spec is None or "verb" not in spec.applies_to:
+                problems.append(f"{name}: example uses unknown form '{example.get('form')}'")
+    return problems
+
+
+def dump_forms():
+    """Serialize the catalogue as forms.json, in the repo's style."""
+    return json.dumps(form_catalogue.to_json_doc(), ensure_ascii=False, indent=2) + "\n"
+
+
 def dump_verbs(doc):
     """Serialize verbs.json in the repo's style: 2-space indent, non-ASCII
     kept, and each example object on a single line."""
@@ -651,7 +683,12 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     grammar_path = data_dir / "grammar.json"
     furigana_path = data_dir / "furigana.json"
     manifest_path = data_dir / "manifest.json"
+    forms_path = data_dir / "forms.json"
     messages = []
+
+    problems = form_catalogue.problems()
+    if problems:
+        return 1, capped("the form catalogue is invalid:", problems)
 
     grammar_bytes = grammar_path.read_bytes()
     grammar_doc = json.loads(grammar_bytes)
@@ -670,6 +707,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_verb_jlpt(verbs_doc)
     if problems:
         return 1, capped("verbs.json has an invalid jlpt level:", problems)
+    problems = check_verb_forms(verbs_doc)
+    if problems:
+        return 1, capped("verbs.json has invalid forms:", problems)
     apply_nd_forms(verbs_doc)
     try:
         apply_potential_forms(verbs_doc)
@@ -699,9 +739,13 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     )
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
 
+    forms_text = dump_forms()
+
     stale = []
     if verbs_path.read_bytes() != verbs_bytes:
         stale.append("data/verbs.json")
+    if not forms_path.exists() or forms_path.read_text(encoding="utf-8") != forms_text:
+        stale.append("data/forms.json")
     if manifest_path.read_text(encoding="utf-8") != manifest_text:
         stale.append("data/manifest.json")
 
@@ -713,6 +757,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     if "data/verbs.json" in stale:
         verbs_path.write_bytes(verbs_bytes)
         messages.append("updated data/verbs.json")
+    if "data/forms.json" in stale:
+        forms_path.write_text(forms_text, encoding="utf-8")
+        messages.append("updated data/forms.json")
     if "data/manifest.json" in stale:
         manifest_path.write_text(manifest_text, encoding="utf-8")
         messages.append(
