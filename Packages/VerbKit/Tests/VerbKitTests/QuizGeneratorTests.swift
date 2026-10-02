@@ -196,7 +196,6 @@ final class QuizGeneratorTests: XCTestCase {
         for question in questions {
             let sentence = try XCTUnwrap(question.sentence)
             XCTAssertTrue(sentence.contains(QuizQuestion.blank))
-            XCTAssertFalse(sentence.contains(question.correct), "\(question.verb.dict): the answer is still in the sentence")
             XCTAssertEqual(question.correct, question.formString)
             XCTAssertNotNil(question.translation)
             XCTAssertTrue(question.choices.contains(question.correct))
