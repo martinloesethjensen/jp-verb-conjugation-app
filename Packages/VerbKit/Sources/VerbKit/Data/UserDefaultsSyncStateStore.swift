@@ -72,4 +72,12 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
         markCurrent(furiganaVersionKey)
         defaults.set(manifest.sha256, forKey: furiganaHashKey)
     }
+
+    public func highestAcceptedVersion(for file: String) -> String? {
+        defaults.string(forKey: "VerbKit.highestAcceptedVersion.\(file)")
+    }
+
+    public func saveHighestAcceptedVersion(_ version: String, for file: String) {
+        defaults.set(version, forKey: "VerbKit.highestAcceptedVersion.\(file)")
+    }
 }

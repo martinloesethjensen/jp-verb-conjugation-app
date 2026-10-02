@@ -22,6 +22,10 @@ It does six things:
      bumping a file's version (minor) when its content changed.
   6. With --check, verifies all of the above without writing anything.
 
+Every manifest change must be re-signed (scripts/sign_manifest.py sign): the app
+refuses a manifest whose signature does not match its exact bytes. --ref TAG pins the
+entries to that release tag; see docs/security/data-signing.md for the release steps.
+
 Standard library only.
 """
 import argparse
@@ -505,12 +509,41 @@ def bump_minor(version):
     return f"{major}.{int(minor) + 1}.0"
 
 
+REF_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+
+
+def valid_ref(text):
+    """argparse type: a release tag the app accepts (it ends up in a URL path)."""
+    if not REF_PATTERN.match(text):
+        raise argparse.ArgumentTypeError("a tag may use letters, digits, '.', '_' and '-' only (max 64, start with a letter or digit)")
+    return text
+
+
+def entry_ref(old, new_hash, ref):
+    """The `ref` for a manifest entry. An explicit ref wins. Otherwise the old one is kept only
+    while the file's content is unchanged: a tag made before an edit does not contain the edit, so
+    keeping it would pin the app to stale data (and fail its hash check)."""
+    if ref:
+        return ref
+    if old and old.get("sha256") == new_hash and old.get("ref"):
+        return old["ref"]
+    return None
+
+
+def with_ref(entry, ref):
+    if ref:
+        entry["ref"] = ref
+    return entry
+
+
 def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, grammar_version=None,
-                   furigana_bytes=None, furigana_version=None):
+                   furigana_bytes=None, furigana_version=None, ref=None):
     """New manifest dict. A file's version is kept when its hash is
     unchanged, bumped (minor) when it changed, or forced by an explicit
     version. A grammar or furigana block that did not exist yet starts at
-    1.0.0. The furigana block is left out when no furigana bytes are given."""
+    1.0.0. The furigana block is left out when no furigana bytes are given.
+
+    `ref` pins every entry to that release tag; see `entry_ref`."""
     verbs_hash = sha256_hex(verbs_bytes)
     grammar_hash = sha256_hex(grammar_bytes)
 
@@ -532,11 +565,10 @@ def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, gra
     else:
         new_grammar_version = bump_minor(old_grammar["version"])
 
-    manifest = {
-        "version": new_verbs_version,
-        "sha256": verbs_hash,
-        "grammar": {"version": new_grammar_version, "sha256": grammar_hash},
-    }
+    manifest = with_ref({"version": new_verbs_version, "sha256": verbs_hash}, entry_ref(existing, verbs_hash, ref))
+    manifest["grammar"] = with_ref(
+        {"version": new_grammar_version, "sha256": grammar_hash}, entry_ref(old_grammar, grammar_hash, ref)
+    )
 
     if furigana_bytes is not None:
         furigana_hash = sha256_hex(furigana_bytes)
@@ -549,7 +581,9 @@ def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, gra
             new_furigana_version = old_furigana["version"]
         else:
             new_furigana_version = bump_minor(old_furigana["version"])
-        manifest["furigana"] = {"version": new_furigana_version, "sha256": furigana_hash}
+        manifest["furigana"] = with_ref(
+            {"version": new_furigana_version, "sha256": furigana_hash}, entry_ref(old_furigana, furigana_hash, ref)
+        )
     return manifest
 
 
@@ -561,7 +595,7 @@ def capped(heading, problems):
     return lines
 
 
-def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None):
+def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None, ref=None):
     """Returns (exit_code, messages)."""
     data_dir = Path(data_dir)
     verbs_path = data_dir / "verbs.json"
@@ -608,7 +642,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     existing = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest = build_manifest(
         existing, verbs_bytes, grammar_bytes, verbs_version, grammar_version,
-        furigana_bytes=furigana_bytes, furigana_version=furigana_version,
+        furigana_bytes=furigana_bytes, furigana_version=furigana_version, ref=ref,
     )
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
 
@@ -632,6 +666,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
             f"updated data/manifest.json (verbs {manifest['version']}, grammar {manifest['grammar']['version']}, "
             f"furigana {manifest['furigana']['version']})"
         )
+        messages.append("the manifest changed: re-sign it with scripts/sign_manifest.py sign")
     if not stale:
         messages.append("nothing to do; data is up to date")
     return 0, messages
@@ -644,8 +679,9 @@ def main(argv=None):
     parser.add_argument("--verbs-version", help="force the verbs.json manifest version")
     parser.add_argument("--grammar-version", help="force the grammar.json manifest version")
     parser.add_argument("--furigana-version", help="force the furigana.json manifest version")
+    parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
     args = parser.parse_args(argv)
-    code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version, args.furigana_version)
+    code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version, args.furigana_version, args.ref)
     for line in messages:
         print(line)
     return code

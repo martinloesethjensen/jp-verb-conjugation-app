@@ -30,6 +30,7 @@ public struct GrammarSyncService: Sendable {
         guard let manifest = try await fetcher.fetchGrammarManifest() else {
             return .upToDate
         }
+        try rejectRollback(of: manifest.version)
         if let last = syncState.lastSyncedGrammarManifest(), last == manifest {
             return .upToDate
         }
@@ -54,5 +55,15 @@ public struct GrammarSyncService: Sendable {
     /// durably persisted.
     public func confirmSynced(_ manifest: GrammarManifest) {
         syncState.saveLastSyncedGrammarManifest(manifest)
+        syncState.saveHighestAcceptedVersion(manifest.version, for: "grammar")
+    }
+
+    /// A validly signed manifest can still be an old one replayed. Refuse any version
+    /// older than the highest this device has accepted.
+    private func rejectRollback(of version: String) throws {
+        if let highest = syncState.highestAcceptedVersion(for: "grammar"),
+           DataVersion.isOlder(version, than: highest) {
+            throw VerbSyncError.untrusted
+        }
     }
 }

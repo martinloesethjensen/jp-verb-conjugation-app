@@ -95,6 +95,58 @@ final class VerbSyncServiceTests: XCTestCase {
         }
     }
 
+    func testManifestOlderThanOneAlreadyAcceptedIsRefused() async throws {
+        let data = try fixtureData()
+        let fetcher = MockVerbDataFetcher()
+        fetcher.manifestResult = .success(VerbManifest(version: "1.1.0", sha256: sha256Hex(of: data)))
+        fetcher.verbDataResult = .success(data)
+        let syncState = InMemorySyncStateStore()
+        syncState.saveHighestAcceptedVersion("1.2.0", for: "verbs")
+
+        let service = VerbSyncService(fetcher: fetcher, syncState: syncState)
+        do {
+            _ = try await service.sync()
+            XCTFail("expected untrusted")
+        } catch VerbSyncError.untrusted {
+            // expected
+        }
+    }
+
+    func testConfirmSyncedRaisesTheHighestAcceptedVersion() {
+        let syncState = InMemorySyncStateStore()
+        let service = VerbSyncService(fetcher: MockVerbDataFetcher(), syncState: syncState)
+        service.confirmSynced(VerbManifest(version: "1.3.0", sha256: "abc"))
+        XCTAssertEqual(syncState.highestAcceptedVersion(for: "verbs"), "1.3.0")
+    }
+
+    func testGrammarManifestOlderThanOneAlreadyAcceptedIsRefused() async throws {
+        let fetcher = MockVerbDataFetcher()
+        fetcher.grammarManifestResult = .success(GrammarManifest(version: "1.0.0", sha256: "x"))
+        let syncState = InMemorySyncStateStore()
+        syncState.saveHighestAcceptedVersion("1.1.0", for: "grammar")
+
+        do {
+            _ = try await GrammarSyncService(fetcher: fetcher, syncState: syncState).sync()
+            XCTFail("expected untrusted")
+        } catch VerbSyncError.untrusted {
+            // expected
+        }
+    }
+
+    func testFuriganaManifestOlderThanOneAlreadyAcceptedIsRefused() async throws {
+        let fetcher = MockVerbDataFetcher()
+        fetcher.furiganaManifestResult = .success(FuriganaManifest(version: "1.0.0", sha256: "x"))
+        let syncState = InMemorySyncStateStore()
+        syncState.saveHighestAcceptedVersion("1.1.0", for: "furigana")
+
+        do {
+            _ = try await FuriganaSyncService(fetcher: fetcher, syncState: syncState).sync()
+            XCTFail("expected untrusted")
+        } catch VerbSyncError.untrusted {
+            // expected
+        }
+    }
+
     func testOfflineErrorPropagates() async throws {
         let fetcher = MockVerbDataFetcher()
         fetcher.manifestResult = .failure(VerbSyncError.offline)
@@ -139,4 +191,7 @@ final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
     func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) { grammarManifest = manifest }
     func lastSyncedFuriganaManifest() -> FuriganaManifest? { furiganaManifest }
     func saveLastSyncedFuriganaManifest(_ manifest: FuriganaManifest) { furiganaManifest = manifest }
+    private var highest: [String: String] = [:]
+    func highestAcceptedVersion(for file: String) -> String? { highest[file] }
+    func saveHighestAcceptedVersion(_ version: String, for file: String) { highest[file] = version }
 }

@@ -22,6 +22,13 @@ final class UserDefaultsSyncStateStoreTests: XCTestCase {
         )
     }
 
+    func testHighestAcceptedVersionSurvivesANewBuild() {
+        UserDefaultsSyncStateStore(defaults: defaults, build: "1").saveHighestAcceptedVersion("1.4.0", for: "verbs")
+        let new = UserDefaultsSyncStateStore(defaults: defaults, build: "2")
+        XCTAssertEqual(new.highestAcceptedVersion(for: "verbs"), "1.4.0")
+        XCTAssertNil(new.highestAcceptedVersion(for: "grammar"))
+    }
+
     func testANewBuildForgetsAllThreeManifests() {
         let old = UserDefaultsSyncStateStore(defaults: defaults, build: "1")
         old.saveLastSyncedManifest(VerbManifest(version: "1.0.0", sha256: "a"))

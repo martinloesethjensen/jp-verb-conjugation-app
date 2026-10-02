@@ -1,6 +1,6 @@
 # Brainstorm: authenticity of the synced data files
 
-Security review finding #1. Status: open, for discussion.
+Security review finding #1. Status: decided. B, C and D are implemented, see `data-signing.md`. A (branch and tag protection) is left to the repo owner.
 
 ## Problem
 The app fetches `manifest.json`, `verbs.json`, `grammar.json` and `furigana.json` from
