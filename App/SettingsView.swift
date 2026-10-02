@@ -1,6 +1,7 @@
 import SwiftUI
 import VerbKit
 import WidgetKit
+import UserNotifications
 
 enum AppearanceMode: String, CaseIterable, Identifiable, Hashable {
     case system, light, dark
@@ -26,6 +27,36 @@ struct SettingsView: View {
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
     @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
+    @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
+    @AppStorage(ReminderScheduler.minutesKey, store: .appGroup) private var reminderMinutes = ReminderScheduler.defaultMinutes
+    @State private var reminderDenied = false
+
+    private var reminderToggle: Binding<Bool> {
+        Binding(
+            get: { reminderEnabled },
+            set: { on in
+                guard on else { reminderEnabled = false; return }
+                Task {
+                    let allowed = await ReminderScheduler.requestAuthorization()
+                    reminderDenied = !allowed
+                    reminderEnabled = allowed
+                }
+            }
+        )
+    }
+
+    private var reminderTime: Binding<Date> {
+        Binding(
+            get: {
+                let minutes = DailyReminder.clampedMinutes(reminderMinutes)
+                return Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now
+            },
+            set: { date in
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+                reminderMinutes = (parts.hour ?? 9) * 60 + (parts.minute ?? 0)
+            }
+        )
+    }
 
     /// The levels present in the verb and grammar data, N5 first.
     private var availableLevels: [JLPTLevel] {
@@ -104,6 +135,18 @@ struct SettingsView: View {
                         }
                         Button("Cancel", role: .cancel) {}
                     }
+            }
+            Section {
+                Toggle("Verb of the day", isOn: reminderToggle)
+                if reminderEnabled {
+                    DatePicker("Time", selection: reminderTime, displayedComponents: .hourAndMinute)
+                }
+            } header: {
+                Text("Daily reminder")
+            } footer: {
+                Text(reminderDenied
+                     ? "Notifications are turned off for this app. Allow them in \(settingsApp) > Notifications."
+                     : "A notification with the same verb the widget shows. Tap it to open the verb.")
             }
             Section {
                 Toggle("Speak after quiz answers", isOn: $speakQuizAnswers)
