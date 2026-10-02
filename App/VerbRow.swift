@@ -14,6 +14,10 @@ struct VerbRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    if let group = verb.teGroup {
+                        Circle().fill(group.accentColor).frame(width: 10, height: 10)
+                            .accessibilityHidden(true)
+                    }
                     Text(verb.dict)
                         .font(.title3.weight(.bold))
                         .foregroundStyle(.primary)
