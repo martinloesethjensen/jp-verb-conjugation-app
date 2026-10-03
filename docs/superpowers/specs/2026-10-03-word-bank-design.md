@@ -21,6 +21,10 @@ region with tags, find them again with search, and review them.
   "Unfiled"). Folders say where an entry is filed; tags say what it is.
 - **Storage:** local first, in a model that already follows CloudKit's rules.
   iCloud sync is a later milestone.
+- **Search:** ranked search inside the Word Bank tab with tokens and chips
+  (no query syntax), recent searches, saved searches shown as smart folders,
+  and entries in iOS/macOS Spotlight. No app-wide search across Verbs and
+  Grammar.
 - **Import / export:** JSON only. Import creates missing folders and tags and
   merges with what is already there using a "combine both, lose nothing" rule.
 - **Speech:** keep `SpeakButton`, with a note that it uses standard pitch, not
@@ -126,19 +130,133 @@ can rename any tag freely.
 
 ### Search
 
+Search is how entries are found again, so it gets its own logic layer in
+VerbKit (`WordBankSearch`), separate from the views and fully unit-tested.
+The existing `VerbSearch` is a yes/no match; this one also ranks and
+explains its results.
+
+#### The search field
+
 - The existing `inlineSearch` modifier, prompt "Search word bank…".
-- Matches text, reading, kanji spelling, senses, standard equivalents (written
-  and reading) and notes, with the existing `Romaji` matching, so "ookini",
-  おおきに and "thank you" all find おおきに.
-- Tags are **search tokens** (`searchable(text:tokens:)`): typing "kuma"
-  suggests 熊本弁. Several tokens combine (AND), together with free text.
-- A chip row under the search field, like the Verbs tab: dialect/region menu
-  chip, kind chip, custom tag chip.
+- What's in the field is **text plus tokens**
+  (`searchable(text:tokens:suggestedTokens:)`). Tokens are filters; the text
+  is matched against entry content.
+- The chip row under the field (Dialect ▾ by region › dialect, Kind ▾,
+  Tag ▾) adds and removes the same tokens. Tokens are the single source of
+  truth, so a chip and its token are always in sync.
 - Inside a folder, search scopes (`searchScopes`) choose **This folder**
-  (including subfolders, the default) or **All entries**. Results outside the
-  current folder show their folder path.
-- Search logic lives in VerbKit (`WordBankSearch`), next to `VerbSearch` and
-  `GrammarSearch`, so it is unit-tested.
+  (with subfolders, the default) or **All entries**.
+
+#### Tokens
+
+| Token | Example | Matches |
+|---|---|---|
+| Dialect tag | 熊本弁 | Entries with that tag |
+| Region | 九州 | Entries with any dialect tag in that region |
+| Prefecture | 岐阜県 | Entries with any dialect tag in that prefecture |
+| Custom tag | #food | Entries with that tag |
+| Folder | Trip 2026 › Takayama | That folder and its subfolders |
+| Kind | Phrase | Entries of that kind |
+| Special | Unfiled, No dialect tag | Entries without a folder or dialect tag |
+
+- **Suggested tokens** appear while typing, matched with the tag-suggestion
+  normalisation: "kuma" suggests 熊本弁, "kyushu" suggests 九州, "taka"
+  suggests 高山弁 and the folder "Takayama". Only tokens that would return
+  results are suggested. Picking one replaces the typed fragment.
+- Different tokens combine with **AND**. Region and prefecture tokens are the
+  way to say "any of these dialects".
+
+#### Matching
+
+- **Normalisation** (`JapaneseNormalizer`, shared with tag suggestions and
+  import merging): NFKC (full/half width), katakana → hiragana, Latin case
+  and diacritics folded (ō → o), whitespace trimmed.
+- **Romaji:** a Latin query is also converted with the existing `Romaji`,
+  which drops half-typed endings, so results narrow as you type ("ooki" →
+  おおき). A Latin query matches both English fields directly and Japanese
+  fields through its kana form.
+- **Loose kana fallback:** if the exact kana finds nothing, long vowels are
+  folded on both sides (おお/おう → お, ー removed), so "okini" still finds
+  おおきに. Fallback matches rank below exact ones.
+- **Several words:** the text is split on spaces; every word must match
+  somewhere in the entry (AND), in any field. Japanese typed without spaces is
+  one word. Text in quotes ("お腹すいた") must match as a whole phrase.
+- **Fields searched,** strongest first: text; reading and kanji spelling;
+  standard equivalents (written and reading); sense meanings; tag names
+  (typing "kansai" finds entries tagged 関西弁 even without a token); sense
+  notes; folder name; source and notes.
+
+#### Ranking
+
+- Each match scores **field weight × match quality**, where quality goes
+  exact > starts with > word starts with > contains > loose fallback. An
+  entry's score is its best match; with several words, the scores add up.
+- Ties go to the most recently updated entry.
+- **When there is text,** results are one flat list in rank order, not
+  grouped. **With only tokens,** the list keeps its normal grouping and sort.
+
+#### Results
+
+- Each row shows **why it matched** when that isn't obvious: "Standard:
+  ありがとう", "Meaning: thank you", "Note: …from Yuki at the izakaya…",
+  with the matched part highlighted. VoiceOver reads the same text.
+- Rows outside the current folder show their folder path.
+- **No results:** "No results for 'X'" with ways out: drop a token ("Without
+  熊本弁: 3 results"), switch to All entries when scoped, and **Add "X" as a
+  new entry** (opens the editor with the text filled in, so search doubles as
+  quick capture).
+
+#### Recent searches
+
+- With the field focused and empty, the last 10 searches (text + tokens) are
+  shown, newest first. Tapping one restores it; swipe to remove; "Clear".
+- A search is recorded when a result is opened or the search is submitted,
+  not on every keystroke, and duplicates move to the top.
+- Stored on this device only (`UserDefaults`), never exported or synced.
+
+#### Saved searches
+
+- **Save search** (in the search bar's menu, available when there is text or
+  a token) stores the text, tokens, folder scope and sort under a name. The
+  name defaults to the filters ("熊本弁 · Phrase") and can be changed.
+- Saved searches appear in a **Saved searches** section on the root screen
+  under the smart rows, each with a live count, and behave like smart
+  folders: opening one runs the search.
+- Rename, reorder, edit (re-opens the search to change it and save again)
+  and delete. Deleting one never touches entries.
+- Saved searches are user data: stored in the Word Bank store, included in
+  full exports and imports (merged by id, then by name), and synced once
+  iCloud arrives.
+- A token that points to a deleted tag or folder is dropped from the saved
+  search, with a note on it ("1 filter no longer exists").
+- Saved searches can be used anywhere a folder can: **Review**, **Export**
+  and the widget's source.
+
+#### Spotlight
+
+- Entries are indexed for system search on iOS and macOS. Typing おおきに or
+  "thank you" in Spotlight finds the entry, and tapping it opens the entry in
+  the app.
+- Built on App Intents: `WordBankEntryEntity` conforms to `IndexedEntity`,
+  so the same entity serves Spotlight and the "Add to Word Bank" quick
+  capture intent. Title is the text, subtitle the reading and first standard
+  equivalent, plus keywords (reading, kanji spelling, equivalents, meanings,
+  tag names, folder name).
+- The index is updated whenever entries are saved, deleted or imported
+  (batched for imports and folder deletes), and rebuilt in full when its
+  version number changes or the bank is restored from backup.
+- **Settings › Word Bank › Show in Spotlight** (on by default). Turning it
+  off removes every indexed entry.
+- Opening a Spotlight result uses the `wordbank` route, so it dismisses
+  sheets like the existing deep links.
+
+#### Performance
+
+- Search runs in memory over the whole bank. Each entry's normalised search
+  keys are computed once and cached in `WordBankStore`, and recomputed only
+  when the entry changes. They are never stored.
+- Target: under 16 ms per keystroke for 5,000 entries on a recent iPhone,
+  checked with a package performance test.
 
 ### Detail page
 
@@ -314,6 +432,10 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
 - Nothing is seeded: the dialect catalogue is read-only bundled data used
   for suggestions, and tags are rows only once the user creates them.
   `DialectTag` stores an optional `catalogueID`.
+- `WordBankSavedSearch` model: id, name, query text, tokens (as `Codable`
+  descriptors holding ids, so a renamed tag or folder still matches), scope
+  folder id, sort, order. Archive format version 1 has an optional
+  `savedSearches` list.
 - Automatic pre-import backups are `.wordbank` files in the app's
   Application Support folder, not in the database.
 
@@ -324,21 +446,26 @@ Each ships on its own:
 1. **Core:** models, separate store, dialect catalogue, store, tab, list,
    folders, add/edit, detail (comparison card, senses, kanji chips, speech,
    text actions), tags and tag management with suggestions, search with
-   tokens, chips and folder scopes.
+   tokens, chips and folder scopes, ranking, match explanations, no-results
+   actions, recent searches.
 2. **Import / export:** `.wordbank` format, export scopes, import preview,
    folder and tag generation, combine merge, automatic backups and restore.
-3. **Links:** verb links (automatic and manual), same-meaning-in-other-dialects
+3. **Saved searches:** model, smart-folder section, edit, use in export
+   (review and widget pick them up in their own milestones).
+4. **Links:** verb links (automatic and manual), same-meaning-in-other-dialects
    section, `wordbank` route.
-4. **Flashcard review.**
-5. **Widget.**
-6. **Quick capture** App Intent.
-7. *(later)* iCloud sync, CSV and Anki formats, share extension, map of Japan
+5. **Flashcard review.**
+6. **Widget.**
+7. **Quick capture and Spotlight:** `WordBankEntryEntity`
+   (`IndexedEntity`), the App Intent, Spotlight indexing and its setting.
+8. *(later)* iCloud sync, CSV and Anki formats, share extension, map of Japan
    by prefecture.
 
 ## Components
 
 - VerbKit: `WordBank/` (models, `Sense`, `StandardEquivalent`, dialect
-  catalogue + `dialects.json`, `TagSuggester`, `WordBankSearch`, folder tree operations, `WordBankArchive`,
+  catalogue + `dialects.json`, `TagSuggester`, `JapaneseNormalizer`, `WordBankSearch` (matching, ranking,
+  match explanations, token model), recent search list, folder tree operations, `WordBankArchive`,
   `WordBankImportPlanner`, cross-dialect grouping, kanji extraction),
   `Persistence/` (entities, persisting), `Store/WordBankStore.swift`,
   `Lookup/TextLookupURL.swift` (`jishoKanji`), `Navigation/` (route case),
@@ -348,6 +475,8 @@ Each ships on its own:
   `TagManagerView`, `ImportPreviewSheet`, `FlashcardReviewView`;
   `MainTabView` gains the tab; `project.yml` declares the `.wordbank`
   document type and exported `UTType`.
+- App Intents: `WordBankEntryEntity` (`IndexedEntity`), `AddToWordBankIntent`.
+- App: `SavedSearchesSection`, `SaveSearchSheet`, `SearchExplanationLabel`.
 - Widgets: `WordBankWidget` + intent.
 
 ## Platforms
@@ -367,6 +496,17 @@ modifiers stay behind `#if os(iOS)`.
   parsing.
 - Folders: sibling-name uniqueness, move with cycle prevention, delete with
   keep vs delete contents, scoped search including subfolders.
+- Search: normalisation (width, katakana, case, diacritics); romaji partial
+  input; loose kana fallback ranked below exact; multi-word AND across
+  fields; quoted phrases; every token type, including region/prefecture
+  expansion and folder including subfolders; folder scope; ranking order
+  (field weight, match quality, recency tie-break); match explanation picks
+  the right field; no-results suggestions report correct counts; recent
+  searches dedupe and cap at 10; saved search with a deleted tag drops it;
+  saved searches round-trip through export/import; performance test for
+  5,000 entries.
+- Spotlight: entity fields and keywords; index updated on save, delete and
+  import; turning the setting off removes everything.
 - Import / export: lossless round trip; folder-scoped export re-roots paths;
   hand-written file with only paths and names creates folders and tags;
   import into a chosen folder nests paths; matching order and every rule
@@ -384,4 +524,5 @@ modifiers stay behind `#if os(iOS)`.
 Shipped dialect content, a built-in kanji dictionary, dialect-accurate audio,
 recording the user's own audio, live sharing between users (files can be
 sent, but there is no shared bank), CSV/Anki formats and iCloud sync (until
-milestone 7).
+milestone 8), search across Verbs/Grammar/Word Bank in one field, typo
+tolerance for English (beyond the loose kana fallback).
