@@ -32,7 +32,11 @@ region with tags, find them again with search, and review them.
 - **Review:** flashcards in both directions.
 - **Meanings and links:** several senses per entry, structured standard
   Japanese equivalents (kanji + reading), kanji chips linking to Jisho,
-  automatic links to app verbs, and a derived cross-dialect view.
+  automatic links to the app's words (verbs today, adjectives and nouns once
+  the form-agnostic data model lands), and a derived cross-dialect view.
+- **Built on the form-agnostic data model (PR #16).** The Word Bank reuses its
+  `WordClass`, `Word.id` and `FormID` instead of inventing parallel types.
+  See "Dependencies on open PRs".
 
 ## Design
 
@@ -43,10 +47,11 @@ region with tags, find them again with search, and review them.
 | Text | yes | おおきに | What was heard / written, as the user writes it |
 | Reading | no | おおきに | Kana; drives furigana and romaji search |
 | Kanji spelling | no | 大きに | Etymology or written form when the text is kana-only |
-| Kind | yes (default word) | word / phrase / sentence | Filterable |
+| Kind (`EntryKind`) | yes (default word) | word / phrase / sentence | Filterable |
+| Word class | no, words only | verb / i-adjective / na-adjective / noun | The existing `WordClass`; filterable |
 | Senses | no, 0…n | "thank you" | English meaning + optional note per sense |
 | Standard equivalents | no, 0…n | ありがとう; 可愛い (かわいい) | Written form, reading, note |
-| Linked verb | no | 行く | Manual link for conjugated dialect forms (行かへん) |
+| Linked word | no | 行く · short negative | A curated word plus, optionally, the form the dialect entry corresponds to (行かへん ↔ `short_neg`) |
 | Folder | no, 0…1 | Trip 2026 › Takayama | Unfiled when empty |
 | Tags | no, 0…n | 関西弁, #from-Yuki | Dialect and custom tags |
 | Source / notes | no | "Yuki, izakaya in Osaka" | Free text |
@@ -237,14 +242,22 @@ explains its results.
 - Entries are indexed for system search on iOS and macOS. Typing おおきに or
   "thank you" in Spotlight finds the entry, and tapping it opens the entry in
   the app.
-- Built on App Intents: `WordBankEntryEntity` conforms to `IndexedEntity`,
-  so the same entity serves Spotlight and the "Add to Word Bank" quick
-  capture intent. Title is the text, subtitle the reading and first standard
-  equivalent, plus keywords (reading, kanji spelling, equivalents, meanings,
-  tag names, folder name).
-- The index is updated whenever entries are saved, deleted or imported
-  (batched for imports and folder deletes), and rebuilt in full when its
-  version number changes or the bank is restored from backup.
+- Built on the `SpotlightIndexer` from PR #24 rather than a second
+  mechanism: a third domain, `wordbank`, next to `verbs` and `lessons`. Each
+  item's unique identifier is its `verbtable://wordbank/<uuid>` route URL,
+  so a tapped result goes through the same `RootView.open(_:)` and
+  `onContinueUserActivity(CSSearchableItemActionType)` path as verbs and
+  lessons. Title is the text, description the reading, first standard
+  equivalent and first meaning; keywords are reading, kanji spelling,
+  equivalents, meanings, tag names and folder name.
+- Unlike verbs and lessons (which replace their whole domain when the data
+  changes), Word Bank items are updated **incrementally**: indexed on save,
+  removed by identifier on delete, batched for imports and folder deletes.
+  The whole domain is rebuilt only when its index version changes or the bank
+  is restored from backup.
+- `WordBankEntryEntity` (an `AppEntity` with an `EntityStringQuery` backed by
+  `WordBankSearch`) lives in `App/Intents/` beside PR #24's `VerbIntents`, so
+  Shortcuts can pick entries and the quick capture intent can return one.
 - **Settings › Word Bank › Show in Spotlight** (on by default). Turning it
   off removes every indexed entry.
 - Opening a Spotlight result uses the `wordbank` route, so it dismisses
@@ -269,11 +282,17 @@ explains its results.
 - **Kanji chips:** one chip per distinct kanji in the text, kanji spelling and
   standard equivalents. Tapping opens Jisho's kanji page
   (`TextLookupURL.jishoKanji`, new). No built-in kanji dictionary.
-- **Verb links:** a standard equivalent whose written form or reading matches a
-  verb in the app (`dict` or `kanji`) shows "Open 行く" via `openRoute`. A
-  manually linked verb shows the same way. A dialect verb form can also show
-  the standard conjugation side by side (行かへん ↔ 行かない) when the user
-  links the verb.
+- **Word links:** a standard equivalent is matched against the app's curated
+  words (any `WordClass`): their `dict`, `kanji`, **and every conjugated
+  surface in `forms` and `alternates`**, looked up through the `FormCatalogue`.
+  So ありがとう finds nothing, 疲れる shows "Open 疲れる", and 行かない shows
+  "行かない = 行く · Short · negative" (label from the catalogue) with a link
+  to the page. A manually linked word shows the same way.
+- **Dialect form vs standard form:** when the link has a form
+  (行かへん → 行く, `short_neg`), the card shows the standard surface from
+  `word.forms[formID]` next to the dialect one. Picking the form is offered
+  automatically when an equivalent matched a conjugated surface, so linking
+  usually takes one tap.
 - **Same meaning in other dialects:** other entries sharing a standard
   equivalent, with their dialect tags ("ありがとう: おおきに 関西弁, だんだん
   出雲弁"). Derived at read time, never stored, so it needs no upkeep.
@@ -374,7 +393,11 @@ unit-tested without UI.
 
 Text first, then reading, standard equivalents (＋ to add more), senses (＋),
 kind, folder, tags (token picker with "New dialect tag…" / "New tag…"), kanji
-spelling, verb link (searchable picker over app verbs), source/notes. Only
+spelling, word link (searchable picker over the app's words, then an
+optional form picker listing the catalogue forms that word has),
+source/notes. When the text has kanji and the reading is empty, the reading
+is pre-filled from the furigana dictionary (`FuriganaDictionary.reading(of:)`,
+PR #18) for the user to confirm or correct. Only
 text is required. When text is entered and an existing entry has the same
 text, the sheet offers to open it instead of creating a duplicate.
 
@@ -418,9 +441,19 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
 - Senses and standard equivalents are `Codable` value arrays on the entry
   (`[Sense]`, `[StandardEquivalent]`); they are edited with the entry and
   never shared, so they don't need to be models.
-- The linked verb is stored by verb `dict` string, not a relationship, so a
-  data sync that rewrites `VerbEntity` rows can never break or delete it. A
-  link to a verb that no longer exists is simply not shown.
+- The linked word is stored as two strings, never as a relationship: the
+  `Word.id` (`"verb:いく"`, `"i-adjective:たかい"`) and an optional `FormID`
+  raw value. The synced word cache (`VerbEntity` today, PR #16's payload
+  `WordEntity` later) is rewritten or even re-created by a re-sync, so a
+  relationship into it would be lost. A link whose word or form no longer
+  exists is simply not shown. Import also accepts a bare verb `dict` (the
+  form verb deep links keep, PR #16 open question 5) and maps it to
+  `verb:<dict>`.
+- Entry kind is its own `EntryKind` enum, not a reuse of `QuizQuestionKind`
+  or `WordClass`; the optional word class is the existing `WordClass`.
+- Naming: every Word Bank type is prefixed `WordBank…` (or `DialectTag`,
+  `CustomTag`), never bare `Word…`, because `Word`, `WordClass`,
+  `WordExample` and `WordEntity` belong to the curated data model.
 - **Separate store:** the Word Bank models go in their own
   `ModelConfiguration` (`WordBank.sqlite` in the App Group container), inside
   the same `ModelContainer` as today. The synced verb/grammar data and the
@@ -429,6 +462,12 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
 - Store and persistence follow the existing pattern:
   `WordBankPersisting` protocol, `SwiftDataWordBankPersisting`,
   `@Observable WordBankStore` in the environment.
+- PR #16 step 5 rebuilds the synced cache (and its open question 11 may drop
+  the coexistence release and simply re-sync). Because the Word Bank lives in
+  its own configuration and file, that work must never delete or migrate
+  `WordBank.sqlite`; a test pins this.
+- `dialects.json` is bundled in `Sources/VerbKit/Resources/` next to PR #16's
+  `forms.json`, using the same `resources:` entry style in `Package.swift`.
 - Nothing is seeded: the dialect catalogue is read-only bundled data used
   for suggestions, and tags are rows only once the user creates them.
   `DialectTag` stores an optional `catalogueID`.
@@ -452,12 +491,13 @@ Each ships on its own:
    folder and tag generation, combine merge, automatic backups and restore.
 3. **Saved searches:** model, smart-folder section, edit, use in export
    (review and widget pick them up in their own milestones).
-4. **Links:** verb links (automatic and manual), same-meaning-in-other-dialects
-   section, `wordbank` route.
+4. **Links:** word links (automatic and manual, with forms), dialect-vs-
+   standard form card, same-meaning-in-other-dialects section, `wordbank`
+   route. Needs PR #16's foundations (`Word`, `FormCatalogue`) merged.
 5. **Flashcard review.**
 6. **Widget.**
-7. **Quick capture and Spotlight:** `WordBankEntryEntity`
-   (`IndexedEntity`), the App Intent, Spotlight indexing and its setting.
+7. **Quick capture and Spotlight:** `WordBankEntryEntity`, the App Intent,
+   the `wordbank` Spotlight domain and its setting. Needs PR #24 merged.
 8. *(later)* iCloud sync, CSV and Anki formats, share extension, map of Japan
    by prefecture.
 
@@ -475,7 +515,9 @@ Each ships on its own:
   `TagManagerView`, `ImportPreviewSheet`, `FlashcardReviewView`;
   `MainTabView` gains the tab; `project.yml` declares the `.wordbank`
   document type and exported `UTType`.
-- App Intents: `WordBankEntryEntity` (`IndexedEntity`), `AddToWordBankIntent`.
+- App Intents (`App/Intents/`, with PR #24's): `WordBankEntryEntity`,
+  `AddToWordBankIntent`; `App/SpotlightIndexer.swift` gains the `wordbank`
+  domain.
 - App: `SavedSearchesSection`, `SaveSearchSheet`, `SearchExplanationLabel`.
 - Widgets: `WordBankWidget` + intent.
 
@@ -487,7 +529,10 @@ modifiers stay behind `#if os(iOS)`.
 ## Testing
 
 - Package tests for: search (kana, kanji, romaji, English, equivalents, tag
-  token AND), cross-dialect grouping, kanji extraction, verb matching,
+  token AND), cross-dialect grouping, kanji extraction, word matching
+  (dict, kanji, every conjugated surface and alternate, across word
+  classes, using test catalogues), linked word/form resolution including a
+  missing word or form,
   tag suggestions (normalisation of kana/romaji/macrons/弁 suffixes,
   aliases, ranking, own-tag-first and duplicate blocking, related dialects
   from existing tags, already-applied tags excluded), catalogue file decodes
@@ -518,6 +563,26 @@ modifiers stay behind `#if os(iOS)`.
   (test: sync after adding entries leaves them intact).
 - Builds: iOS and macOS schemes. On-screen checks on the iPhone simulator for
   each milestone.
+
+## Dependencies on open PRs
+
+Checked against the open PRs on 2026-10-03. None of them conflicts with the
+Word Bank's user data, but several change what it should build on.
+
+| PR | What it changes | Effect on the Word Bank |
+|---|---|---|
+| #16 Form-agnostic data model | `Word`, `WordClass` (promoted out of `GrammarPoint`), `FormID`, `Conjugations`, `FormCatalogue` + bundled `forms.json`; later `WordEntity` replaces `VerbEntity` | Entries get an optional `WordClass`; links use `Word.id` + `FormID`; word matching iterates all classes through the catalogue; type names avoid `Word…`; `dialects.json` sits beside `forms.json`. **Merge #16 (at least its foundations) before Core starts**, so Core uses the shared `WordClass` instead of adding a temporary copy. |
+| #24 Siri, Shortcuts and Spotlight | `SpotlightIndexer` (domains, route URLs as ids), `RootView.open(_:)`, `onContinueUserActivity`, `App/Intents/VerbIntents.swift` | Word Bank adds a domain to the same indexer and its entity and intent beside the verb ones; `IndexedEntity` is dropped from this spec for consistency. Milestone 7 builds on it. |
+| #17 Security hardening | `onOpenURL` ignores a route that doesn't resolve, before dismissing sheets | `Route.resolve` must also know Word Bank entries (a `wordbank` route resolves when the entry exists), or Word Bank links and Spotlight results would be ignored. |
+| #18 Lesson search by kana reading | `FuriganaDictionary.reading(of:)` | Pre-fills an entry's reading and gives entries without a reading a derived one for search. |
+| #21 Japanese voice picker | `Speaker` uses the chosen voice | The Word Bank's `SpeakButton` follows the picked voice with no extra work. |
+| #23 Favourite verbs | Starred verb ids in shared defaults | No overlap. Favourites mark curated verbs; the Word Bank holds the user's own entries. |
+| #20, #25 Quiz kinds and more forms | `QuizQuestion`, `QuizForm`, more forms in `verbs.json` | Flashcards stay independent of the quiz model (self-graded, own attempt rows), so they're unaffected. More forms just means more surfaces to match. |
+
+Merge order that keeps rework lowest: **#16 → Word Bank Core**, with #17 and
+#24 landed before milestones 4 and 7 respectively. If #16's later steps
+(quiz, persistence) are still in flight, the Word Bank only needs its step 2
+types.
 
 ## Out of scope
 
