@@ -17,6 +17,9 @@ struct VerbListView: View {
     /// back-to-top button appears.
     @State private var filtersOffscreen = false
     @State private var scope: LevelScope = .mine
+    @FocusState private var searchFocused: Bool
+    @State private var scrolledAwayFromTop = false
+    @State private var scrollToTop: (() -> Void)?
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     private var settings: LevelSettings { LevelSettings(rawValue: hiddenLevelsRaw) }
@@ -53,12 +56,7 @@ struct VerbListView: View {
         if let teFilter, let rule = TeFormRule.all.first(where: { $0.group == teFilter }) {
             parts.append(rule.result)
         }
-        switch typeFilter {
-        case .irregular?: parts.append("Irregular")
-        case .ru?: parts.append("Ru-verbs")
-        case .u?: parts.append("U-verbs")
-        case nil: break
-        }
+        if let typeFilter { parts.append(typeFilter.filterTitle) }
         if scope == .mine, let levels = settings.summary(among: availableLevels) { parts.append(levels) }
         return parts.joined(separator: " · ")
     }
@@ -68,7 +66,7 @@ struct VerbListView: View {
             List(selection: $selection) {
                 Section {
                     // The filters scroll with the list, so nothing is pinned over the rows.
-                    TeFormFilter(selection: $teFilter)
+                    TeFormFilter(type: $typeFilter, selection: $teFilter)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
@@ -80,17 +78,6 @@ struct VerbListView: View {
                 // No section margin, so the chip row spans the full width and never clips.
                 .listSectionMargins(.horizontal, 0)
                 #endif
-
-                Section {
-                    Picker("Type", selection: $typeFilter) {
-                        Text("All").tag(VerbType?.none)
-                        Text("Irregular").tag(VerbType?.some(.irregular))
-                        Text("Ru-verbs").tag(VerbType?.some(.ru))
-                        Text("U-verbs").tag(VerbType?.some(.u))
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowSeparator(.hidden)
-                }
 
                 Section {
                     if filtered.isEmpty {
@@ -120,14 +107,17 @@ struct VerbListView: View {
                         .font(.caption)
                 }
             }
-            .searchable(text: $search, prompt: "Search hiragana, kanji, romaji, or English…")
+            .inlineSearch(text: $search, prompt: "Search verbs…", focused: $searchFocused)
             .levelScopeBar(isActive: levelsHidden, scope: $scope)
             .onChange(of: search) { if search.isEmpty { scope = .mine } }
+            .onAppear { scrollToTop = { withAnimation { proxy.scrollTo(Self.filtersID, anchor: .top) } } }
             #if os(iOS)
             .listSectionSpacing(.compact)
-            // The search field collapses to a button in the navigation bar, so search
-            // stays one tap away however far the list has scrolled.
-            .searchToolbarBehavior(.minimize)
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top > 44
+            } action: { _, scrolled in
+                scrolledAwayFromTop = scrolled
+            }
             .overlay(alignment: .bottomTrailing) {
                 if filtersOffscreen {
                     Button {
@@ -152,20 +142,32 @@ struct VerbListView: View {
         .navigationSubtitle(filterSummary)
         .sheet(isPresented: $showGuide) { VerbGuideSheet() }
         .toolbar {
+            #if os(iOS)
+            if scrolledAwayFromTop {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Search", systemImage: "magnifyingglass") {
+                        scrollToTop?()
+                        searchFocused = true
+                    }
+                }
+            }
+            #endif
             ToolbarItem(placement: .primaryAction) {
-                Button("Guide", systemImage: "info.circle") { showGuide = true }
+                // The toolbar drops a Label's title, so the text is spelled out to keep "Quiz" visible.
+                Button(action: onRandomQuiz) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "gamecontroller").accessibilityHidden(true)
+                        Text("Quiz")
+                    }
+                }
             }
             ToolbarItem(placement: .primaryAction) {
-                Button("Progress", systemImage: "chart.bar", action: onProgress)
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button("Random Quiz", systemImage: "gamecontroller", action: onRandomQuiz)
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                ReportProblemButton(item: "")
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Button("Settings", systemImage: "gearshape", action: onSettings)
+                Menu("More", systemImage: "ellipsis") {
+                    Button("Progress", systemImage: "chart.bar", action: onProgress)
+                    Button("Guide", systemImage: "info.circle") { showGuide = true }
+                    Button("Settings", systemImage: "gearshape", action: onSettings)
+                    ReportProblemButton(item: "")
+                }
             }
         }
     }

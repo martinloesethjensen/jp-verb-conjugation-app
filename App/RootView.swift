@@ -25,7 +25,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if verbStore.hasLocalData {
-                MainTabView(verbSelection: $selection, incomingRoute: $incomingRoute) {
+                MainTabView(verbSelection: $selection, incomingRoute: $incomingRoute, onSettings: { showingSettings = true }) {
                     verbsTab
                 }
             } else {
@@ -46,6 +46,16 @@ struct RootView: View {
             quizQuestions = nil
             incomingRoute = route
         }
+        .sheet(isPresented: $showingSettings) {
+            NavigationStack {
+                SettingsView()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showingSettings = false }
+                        }
+                    }
+            }
+        }
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
         // Applied to the windows rather than with preferredColorScheme: see AppearanceApplier.
@@ -54,9 +64,9 @@ struct RootView: View {
         }
     }
 
-    /// The existing Verbs experience — moved here unchanged, including the
-    /// sheets and quiz presentation chained onto it — so `MainTabView`
-    /// can host it as one tab.
+    /// The Verbs experience, including the sheets and quiz presentation chained
+    /// onto it, so `MainTabView` can host it as one tab. The Settings sheet lives
+    /// on the root instead, so the Grammar tab can open it too.
     @ViewBuilder
     private var verbsTab: some View {
         NavigationSplitView {
@@ -84,16 +94,6 @@ struct RootView: View {
             }
         }
         .sheet(isPresented: $showingProgress) { QuizProgressView() }
-        .sheet(isPresented: $showingSettings) {
-            NavigationStack {
-                SettingsView()
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { showingSettings = false }
-                        }
-                    }
-            }
-        }
         .sheet(isPresented: topicSheetBinding, onDismiss: {
             if let pendingQuestions {
                 quizQuestions = pendingQuestions

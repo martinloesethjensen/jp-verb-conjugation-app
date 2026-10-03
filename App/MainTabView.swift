@@ -20,11 +20,13 @@ struct MainTabView<VerbsTab: View>: View {
     /// otherwise; `open` sets this to `.detail` so a cross-link lands on
     /// the lesson even when the Grammar tab hasn't been visited yet.
     @State private var grammarColumn: NavigationSplitViewColumn = .sidebar
+    let onSettings: () -> Void
     private let verbsTab: VerbsTab
 
-    init(verbSelection: Binding<Verb?>, incomingRoute: Binding<Route?>, @ViewBuilder verbsTab: () -> VerbsTab) {
+    init(verbSelection: Binding<Verb?>, incomingRoute: Binding<Route?>, onSettings: @escaping () -> Void, @ViewBuilder verbsTab: () -> VerbsTab) {
         _verbSelection = verbSelection
         _incomingRoute = incomingRoute
+        self.onSettings = onSettings
         self.verbsTab = verbsTab()
     }
 
@@ -34,7 +36,7 @@ struct MainTabView<VerbsTab: View>: View {
                 verbsTab
             }
             Tab("Grammar", systemImage: "text.book.closed", value: AppTab.grammar) {
-                GrammarTab(selection: $grammarSelection, preferredColumn: $grammarColumn)
+                GrammarTab(selection: $grammarSelection, preferredColumn: $grammarColumn, onSettings: onSettings)
             }
         }
         .tabViewStyle(.sidebarAdaptable)
@@ -64,10 +66,11 @@ struct MainTabView<VerbsTab: View>: View {
 struct GrammarTab: View {
     @Binding var selection: GrammarPoint?
     @Binding var preferredColumn: NavigationSplitViewColumn
+    let onSettings: () -> Void
 
     var body: some View {
         NavigationSplitView(preferredCompactColumn: $preferredColumn) {
-            GrammarListView(selection: $selection)
+            GrammarListView(selection: $selection, onSettings: onSettings)
         } detail: {
             if let selection {
                 GrammarDetailView(point: selection)
