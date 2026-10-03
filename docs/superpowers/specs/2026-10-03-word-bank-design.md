@@ -17,8 +17,12 @@ region with tags, find them again with search, and review them.
   also holds slang, phrases from friends, notes.
 - **Two tag kinds:** structured dialect tags (dialect → prefecture → region)
   and free-form custom tags.
-- **Storage:** local first, in a model that already follows CloudKit's rules,
-  with JSON export as backup. iCloud sync is a later milestone.
+- **Folders:** nested, and each entry lives in at most one folder (or
+  "Unfiled"). Folders say where an entry is filed; tags say what it is.
+- **Storage:** local first, in a model that already follows CloudKit's rules.
+  iCloud sync is a later milestone.
+- **Import / export:** JSON only. Import creates missing folders and tags and
+  merges with what is already there using a "combine both, lose nothing" rule.
 - **Speech:** keep `SpeakButton`, with a note that it uses standard pitch, not
   the dialect's.
 - **Review:** flashcards in both directions.
@@ -39,6 +43,7 @@ region with tags, find them again with search, and review them.
 | Senses | no, 0…n | "thank you" | English meaning + optional note per sense |
 | Standard equivalents | no, 0…n | ありがとう; 可愛い (かわいい) | Written form, reading, note |
 | Linked verb | no | 行く | Manual link for conjugated dialect forms (行かへん) |
+| Folder | no, 0…1 | Trip 2026 › Takayama | Unfiled when empty |
 | Tags | no, 0…n | 関西弁, #from-Yuki | Dialect and custom tags |
 | Source / notes | no | "Yuki, izakaya in Osaka" | Free text |
 | Created / updated | auto | | Sorting, "recently added" |
@@ -107,8 +112,13 @@ can rename any tag freely.
 - `Tab("Word Bank", systemImage: "books.vertical")` in `MainTabView`, its own
   `NavigationSplitView` like the other tabs; `.sidebarAdaptable` makes it a
   sidebar item on iPad and macOS.
-- Top bar follows the Verbs/Grammar pattern: **＋** (Add) and a **⋯ menu**
-  (Review, Manage tags, Export, Settings, Report a problem).
+- Top bar follows the Verbs/Grammar pattern: **＋** (Add entry / New folder)
+  and a **⋯ menu** (Review, Manage tags, Import, Export, Settings, Report a
+  problem).
+- The root screen starts with **All entries**, **Unfiled** and **Recently
+  added**, then the top-level folders, then (at the root only) unfiled
+  entries. Opening a folder shows its subfolders first, then its entries, with
+  the folder path as the navigation subtitle.
 - Grouping (menu chip): by region › dialect (entries without a dialect tag go
   in "Untagged"), by date added, or A–Z.
 - Row: text with furigana, first standard equivalent, first sense, tag pills.
@@ -124,6 +134,9 @@ can rename any tag freely.
   suggests 熊本弁. Several tokens combine (AND), together with free text.
 - A chip row under the search field, like the Verbs tab: dialect/region menu
   chip, kind chip, custom tag chip.
+- Inside a folder, search scopes (`searchScopes`) choose **This folder**
+  (including subfolders, the default) or **All entries**. Results outside the
+  current folder show their folder path.
 - Search logic lives in VerbKit (`WordBankSearch`), next to `VerbSearch` and
   `GrammarSearch`, so it is unit-tested.
 
@@ -148,10 +161,101 @@ can rename any tag freely.
   出雲弁"). Derived at read time, never stored, so it needs no upkeep.
 - Tags, source/notes, dates; Edit and Delete.
 
+### Folders
+
+- **Create:** "New folder" in the ＋ menu creates it inside the folder being
+  viewed. Names must be unique among siblings (compared case- and
+  width-insensitively), so a folder path always names exactly one folder,
+  which import relies on.
+- **File an entry:** a Folder row in the add/edit sheet; adding from inside
+  a folder pre-selects that folder.
+- **Move:** "Move to…" on entries (also multi-select in edit mode) and on
+  folders opens a folder picker; drag and drop on iPad and macOS. A folder
+  can't be moved into itself or its own subfolders.
+- **Rename** and **delete.** Deleting a folder asks: **Keep entries** (the
+  default; entries and subfolders move up to the parent) or **Delete
+  everything** (with the entry count shown).
+- **Use elsewhere:** "Review this folder" and "Export this folder" act on the
+  folder and its subfolders; the widget can be limited to a folder as well as
+  a tag.
+- No depth limit; the UI never needs one, since each level is its own screen.
+
+### Import and export
+
+**File format.** A JSON file with the extension `.wordbank` (a custom
+`UTType` conforming to `public.json`, so the app opens it from Files, AirDrop
+and Mail too). It has a header (`format: "word-bank"`, `version: 1`,
+`exportedAt`), then `folders` (id, name, parent id), `dialectTags`,
+`customTags` and `entries` (all fields, folder id, tag ids). Each entry also
+carries its **folder path** (`["Trip 2026", "Takayama"]`) and tag
+**names**, so a hand-written or generated file with no ids and no `folders`
+list still imports: paths create folders, names match or create tags. Only
+`text` is required per entry; unknown fields are ignored.
+
+**Export.** Everything (full backup), one folder with its subfolders (that
+folder becomes the file's root), the current selection, or the current
+search results. A full backup can include review history; other exports
+never do. Shared through the share sheet or saved with `fileExporter`.
+
+**Import flow.**
+
+1. Pick a file (`fileImporter`) or open a `.wordbank` file from outside the
+   app.
+2. Choose the destination: **Word Bank root** (folder paths kept as they
+   are) or **Into a folder…** (the file's folders are created inside it).
+3. A **preview** shows what will happen before anything is saved: new
+   entries, entries combined with existing ones, unchanged entries, new
+   folders (as paths), new tags, and skipped records with reasons.
+4. **Import** applies everything in one save; if the save fails, nothing
+   changes.
+5. Before applying, the app writes an automatic backup of the current bank
+   (the last three are kept; **Settings › Word Bank › Restore backup**), so
+   any import can be undone.
+
+**Matching.** Order matters: folders, then tags, then entries.
+
+- *Folders:* by id; otherwise by path from the destination, segment by
+  segment, using the sibling-name comparison above. Anything unmatched is
+  created, parents first. A matched folder keeps its local name.
+- *Dialect tags:* by id, then catalogue id, then normalised name (the
+  `TagSuggester` normalisation). *Custom tags:* by id, then normalised name.
+  Unmatched tags are created.
+- *Entries:* by id; otherwise by normalised text plus reading. When the file
+  has no reading, text alone matches only if exactly one local entry has that
+  text; if several do, the imported entry is added as new rather than
+  guessed.
+
+**Combining a matched entry** (nothing is ever deleted or overwritten):
+
+- Text, kind and anything else already filled in locally stay as they are.
+- Empty local fields (reading, kanji spelling, linked verb, source) are
+  filled from the file.
+- Senses, standard equivalents and tags are **unioned**; duplicates are found
+  with the same normalisation as search.
+- Notes: if the file's note differs and isn't already contained in the local
+  one, it is appended under "Imported <date>".
+- Folder: an entry already filed stays where it is; an unfiled one moves to
+  the imported folder.
+- Created date becomes the earlier of the two; updated date is set only if
+  something actually changed.
+
+Importing the same file twice therefore changes nothing the second time; the
+preview reports everything as unchanged.
+
+**Validation.** A file with a newer major `version` is refused with a
+message asking to update the app. Records without text, references to
+missing folders or tags (which fall back to the path or name), and
+malformed values are skipped or repaired and listed in the preview. Files
+over 20 MB are refused.
+
+All of this logic (`WordBankArchive` for the format, `WordBankImportPlanner`
+producing the preview plan, applied by the store) lives in VerbKit and is
+unit-tested without UI.
+
 ### Add / edit sheet
 
 Text first, then reading, standard equivalents (＋ to add more), senses (＋),
-kind, tags (token picker with "New dialect tag…" / "New tag…"), kanji
+kind, folder, tags (token picker with "New dialect tag…" / "New tag…"), kanji
 spelling, verb link (searchable picker over app verbs), source/notes. Only
 text is required. When text is entered and an existing entry has the same
 text, the sheet offers to open it instead of creating a duplicate.
@@ -184,10 +288,15 @@ straight to the store. A share extension can build on it later.
 
 New SwiftData models in VerbKit, CloudKit-compatible from the start:
 
-- `WordBankEntry`, `DialectTag`, `CustomTag`, `WordBankReviewAttempt`.
+- `WordBankEntry`, `WordBankFolder`, `DialectTag`, `CustomTag`,
+  `WordBankReviewAttempt`.
 - No `@Attribute(.unique)`; every property optional or defaulted; all
   relationships optional with inverses (entry ↔ dialect tags, entry ↔ custom
-  tags, entry ↔ review attempts). Identity by a `UUID` property.
+  tags, entry ↔ review attempts, entry → folder ↔ folder entries, folder →
+  parent ↔ folder children). Identity by a `UUID` property. Sibling-name
+  uniqueness is enforced by the store, since CloudKit can't.
+- Deleting a folder never cascades at the model level; the store moves or
+  deletes contents explicitly, according to the user's choice.
 - Senses and standard equivalents are `Codable` value arrays on the entry
   (`[Sense]`, `[StandardEquivalent]`); they are edited with the entry and
   never shared, so they don't need to be models.
@@ -205,33 +314,40 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
 - Nothing is seeded: the dialect catalogue is read-only bundled data used
   for suggestions, and tags are rows only once the user creates them.
   `DialectTag` stores an optional `catalogueID`.
-- Export / import: JSON of entries and tags, via `fileExporter` /
-  `fileImporter`. Import merges by `UUID`.
+- Automatic pre-import backups are `.wordbank` files in the app's
+  Application Support folder, not in the database.
 
 ## Milestones
 
 Each ships on its own:
 
-1. **Core:** models, separate store, dialect catalogue, store, tab, list, add/edit,
-   detail (comparison card, senses, kanji chips, speech, text actions), tags
-   and tag management with suggestions, search with tokens and chips, JSON export/import.
-2. **Links:** verb links (automatic and manual), same-meaning-in-other-dialects
+1. **Core:** models, separate store, dialect catalogue, store, tab, list,
+   folders, add/edit, detail (comparison card, senses, kanji chips, speech,
+   text actions), tags and tag management with suggestions, search with
+   tokens, chips and folder scopes.
+2. **Import / export:** `.wordbank` format, export scopes, import preview,
+   folder and tag generation, combine merge, automatic backups and restore.
+3. **Links:** verb links (automatic and manual), same-meaning-in-other-dialects
    section, `wordbank` route.
-3. **Flashcard review.**
-4. **Widget.**
-5. **Quick capture** App Intent.
-6. *(later)* iCloud sync, share extension, map of Japan by prefecture.
+4. **Flashcard review.**
+5. **Widget.**
+6. **Quick capture** App Intent.
+7. *(later)* iCloud sync, CSV and Anki formats, share extension, map of Japan
+   by prefecture.
 
 ## Components
 
 - VerbKit: `WordBank/` (models, `Sense`, `StandardEquivalent`, dialect
-  catalogue + `dialects.json`, `TagSuggester`, `WordBankSearch`, cross-dialect grouping, kanji extraction),
+  catalogue + `dialects.json`, `TagSuggester`, `WordBankSearch`, folder tree operations, `WordBankArchive`,
+  `WordBankImportPlanner`, cross-dialect grouping, kanji extraction),
   `Persistence/` (entities, persisting), `Store/WordBankStore.swift`,
   `Lookup/TextLookupURL.swift` (`jishoKanji`), `Navigation/` (route case),
   `VerbModelContainer` (second configuration).
-- App: `WordBankTab`, `WordBankListView`, `WordBankDetailView`,
-  `WordBankEditor`, `TagPicker`, `TagManagerView`, `FlashcardReviewView`;
-  `MainTabView` gains the tab.
+- App: `WordBankTab`, `WordBankListView`, `WordBankFolderView`,
+  `FolderPicker`, `WordBankDetailView`, `WordBankEditor`, `TagPicker`,
+  `TagManagerView`, `ImportPreviewSheet`, `FlashcardReviewView`;
+  `MainTabView` gains the tab; `project.yml` declares the `.wordbank`
+  document type and exported `UTType`.
 - Widgets: `WordBankWidget` + intent.
 
 ## Platforms
@@ -247,8 +363,17 @@ modifiers stay behind `#if os(iOS)`.
   aliases, ranking, own-tag-first and duplicate blocking, related dialects
   from existing tags, already-applied tags excluded), catalogue file decodes
   and covers all 47 prefectures, persistence round trip
-  in memory, export/import round trip and merge, review ordering, Jisho kanji
-  URL encoding, the new route parsing.
+  in memory, review ordering, Jisho kanji URL encoding, the new route
+  parsing.
+- Folders: sibling-name uniqueness, move with cycle prevention, delete with
+  keep vs delete contents, scoped search including subfolders.
+- Import / export: lossless round trip; folder-scoped export re-roots paths;
+  hand-written file with only paths and names creates folders and tags;
+  import into a chosen folder nests paths; matching order and every rule
+  above (id, catalogue id, normalised name, text + reading, ambiguous text
+  added as new); combine rule field by field; re-importing the same file is
+  a no-op; newer version refused; invalid records reported; failed save
+  leaves the bank unchanged; backup written before apply and restorable.
 - Existing suite stays green; verb data sync must not touch Word Bank rows
   (test: sync after adding entries leaves them intact).
 - Builds: iOS and macOS schemes. On-screen checks on the iPhone simulator for
@@ -257,5 +382,6 @@ modifiers stay behind `#if os(iOS)`.
 ## Out of scope
 
 Shipped dialect content, a built-in kanji dictionary, dialect-accurate audio,
-recording the user's own audio, sharing entries between users, iCloud sync
-(until milestone 6).
+recording the user's own audio, live sharing between users (files can be
+sent, but there is no shared bank), CSV/Anki formats and iCloud sync (until
+milestone 7).
