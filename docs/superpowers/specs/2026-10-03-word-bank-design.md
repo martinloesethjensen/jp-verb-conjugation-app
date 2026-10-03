@@ -51,12 +51,56 @@ Senses exist because dialect words are often false friends: Kansai なおす mea
 
 **Dialect tags** have a name (Japanese + romaji, e.g. 熊本弁 / Kumamoto-ben), a
 prefecture (one of the 47) and a region (北海道, 東北, 関東, 中部, 関西, 中国,
-四国, 九州・沖縄). Presets are seeded on first use: one tag per prefecture plus
-well-known dialects (大阪弁, 京都弁, 博多弁, 名古屋弁, 津軽弁, 沖縄方言, …). The
-user can add their own dialect tags (高山弁 / 飛騨弁 → 岐阜県 → 中部) and hide
-presets they don't use. Presets are rows like any other, so they can be renamed.
+四国, 九州・沖縄). The user's tag list starts empty: a tag exists only once
+the user creates it, so the list holds only dialects they actually study.
 
 **Custom tags** are a name and a colour.
+
+### Tag suggestions
+
+Creating a tag starts from a single field, "New tag…", in the tag picker
+and in Manage tags. As the user types, suggestions appear in sections:
+
+1. **Already yours.** Existing tags that match, shown first with "Use", so
+   typing "kansai" when 関西弁 exists reuses it instead of making a
+   duplicate. An exact match (after normalisation, below) blocks creating a
+   second tag with the same name.
+2. **Dialects.** Matches from a bundled **dialect catalogue**. Picking one
+   creates a dialect tag with name, romaji, prefecture and region already
+   filled in. Typing "takayama" suggests 高山弁 / 飛騨弁 (岐阜県, 中部);
+   "kuma" suggests 熊本弁; "gifu" lists every dialect of 岐阜県 (飛騨弁, 美濃弁)
+   plus a plain 岐阜県 prefecture tag.
+3. **Custom tag ideas.** Matches from a short bundled list of common
+   categories (greetings, food, slang, casual, polite, from a friend,
+   overheard, …), offered with a colour already chosen.
+4. **Create "…".** Always last: creates exactly what was typed as a custom
+   tag, or as a dialect tag through a "Dialect…" option where the user picks
+   prefecture and region (pre-selected when the typed text names one).
+
+With an empty field the picker shows **Recently used** tags, then dialect
+suggestions **based on the user's existing tags**: other dialects of the
+same prefecture and region first (having 大阪弁 suggests 京都弁, 神戸弁,
+河内弁), so related dialects are one tap away.
+
+**Matching** happens in VerbKit (`TagSuggester`), not in the view, and is
+unit-tested. Before comparing, both the query and candidates are normalised:
+hiragana ↔ katakana, romaji through the existing `Romaji` conversion,
+macrons and long vowels folded (Ōsaka = Oosaka = Osaka), case and spaces
+ignored, and the dialect suffixes 弁 / べん / -ben / ben / 方言 / 言葉 removed. So
+"osaka", "おおさか", "Osaka-ben" and "大阪弁" all find 大阪弁. A
+match at the start of a word ranks above a match inside it; tags already on
+the entry are not suggested again.
+
+**Dialect catalogue:** a bundled JSON file in VerbKit (`dialects.json`), not
+synced data, with one record per dialect: id, kanji name, kana reading,
+romaji, aliases (飛騨弁 ↔ 高山弁, 関西弁 for the Kansai family), prefecture(s),
+region. It covers all 47 prefectures (each also available as a plain
+prefecture tag) and the well-known dialects within them. A dialect spanning
+several prefectures (関西弁, 東北弁) lists them all and has a region but no
+single prefecture. A tag created from the catalogue keeps its catalogue id,
+so suggestions can tell it's already used and later catalogue updates can
+fill in missing romaji without touching the name the user sees. The user
+can rename any tag freely.
 
 ### Tab and list
 
@@ -158,8 +202,9 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
 - Store and persistence follow the existing pattern:
   `WordBankPersisting` protocol, `SwiftDataWordBankPersisting`,
   `@Observable WordBankStore` in the environment.
-- Dialect presets come from a bundled list in VerbKit and are seeded once
-  (tracked by a flag), so user edits are never overwritten.
+- Nothing is seeded: the dialect catalogue is read-only bundled data used
+  for suggestions, and tags are rows only once the user creates them.
+  `DialectTag` stores an optional `catalogueID`.
 - Export / import: JSON of entries and tags, via `fileExporter` /
   `fileImporter`. Import merges by `UUID`.
 
@@ -167,9 +212,9 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
 
 Each ships on its own:
 
-1. **Core:** models, separate store, presets, store, tab, list, add/edit,
+1. **Core:** models, separate store, dialect catalogue, store, tab, list, add/edit,
    detail (comparison card, senses, kanji chips, speech, text actions), tags
-   and tag management, search with tokens and chips, JSON export/import.
+   and tag management with suggestions, search with tokens and chips, JSON export/import.
 2. **Links:** verb links (automatic and manual), same-meaning-in-other-dialects
    section, `wordbank` route.
 3. **Flashcard review.**
@@ -179,8 +224,8 @@ Each ships on its own:
 
 ## Components
 
-- VerbKit: `WordBank/` (models, `Sense`, `StandardEquivalent`, dialect preset
-  list, `WordBankSearch`, cross-dialect grouping, kanji extraction),
+- VerbKit: `WordBank/` (models, `Sense`, `StandardEquivalent`, dialect
+  catalogue + `dialects.json`, `TagSuggester`, `WordBankSearch`, cross-dialect grouping, kanji extraction),
   `Persistence/` (entities, persisting), `Store/WordBankStore.swift`,
   `Lookup/TextLookupURL.swift` (`jishoKanji`), `Navigation/` (route case),
   `VerbModelContainer` (second configuration).
@@ -198,7 +243,10 @@ modifiers stay behind `#if os(iOS)`.
 
 - Package tests for: search (kana, kanji, romaji, English, equivalents, tag
   token AND), cross-dialect grouping, kanji extraction, verb matching,
-  preset seeding runs once and never overwrites edits, persistence round trip
+  tag suggestions (normalisation of kana/romaji/macrons/弁 suffixes,
+  aliases, ranking, own-tag-first and duplicate blocking, related dialects
+  from existing tags, already-applied tags excluded), catalogue file decodes
+  and covers all 47 prefectures, persistence round trip
   in memory, export/import round trip and merge, review ordering, Jisho kanji
   URL encoding, the new route parsing.
 - Existing suite stays green; verb data sync must not touch Word Bank rows
