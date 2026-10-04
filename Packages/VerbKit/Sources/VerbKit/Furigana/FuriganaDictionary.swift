@@ -65,6 +65,12 @@ public struct FuriganaDictionary: Equatable, Sendable {
         }
     }
 
+    /// `text` with every kanji the dictionary knows replaced by its reading, so
+    /// 頭が痛いんです becomes あたまがいたいんです. Unknown kanji stay as they are.
+    public func reading(of text: String) -> String {
+        units(for: text).map { $0.reading ?? $0.text }.joined()
+    }
+
     // MARK: segmentation
 
     public func units(for text: String) -> [TextUnit] {

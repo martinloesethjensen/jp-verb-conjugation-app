@@ -42,10 +42,31 @@ final class GrammarSearchTests: XCTestCase {
     }
 
     func testRomajiCannotMatchKanjiInExample() {
-        XCTAssertFalse(matchesGrammarSearch(nDesu, query: "atama ga itai"))
+        XCTAssertFalse(matchesGrammarSearch(nDesu, query: "atama ga itai"))   // without a furigana dictionary
     }
 
     func testRomajiNoMatchInGrammar() {
         XCTAssertFalse(matchesGrammarSearch(nDesu, query: "hazu"))
+    }
+
+    // MARK: search by reading
+
+    private let readings = FuriganaDictionary(readings: ["頭": "あたま", "痛い": "いた"])
+
+    func testRomajiMatchesKanjiExampleThroughFurigana() {
+        XCTAssertTrue(matchesGrammarSearch(nDesu, query: "atama ga itai", furigana: readings))
+    }
+
+    func testKanaMatchesKanjiExampleThroughFurigana() {
+        XCTAssertTrue(matchesGrammarSearch(nDesu, query: "あたまがいたい", furigana: readings))
+    }
+
+    func testFuriganaDoesNotCreateFalseMatches() {
+        XCTAssertFalse(matchesGrammarSearch(nDesu, query: "hazu", furigana: readings))
+    }
+
+    func testReadingOfReplacesKnownKanjiOnly() {
+        XCTAssertEqual(readings.reading(of: "頭が痛いんです。"), "あたまがいたいんです。")
+        XCTAssertEqual(readings.reading(of: "電車が"), "電車が")
     }
 }
