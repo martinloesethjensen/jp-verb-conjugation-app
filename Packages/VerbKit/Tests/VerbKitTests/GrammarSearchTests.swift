@@ -51,7 +51,7 @@ final class GrammarSearchTests: XCTestCase {
 
     // MARK: search by reading
 
-    private let readings = FuriganaDictionary(readings: ["頭": "あたま", "痛い": "いたい"])
+    private let readings = FuriganaDictionary(readings: ["頭": "あたま", "痛い": "いた"])
 
     func testRomajiMatchesKanjiExampleThroughFurigana() {
         XCTAssertTrue(matchesGrammarSearch(nDesu, query: "atama ga itai", furigana: readings))
