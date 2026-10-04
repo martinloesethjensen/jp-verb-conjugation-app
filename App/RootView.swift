@@ -54,7 +54,8 @@ struct RootView: View {
             }
         }
         .onOpenURL { open($0) }
-        .onChange(of: reminderRouter.pendingURL) { _, url in
+        // `initial`: a tap that launched the app can arrive before this view exists.
+        .onChange(of: reminderRouter.pendingURL, initial: true) { _, url in
             guard let url else { return }
             reminderRouter.pendingURL = nil
             open(url)
