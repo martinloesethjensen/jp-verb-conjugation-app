@@ -109,6 +109,7 @@ struct VerbListView: View {
                         } label: {
                             HStack {
                                 VerbRow(verb: verb)
+                                Spacer(minLength: 0)
                                 if favourites.contains(verb) {
                                     Image(systemName: "star.fill")
                                         .foregroundStyle(.yellow)
