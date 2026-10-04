@@ -187,4 +187,36 @@ final class QuizGeneratorTests: XCTestCase {
         )
         XCTAssertEqual(questions.map(\.form.id), ["masu_neg"])
     }
+
+    // MARK: fill-in
+
+    func testFillInBlanksTheFormInAnExampleSentence() throws {
+        let questions = buildQuestions(verbs: try verbs(), topics: all, count: 1000, kinds: [.fillIn])
+        XCTAssertFalse(questions.isEmpty)
+        for question in questions {
+            let sentence = try XCTUnwrap(question.sentence)
+            XCTAssertTrue(sentence.contains(QuizQuestion.blank))
+            XCTAssertEqual(question.correct, question.formString)
+            XCTAssertNotNil(question.translation)
+            XCTAssertTrue(question.choices.contains(question.correct))
+            XCTAssertGreaterThanOrEqual(question.choices.count, 2)
+            XCTAssertEqual(Set(question.choices).count, question.choices.count)
+        }
+    }
+
+    func testFillInDistractorsAreTheSameVerbsForms() throws {
+        let all = Set(QuizTopic.allCases)
+        for question in buildQuestions(verbs: try verbs(), topics: all, count: 1000, kinds: [.fillIn]) {
+            let own = Set(QuizForm.available(in: question.verb.forms, topics: all).map(\.value))
+            XCTAssertTrue(Set(question.choices).isSubset(of: own))
+        }
+    }
+
+    func testFillInIsSkippedWithoutAMatchingExample() throws {
+        var taberu = try XCTUnwrap(try verbs().first { $0.dict == "たべる" })
+        taberu.examples = []
+        XCTAssertTrue(buildQuestions(verbs: [taberu], topics: all, count: 10, kinds: [.fillIn]).isEmpty)
+        // With other kinds allowed it still gets questions.
+        XCTAssertFalse(buildQuestions(verbs: [taberu], topics: all, count: 10, kinds: [.fillIn, .conjugate]).isEmpty)
+    }
 }

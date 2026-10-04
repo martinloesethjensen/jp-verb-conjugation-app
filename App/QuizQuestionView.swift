@@ -87,6 +87,19 @@ struct QuizQuestionView: View {
                     .font(.caption)
                     .multilineTextAlignment(.center)
                 verbBlock
+            case .fillIn:
+                Text(.init("Fill in the blank with the **\(question.form.label)** form of \(question.verb.dict)"))
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                JapaneseText(question.sentence ?? "")
+                    .font(.title2.weight(.bold))
+                    .multilineTextAlignment(.center)
+                if let translation = question.translation {
+                    Text(translation)
+                        .italic()
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             case .identify:
                 Text("Which form is this?")
                     .font(.caption)
