@@ -91,7 +91,7 @@ struct QuizQuestionView: View {
                 Text(.init("Fill in the blank with the **\(question.form.label)** form of \(question.verb.dict)"))
                     .font(.caption)
                     .multilineTextAlignment(.center)
-                Text(question.sentence ?? "")
+                JapaneseText(question.sentence ?? "")
                     .font(.title2.weight(.bold))
                     .multilineTextAlignment(.center)
                 if let translation = question.translation {
