@@ -103,7 +103,7 @@ struct RootView: View {
             if let topicSheetVerbs {
                 QuizTopicSheet(
                     verbs: topicSheetVerbs,
-                    weakSpotCount: weakPairs(in: topicSheetVerbs).count,
+                    weakSpotCount: { weakPairs(in: $0).count },
                     onStart: { verbs, selection in
                         let questions = questions(for: selection, verbs: verbs)
                         pendingQuestions = questions.isEmpty ? nil : questions

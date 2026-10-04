@@ -11,7 +11,8 @@ enum QuizSelection {
 /// play have forms in, plus Everything and, first, Weak spots.
 struct QuizTopicSheet: View {
     let verbs: [Verb]
-    let weakSpotCount: Int
+    /// Weak pairs among the given verbs, so the count follows "Favourites only".
+    let weakSpotCount: ([Verb]) -> Int
     var onStart: ([Verb], QuizSelection) -> Void
     var onCancel: () -> Void
 
@@ -22,8 +23,31 @@ struct QuizTopicSheet: View {
     }
 
     @State private var choice: Choice = .everything
+    @State private var favouritesOnly = false
+    @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
 
-    private var choices: [QuizTopicChoice] { QuizTopic.choices(for: verbs) }
+    private var favouriteVerbs: [Verb] { FavouriteVerbs(rawValue: favouritesRaw).filter(verbs) }
+
+    /// The verbs the quiz draws from: only the starred ones when that is switched on.
+    private var quizVerbs: [Verb] { favouritesOnly ? favouriteVerbs : verbs }
+
+    private var choices: [QuizTopicChoice] { QuizTopic.choices(for: quizVerbs) }
+
+    private var weakSpots: Int { weakSpotCount(quizVerbs) }
+
+    private var weakSpotsDetail: String {
+        if weakSpots > 0 { return "\(weakSpots) \(weakSpots == 1 ? "pair" : "pairs")" }
+        return favouritesOnly && weakSpotCount(verbs) > 0 ? "None in favourites" : "Answer some questions first"
+    }
+
+    /// False when narrowing the verbs has left nothing behind `value`.
+    private func isAvailable(_ value: Choice) -> Bool {
+        switch value {
+        case .weakSpots: return weakSpots > 0
+        case .everything: return true
+        case .topic(let topic): return choices.contains { $0.topic == topic }
+        }
+    }
 
     private var selection: QuizSelection {
         switch choice {
@@ -39,15 +63,24 @@ struct QuizTopicSheet: View {
                 Section("Practise") {
                     row(
                         title: "Weak spots",
-                        detail: weakSpotCount > 0 ? "\(weakSpotCount) \(weakSpotCount == 1 ? "pair" : "pairs")" : "Answer some questions first",
+                        detail: weakSpotsDetail,
                         choice: .weakSpots,
-                        enabled: weakSpotCount > 0
+                        enabled: weakSpots > 0
                     )
                     ForEach(choices, id: \.topic) { item in
                         row(title: item.topic.title, detail: Self.formsText(item.count), choice: .topic(item.topic))
                     }
                     row(title: "Everything", detail: Self.formsText(choices.reduce(0) { $0 + $1.count }), choice: .everything)
                 }
+                // Only worth offering when there is a choice to make: some, but not all, verbs starred.
+                if !favouriteVerbs.isEmpty && favouriteVerbs.count < verbs.count {
+                    Section {
+                        Toggle("Favourites only (\(favouriteVerbs.count))", isOn: $favouritesOnly)
+                    }
+                }
+            }
+            .onChange(of: favouritesOnly) {
+                if !isAvailable(choice) { choice = .everything }
             }
             .navigationTitle("Quiz")
             #if os(iOS)
@@ -58,7 +91,7 @@ struct QuizTopicSheet: View {
                     Button("Cancel", action: onCancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Start") { onStart(verbs, selection) }
+                    Button("Start") { onStart(quizVerbs, selection) }
                 }
             }
         }
@@ -80,9 +113,10 @@ struct QuizTopicSheet: View {
                 Image(systemName: choice == value ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(choice == value ? Color.accentColor : Color.secondary)
             }
+            // On the label, so the gap between title and detail is tappable too.
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
-        .contentShape(Rectangle())
     }
 }

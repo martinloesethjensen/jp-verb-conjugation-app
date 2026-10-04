@@ -13,6 +13,8 @@ struct VerbListView: View {
     @State private var search = ""
     @State private var typeFilter: VerbType?
     @State private var teFilter: TeGroup?
+    @State private var favouritesOnly = false
+    @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
     /// True once the filters block has scrolled off screen, which is when the
     /// back-to-top button appears.
     @State private var filtersOffscreen = false
@@ -31,9 +33,19 @@ struct VerbListView: View {
 
     private static let filtersID = "filters"
 
+    private var favourites: FavouriteVerbs { FavouriteVerbs(rawValue: favouritesRaw) }
+
+    private func toggleFavourite(_ verb: Verb) {
+        var updated = favourites
+        updated.toggle(verb)
+        favouritesRaw = updated.rawValue
+    }
+
     private func matching(in levels: LevelSettings) -> [Verb] {
-        verbStore.verbs.visible(in: levels).filter {
-            matchesType($0, filter: typeFilter)
+        let favourites = favourites
+        return verbStore.verbs.visible(in: levels).filter {
+            (!favouritesOnly || favourites.contains($0))
+                && matchesType($0, filter: typeFilter)
                 && matchesTeGroup($0, filter: teFilter)
                 && matchesSearch($0, query: search)
         }
@@ -47,7 +59,7 @@ struct VerbListView: View {
         return matching(in: LevelSettings()).count - filtered.count
     }
 
-    private var hasFilters: Bool { typeFilter != nil || teFilter != nil }
+    private var hasFilters: Bool { typeFilter != nil || teFilter != nil || favouritesOnly }
 
     /// "って · Ru-verbs": which filters are on, shown under the title so they stay
     /// visible after the filters themselves have scrolled away. Empty when none is on.
@@ -57,6 +69,7 @@ struct VerbListView: View {
             parts.append(rule.result)
         }
         if let typeFilter { parts.append(typeFilter.filterTitle) }
+        if favouritesOnly { parts.append("Favourites") }
         if scope == .mine, let levels = settings.summary(among: availableLevels) { parts.append(levels) }
         return parts.joined(separator: " · ")
     }
@@ -94,10 +107,25 @@ struct VerbListView: View {
                         Button {
                             selection = verb
                         } label: {
-                            VerbRow(verb: verb)
+                            HStack {
+                                VerbRow(verb: verb)
+                                Spacer(minLength: 0)
+                                if favourites.contains(verb) {
+                                    Image(systemName: "star.fill")
+                                        .foregroundStyle(.yellow)
+                                        .accessibilityLabel("Favourite")
+                                }
+                            }
                         }
                         .buttonStyle(.plain)
                         .tag(verb)
+                        .swipeActions(edge: .leading) {
+                            Button(favourites.contains(verb) ? "Unfavourite" : "Favourite",
+                                   systemImage: favourites.contains(verb) ? "star.slash" : "star") {
+                                toggleFavourite(verb)
+                            }
+                            .tint(.yellow)
+                        }
                     }
                     if !filtered.isEmpty && hiddenMatchCount > 0 {
                         HiddenMatchesRow(count: hiddenMatchCount)
@@ -163,6 +191,7 @@ struct VerbListView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu("More", systemImage: "ellipsis") {
+                    Toggle("Favourites only", systemImage: "star", isOn: $favouritesOnly)
                     Button("Progress", systemImage: "chart.bar", action: onProgress)
                     Button("Guide", systemImage: "info.circle") { showGuide = true }
                     Button("Settings", systemImage: "gearshape", action: onSettings)
@@ -181,7 +210,7 @@ struct VerbListView: View {
             } description: {
                 Text(search.isEmpty ? "No verb fits these filters." : "No verb fits “\(search)” with these filters.")
             } actions: {
-                Button("Clear filters") { typeFilter = nil; teFilter = nil }
+                Button("Clear filters") { typeFilter = nil; teFilter = nil; favouritesOnly = false }
             }
         }
     }

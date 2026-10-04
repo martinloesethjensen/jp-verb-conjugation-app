@@ -6,6 +6,9 @@ struct VerbDetailView: View {
     var onExamples: () -> Void
     var onQuiz: () -> Void
     @ScaledMetric(relativeTo: .caption) private var dotSize: CGFloat = 8
+    @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
+
+    private var isFavourite: Bool { FavouriteVerbs(rawValue: favouritesRaw).contains(verb) }
 
     private var accent: Color {
         verb.teGroup?.accentColor ?? verb.type.accentColor
@@ -44,6 +47,12 @@ struct VerbDetailView: View {
             #endif
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
+                    Button(isFavourite ? "Remove from favourites" : "Add to favourites",
+                           systemImage: isFavourite ? "star.fill" : "star") {
+                        var favourites = FavouriteVerbs(rawValue: favouritesRaw)
+                        favourites.toggle(verb)
+                        favouritesRaw = favourites.rawValue
+                    }
                     SpeakButton(text: verb.jishoQuery)
                     Button("Examples", systemImage: "book", action: onExamples)
                     if let jishoURL {
