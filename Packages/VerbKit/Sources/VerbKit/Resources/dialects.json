@@ -1,0 +1,726 @@
+{
+  "schema": 1,
+  "description": "Dialects offered as tag suggestions in the Word Bank. Bundled with the app, not synced. Hand-authored; ids are stable.",
+  "dialects": [
+    {
+      "id": "hokkaido-ben",
+      "name": "北海道弁",
+      "kana": "ほっかいどうべん",
+      "romaji": "Hokkaido-ben",
+      "aliases": [],
+      "prefectures": [
+        "hokkaido"
+      ],
+      "region": "hokkaido"
+    },
+    {
+      "id": "tsugaru-ben",
+      "name": "津軽弁",
+      "kana": "つがるべん",
+      "romaji": "Tsugaru-ben",
+      "aliases": [],
+      "prefectures": [
+        "aomori"
+      ],
+      "region": "tohoku"
+    },
+    {
+      "id": "nanbu-ben",
+      "name": "南部弁",
+      "kana": "なんぶべん",
+      "romaji": "Nanbu-ben",
+      "aliases": [],
+      "prefectures": [
+        "aomori",
+        "iwate"
+      ],
+      "region": "tohoku"
+    },
+    {
+      "id": "iwate-ben",
+      "name": "岩手弁",
+      "kana": "いわてべん",
+      "romaji": "Iwate-ben",
+      "aliases": [],
+      "prefectures": [
+        "iwate"
+      ],
+      "region": "tohoku"
+    },
+    {
+      "id": "sendai-ben",
+      "name": "仙台弁",
+      "kana": "せんだいべん",
+      "romaji": "Sendai-ben",
+      "aliases": [
+        "宮城弁",
+        "みやぎべん",
+        "Miyagi-ben"
+      ],
+      "prefectures": [
+        "miyagi"
+      ],
+      "region": "tohoku"
+    },
+    {
+      "id": "akita-ben",
+      "name": "秋田弁",
+      "kana": "あきたべん",
+      "romaji": "Akita-ben",
+      "aliases": [],
+      "prefectures": [
+        "akita"
+      ],
+      "region": "tohoku"
+    },
+    {
+      "id": "yamagata-ben",
+      "name": "山形弁",
+      "kana": "やまがたべん",
+      "romaji": "Yamagata-ben",
+      "aliases": [],
+      "prefectures": [
+        "yamagata"
+      ],
+      "region": "tohoku"
+    },
+    {
+      "id": "fukushima-ben",
+      "name": "福島弁",
+      "kana": "ふくしまべん",
+      "romaji": "Fukushima-ben",
+      "aliases": [],
+      "prefectures": [
+        "fukushima"
+      ],
+      "region": "tohoku"
+    },
+    {
+      "id": "tohoku-ben",
+      "name": "東北弁",
+      "kana": "とうほくべん",
+      "romaji": "Tohoku-ben",
+      "aliases": [],
+      "prefectures": [
+        "aomori",
+        "iwate",
+        "miyagi",
+        "akita",
+        "yamagata",
+        "fukushima"
+      ],
+      "region": "tohoku"
+    },
+    {
+      "id": "ibaraki-ben",
+      "name": "茨城弁",
+      "kana": "いばらきべん",
+      "romaji": "Ibaraki-ben",
+      "aliases": [],
+      "prefectures": [
+        "ibaraki"
+      ],
+      "region": "kanto"
+    },
+    {
+      "id": "tochigi-ben",
+      "name": "栃木弁",
+      "kana": "とちぎべん",
+      "romaji": "Tochigi-ben",
+      "aliases": [],
+      "prefectures": [
+        "tochigi"
+      ],
+      "region": "kanto"
+    },
+    {
+      "id": "gunma-ben",
+      "name": "群馬弁",
+      "kana": "ぐんまべん",
+      "romaji": "Gunma-ben",
+      "aliases": [
+        "上州弁",
+        "じょうしゅうべん",
+        "Joshu-ben"
+      ],
+      "prefectures": [
+        "gunma"
+      ],
+      "region": "kanto"
+    },
+    {
+      "id": "saitama-ben",
+      "name": "埼玉弁",
+      "kana": "さいたまべん",
+      "romaji": "Saitama-ben",
+      "aliases": [],
+      "prefectures": [
+        "saitama"
+      ],
+      "region": "kanto"
+    },
+    {
+      "id": "chiba-ben",
+      "name": "千葉弁",
+      "kana": "ちばべん",
+      "romaji": "Chiba-ben",
+      "aliases": [],
+      "prefectures": [
+        "chiba"
+      ],
+      "region": "kanto"
+    },
+    {
+      "id": "edo-ben",
+      "name": "江戸弁",
+      "kana": "えどべん",
+      "romaji": "Edo-ben",
+      "aliases": [
+        "東京弁",
+        "とうきょうべん",
+        "Tokyo-ben",
+        "べらんめえ"
+      ],
+      "prefectures": [
+        "tokyo"
+      ],
+      "region": "kanto"
+    },
+    {
+      "id": "kanagawa-ben",
+      "name": "神奈川弁",
+      "kana": "かながわべん",
+      "romaji": "Kanagawa-ben",
+      "aliases": [
+        "横浜弁",
+        "よこはまべん",
+        "Yokohama-ben"
+      ],
+      "prefectures": [
+        "kanagawa"
+      ],
+      "region": "kanto"
+    },
+    {
+      "id": "niigata-ben",
+      "name": "新潟弁",
+      "kana": "にいがたべん",
+      "romaji": "Niigata-ben",
+      "aliases": [],
+      "prefectures": [
+        "niigata"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "toyama-ben",
+      "name": "富山弁",
+      "kana": "とやまべん",
+      "romaji": "Toyama-ben",
+      "aliases": [],
+      "prefectures": [
+        "toyama"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "kanazawa-ben",
+      "name": "金沢弁",
+      "kana": "かなざわべん",
+      "romaji": "Kanazawa-ben",
+      "aliases": [
+        "加賀弁",
+        "かがべん",
+        "Kaga-ben"
+      ],
+      "prefectures": [
+        "ishikawa"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "fukui-ben",
+      "name": "福井弁",
+      "kana": "ふくいべん",
+      "romaji": "Fukui-ben",
+      "aliases": [],
+      "prefectures": [
+        "fukui"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "koshu-ben",
+      "name": "甲州弁",
+      "kana": "こうしゅうべん",
+      "romaji": "Koshu-ben",
+      "aliases": [
+        "山梨弁",
+        "やまなしべん",
+        "Yamanashi-ben"
+      ],
+      "prefectures": [
+        "yamanashi"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "shinshu-ben",
+      "name": "信州弁",
+      "kana": "しんしゅうべん",
+      "romaji": "Shinshu-ben",
+      "aliases": [
+        "長野弁",
+        "ながのべん",
+        "Nagano-ben"
+      ],
+      "prefectures": [
+        "nagano"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "hida-ben",
+      "name": "飛騨弁",
+      "kana": "ひだべん",
+      "romaji": "Hida-ben",
+      "aliases": [
+        "高山弁",
+        "たかやまべん",
+        "Takayama-ben"
+      ],
+      "prefectures": [
+        "gifu"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "mino-ben",
+      "name": "美濃弁",
+      "kana": "みのべん",
+      "romaji": "Mino-ben",
+      "aliases": [],
+      "prefectures": [
+        "gifu"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "shizuoka-ben",
+      "name": "静岡弁",
+      "kana": "しずおかべん",
+      "romaji": "Shizuoka-ben",
+      "aliases": [],
+      "prefectures": [
+        "shizuoka"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "nagoya-ben",
+      "name": "名古屋弁",
+      "kana": "なごやべん",
+      "romaji": "Nagoya-ben",
+      "aliases": [
+        "尾張弁",
+        "おわりべん",
+        "Owari-ben"
+      ],
+      "prefectures": [
+        "aichi"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "mikawa-ben",
+      "name": "三河弁",
+      "kana": "みかわべん",
+      "romaji": "Mikawa-ben",
+      "aliases": [],
+      "prefectures": [
+        "aichi"
+      ],
+      "region": "chubu"
+    },
+    {
+      "id": "ise-ben",
+      "name": "伊勢弁",
+      "kana": "いせべん",
+      "romaji": "Ise-ben",
+      "aliases": [
+        "三重弁",
+        "みえべん",
+        "Mie-ben"
+      ],
+      "prefectures": [
+        "mie"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "shiga-ben",
+      "name": "滋賀弁",
+      "kana": "しがべん",
+      "romaji": "Shiga-ben",
+      "aliases": [
+        "近江弁",
+        "おうみべん",
+        "Omi-ben"
+      ],
+      "prefectures": [
+        "shiga"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "kyoto-ben",
+      "name": "京都弁",
+      "kana": "きょうとべん",
+      "romaji": "Kyoto-ben",
+      "aliases": [
+        "京言葉",
+        "きょうことば",
+        "Kyo-kotoba"
+      ],
+      "prefectures": [
+        "kyoto"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "osaka-ben",
+      "name": "大阪弁",
+      "kana": "おおさかべん",
+      "romaji": "Osaka-ben",
+      "aliases": [],
+      "prefectures": [
+        "osaka"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "kawachi-ben",
+      "name": "河内弁",
+      "kana": "かわちべん",
+      "romaji": "Kawachi-ben",
+      "aliases": [],
+      "prefectures": [
+        "osaka"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "kobe-ben",
+      "name": "神戸弁",
+      "kana": "こうべべん",
+      "romaji": "Kobe-ben",
+      "aliases": [],
+      "prefectures": [
+        "hyogo"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "banshu-ben",
+      "name": "播州弁",
+      "kana": "ばんしゅうべん",
+      "romaji": "Banshu-ben",
+      "aliases": [],
+      "prefectures": [
+        "hyogo"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "nara-ben",
+      "name": "奈良弁",
+      "kana": "ならべん",
+      "romaji": "Nara-ben",
+      "aliases": [
+        "大和弁",
+        "やまとべん",
+        "Yamato-ben"
+      ],
+      "prefectures": [
+        "nara"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "wakayama-ben",
+      "name": "和歌山弁",
+      "kana": "わかやまべん",
+      "romaji": "Wakayama-ben",
+      "aliases": [
+        "紀州弁",
+        "きしゅうべん",
+        "Kishu-ben"
+      ],
+      "prefectures": [
+        "wakayama"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "kansai-ben",
+      "name": "関西弁",
+      "kana": "かんさいべん",
+      "romaji": "Kansai-ben",
+      "aliases": [],
+      "prefectures": [
+        "shiga",
+        "kyoto",
+        "osaka",
+        "hyogo",
+        "nara",
+        "wakayama"
+      ],
+      "region": "kansai"
+    },
+    {
+      "id": "tottori-ben",
+      "name": "鳥取弁",
+      "kana": "とっとりべん",
+      "romaji": "Tottori-ben",
+      "aliases": [
+        "因州弁",
+        "いんしゅうべん",
+        "Inshu-ben"
+      ],
+      "prefectures": [
+        "tottori"
+      ],
+      "region": "chugoku"
+    },
+    {
+      "id": "izumo-ben",
+      "name": "出雲弁",
+      "kana": "いずもべん",
+      "romaji": "Izumo-ben",
+      "aliases": [],
+      "prefectures": [
+        "shimane"
+      ],
+      "region": "chugoku"
+    },
+    {
+      "id": "iwami-ben",
+      "name": "石見弁",
+      "kana": "いわみべん",
+      "romaji": "Iwami-ben",
+      "aliases": [],
+      "prefectures": [
+        "shimane"
+      ],
+      "region": "chugoku"
+    },
+    {
+      "id": "okayama-ben",
+      "name": "岡山弁",
+      "kana": "おかやまべん",
+      "romaji": "Okayama-ben",
+      "aliases": [],
+      "prefectures": [
+        "okayama"
+      ],
+      "region": "chugoku"
+    },
+    {
+      "id": "hiroshima-ben",
+      "name": "広島弁",
+      "kana": "ひろしまべん",
+      "romaji": "Hiroshima-ben",
+      "aliases": [],
+      "prefectures": [
+        "hiroshima"
+      ],
+      "region": "chugoku"
+    },
+    {
+      "id": "yamaguchi-ben",
+      "name": "山口弁",
+      "kana": "やまぐちべん",
+      "romaji": "Yamaguchi-ben",
+      "aliases": [
+        "長州弁",
+        "ちょうしゅうべん",
+        "Choshu-ben"
+      ],
+      "prefectures": [
+        "yamaguchi"
+      ],
+      "region": "chugoku"
+    },
+    {
+      "id": "awa-ben",
+      "name": "阿波弁",
+      "kana": "あわべん",
+      "romaji": "Awa-ben",
+      "aliases": [
+        "徳島弁",
+        "とくしまべん",
+        "Tokushima-ben"
+      ],
+      "prefectures": [
+        "tokushima"
+      ],
+      "region": "shikoku"
+    },
+    {
+      "id": "sanuki-ben",
+      "name": "讃岐弁",
+      "kana": "さぬきべん",
+      "romaji": "Sanuki-ben",
+      "aliases": [
+        "香川弁",
+        "かがわべん",
+        "Kagawa-ben"
+      ],
+      "prefectures": [
+        "kagawa"
+      ],
+      "region": "shikoku"
+    },
+    {
+      "id": "iyo-ben",
+      "name": "伊予弁",
+      "kana": "いよべん",
+      "romaji": "Iyo-ben",
+      "aliases": [
+        "愛媛弁",
+        "えひめべん",
+        "Ehime-ben"
+      ],
+      "prefectures": [
+        "ehime"
+      ],
+      "region": "shikoku"
+    },
+    {
+      "id": "tosa-ben",
+      "name": "土佐弁",
+      "kana": "とさべん",
+      "romaji": "Tosa-ben",
+      "aliases": [
+        "高知弁",
+        "こうちべん",
+        "Kochi-ben"
+      ],
+      "prefectures": [
+        "kochi"
+      ],
+      "region": "shikoku"
+    },
+    {
+      "id": "hakata-ben",
+      "name": "博多弁",
+      "kana": "はかたべん",
+      "romaji": "Hakata-ben",
+      "aliases": [
+        "福岡弁",
+        "ふくおかべん",
+        "Fukuoka-ben"
+      ],
+      "prefectures": [
+        "fukuoka"
+      ],
+      "region": "kyushuOkinawa"
+    },
+    {
+      "id": "saga-ben",
+      "name": "佐賀弁",
+      "kana": "さがべん",
+      "romaji": "Saga-ben",
+      "aliases": [],
+      "prefectures": [
+        "saga"
+      ],
+      "region": "kyushuOkinawa"
+    },
+    {
+      "id": "nagasaki-ben",
+      "name": "長崎弁",
+      "kana": "ながさきべん",
+      "romaji": "Nagasaki-ben",
+      "aliases": [],
+      "prefectures": [
+        "nagasaki"
+      ],
+      "region": "kyushuOkinawa"
+    },
+    {
+      "id": "kumamoto-ben",
+      "name": "熊本弁",
+      "kana": "くまもとべん",
+      "romaji": "Kumamoto-ben",
+      "aliases": [
+        "肥後弁",
+        "ひごべん",
+        "Higo-ben"
+      ],
+      "prefectures": [
+        "kumamoto"
+      ],
+      "region": "kyushuOkinawa"
+    },
+    {
+      "id": "oita-ben",
+      "name": "大分弁",
+      "kana": "おおいたべん",
+      "romaji": "Oita-ben",
+      "aliases": [
+        "豊後弁",
+        "ぶんごべん",
+        "Bungo-ben"
+      ],
+      "prefectures": [
+        "oita"
+      ],
+      "region": "kyushuOkinawa"
+    },
+    {
+      "id": "miyazaki-ben",
+      "name": "宮崎弁",
+      "kana": "みやざきべん",
+      "romaji": "Miyazaki-ben",
+      "aliases": [
+        "日向弁",
+        "ひゅうがべん",
+        "Hyuga-ben"
+      ],
+      "prefectures": [
+        "miyazaki"
+      ],
+      "region": "kyushuOkinawa"
+    },
+    {
+      "id": "kagoshima-ben",
+      "name": "鹿児島弁",
+      "kana": "かごしまべん",
+      "romaji": "Kagoshima-ben",
+      "aliases": [
+        "薩摩弁",
+        "さつまべん",
+        "Satsuma-ben"
+      ],
+      "prefectures": [
+        "kagoshima"
+      ],
+      "region": "kyushuOkinawa"
+    },
+    {
+      "id": "okinawa-hogen",
+      "name": "沖縄方言",
+      "kana": "おきなわほうげん",
+      "romaji": "Okinawa-hogen",
+      "aliases": [
+        "ウチナーヤマトグチ",
+        "Uchinaa-Yamatuguchi"
+      ],
+      "prefectures": [
+        "okinawa"
+      ],
+      "region": "kyushuOkinawa"
+    }
+  ]
+}

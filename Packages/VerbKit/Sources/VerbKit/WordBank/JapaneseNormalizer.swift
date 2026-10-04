@@ -33,7 +33,7 @@ public enum JapaneseNormalizer {
     }
 
     /// Key for comparing tag names: `key` without spaces and hyphens, without a
-    /// dialect suffix (弁, べん, ben, 方言, ことば, 言葉), romaji converted to kana,
+    /// dialect suffix (弁, べん, ben, 方言, ほうげん, hogen, ことば, 言葉), romaji converted to kana,
     /// and long vowels folded. "Osaka-ben", "osaka ben", "Ōsaka" and "おおさかべん"
     /// share one key; kanji is not converted, so "大阪弁" matches "大阪" only.
     public static func tagKey(_ text: String) -> String {
@@ -59,7 +59,7 @@ public enum JapaneseNormalizer {
 
     // MARK: - Helpers
 
-    private static let tagSuffixes = ["ことば", "方言", "言葉", "べん", "ben", "弁"]
+    private static let tagSuffixes = ["ほうげん", "ことば", "方言", "言葉", "hogen", "べん", "ben", "弁"]
 
     private static func isASCIILetter(_ character: Character) -> Bool {
         character.isASCII && character.isLetter
