@@ -11,7 +11,8 @@ enum QuizSelection {
 /// play have forms in, plus Everything and, first, Weak spots.
 struct QuizTopicSheet: View {
     let verbs: [Verb]
-    let weakSpotCount: Int
+    /// Weak pairs among the given verbs, so the count follows "Favourites only".
+    let weakSpotCount: ([Verb]) -> Int
     var onStart: ([Verb], QuizSelection) -> Void
     var onCancel: () -> Void
 
@@ -32,6 +33,22 @@ struct QuizTopicSheet: View {
 
     private var choices: [QuizTopicChoice] { QuizTopic.choices(for: quizVerbs) }
 
+    private var weakSpots: Int { weakSpotCount(quizVerbs) }
+
+    private var weakSpotsDetail: String {
+        if weakSpots > 0 { return "\(weakSpots) \(weakSpots == 1 ? "pair" : "pairs")" }
+        return favouritesOnly && weakSpotCount(verbs) > 0 ? "None in favourites" : "Answer some questions first"
+    }
+
+    /// False when narrowing the verbs has left nothing behind `value`.
+    private func isAvailable(_ value: Choice) -> Bool {
+        switch value {
+        case .weakSpots: return weakSpots > 0
+        case .everything: return true
+        case .topic(let topic): return choices.contains { $0.topic == topic }
+        }
+    }
+
     private var selection: QuizSelection {
         switch choice {
         case .weakSpots: return .weakSpots
@@ -46,9 +63,9 @@ struct QuizTopicSheet: View {
                 Section("Practise") {
                     row(
                         title: "Weak spots",
-                        detail: weakSpotCount > 0 ? "\(weakSpotCount) \(weakSpotCount == 1 ? "pair" : "pairs")" : "Answer some questions first",
+                        detail: weakSpotsDetail,
                         choice: .weakSpots,
-                        enabled: weakSpotCount > 0
+                        enabled: weakSpots > 0
                     )
                     ForEach(choices, id: \.topic) { item in
                         row(title: item.topic.title, detail: Self.formsText(item.count), choice: .topic(item.topic))
@@ -61,6 +78,9 @@ struct QuizTopicSheet: View {
                         Toggle("Favourites only (\(favouriteVerbs.count))", isOn: $favouritesOnly)
                     }
                 }
+            }
+            .onChange(of: favouritesOnly) {
+                if !isAvailable(choice) { choice = .everything }
             }
             .navigationTitle("Quiz")
             #if os(iOS)
