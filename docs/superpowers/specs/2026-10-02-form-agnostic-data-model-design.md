@@ -41,6 +41,8 @@ directly, (2) the catalogue as the typed layer the UI and quiz iterate, never gu
   the same ids again with a closure each. `FormKey` (9 cases) drives search, examples and
   the Examples sheet. Several `VerbForms` fields (`volitional`, `passive`, `causative`,
   `conditional_*`, `imperative`, `tai`) exist in Swift but no verb in the data fills them.
+  *(Update 2026-10-04: #25 now generates these eight for every verb; they are the catalogue's
+  `other` family, "More forms".)*
 - `update_data.py` derives nd, potential and auxiliary forms from base forms with
   per-feature tables (`ND_FIELDS`, `POTENTIAL_CONJUGATIONS`, `TEIRU_CONJUGATIONS`, ...) and
   exception sets (`IRREGULAR_POTENTIAL`, `NO_POTENTIAL`, `NO_TE_AUXILIARIES`). It owns
@@ -86,7 +88,7 @@ A catalogue entry carries these facets (any may be absent: a て-form has no ten
 | `register` | `short`, `polite`, `casual`, `formal` | `casual` is the んだ family; `formal` is である. |
 | `polarity` | `pos`, `neg` | |
 | `tense` | `present`, `past` | |
-| `family` | `basic`, `nd`, `potential`, `auxiliary`, `adjective`, `copula` | The quiz topic and detail-page section. A catalogue field, not an enum in Swift. |
+| `family` | `basic`, `nd`, `potential`, `auxiliary`, `other`, `adjective`, `copula` | The quiz topic and detail-page section. A catalogue field, not an enum in Swift. |
 | `grammar` | a `GrammarPoint.id` (`n-desu`, `potential`, `teiru`, `sugiru`, ...) or null | Links forms to lessons. |
 | `concept` | e.g. `polite.pos.present` | Equates forms that mean the same across classes when the storage id differs (§4.3). |
 
@@ -116,9 +118,10 @@ override.
 | `attributive` | copula | Na N | しずかな / がくせいの. |
 | `formal_pos`, `formal_neg`, `formal_past`, `formal_past_neg` | copula | Na N | である family. |
 
-New forms are catalogue entries. Reserved-but-unfilled ids (today's `volitional`,
-`passive`, ...) become catalogue entries with a `status: "planned"` flag instead of dead
-Swift properties.
+New forms are catalogue entries. Reserved-but-unfilled ids become catalogue entries with a
+`status: "planned"` flag instead of dead Swift properties. (`volitional`, `passive` and the
+rest of the `other` family were the first example; #25 filled them, so they are ordinary
+derived entries now.)
 
 ### 4.3 Shared concepts with different ids
 

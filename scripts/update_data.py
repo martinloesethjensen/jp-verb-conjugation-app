@@ -96,11 +96,9 @@ A_ROW = {"う": "わ", "く": "か", "ぐ": "が", "す": "さ", "つ": "た", "
 I_ROW = {"う": "い", "く": "き", "ぐ": "ぎ", "す": "し", "つ": "ち", "ぬ": "に", "ぶ": "び", "む": "み", "る": "り"}
 O_ROW = {"う": "お", "く": "こ", "ぐ": "ご", "す": "そ", "つ": "と", "ぬ": "の", "ぶ": "ぼ", "む": "も", "る": "ろ"}
 
-# Every field this step owns, in JSON order.
-OTHER_FORM_FIELDS = [
-    "volitional", "passive", "causative", "causative_passive",
-    "conditional_ba", "conditional_tara", "imperative", "tai",
-]
+# Every field this step owns, in JSON order. The ids come from the form catalogue;
+# IRREGULAR_OTHER_FORMS below lists its spellings in the same order.
+OTHER_FORM_FIELDS = form_catalogue.ids("verb", family="other")
 
 # Irregular verbs, spelled out: only する and くる.
 IRREGULAR_OTHER_FORMS = {

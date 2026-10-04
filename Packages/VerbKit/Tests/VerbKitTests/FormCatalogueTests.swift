@@ -7,12 +7,13 @@ final class FormCatalogueTests: XCTestCase {
     /// The quiz topic each catalogue family corresponds to.
     private let topicForFamily: [String: QuizTopic] = [
         "basic": .basic, "potential": .potential, "nd": .nDesu, "auxiliary": .auxiliaries,
+        "other": .otherForms,
     ]
 
     func testBundledCatalogueLoads() {
         XCTAssertEqual(catalogue.schema, 1)
-        XCTAssertEqual(catalogue.forms.count, 48)
-        XCTAssertEqual(catalogue.families.map(\.id), ["basic", "potential", "nd", "auxiliary"])
+        XCTAssertEqual(catalogue.forms.count, 56)
+        XCTAssertEqual(catalogue.families.map(\.id), ["basic", "potential", "nd", "auxiliary", "other"])
     }
 
     func testIdsAreUniqueAndLookupFindsThem() {
@@ -29,7 +30,7 @@ final class FormCatalogueTests: XCTestCase {
     }
 
     func testAllFormsApplyToVerbsForNow() {
-        XCTAssertEqual(catalogue.specs(for: .verb).count, 48)
+        XCTAssertEqual(catalogue.specs(for: .verb).count, 56)
         XCTAssertTrue(catalogue.specs(for: .iAdjective).isEmpty)
     }
 
@@ -62,8 +63,13 @@ final class FormCatalogueTests: XCTestCase {
     func testAvailableSkipsFormsAWordLacks() throws {
         let aru = Word(try XCTUnwrap(try RealVerbs.load().first { $0.dict == "ある" }))
         let taberu = Word(try XCTUnwrap(try RealVerbs.load().first { $0.dict == "たべる" }))
-        XCTAssertEqual(catalogue.available(in: taberu.forms, for: .verb).count, 48)
-        XCTAssertEqual(catalogue.available(in: aru.forms, for: .verb).count, 24)
+        XCTAssertEqual(catalogue.available(in: taberu.forms, for: .verb).count, 56)
+        XCTAssertEqual(catalogue.available(in: aru.forms, for: .verb).count, 28)
+        // ある has only some of the other forms: no passive, causative or imperative.
+        XCTAssertEqual(
+            catalogue.available(in: aru.forms, for: .verb, family: "other").map { $0.spec.id.rawValue },
+            ["volitional", "conditional_ba", "conditional_tara", "tai"]
+        )
         XCTAssertTrue(catalogue.available(in: aru.forms, for: .verb, family: "potential").isEmpty)
         XCTAssertEqual(catalogue.available(in: taberu.forms, for: .verb, family: "nd").count, 8)
     }

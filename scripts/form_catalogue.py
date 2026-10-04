@@ -25,6 +25,7 @@ FAMILIES = (
     ("potential", "Potential"),
     ("nd", "んです"),
     ("auxiliary", "Auxiliaries"),
+    ("other", "More forms"),
 )
 
 ROLES = ("finite", "connective", "derived")
@@ -193,6 +194,20 @@ def _build():
     forms.append(FormSpec(
         id="nagara", family="auxiliary", role="derived", name="ながら", grammar="temiru",
     ))
+
+    # More forms: each is identified by its name alone, so it is "derived". No
+    # lessons yet. ある has only some of them (update_data.py decides which).
+    for form_id, name in (
+        ("volitional", "Volitional"),
+        ("passive", "Passive"),
+        ("causative", "Causative"),
+        ("causative_passive", "Causative-passive"),
+        ("conditional_ba", "Conditional (ば)"),
+        ("conditional_tara", "Conditional (たら)"),
+        ("imperative", "Imperative"),
+        ("tai", "たい (want to)"),
+    ):
+        forms.append(FormSpec(id=form_id, family="other", role="derived", name=name))
     return forms
 
 

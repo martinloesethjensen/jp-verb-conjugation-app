@@ -71,9 +71,17 @@ class CatalogueMatchesRulesTests(unittest.TestCase):
         table = ud.TE_AUXILIARY_FIELDS + ud.STEM_AUXILIARY_FIELDS
         self.assertEqual(table, fc.ids("verb", family="auxiliary"))
 
+    def test_other_forms_table_covers_exactly_the_other_family(self):
+        self.assertEqual(ud.OTHER_FORM_FIELDS, fc.ids("verb", family="other"))
+        for spellings in ud.IRREGULAR_OTHER_FORMS.values():
+            self.assertEqual(len(spellings), len(ud.OTHER_FORM_FIELDS))
+        for kept in ud.PARTIAL_OTHER_FORMS.values():
+            self.assertTrue(kept <= set(ud.OTHER_FORM_FIELDS))
+
     def test_every_derived_form_has_a_rule(self):
         covered = (
             [name for name, _, _ in ud.ND_FIELDS] + ud.POTENTIAL_FIELDS + ud.AUXILIARY_FIELDS
+            + ud.OTHER_FORM_FIELDS
         )
         self.assertEqual(sorted(covered), sorted(fc.ids("verb", source="derived")))
 

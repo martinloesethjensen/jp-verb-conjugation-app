@@ -23,6 +23,10 @@
     {
       "id": "auxiliary",
       "title": "Auxiliaries"
+    },
+    {
+      "id": "other",
+      "title": "More forms"
     }
   ],
   "forms": [
@@ -709,6 +713,94 @@
       ],
       "source": "derived",
       "grammar": "temiru"
+    },
+    {
+      "id": "volitional",
+      "family": "other",
+      "label": "Volitional",
+      "name": "Volitional",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "passive",
+      "family": "other",
+      "label": "Passive",
+      "name": "Passive",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "causative",
+      "family": "other",
+      "label": "Causative",
+      "name": "Causative",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "causative_passive",
+      "family": "other",
+      "label": "Causative-passive",
+      "name": "Causative-passive",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "conditional_ba",
+      "family": "other",
+      "label": "Conditional (ば)",
+      "name": "Conditional (ば)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "conditional_tara",
+      "family": "other",
+      "label": "Conditional (たら)",
+      "name": "Conditional (たら)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "imperative",
+      "family": "other",
+      "label": "Imperative",
+      "name": "Imperative",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "tai",
+      "family": "other",
+      "label": "たい (want to)",
+      "name": "たい (want to)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
     }
   ]
 }
