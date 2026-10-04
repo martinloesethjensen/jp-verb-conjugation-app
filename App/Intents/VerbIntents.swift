@@ -61,7 +61,7 @@ struct ShowVerbIntent: AppIntent {
 }
 
 enum QuizTopicOption: String, AppEnum {
-    case basic, potential, nDesu, auxiliaries
+    case basic, potential, nDesu, auxiliaries, otherForms
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Topic"
     static let caseDisplayRepresentations: [QuizTopicOption: DisplayRepresentation] = [
@@ -69,6 +69,7 @@ enum QuizTopicOption: String, AppEnum {
         .potential: "Potential",
         .nDesu: "んです",
         .auxiliaries: "Auxiliaries",
+        .otherForms: "More forms",
     ]
 
     var topic: QuizTopic { QuizTopic(rawValue: rawValue) ?? .basic }

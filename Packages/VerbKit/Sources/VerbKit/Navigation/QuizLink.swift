@@ -1,7 +1,7 @@
 import Foundation
 
 /// `verbtable://quiz` starts a quiz on everything, `verbtable://quiz/<topic>` on one topic
-/// (`basic`, `potential`, `nDesu`, `auxiliaries`). Used by Siri and Shortcuts.
+/// (a `QuizTopic` raw value such as `basic` or `nDesu`). Used by Siri and Shortcuts.
 public struct QuizLink: Equatable, Sendable {
     /// `nil` means every topic.
     public var topic: QuizTopic?
