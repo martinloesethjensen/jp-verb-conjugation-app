@@ -255,7 +255,7 @@ explains its results.
   removed by identifier on delete, batched for imports and folder deletes.
   The whole domain is rebuilt only when its index version changes or the bank
   is restored from backup.
-- `WordBankEntryEntity` (an `AppEntity` with an `EntityStringQuery` backed by
+- `WordBankEntryAppEntity` (an `AppEntity` with an `EntityStringQuery` backed by
   `WordBankSearch`) lives in `App/Intents/` beside PR #24's `VerbIntents`, so
   Shortcuts can pick entries and the quick capture intent can return one.
 - **Settings › Word Bank › Show in Spotlight** (on by default). Turning it
@@ -453,7 +453,11 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
   or `WordClass`; the optional word class is the existing `WordClass`.
 - Naming: every Word Bank type is prefixed `WordBank…` (or `DialectTag`,
   `CustomTag`), never bare `Word…`, because `Word`, `WordClass`,
-  `WordExample` and `WordEntity` belong to the curated data model.
+  `WordExample` and `WordEntity` belong to the curated data model. SwiftData
+  classes end in `Entity` (`WordBankEntryEntity`); App Intents entities end in
+  `AppEntity` (`WordBankEntryAppEntity`). The app target imports VerbKit, so an
+  app type with the same name as a VerbKit type hides it (today's Siri
+  `VerbEntity` already hides VerbKit's SwiftData `VerbEntity` inside the app).
 - **Separate store:** the Word Bank models go in their own
   `ModelConfiguration` (`WordBank.sqlite` in the App Group container), inside
   the same `ModelContainer` as today. The synced verb/grammar data and the
@@ -496,7 +500,7 @@ Each ships on its own:
    route. Needs PR #16's foundations (`Word`, `FormCatalogue`) merged.
 5. **Flashcard review.**
 6. **Widget.**
-7. **Quick capture and Spotlight:** `WordBankEntryEntity`, the App Intent,
+7. **Quick capture and Spotlight:** `WordBankEntryAppEntity`, the App Intent,
    the `wordbank` Spotlight domain and its setting. Needs PR #24 merged.
 8. *(later)* iCloud sync, CSV and Anki formats, share extension, map of Japan
    by prefecture.
@@ -515,7 +519,7 @@ Each ships on its own:
   `TagManagerView`, `ImportPreviewSheet`, `FlashcardReviewView`;
   `MainTabView` gains the tab; `project.yml` declares the `.wordbank`
   document type and exported `UTType`.
-- App Intents (`App/Intents/`, with PR #24's): `WordBankEntryEntity`,
+- App Intents (`App/Intents/`, with PR #24's): `WordBankEntryAppEntity`,
   `AddToWordBankIntent`; `App/SpotlightIndexer.swift` gains the `wordbank`
   domain.
 - App: `SavedSearchesSection`, `SaveSearchSheet`, `SearchExplanationLabel`.
@@ -569,6 +573,11 @@ modifiers stay behind `#if os(iOS)`.
 Checked against the open PRs on 2026-10-03. None of them conflicts with the
 Word Bank's user data, but several change what it should build on.
 
+**Status 2026-10-04:** #16 (foundations, steps 1–2), #18, #20, #21, #23, #24
+and #25 are merged into `main`; #16 also gained an `other` family ("More
+forms") for #25's eight forms. Only #17 is still open, so Core can start from
+`main`, and milestone 7 no longer waits on anything.
+
 | PR | What it changes | Effect on the Word Bank |
 |---|---|---|
 | #16 Form-agnostic data model | `Word`, `WordClass` (promoted out of `GrammarPoint`), `FormID`, `Conjugations`, `FormCatalogue` + bundled `forms.json`; later `WordEntity` replaces `VerbEntity` | Entries get an optional `WordClass`; links use `Word.id` + `FormID`; word matching iterates all classes through the catalogue; type names avoid `Word…`; `dialects.json` sits beside `forms.json`. **Merge #16 (at least its foundations) before Core starts**, so Core uses the shared `WordClass` instead of adding a temporary copy. |
@@ -580,7 +589,8 @@ Word Bank's user data, but several change what it should build on.
 | #20, #25 Quiz kinds and more forms | `QuizQuestion`, `QuizForm`, more forms in `verbs.json` | Flashcards stay independent of the quiz model (self-graded, own attempt rows), so they're unaffected. More forms just means more surfaces to match. |
 
 Merge order that keeps rework lowest: **#16 → Word Bank Core**, with #17 and
-#24 landed before milestones 4 and 7 respectively. If #16's later steps
+#24 landed before milestones 4 and 7 respectively (as of 2026-10-04 only #17
+is outstanding). If #16's later steps
 (quiz, persistence) are still in flight, the Word Bank only needs its step 2
 types.
 
