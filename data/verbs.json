@@ -2042,7 +2042,7 @@
       "meaning": "to remember / memorize",
       "description": "A ru-verb. Drop the final る and add your ending.",
       "notes": "Means to memorize or to keep in mind. Opposite of わすれる.",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "おぼえます",
         "masu_neg": "おぼえません",
@@ -2106,7 +2106,7 @@
       "meaning": "to take (a shower)",
       "description": "A ru-verb. Drop the final る and add your ending.",
       "notes": "Used with シャワー: シャワーをあびる. Ends in びる but is a ru-verb.",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "あびます",
         "masu_neg": "あびません",
@@ -2554,7 +2554,7 @@
       "meaning": "to get tired",
       "description": "A ru-verb. Drop the final る and add your ending.",
       "notes": "Often used in the past or ている form (つかれた = I'm tired).",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "つかれます",
         "masu_neg": "つかれません",
@@ -3074,7 +3074,7 @@
       "teGroup": "tte",
       "description": "A u-verb ending in る. The て-form uses って/った.",
       "notes": "Ends in る but is a u-verb. 'Do you know?' is しっていますか; the answer 'I don't know' is しりません.",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "しります",
         "masu_neg": "しりません",
@@ -3334,7 +3334,7 @@
       "teGroup": "nde",
       "description": "A u-verb ending in ぶ. The て-form uses んで/んだ.",
       "notes": "Means to call out to or summon someone (タクシーをよぶ).",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "よびます",
         "masu_neg": "よびません",
@@ -3399,7 +3399,7 @@
       "teGroup": "tte",
       "description": "A u-verb ending in う. The て-form uses って/った.",
       "notes": "An う-ending u-verb, so the negative uses わ: あらわない.",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "あらいます",
         "masu_neg": "あらいません",
@@ -3724,7 +3724,7 @@
       "teGroup": "shite",
       "description": "A u-verb ending in す. The て-form uses して/した.",
       "notes": "Used for buttons, doors and stamps.",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "おします",
         "masu_neg": "おしません",
@@ -3789,7 +3789,7 @@
       "teGroup": "shite",
       "description": "A u-verb ending in す. The て-form uses して/した.",
       "notes": "Transitive partner of でる. Also used for mailing letters (てがみをだす).",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "だします",
         "masu_neg": "だしません",
@@ -3919,7 +3919,7 @@
       "teGroup": "tte",
       "description": "A u-verb ending in つ. The て-form uses って/った.",
       "notes": "A つ-ending u-verb with the って て-form. The state of standing is たっている.",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "たちます",
         "masu_neg": "たちません",
