@@ -36,6 +36,6 @@ public struct ManifestSignatureVerifier: Sendable {
     /// `scripts/sign_manifest.py keygen` and pastes the public key here (see
     /// docs/security/data-signing.md). While it is empty every sync fails closed.
     public static let production = ManifestSignatureVerifier(base64Keys: [
-        // "<base64 public key>",
+        "rratyJ5yBhlonBpzW/WGUSKL+nw4lHLn7iIcVl2RDH0=",
     ])
 }
