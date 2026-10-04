@@ -38,6 +38,10 @@ struct VerbDetailView: View {
                 .padding()
             }
             .navigationTitle(verb.dict)
+            #if os(iOS)
+            // The header already shows the verb large; a large title would repeat it.
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
                     SpeakButton(text: verb.jishoQuery)
