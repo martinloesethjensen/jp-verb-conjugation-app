@@ -13,7 +13,7 @@ final class QuizGeneratorTests: XCTestCase {
     func testCapsAtThePoolSize() throws {
         let taberu = try XCTUnwrap(try verbs().first { $0.dict == "たべる" })
         XCTAssertEqual(buildQuestions(verbs: [taberu], topics: [.basic], count: 100).count, 9)
-        XCTAssertEqual(buildQuestions(verbs: [taberu], topics: all, count: 100).count, 48)
+        XCTAssertEqual(buildQuestions(verbs: [taberu], topics: all, count: 100).count, 56)
     }
 
     func testOnlyTheChosenTopicsAreAsked() throws {
@@ -28,7 +28,7 @@ final class QuizGeneratorTests: XCTestCase {
         let aru = try XCTUnwrap(try verbs().first { $0.dict == "ある" })
         XCTAssertTrue(buildQuestions(verbs: [aru], topics: [.potential], count: 10).isEmpty)
         let questions = buildQuestions(verbs: [aru], topics: all, count: 100)
-        XCTAssertEqual(questions.count, 24)
+        XCTAssertEqual(questions.count, 28)
         XCTAssertFalse(questions.contains { $0.form.topic == .potential })
     }
 
@@ -71,11 +71,29 @@ final class QuizGeneratorTests: XCTestCase {
         }
     }
 
-    func testIdentifyHasExactlyOneRightAnswerPerString() throws {
+    func testOnlyThePassiveAndPotentialEverShareAString() throws {
         for verb in try verbs() {
-            let strings = QuizForm.available(in: verb.forms, topics: all).map(\.value)
-            XCTAssertEqual(Set(strings).count, strings.count, "\(verb.dict) has two forms with the same string")
+            let forms = QuizForm.available(in: verb.forms, topics: all)
+            for (_, group) in Dictionary(grouping: forms, by: \.value) where group.count > 1 {
+                XCTAssertEqual(Set(group.map(\.form.id)), ["potential", "passive"], "\(verb.dict): \(group.map(\.value))")
+            }
         }
+    }
+
+    func testIdentifyHasExactlyOneRightAnswerPerString() throws {
+        for question in buildQuestions(verbs: try verbs(), topics: all, count: 5000, kinds: [.identify]) {
+            let sameString = QuizForm.available(in: question.verb.forms, topics: all).filter { $0.value == question.formString }
+            XCTAssertEqual(sameString.count, 1, "\(question.verb.dict) \(question.formString)")
+        }
+    }
+
+    func testAFormSharingItsStringIsStillAskedToConjugate() throws {
+        let taberu = try XCTUnwrap(try verbs().first { $0.dict == "たべる" })
+        XCTAssertEqual(taberu.forms.passive, taberu.forms.potential)
+        let passive = try XCTUnwrap(QuizForm.all.first { $0.id == "passive" })
+        let asked = buildQuestions(pairs: [(taberu, passive)], among: [taberu], count: 10, kinds: [.conjugate, .identify])
+        XCTAssertEqual(asked.map(\.kind), [.conjugate])
+        XCTAssertTrue(buildQuestions(pairs: [(taberu, passive)], among: [taberu], count: 10, kinds: [.identify]).isEmpty)
     }
 
     func testBothKindsAppearByDefault() throws {
@@ -93,15 +111,17 @@ final class QuizGeneratorTests: XCTestCase {
         }
     }
 
-    func testAFormSharingItsStringWithAnotherIsNeverAsked() throws {
+    func testAFormSharingItsStringWithAnotherIsOnlyAskedToConjugate() throws {
         var taberu = try XCTUnwrap(try verbs().first { $0.dict == "たべる" })
-        taberu.forms.masuNeg = taberu.forms.masuPos // two forms, one string: two right answers
+        taberu.forms.masuNeg = taberu.forms.masuPos // two forms, one string: two right labels
         let questions = buildQuestions(verbs: [taberu], topics: [.basic], count: 100)
-        XCTAssertEqual(questions.count, 7)
-        XCTAssertFalse(questions.contains { ["masu_pos", "masu_neg"].contains($0.form.id) })
+        XCTAssertEqual(questions.count, 9)
+        for question in questions where ["masu_pos", "masu_neg"].contains(question.form.id) {
+            XCTAssertEqual(question.kind, .conjugate)
+        }
     }
 
-    func testEverythingDrawsOnAllFourTopics() throws {
+    func testEverythingDrawsOnEveryTopic() throws {
         let questions = buildQuestions(verbs: try verbs(), topics: all, count: 2000)
         XCTAssertEqual(Set(questions.map(\.form.topic)), Set(QuizTopic.allCases))
     }
@@ -176,16 +196,17 @@ final class QuizGeneratorTests: XCTestCase {
         XCTAssertTrue(questions[0].choices.contains(try XCTUnwrap(masuPos.value(in: taberu.forms))))
     }
 
-    func testPairsSkipAStringCollision() throws {
+    func testPairsAskAStringCollisionOnlyToConjugate() throws {
         let verb = Verb(
             type: .ru, label: "Ru-verb", dict: "x", kanji: nil, meaning: "m", description: "d",
             forms: VerbForms(masuPos: "same", masuNeg: "n", masuPast: "same", masuPastNeg: "pn", te: "t", shortPos: "sp", shortNeg: "sn", shortPast: "spa", shortPastNeg: "spn"),
             examples: []
         )
-        let questions = buildQuestions(
-            pairs: pairs(verb, ["masu_pos", "masu_neg", "masu_past"]), among: [verb], count: 5, kinds: [.conjugate]
-        )
-        XCTAssertEqual(questions.map(\.form.id), ["masu_neg"])
+        let ids = ["masu_pos", "masu_neg", "masu_past"]
+        let conjugate = buildQuestions(pairs: pairs(verb, ids), among: [verb], count: 5, kinds: [.conjugate])
+        XCTAssertEqual(conjugate.map(\.form.id), ids)
+        let identify = buildQuestions(pairs: pairs(verb, ids), among: [verb], count: 5, kinds: [.identify])
+        XCTAssertEqual(identify.map(\.form.id), ["masu_neg"])
     }
 
     // MARK: fill-in

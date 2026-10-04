@@ -59,7 +59,15 @@
         "yasui_polite": "しやすいです",
         "nikui": "しにくい",
         "nikui_polite": "しにくいです",
-        "nagara": "しながら"
+        "nagara": "しながら",
+        "volitional": "しよう",
+        "passive": "される",
+        "causative": "させる",
+        "causative_passive": "させられる",
+        "conditional_ba": "すれば",
+        "conditional_tara": "したら",
+        "imperative": "しろ",
+        "tai": "したい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちべんきょうします。", "en": "I study every day." },
@@ -132,7 +140,15 @@
         "yasui_polite": "きやすいです",
         "nikui": "きにくい",
         "nikui_polite": "きにくいです",
-        "nagara": "きながら"
+        "nagara": "きながら",
+        "volitional": "こよう",
+        "passive": "こられる",
+        "causative": "こさせる",
+        "causative_passive": "こさせられる",
+        "conditional_ba": "くれば",
+        "conditional_tara": "きたら",
+        "imperative": "こい",
+        "tai": "きたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "バスがもうすぐきます。", "en": "The bus is coming soon." },
@@ -205,7 +221,15 @@
         "yasui_polite": "たべやすいです",
         "nikui": "たべにくい",
         "nikui_polite": "たべにくいです",
-        "nagara": "たべながら"
+        "nagara": "たべながら",
+        "volitional": "たべよう",
+        "passive": "たべられる",
+        "causative": "たべさせる",
+        "causative_passive": "たべさせられる",
+        "conditional_ba": "たべれば",
+        "conditional_tara": "たべたら",
+        "imperative": "たべろ",
+        "tai": "たべたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "あさごはんをたべます。", "en": "I eat breakfast." },
@@ -280,7 +304,15 @@
         "yasui_polite": "みやすいです",
         "nikui": "みにくい",
         "nikui_polite": "みにくいです",
-        "nagara": "みながら"
+        "nagara": "みながら",
+        "volitional": "みよう",
+        "passive": "みられる",
+        "causative": "みさせる",
+        "causative_passive": "みさせられる",
+        "conditional_ba": "みれば",
+        "conditional_tara": "みたら",
+        "imperative": "みろ",
+        "tai": "みたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちテレビをみます。", "en": "I watch TV every day." },
@@ -352,7 +384,15 @@
         "yasui_polite": "ねやすいです",
         "nikui": "ねにくい",
         "nikui_polite": "ねにくいです",
-        "nagara": "ねながら"
+        "nagara": "ねながら",
+        "volitional": "ねよう",
+        "passive": "ねられる",
+        "causative": "ねさせる",
+        "causative_passive": "ねさせられる",
+        "conditional_ba": "ねれば",
+        "conditional_tara": "ねたら",
+        "imperative": "ねろ",
+        "tai": "ねたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "じゅういちじにねます。", "en": "I go to sleep at eleven." },
@@ -423,7 +463,15 @@
         "yasui_polite": "おきやすいです",
         "nikui": "おきにくい",
         "nikui_polite": "おきにくいです",
-        "nagara": "おきながら"
+        "nagara": "おきながら",
+        "volitional": "おきよう",
+        "passive": "おきられる",
+        "causative": "おきさせる",
+        "causative_passive": "おきさせられる",
+        "conditional_ba": "おきれば",
+        "conditional_tara": "おきたら",
+        "imperative": "おきろ",
+        "tai": "おきたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しちじにおきます。", "en": "I wake up at seven." },
@@ -493,7 +541,15 @@
         "yasui_polite": "みせやすいです",
         "nikui": "みせにくい",
         "nikui_polite": "みせにくいです",
-        "nagara": "みせながら"
+        "nagara": "みせながら",
+        "volitional": "みせよう",
+        "passive": "みせられる",
+        "causative": "みせさせる",
+        "causative_passive": "みせさせられる",
+        "conditional_ba": "みせれば",
+        "conditional_tara": "みせたら",
+        "imperative": "みせろ",
+        "tai": "みせたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しゃしんをみせます。", "en": "I'll show you a photo." },
@@ -561,7 +617,15 @@
         "yasui_polite": "かりやすいです",
         "nikui": "かりにくい",
         "nikui_polite": "かりにくいです",
-        "nagara": "かりながら"
+        "nagara": "かりながら",
+        "volitional": "かりよう",
+        "passive": "かりられる",
+        "causative": "かりさせる",
+        "causative_passive": "かりさせられる",
+        "conditional_ba": "かりれば",
+        "conditional_tara": "かりたら",
+        "imperative": "かりろ",
+        "tai": "かりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "としょかんで本をかります。", "en": "I borrow books from the library." },
@@ -630,7 +694,15 @@
         "yasui_polite": "かいやすいです",
         "nikui": "かいにくい",
         "nikui_polite": "かいにくいです",
-        "nagara": "かいながら"
+        "nagara": "かいながら",
+        "volitional": "かおう",
+        "passive": "かわれる",
+        "causative": "かわせる",
+        "causative_passive": "かわせられる",
+        "conditional_ba": "かえば",
+        "conditional_tara": "かったら",
+        "imperative": "かえ",
+        "tai": "かいたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "スーパーでたまごをかいます。", "en": "I buy eggs at the supermarket." },
@@ -700,7 +772,15 @@
         "yasui_polite": "あいやすいです",
         "nikui": "あいにくい",
         "nikui_polite": "あいにくいです",
-        "nagara": "あいながら"
+        "nagara": "あいながら",
+        "volitional": "あおう",
+        "passive": "あわれる",
+        "causative": "あわせる",
+        "causative_passive": "あわせられる",
+        "conditional_ba": "あえば",
+        "conditional_tara": "あったら",
+        "imperative": "あえ",
+        "tai": "あいたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "えきでともだちにあいます。", "en": "I'm meeting my friend at the station." },
@@ -768,7 +848,15 @@
         "yasui_polite": "まちやすいです",
         "nikui": "まちにくい",
         "nikui_polite": "まちにくいです",
-        "nagara": "まちながら"
+        "nagara": "まちながら",
+        "volitional": "まとう",
+        "passive": "またれる",
+        "causative": "またせる",
+        "causative_passive": "またせられる",
+        "conditional_ba": "まてば",
+        "conditional_tara": "まったら",
+        "imperative": "まて",
+        "tai": "まちたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "えきのまえでまちます。", "en": "I'll wait in front of the station." },
@@ -836,7 +924,15 @@
         "yasui_polite": "とりやすいです",
         "nikui": "とりにくい",
         "nikui_polite": "とりにくいです",
-        "nagara": "とりながら"
+        "nagara": "とりながら",
+        "volitional": "とろう",
+        "passive": "とられる",
+        "causative": "とらせる",
+        "causative_passive": "とらせられる",
+        "conditional_ba": "とれば",
+        "conditional_tara": "とったら",
+        "imperative": "とれ",
+        "tai": "とりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しゃしんをとります。", "en": "I'll take a photo." },
@@ -880,7 +976,11 @@
         "yasui_polite": "ありやすいです",
         "nikui": "ありにくい",
         "nikui_polite": "ありにくいです",
-        "nagara": "ありながら"
+        "nagara": "ありながら",
+        "volitional": "あろう",
+        "conditional_ba": "あれば",
+        "conditional_tara": "あったら",
+        "tai": "ありたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "つくえのうえにほんがあります。", "en": "There is a book on the desk." },
@@ -949,7 +1049,15 @@
         "yasui_polite": "もちやすいです",
         "nikui": "もちにくい",
         "nikui_polite": "もちにくいです",
-        "nagara": "もちながら"
+        "nagara": "もちながら",
+        "volitional": "もとう",
+        "passive": "もたれる",
+        "causative": "もたせる",
+        "causative_passive": "もたせられる",
+        "conditional_ba": "もてば",
+        "conditional_tara": "もったら",
+        "imperative": "もて",
+        "tai": "もちたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "かばんをもちます。", "en": "I'll carry the bag." },
@@ -1017,7 +1125,15 @@
         "yasui_polite": "よみやすいです",
         "nikui": "よみにくい",
         "nikui_polite": "よみにくいです",
-        "nagara": "よみながら"
+        "nagara": "よみながら",
+        "volitional": "よもう",
+        "passive": "よまれる",
+        "causative": "よませる",
+        "causative_passive": "よませられる",
+        "conditional_ba": "よめば",
+        "conditional_tara": "よんだら",
+        "imperative": "よめ",
+        "tai": "よみたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちしんぶんをよみます。", "en": "I read the newspaper every day." },
@@ -1086,7 +1202,15 @@
         "yasui_polite": "のみやすいです",
         "nikui": "のみにくい",
         "nikui_polite": "のみにくいです",
-        "nagara": "のみながら"
+        "nagara": "のみながら",
+        "volitional": "のもう",
+        "passive": "のまれる",
+        "causative": "のませる",
+        "causative_passive": "のませられる",
+        "conditional_ba": "のめば",
+        "conditional_tara": "のんだら",
+        "imperative": "のめ",
+        "tai": "のみたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいあさコーヒーをのみます。", "en": "I drink coffee every morning." },
@@ -1156,7 +1280,15 @@
         "yasui_polite": "あそびやすいです",
         "nikui": "あそびにくい",
         "nikui_polite": "あそびにくいです",
-        "nagara": "あそびながら"
+        "nagara": "あそびながら",
+        "volitional": "あそぼう",
+        "passive": "あそばれる",
+        "causative": "あそばせる",
+        "causative_passive": "あそばせられる",
+        "conditional_ba": "あそべば",
+        "conditional_tara": "あそんだら",
+        "imperative": "あそべ",
+        "tai": "あそびたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "こうえんであそびます。", "en": "I play at the park." },
@@ -1224,7 +1356,15 @@
         "yasui_polite": "しにやすいです",
         "nikui": "しににくい",
         "nikui_polite": "しににくいです",
-        "nagara": "しにながら"
+        "nagara": "しにながら",
+        "volitional": "しのう",
+        "passive": "しなれる",
+        "causative": "しなせる",
+        "causative_passive": "しなせられる",
+        "conditional_ba": "しねば",
+        "conditional_tara": "しんだら",
+        "imperative": "しね",
+        "tai": "しにたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "むしはふゆにしにます。", "en": "Insects die in winter." },
@@ -1290,7 +1430,15 @@
         "yasui_polite": "かきやすいです",
         "nikui": "かきにくい",
         "nikui_polite": "かきにくいです",
-        "nagara": "かきながら"
+        "nagara": "かきながら",
+        "volitional": "かこう",
+        "passive": "かかれる",
+        "causative": "かかせる",
+        "causative_passive": "かかせられる",
+        "conditional_ba": "かけば",
+        "conditional_tara": "かいたら",
+        "imperative": "かけ",
+        "tai": "かきたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "てがみをかきます。", "en": "I write a letter." },
@@ -1359,7 +1507,15 @@
         "yasui_polite": "ききやすいです",
         "nikui": "ききにくい",
         "nikui_polite": "ききにくいです",
-        "nagara": "ききながら"
+        "nagara": "ききながら",
+        "volitional": "きこう",
+        "passive": "きかれる",
+        "causative": "きかせる",
+        "causative_passive": "きかせられる",
+        "conditional_ba": "きけば",
+        "conditional_tara": "きいたら",
+        "imperative": "きけ",
+        "tai": "ききたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちおんがくをききます。", "en": "I listen to music every day." },
@@ -1427,7 +1583,15 @@
         "yasui_polite": "いきやすいです",
         "nikui": "いきにくい",
         "nikui_polite": "いきにくいです",
-        "nagara": "いきながら"
+        "nagara": "いきながら",
+        "volitional": "いこう",
+        "passive": "いかれる",
+        "causative": "いかせる",
+        "causative_passive": "いかせられる",
+        "conditional_ba": "いけば",
+        "conditional_tara": "いったら",
+        "imperative": "いけ",
+        "tai": "いきたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "がっこうにいきます。", "en": "I go to school." },
@@ -1499,7 +1663,15 @@
         "yasui_polite": "いそぎやすいです",
         "nikui": "いそぎにくい",
         "nikui_polite": "いそぎにくいです",
-        "nagara": "いそぎながら"
+        "nagara": "いそぎながら",
+        "volitional": "いそごう",
+        "passive": "いそがれる",
+        "causative": "いそがせる",
+        "causative_passive": "いそがせられる",
+        "conditional_ba": "いそげば",
+        "conditional_tara": "いそいだら",
+        "imperative": "いそげ",
+        "tai": "いそぎたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "じかんがないので、いそぎます。", "en": "I don't have time, so I'll hurry." },
@@ -1566,7 +1738,15 @@
         "yasui_polite": "およぎやすいです",
         "nikui": "およぎにくい",
         "nikui_polite": "およぎにくいです",
-        "nagara": "およぎながら"
+        "nagara": "およぎながら",
+        "volitional": "およごう",
+        "passive": "およがれる",
+        "causative": "およがせる",
+        "causative_passive": "およがせられる",
+        "conditional_ba": "およげば",
+        "conditional_tara": "およいだら",
+        "imperative": "およげ",
+        "tai": "およぎたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "うみでおよぎます。", "en": "I swim in the sea." },
@@ -1633,7 +1813,15 @@
         "yasui_polite": "はなしやすいです",
         "nikui": "はなしにくい",
         "nikui_polite": "はなしにくいです",
-        "nagara": "はなしながら"
+        "nagara": "はなしながら",
+        "volitional": "はなそう",
+        "passive": "はなされる",
+        "causative": "はなさせる",
+        "causative_passive": "はなさせられる",
+        "conditional_ba": "はなせば",
+        "conditional_tara": "はなしたら",
+        "imperative": "はなせ",
+        "tai": "はなしたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "にほんごをすこしはなします。", "en": "I speak a little Japanese." },
@@ -1703,7 +1891,15 @@
         "yasui_polite": "かえしやすいです",
         "nikui": "かえしにくい",
         "nikui_polite": "かえしにくいです",
-        "nagara": "かえしながら"
+        "nagara": "かえしながら",
+        "volitional": "かえそう",
+        "passive": "かえされる",
+        "causative": "かえさせる",
+        "causative_passive": "かえさせられる",
+        "conditional_ba": "かえせば",
+        "conditional_tara": "かえしたら",
+        "imperative": "かえせ",
+        "tai": "かえしたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "あしたかえします。", "en": "I'll return it tomorrow." },
@@ -1771,7 +1967,15 @@
         "yasui_polite": "おしえやすいです",
         "nikui": "おしえにくい",
         "nikui_polite": "おしえにくいです",
-        "nagara": "おしえながら"
+        "nagara": "おしえながら",
+        "volitional": "おしえよう",
+        "passive": "おしえられる",
+        "causative": "おしえさせる",
+        "causative_passive": "おしえさせられる",
+        "conditional_ba": "おしえれば",
+        "conditional_tara": "おしえたら",
+        "imperative": "おしえろ",
+        "tai": "おしえたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "せんせいがにほんごをおしえます。", "en": "The teacher teaches Japanese." },
@@ -1835,7 +2039,15 @@
         "yasui_polite": "あけやすいです",
         "nikui": "あけにくい",
         "nikui_polite": "あけにくいです",
-        "nagara": "あけながら"
+        "nagara": "あけながら",
+        "volitional": "あけよう",
+        "passive": "あけられる",
+        "causative": "あけさせる",
+        "causative_passive": "あけさせられる",
+        "conditional_ba": "あければ",
+        "conditional_tara": "あけたら",
+        "imperative": "あけろ",
+        "tai": "あけたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まどをあけます。", "en": "I open the window." },
@@ -1899,7 +2111,15 @@
         "yasui_polite": "しめやすいです",
         "nikui": "しめにくい",
         "nikui_polite": "しめにくいです",
-        "nagara": "しめながら"
+        "nagara": "しめながら",
+        "volitional": "しめよう",
+        "passive": "しめられる",
+        "causative": "しめさせる",
+        "causative_passive": "しめさせられる",
+        "conditional_ba": "しめれば",
+        "conditional_tara": "しめたら",
+        "imperative": "しめろ",
+        "tai": "しめたい"
       },
       "examples": [
         { "form": "te", "jp": "ドアをしめてください。", "en": "Please close the door." },
@@ -1963,7 +2183,15 @@
         "yasui_polite": "つけやすいです",
         "nikui": "つけにくい",
         "nikui_polite": "つけにくいです",
-        "nagara": "つけながら"
+        "nagara": "つけながら",
+        "volitional": "つけよう",
+        "passive": "つけられる",
+        "causative": "つけさせる",
+        "causative_passive": "つけさせられる",
+        "conditional_ba": "つければ",
+        "conditional_tara": "つけたら",
+        "imperative": "つけろ",
+        "tai": "つけたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "へやのでんきをつけます。", "en": "I turn on the light in the room." },
@@ -2027,7 +2255,15 @@
         "yasui_polite": "わすれやすいです",
         "nikui": "わすれにくい",
         "nikui_polite": "わすれにくいです",
-        "nagara": "わすれながら"
+        "nagara": "わすれながら",
+        "volitional": "わすれよう",
+        "passive": "わすれられる",
+        "causative": "わすれさせる",
+        "causative_passive": "わすれさせられる",
+        "conditional_ba": "わすれれば",
+        "conditional_tara": "わすれたら",
+        "imperative": "わすれろ",
+        "tai": "わすれたい"
       },
       "examples": [
         { "form": "masu_past", "jp": "かさをわすれました。", "en": "I forgot my umbrella." },
@@ -2091,7 +2327,15 @@
         "yasui_polite": "おぼえやすいです",
         "nikui": "おぼえにくい",
         "nikui_polite": "おぼえにくいです",
-        "nagara": "おぼえながら"
+        "nagara": "おぼえながら",
+        "volitional": "おぼえよう",
+        "passive": "おぼえられる",
+        "causative": "おぼえさせる",
+        "causative_passive": "おぼえさせられる",
+        "conditional_ba": "おぼえれば",
+        "conditional_tara": "おぼえたら",
+        "imperative": "おぼえろ",
+        "tai": "おぼえたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちたんごをおぼえます。", "en": "I memorize words every day." },
@@ -2155,7 +2399,15 @@
         "yasui_polite": "あびやすいです",
         "nikui": "あびにくい",
         "nikui_polite": "あびにくいです",
-        "nagara": "あびながら"
+        "nagara": "あびながら",
+        "volitional": "あびよう",
+        "passive": "あびられる",
+        "causative": "あびさせる",
+        "causative_passive": "あびさせられる",
+        "conditional_ba": "あびれば",
+        "conditional_tara": "あびたら",
+        "imperative": "あびろ",
+        "tai": "あびたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "あさシャワーをあびます。", "en": "I take a shower in the morning." },
@@ -2219,7 +2471,15 @@
         "yasui_polite": "でやすいです",
         "nikui": "でにくい",
         "nikui_polite": "でにくいです",
-        "nagara": "でながら"
+        "nagara": "でながら",
+        "volitional": "でよう",
+        "passive": "でられる",
+        "causative": "でさせる",
+        "causative_passive": "でさせられる",
+        "conditional_ba": "でれば",
+        "conditional_tara": "でたら",
+        "imperative": "でろ",
+        "tai": "でたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "７じにいえをでます。", "en": "I leave the house at seven." },
@@ -2283,7 +2543,15 @@
         "yasui_polite": "いれやすいです",
         "nikui": "いれにくい",
         "nikui_polite": "いれにくいです",
-        "nagara": "いれながら"
+        "nagara": "いれながら",
+        "volitional": "いれよう",
+        "passive": "いれられる",
+        "causative": "いれさせる",
+        "causative_passive": "いれさせられる",
+        "conditional_ba": "いれれば",
+        "conditional_tara": "いれたら",
+        "imperative": "いれろ",
+        "tai": "いれたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "コーヒーにさとうをいれます。", "en": "I put sugar in my coffee." },
@@ -2347,7 +2615,15 @@
         "yasui_polite": "はじめやすいです",
         "nikui": "はじめにくい",
         "nikui_polite": "はじめにくいです",
-        "nagara": "はじめながら"
+        "nagara": "はじめながら",
+        "volitional": "はじめよう",
+        "passive": "はじめられる",
+        "causative": "はじめさせる",
+        "causative_passive": "はじめさせられる",
+        "conditional_ba": "はじめれば",
+        "conditional_tara": "はじめたら",
+        "imperative": "はじめろ",
+        "tai": "はじめたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "しごとをはじめます。", "en": "I begin work." },
@@ -2411,7 +2687,15 @@
         "yasui_polite": "かんがえやすいです",
         "nikui": "かんがえにくい",
         "nikui_polite": "かんがえにくいです",
-        "nagara": "かんがえながら"
+        "nagara": "かんがえながら",
+        "volitional": "かんがえよう",
+        "passive": "かんがえられる",
+        "causative": "かんがえさせる",
+        "causative_passive": "かんがえさせられる",
+        "conditional_ba": "かんがえれば",
+        "conditional_tara": "かんがえたら",
+        "imperative": "かんがえろ",
+        "tai": "かんがえたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "よくかんがえます。", "en": "I think it over carefully." },
@@ -2475,7 +2759,15 @@
         "yasui_polite": "すてやすいです",
         "nikui": "すてにくい",
         "nikui_polite": "すてにくいです",
-        "nagara": "すてながら"
+        "nagara": "すてながら",
+        "volitional": "すてよう",
+        "passive": "すてられる",
+        "causative": "すてさせる",
+        "causative_passive": "すてさせられる",
+        "conditional_ba": "すてれば",
+        "conditional_tara": "すてたら",
+        "imperative": "すてろ",
+        "tai": "すてたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "ごみをすてます。", "en": "I throw away the rubbish." },
@@ -2539,7 +2831,15 @@
         "yasui_polite": "きやすいです",
         "nikui": "きにくい",
         "nikui_polite": "きにくいです",
-        "nagara": "きながら"
+        "nagara": "きながら",
+        "volitional": "きよう",
+        "passive": "きられる",
+        "causative": "きさせる",
+        "causative_passive": "きさせられる",
+        "conditional_ba": "きれば",
+        "conditional_tara": "きたら",
+        "imperative": "きろ",
+        "tai": "きたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "あついのでシャツをきます。", "en": "It is hot, so I wear a shirt." },
@@ -2603,7 +2903,15 @@
         "yasui_polite": "つかれやすいです",
         "nikui": "つかれにくい",
         "nikui_polite": "つかれにくいです",
-        "nagara": "つかれながら"
+        "nagara": "つかれながら",
+        "volitional": "つかれよう",
+        "passive": "つかれられる",
+        "causative": "つかれさせる",
+        "causative_passive": "つかれさせられる",
+        "conditional_ba": "つかれれば",
+        "conditional_tara": "つかれたら",
+        "imperative": "つかれろ",
+        "tai": "つかれたい"
       },
       "examples": [
         { "form": "short_past", "jp": "きょうはつかれた。", "en": "I got tired today." },
@@ -2668,7 +2976,15 @@
         "yasui_polite": "あるきやすいです",
         "nikui": "あるきにくい",
         "nikui_polite": "あるきにくいです",
-        "nagara": "あるきながら"
+        "nagara": "あるきながら",
+        "volitional": "あるこう",
+        "passive": "あるかれる",
+        "causative": "あるかせる",
+        "causative_passive": "あるかせられる",
+        "conditional_ba": "あるけば",
+        "conditional_tara": "あるいたら",
+        "imperative": "あるけ",
+        "tai": "あるきたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "えきまであるきます。", "en": "I walk to the station." },
@@ -2733,7 +3049,15 @@
         "yasui_polite": "はたらきやすいです",
         "nikui": "はたらきにくい",
         "nikui_polite": "はたらきにくいです",
-        "nagara": "はたらきながら"
+        "nagara": "はたらきながら",
+        "volitional": "はたらこう",
+        "passive": "はたらかれる",
+        "causative": "はたらかせる",
+        "causative_passive": "はたらかせられる",
+        "conditional_ba": "はたらけば",
+        "conditional_tara": "はたらいたら",
+        "imperative": "はたらけ",
+        "tai": "はたらきたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "ぎんこうではたらきます。", "en": "I work at a bank." },
@@ -2798,7 +3122,15 @@
         "yasui_polite": "はいりやすいです",
         "nikui": "はいりにくい",
         "nikui_polite": "はいりにくいです",
-        "nagara": "はいりながら"
+        "nagara": "はいりながら",
+        "volitional": "はいろう",
+        "passive": "はいられる",
+        "causative": "はいらせる",
+        "causative_passive": "はいらせられる",
+        "conditional_ba": "はいれば",
+        "conditional_tara": "はいったら",
+        "imperative": "はいれ",
+        "tai": "はいりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "へやにはいります。", "en": "I enter the room." },
@@ -2863,7 +3195,15 @@
         "yasui_polite": "かえりやすいです",
         "nikui": "かえりにくい",
         "nikui_polite": "かえりにくいです",
-        "nagara": "かえりながら"
+        "nagara": "かえりながら",
+        "volitional": "かえろう",
+        "passive": "かえられる",
+        "causative": "かえらせる",
+        "causative_passive": "かえらせられる",
+        "conditional_ba": "かえれば",
+        "conditional_tara": "かえったら",
+        "imperative": "かえれ",
+        "tai": "かえりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいばんしちじにうちへかえります。", "en": "I go home at seven every night." },
@@ -2928,7 +3268,15 @@
         "yasui_polite": "のりやすいです",
         "nikui": "のりにくい",
         "nikui_polite": "のりにくいです",
-        "nagara": "のりながら"
+        "nagara": "のりながら",
+        "volitional": "のろう",
+        "passive": "のられる",
+        "causative": "のらせる",
+        "causative_passive": "のらせられる",
+        "conditional_ba": "のれば",
+        "conditional_tara": "のったら",
+        "imperative": "のれ",
+        "tai": "のりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいあさでんしゃにのります。", "en": "I ride the train every morning." },
@@ -2993,7 +3341,15 @@
         "yasui_polite": "つくりやすいです",
         "nikui": "つくりにくい",
         "nikui_polite": "つくりにくいです",
-        "nagara": "つくりながら"
+        "nagara": "つくりながら",
+        "volitional": "つくろう",
+        "passive": "つくられる",
+        "causative": "つくらせる",
+        "causative_passive": "つくらせられる",
+        "conditional_ba": "つくれば",
+        "conditional_tara": "つくったら",
+        "imperative": "つくれ",
+        "tai": "つくりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "ばんごはんをつくります。", "en": "I make dinner." },
@@ -3058,7 +3414,15 @@
         "yasui_polite": "わかりやすいです",
         "nikui": "わかりにくい",
         "nikui_polite": "わかりにくいです",
-        "nagara": "わかりながら"
+        "nagara": "わかりながら",
+        "volitional": "わかろう",
+        "passive": "わかられる",
+        "causative": "わからせる",
+        "causative_passive": "わからせられる",
+        "conditional_ba": "わかれば",
+        "conditional_tara": "わかったら",
+        "imperative": "わかれ",
+        "tai": "わかりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "にほんごがわかります。", "en": "I understand Japanese." },
@@ -3123,7 +3487,15 @@
         "yasui_polite": "しりやすいです",
         "nikui": "しりにくい",
         "nikui_polite": "しりにくいです",
-        "nagara": "しりながら"
+        "nagara": "しりながら",
+        "volitional": "しろう",
+        "passive": "しられる",
+        "causative": "しらせる",
+        "causative_passive": "しらせられる",
+        "conditional_ba": "しれば",
+        "conditional_tara": "しったら",
+        "imperative": "しれ",
+        "tai": "しりたい"
       },
       "examples": [
         { "form": "masu_neg", "jp": "そのことはしりません。", "en": "I don't know about that." },
@@ -3188,7 +3560,15 @@
         "yasui_polite": "すわりやすいです",
         "nikui": "すわりにくい",
         "nikui_polite": "すわりにくいです",
-        "nagara": "すわりながら"
+        "nagara": "すわりながら",
+        "volitional": "すわろう",
+        "passive": "すわられる",
+        "causative": "すわらせる",
+        "causative_passive": "すわらせられる",
+        "conditional_ba": "すわれば",
+        "conditional_tara": "すわったら",
+        "imperative": "すわれ",
+        "tai": "すわりたい"
       },
       "examples": [
         { "form": "te", "jp": "ここにすわってください。", "en": "Please sit here." },
@@ -3253,7 +3633,15 @@
         "yasui_polite": "やすみやすいです",
         "nikui": "やすみにくい",
         "nikui_polite": "やすみにくいです",
-        "nagara": "やすみながら"
+        "nagara": "やすみながら",
+        "volitional": "やすもう",
+        "passive": "やすまれる",
+        "causative": "やすませる",
+        "causative_passive": "やすませられる",
+        "conditional_ba": "やすめば",
+        "conditional_tara": "やすんだら",
+        "imperative": "やすめ",
+        "tai": "やすみたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "にちようびはやすみます。", "en": "I rest on Sundays." },
@@ -3318,7 +3706,15 @@
         "yasui_polite": "すみやすいです",
         "nikui": "すみにくい",
         "nikui_polite": "すみにくいです",
-        "nagara": "すみながら"
+        "nagara": "すみながら",
+        "volitional": "すもう",
+        "passive": "すまれる",
+        "causative": "すませる",
+        "causative_passive": "すませられる",
+        "conditional_ba": "すめば",
+        "conditional_tara": "すんだら",
+        "imperative": "すめ",
+        "tai": "すみたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "らいねんからおおさかにすみます。", "en": "I will live in Osaka from next year." },
@@ -3383,7 +3779,15 @@
         "yasui_polite": "よびやすいです",
         "nikui": "よびにくい",
         "nikui_polite": "よびにくいです",
-        "nagara": "よびながら"
+        "nagara": "よびながら",
+        "volitional": "よぼう",
+        "passive": "よばれる",
+        "causative": "よばせる",
+        "causative_passive": "よばせられる",
+        "conditional_ba": "よべば",
+        "conditional_tara": "よんだら",
+        "imperative": "よべ",
+        "tai": "よびたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "タクシーをよびます。", "en": "I call a taxi." },
@@ -3448,7 +3852,15 @@
         "yasui_polite": "あらいやすいです",
         "nikui": "あらいにくい",
         "nikui_polite": "あらいにくいです",
-        "nagara": "あらいながら"
+        "nagara": "あらいながら",
+        "volitional": "あらおう",
+        "passive": "あらわれる",
+        "causative": "あらわせる",
+        "causative_passive": "あらわせられる",
+        "conditional_ba": "あらえば",
+        "conditional_tara": "あらったら",
+        "imperative": "あらえ",
+        "tai": "あらいたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいばんてをあらいます。", "en": "I wash my hands every night." },
@@ -3513,7 +3925,15 @@
         "yasui_polite": "つかいやすいです",
         "nikui": "つかいにくい",
         "nikui_polite": "つかいにくいです",
-        "nagara": "つかいながら"
+        "nagara": "つかいながら",
+        "volitional": "つかおう",
+        "passive": "つかわれる",
+        "causative": "つかわせる",
+        "causative_passive": "つかわせられる",
+        "conditional_ba": "つかえば",
+        "conditional_tara": "つかったら",
+        "imperative": "つかえ",
+        "tai": "つかいたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちスマホをつかいます。", "en": "I use my phone every day." },
@@ -3578,7 +3998,15 @@
         "yasui_polite": "うたいやすいです",
         "nikui": "うたいにくい",
         "nikui_polite": "うたいにくいです",
-        "nagara": "うたいながら"
+        "nagara": "うたいながら",
+        "volitional": "うたおう",
+        "passive": "うたわれる",
+        "causative": "うたわせる",
+        "causative_passive": "うたわせられる",
+        "conditional_ba": "うたえば",
+        "conditional_tara": "うたったら",
+        "imperative": "うたえ",
+        "tai": "うたいたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "カラオケでうたをうたいます。", "en": "I sing at karaoke." },
@@ -3643,7 +4071,15 @@
         "yasui_polite": "ならいやすいです",
         "nikui": "ならいにくい",
         "nikui_polite": "ならいにくいです",
-        "nagara": "ならいながら"
+        "nagara": "ならいながら",
+        "volitional": "ならおう",
+        "passive": "ならわれる",
+        "causative": "ならわせる",
+        "causative_passive": "ならわせられる",
+        "conditional_ba": "ならえば",
+        "conditional_tara": "ならったら",
+        "imperative": "ならえ",
+        "tai": "ならいたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "せんせいにピアノをならいます。", "en": "I learn piano from a teacher." },
@@ -3708,7 +4144,15 @@
         "yasui_polite": "いいやすいです",
         "nikui": "いいにくい",
         "nikui_polite": "いいにくいです",
-        "nagara": "いいながら"
+        "nagara": "いいながら",
+        "volitional": "いおう",
+        "passive": "いわれる",
+        "causative": "いわせる",
+        "causative_passive": "いわせられる",
+        "conditional_ba": "いえば",
+        "conditional_tara": "いったら",
+        "imperative": "いえ",
+        "tai": "いいたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "せんせいにそういいます。", "en": "I say so to the teacher." },
@@ -3773,7 +4217,15 @@
         "yasui_polite": "おしやすいです",
         "nikui": "おしにくい",
         "nikui_polite": "おしにくいです",
-        "nagara": "おしながら"
+        "nagara": "おしながら",
+        "volitional": "おそう",
+        "passive": "おされる",
+        "causative": "おさせる",
+        "causative_passive": "おさせられる",
+        "conditional_ba": "おせば",
+        "conditional_tara": "おしたら",
+        "imperative": "おせ",
+        "tai": "おしたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "ボタンをおします。", "en": "I press the button." },
@@ -3838,7 +4290,15 @@
         "yasui_polite": "だしやすいです",
         "nikui": "だしにくい",
         "nikui_polite": "だしにくいです",
-        "nagara": "だしながら"
+        "nagara": "だしながら",
+        "volitional": "だそう",
+        "passive": "だされる",
+        "causative": "ださせる",
+        "causative_passive": "ださせられる",
+        "conditional_ba": "だせば",
+        "conditional_tara": "だしたら",
+        "imperative": "だせ",
+        "tai": "だしたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "てがみをだします。", "en": "I send a letter." },
@@ -3903,7 +4363,15 @@
         "yasui_polite": "けしやすいです",
         "nikui": "けしにくい",
         "nikui_polite": "けしにくいです",
-        "nagara": "けしながら"
+        "nagara": "けしながら",
+        "volitional": "けそう",
+        "passive": "けされる",
+        "causative": "けさせる",
+        "causative_passive": "けさせられる",
+        "conditional_ba": "けせば",
+        "conditional_tara": "けしたら",
+        "imperative": "けせ",
+        "tai": "けしたい"
       },
       "examples": [
         { "form": "te", "jp": "でんきをけしてください。", "en": "Please turn off the light." },
@@ -3968,7 +4436,15 @@
         "yasui_polite": "たちやすいです",
         "nikui": "たちにくい",
         "nikui_polite": "たちにくいです",
-        "nagara": "たちながら"
+        "nagara": "たちながら",
+        "volitional": "たとう",
+        "passive": "たたれる",
+        "causative": "たたせる",
+        "causative_passive": "たたせられる",
+        "conditional_ba": "たてば",
+        "conditional_tara": "たったら",
+        "imperative": "たて",
+        "tai": "たちたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "えきのまえにたちます。", "en": "I stand in front of the station." },
@@ -4033,7 +4509,15 @@
         "yasui_polite": "はしりやすいです",
         "nikui": "はしりにくい",
         "nikui_polite": "はしりにくいです",
-        "nagara": "はしりながら"
+        "nagara": "はしりながら",
+        "volitional": "はしろう",
+        "passive": "はしられる",
+        "causative": "はしらせる",
+        "causative_passive": "はしらせられる",
+        "conditional_ba": "はしれば",
+        "conditional_tara": "はしったら",
+        "imperative": "はしれ",
+        "tai": "はしりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいあさこうえんをはしります。", "en": "I run in the park every morning." },
@@ -4098,7 +4582,15 @@
         "yasui_polite": "おわりやすいです",
         "nikui": "おわりにくい",
         "nikui_polite": "おわりにくいです",
-        "nagara": "おわりながら"
+        "nagara": "おわりながら",
+        "volitional": "おわろう",
+        "passive": "おわられる",
+        "causative": "おわらせる",
+        "causative_passive": "おわらせられる",
+        "conditional_ba": "おわれば",
+        "conditional_tara": "おわったら",
+        "imperative": "おわれ",
+        "tai": "おわりたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "じゅぎょうは３じにおわります。", "en": "Class ends at three." },
@@ -4163,7 +4655,15 @@
         "yasui_polite": "ぬぎやすいです",
         "nikui": "ぬぎにくい",
         "nikui_polite": "ぬぎにくいです",
-        "nagara": "ぬぎながら"
+        "nagara": "ぬぎながら",
+        "volitional": "ぬごう",
+        "passive": "ぬがれる",
+        "causative": "ぬがせる",
+        "causative_passive": "ぬがせられる",
+        "conditional_ba": "ぬげば",
+        "conditional_tara": "ぬいだら",
+        "imperative": "ぬげ",
+        "tai": "ぬぎたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "いえではくつをぬぎます。", "en": "I take off my shoes at home." },
@@ -4228,7 +4728,15 @@
         "yasui_polite": "もらいやすいです",
         "nikui": "もらいにくい",
         "nikui_polite": "もらいにくいです",
-        "nagara": "もらいながら"
+        "nagara": "もらいながら",
+        "volitional": "もらおう",
+        "passive": "もらわれる",
+        "causative": "もらわせる",
+        "causative_passive": "もらわせられる",
+        "conditional_ba": "もらえば",
+        "conditional_tara": "もらったら",
+        "imperative": "もらえ",
+        "tai": "もらいたい"
       },
       "examples": [
         { "form": "masu_pos", "jp": "ともだちにプレゼントをもらいます。", "en": "I receive a present from a friend." },

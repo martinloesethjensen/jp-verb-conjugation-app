@@ -721,3 +721,52 @@ class RunTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OtherFormsTests(unittest.TestCase):
+    def forms(self, dict_form, vtype, short_past):
+        return ud.other_forms({"type": vtype, "dict": dict_form, "forms": {"short_past": short_past}})
+
+    def test_ru_verb(self):
+        self.assertEqual(self.forms("たべる", "ru", "たべた"), {
+            "volitional": "たべよう", "passive": "たべられる", "causative": "たべさせる",
+            "causative_passive": "たべさせられる", "conditional_ba": "たべれば",
+            "conditional_tara": "たべたら", "imperative": "たべろ", "tai": "たべたい",
+        })
+
+    def test_u_verbs(self):
+        got = self.forms("のむ", "u", "のんだ")
+        self.assertEqual(
+            [got[f] for f in ud.OTHER_FORM_FIELDS],
+            ["のもう", "のまれる", "のませる", "のませられる", "のめば", "のんだら", "のめ", "のみたい"],
+        )
+        got = self.forms("かう", "u", "かった")
+        self.assertEqual(got["passive"], "かわれる")
+        self.assertEqual(got["volitional"], "かおう")
+        self.assertEqual(got["conditional_ba"], "かえば")
+        got = self.forms("いく", "u", "いった")
+        self.assertEqual((got["conditional_tara"], got["imperative"]), ("いったら", "いけ"))
+
+    def test_irregular_verbs(self):
+        self.assertEqual(self.forms("する", "irr.", "した")["causative_passive"], "させられる")
+        self.assertEqual(self.forms("くる", "irr.", "きた")["imperative"], "こい")
+        self.assertEqual(self.forms("くる", "irr.", "きた")["conditional_tara"], "きたら")
+
+    def test_aru_only_has_some(self):
+        self.assertEqual(self.forms("ある", "u", "あった"), {
+            "volitional": "あろう", "conditional_ba": "あれば", "conditional_tara": "あったら", "tai": "ありたい",
+        })
+
+    def test_unknown_class_or_missing_past_fails(self):
+        with self.assertRaises(ValueError):
+            self.forms("たべる", "weird", "たべた")
+        with self.assertRaises(ValueError):
+            ud.other_forms({"type": "ru", "dict": "たべる", "forms": {}})
+        with self.assertRaises(ValueError):
+            self.forms("べんきょうする", "irr.", "した")
+
+    def test_apply_is_idempotent_and_removes_stale_fields(self):
+        doc = {"verbs": [{"type": "u", "dict": "ある", "forms": {"short_past": "あった", "passive": "x"}}]}
+        self.assertTrue(ud.apply_other_forms(doc))
+        self.assertNotIn("passive", doc["verbs"][0]["forms"])
+        self.assertFalse(ud.apply_other_forms(doc))
