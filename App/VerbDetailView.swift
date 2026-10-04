@@ -5,6 +5,7 @@ struct VerbDetailView: View {
     let verb: Verb
     var onExamples: () -> Void
     var onQuiz: () -> Void
+    @ScaledMetric(relativeTo: .caption) private var dotSize: CGFloat = 8
 
     private var accent: Color {
         verb.teGroup?.accentColor ?? verb.type.accentColor
@@ -75,7 +76,7 @@ struct VerbDetailView: View {
                     Text(teGroup.rawValue)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Circle().fill(teGroup.accentColor).frame(width: 8, height: 8)
+                    Circle().fill(teGroup.accentColor).frame(width: dotSize, height: dotSize)
                         .accessibilityHidden(true)
                 }
             }

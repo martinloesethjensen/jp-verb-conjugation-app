@@ -17,8 +17,7 @@ struct FormCell: View {
                 Text(form)
             }
         }
-        // Wrap rather than shrink: long forms stay at the reader's text size.
-        .lineLimit(2)
+        // Wrap rather than shrink or truncate: long forms stay whole at the reader's text size.
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
