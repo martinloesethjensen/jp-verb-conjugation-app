@@ -1839,7 +1839,7 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "まどをあけます。", "en": "I open the window." },
-        { "form": "short_neg", "jp": "まだドアをあけない。", "en": "I haven't opened the door yet." }
+        { "form": "short_neg", "jp": "まだドアをあけない。", "en": "I'm not opening the door yet." }
       ]
     },
     {
@@ -2095,7 +2095,7 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "まいにちたんごをおぼえます。", "en": "I memorize words every day." },
-        { "form": "short_past_neg", "jp": "なまえをおぼえなかった。", "en": "I didn't remember the name." }
+        { "form": "short_past_neg", "jp": "なまえをおぼえなかった。", "en": "I didn't memorize the name." }
       ]
     },
     {
@@ -3126,7 +3126,7 @@
         "nagara": "しりながら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "かれのなまえをしります。", "en": "I know his name." },
+        { "form": "masu_neg", "jp": "そのことはしりません。", "en": "I don't know about that." },
         { "form": "short_neg", "jp": "ぜんぜんしらない。", "en": "I don't know at all." }
       ]
     },
@@ -3321,8 +3321,8 @@
         "nagara": "すみながら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "おおさかにすみます。", "en": "I live in Osaka." },
-        { "form": "short_past", "jp": "まえはきょうとにすんだ。", "en": "I used to live in Kyoto." }
+        { "form": "masu_pos", "jp": "らいねんからおおさかにすみます。", "en": "I will live in Osaka from next year." },
+        { "form": "te", "jp": "いまはきょうとにすんでいます。", "en": "I live in Kyoto now." }
       ]
     },
     {
