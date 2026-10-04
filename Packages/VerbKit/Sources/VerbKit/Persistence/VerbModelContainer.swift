@@ -8,22 +8,44 @@ public enum VerbModelContainerError: Error {
 public enum VerbModelContainer {
     public static let appGroupIdentifier = "group.dev.martinloeseth.jpverbconjugation"
 
-    /// The real, on-disk, App Group-shared store — used by the app and,
-    /// later, the widget/Shortcuts extension.
+    /// The synced data and quiz history: VerbKit.sqlite, unchanged since before the Word Bank.
+    static let verbModels: [any PersistentModel.Type] = [
+        VerbEntity.self, GrammarEntity.self, FuriganaEntity.self, QuizAttemptEntity.self,
+    ]
+
+    /// The user's Word Bank: its own file, WordBank.sqlite, so a data re-sync can never touch it.
+    static let wordBankModels: [any PersistentModel.Type] = [
+        WordBankEntryEntity.self, WordBankFolderEntity.self, DialectTagEntity.self, CustomTagEntity.self,
+    ]
+
+    public static let wordBankSchema = Schema(wordBankModels)
+
+    private static let schema = Schema(verbModels + wordBankModels)
+
+    /// The real, on-disk, App Group-shared store used by the app, the widgets and
+    /// the Siri intents.
     public static func make() throws -> ModelContainer {
-        let schema = Schema([VerbEntity.self, GrammarEntity.self, FuriganaEntity.self, QuizAttemptEntity.self])
         guard let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
             throw VerbModelContainerError.appGroupUnavailable
         }
-        let storeURL = groupURL.appendingPathComponent("VerbKit.sqlite")
-        let configuration = ModelConfiguration(schema: schema, url: storeURL)
-        return try ModelContainer(for: schema, configurations: [configuration])
+        return try make(directory: groupURL)
     }
 
-    /// An in-memory store for tests and previews — never touches disk.
+    /// Both stores in `directory`: VerbKit.sqlite and WordBank.sqlite.
+    static func make(directory: URL) throws -> ModelContainer {
+        let verbs = ModelConfiguration(
+            "VerbKit", schema: Schema(verbModels), url: directory.appendingPathComponent("VerbKit.sqlite")
+        )
+        let wordBank = ModelConfiguration(
+            "WordBank", schema: wordBankSchema, url: directory.appendingPathComponent("WordBank.sqlite")
+        )
+        return try ModelContainer(for: schema, configurations: [verbs, wordBank])
+    }
+
+    /// An in-memory store for tests and previews; never touches disk.
     public static func makeInMemory() throws -> ModelContainer {
-        let schema = Schema([VerbEntity.self, GrammarEntity.self, FuriganaEntity.self, QuizAttemptEntity.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-        return try ModelContainer(for: schema, configurations: [configuration])
+        let verbs = ModelConfiguration("VerbKit", schema: Schema(verbModels), isStoredInMemoryOnly: true)
+        let wordBank = ModelConfiguration("WordBank", schema: wordBankSchema, isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, configurations: [verbs, wordBank])
     }
 }
