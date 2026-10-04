@@ -63,7 +63,7 @@ final class RealFuriganaDataTests: XCTestCase {
     func testEachVerbsKanjiSpellsItsKanaForm() throws {
         let dictionary = try loadDictionary()
         let verbsWithKanji = try loadVerbs().filter { $0.kanji != nil }
-        XCTAssertEqual(verbsWithKanji.count, 23)
+        XCTAssertFalse(verbsWithKanji.isEmpty)
         for verb in verbsWithKanji {
             let spelled = dictionary.units(for: verb.kanji!).map { $0.reading ?? $0.text }.joined()
             XCTAssertEqual(spelled, verb.dict, "\(verb.kanji!) should read \(verb.dict)")

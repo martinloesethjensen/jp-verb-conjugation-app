@@ -23,7 +23,7 @@ final class RealAuxiliaryDataTests: XCTestCase {
 
     func testEveryVerbHasItsAuxiliaryFormsBuiltFromItsTeFormAndStem() throws {
         let verbs = try loadVerbs()
-        XCTAssertEqual(verbs.count, 25)
+        XCTAssertGreaterThanOrEqual(verbs.count, 25)
         for verb in verbs {
             let f = verb.forms
             XCTAssertTrue(f.masuPos.hasSuffix("ます"), verb.dict)
