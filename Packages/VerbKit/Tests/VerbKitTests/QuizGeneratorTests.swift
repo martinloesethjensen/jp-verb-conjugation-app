@@ -196,16 +196,17 @@ final class QuizGeneratorTests: XCTestCase {
         XCTAssertTrue(questions[0].choices.contains(try XCTUnwrap(masuPos.value(in: taberu.forms))))
     }
 
-    func testPairsSkipAStringCollision() throws {
+    func testPairsAskAStringCollisionOnlyToConjugate() throws {
         let verb = Verb(
             type: .ru, label: "Ru-verb", dict: "x", kanji: nil, meaning: "m", description: "d",
             forms: VerbForms(masuPos: "same", masuNeg: "n", masuPast: "same", masuPastNeg: "pn", te: "t", shortPos: "sp", shortNeg: "sn", shortPast: "spa", shortPastNeg: "spn"),
             examples: []
         )
-        let questions = buildQuestions(
-            pairs: pairs(verb, ["masu_pos", "masu_neg", "masu_past"]), among: [verb], count: 5, kinds: [.conjugate]
-        )
-        XCTAssertEqual(questions.map(\.form.id), ["masu_neg"])
+        let ids = ["masu_pos", "masu_neg", "masu_past"]
+        let conjugate = buildQuestions(pairs: pairs(verb, ids), among: [verb], count: 5, kinds: [.conjugate])
+        XCTAssertEqual(conjugate.map(\.form.id), ids)
+        let identify = buildQuestions(pairs: pairs(verb, ids), among: [verb], count: 5, kinds: [.identify])
+        XCTAssertEqual(identify.map(\.form.id), ["masu_neg"])
     }
 
     // MARK: fill-in
