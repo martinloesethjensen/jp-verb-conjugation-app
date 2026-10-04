@@ -93,7 +93,10 @@ public struct GitHubVerbFetcher: VerbDataFetching {
     /// The manifest bytes and their decoded refs/entries, only if the signature checks out.
     private func fetchVerifiedManifest() async throws -> (data: Data, file: ManifestFile) {
         let manifestData = try await fetchData(from: manifestBaseURL.appendingPathComponent("manifest.json"))
-        let signatureData = try await fetchData(from: manifestBaseURL.appendingPathComponent("manifest.sig"))
+        // A missing signature (404) is an answer about the data, not a network problem.
+        let signatureData = try await fetchData(
+            from: manifestBaseURL.appendingPathComponent("manifest.sig"), notFound: .untrusted
+        )
         guard let text = String(data: signatureData, encoding: .utf8),
               let signature = Data(base64Encoded: text.trimmingCharacters(in: .whitespacesAndNewlines)),
               verifier.isValid(signature: signature, for: manifestData)
@@ -125,13 +128,14 @@ public struct GitHubVerbFetcher: VerbDataFetching {
     /// The data files are under 100 KB; anything near this is not one of ours.
     static let maxResponseBytes = 5 * 1024 * 1024
 
-    private func fetchData(from url: URL) async throws -> Data {
+    /// `notFound` is thrown for a 404; any other non-2xx status is `.serverUnreachable`.
+    private func fetchData(from url: URL, notFound: VerbSyncError = .serverUnreachable) async throws -> Data {
         var data = Data()
         do {
             let (bytes, response) = try await session.bytes(from: url)
-            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                throw VerbSyncError.serverUnreachable
-            }
+            guard let http = response as? HTTPURLResponse else { throw VerbSyncError.serverUnreachable }
+            if http.statusCode == 404 { throw notFound }
+            guard (200..<300).contains(http.statusCode) else { throw VerbSyncError.serverUnreachable }
             if response.expectedContentLength > Int64(Self.maxResponseBytes) {
                 throw VerbSyncError.malformedData
             }

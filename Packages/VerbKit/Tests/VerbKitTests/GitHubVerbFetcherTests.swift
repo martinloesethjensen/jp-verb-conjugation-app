@@ -222,8 +222,23 @@ final class GitHubVerbFetcherTests: XCTestCase {
         do {
             _ = try await makeFetcher().fetchManifest()
             XCTFail("expected a failure")
+        } catch VerbSyncError.untrusted {
+            // expected: the server answered, there is just no signature to trust
+        }
+    }
+
+    func testAnUnreachableSignatureIsStillUnreachable() async throws {
+        StubURLProtocol.handler = { request in
+            if request.url!.lastPathComponent == "manifest.sig" {
+                return (HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!, Data())
+            }
+            return stubOK(request, Data(#"{"version": "1.0.0", "sha256": "abc"}"#.utf8))
+        }
+        do {
+            _ = try await makeFetcher().fetchManifest()
+            XCTFail("expected a failure")
         } catch VerbSyncError.serverUnreachable {
-            // expected: nothing is trusted without a signature
+            // expected: a server error is not a verdict on the data
         }
     }
 
