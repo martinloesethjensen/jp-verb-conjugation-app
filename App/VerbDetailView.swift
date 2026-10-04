@@ -42,8 +42,10 @@ struct VerbDetailView: View {
             }
             .navigationTitle(verb.dict)
             #if os(iOS)
-            // The header already shows the verb large; a large title would repeat it.
+            // The header already shows the verb large, and the toolbar leaves no room for an
+            // inline title. The title stays set for the back button and VoiceOver.
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(removing: .title)
             #endif
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
