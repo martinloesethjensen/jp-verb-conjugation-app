@@ -27,7 +27,10 @@ struct RootView: View {
     /// What a link opens: a verb or lesson page, or a quiz (from Siri and Shortcuts).
     private func open(_ url: URL) {
         let quizLink = QuizLink(url: url)
-        let route = Route(url: url)
+        // A link from outside the app must not dismiss anything for a page that doesn't exist.
+        let route = Route(url: url).flatMap { route in
+            route.resolve(verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints) == nil ? nil : route
+        }
         guard quizLink != nil || route != nil else { return }
         // Anything presented over the list would hide the page the link opens.
         showingExamples = false

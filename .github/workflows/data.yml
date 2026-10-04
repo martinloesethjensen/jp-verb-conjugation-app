@@ -1,0 +1,28 @@
+name: Data
+
+# Catches an unsigned, stale or tampered data/ before apps see it.
+on:
+  push:
+    branches: [main]
+    paths: ["data/**", "scripts/**", "Packages/VerbKit/Sources/VerbKit/Data/ManifestSignatureVerifier.swift"]
+  pull_request:
+    paths: ["data/**", "scripts/**", "Packages/VerbKit/Sources/VerbKit/Data/ManifestSignatureVerifier.swift"]
+
+permissions:
+  contents: read
+
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install cryptography
+      - name: Script tests
+        run: python3 -m unittest discover -s scripts
+      - name: Data is generated and valid
+        run: python3 scripts/update_data.py --check
+      - name: Manifest is signed by the key the app trusts
+        run: python3 scripts/sign_manifest.py verify

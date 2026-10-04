@@ -7,4 +7,7 @@ DerivedData/
 
 # macOS
 .DS_Store
+
+# Signing keys must never be committed
+*.key
 __pycache__/
