@@ -3,6 +3,7 @@ import VerbKit
 
 struct VerbRow: View {
     let verb: Verb
+    @ScaledMetric(relativeTo: .title3) private var dotSize: CGFloat = 10
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -14,9 +15,13 @@ struct VerbRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    if let group = verb.teGroup {
+                        Circle().fill(group.accentColor).frame(width: dotSize, height: dotSize)
+                            .accessibilityHidden(true)
+                    }
                     Text(verb.dict)
                         .font(.title3.weight(.bold))
-                        .foregroundStyle(verb.teGroup?.accentColor ?? verb.type.accentColor)
+                        .foregroundStyle(.primary)
                     if let kanji = verb.kanji {
                         JapaneseText(kanji)
                             .font(.subheadline)

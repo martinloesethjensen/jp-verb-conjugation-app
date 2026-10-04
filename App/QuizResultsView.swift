@@ -12,6 +12,9 @@ struct QuizResultsView: View {
         return Int((Double(viewModel.score) / Double(viewModel.questions.count) * 100).rounded())
     }
 
+    @ScaledMetric(relativeTo: .largeTitle) private var emojiSize: CGFloat = 56
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 44
+
     private var emoji: String {
         switch percentage {
         case 100: return "🏆"
@@ -25,10 +28,10 @@ struct QuizResultsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Text(emoji).font(.system(size: 56))
+                Text(emoji).font(.system(size: emojiSize))
                 Text("Quiz Complete!").font(.title2.weight(.bold))
                 Text("\(viewModel.score)/\(viewModel.questions.count)")
-                    .font(.system(size: 44, weight: .heavy))
+                    .font(.system(size: scoreSize, weight: .heavy))
                     .foregroundStyle(percentage >= 60 ? .green : .orange)
                 Text("\(percentage)% correct").foregroundStyle(.secondary)
 

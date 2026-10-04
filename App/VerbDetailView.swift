@@ -5,6 +5,7 @@ struct VerbDetailView: View {
     let verb: Verb
     var onExamples: () -> Void
     var onQuiz: () -> Void
+    @ScaledMetric(relativeTo: .caption) private var dotSize: CGFloat = 8
 
     private var accent: Color {
         verb.teGroup?.accentColor ?? verb.type.accentColor
@@ -27,12 +28,12 @@ struct VerbDetailView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     header
                     actions
-                    if let notes = verb.notes {
-                        notesBox(notes)
-                    }
                     JapaneseText(verb.description)
                         .font(.body)
                     formGroups
+                    if let notes = verb.notes {
+                        notesBox(notes)
+                    }
                 }
                 .padding()
             }
@@ -74,15 +75,16 @@ struct VerbDetailView: View {
                 if let teGroup = verb.teGroup {
                     Text(teGroup.rawValue)
                         .font(.caption)
-                        .foregroundStyle(teGroup.accentColor)
+                        .foregroundStyle(.secondary)
+                    Circle().fill(teGroup.accentColor).frame(width: dotSize, height: dotSize)
+                        .accessibilityHidden(true)
                 }
             }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(verb.dict).font(.system(size: 34, weight: .heavy)).foregroundStyle(accent)
+                Text(verb.dict).font(.largeTitle.weight(.heavy)).foregroundStyle(.primary)
                 if let kanji = verb.kanji {
                     JapaneseText(kanji).font(.title2).foregroundStyle(.secondary)
                 }
-                SpeakButton(text: verb.jishoQuery)
             }
             Text(verb.meaning).font(.headline).foregroundStyle(.secondary).italic()
         }
@@ -91,7 +93,7 @@ struct VerbDetailView: View {
     private var actions: some View {
         Button("Test this verb", systemImage: "gamecontroller", action: onQuiz)
             .buttonStyle(.glassProminent)
-            .controlSize(.small)
+            .controlSize(.large)
             .tint(accent)
             .foregroundStyle(Color.black.opacity(0.85))
     }
