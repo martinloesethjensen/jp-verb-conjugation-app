@@ -11,7 +11,10 @@ let package = Package(
         .library(name: "VerbKit", targets: ["VerbKit"])
     ],
     targets: [
-        .target(name: "VerbKit"),
+        .target(
+            name: "VerbKit",
+            resources: [.copy("Resources/forms.json")]
+        ),
         .testTarget(
             name: "VerbKitTests",
             dependencies: ["VerbKit"],
