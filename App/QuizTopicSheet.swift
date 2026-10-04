@@ -113,9 +113,10 @@ struct QuizTopicSheet: View {
                 Image(systemName: choice == value ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(choice == value ? Color.accentColor : Color.secondary)
             }
+            // On the label, so the gap between title and detail is tappable too.
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
-        .contentShape(Rectangle())
     }
 }
