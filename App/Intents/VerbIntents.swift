@@ -12,9 +12,9 @@ enum IntentData {
     }
 }
 
-struct VerbEntity: AppEntity {
+struct VerbAppEntity: AppEntity {
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Verb"
-    static let defaultQuery = VerbEntityQuery()
+    static let defaultQuery = VerbAppEntityQuery()
 
     var id: String   // Verb.id (the dictionary form)
     var title: String
@@ -31,15 +31,15 @@ struct VerbEntity: AppEntity {
     }
 }
 
-struct VerbEntityQuery: EntityStringQuery {
-    func entities(for identifiers: [String]) async throws -> [VerbEntity] {
-        await IntentData.verbs().filter { identifiers.contains($0.id) }.map(VerbEntity.init)
+struct VerbAppEntityQuery: EntityStringQuery {
+    func entities(for identifiers: [String]) async throws -> [VerbAppEntity] {
+        await IntentData.verbs().filter { identifiers.contains($0.id) }.map(VerbAppEntity.init)
     }
-    func suggestedEntities() async throws -> [VerbEntity] {
-        await IntentData.verbs().map(VerbEntity.init)
+    func suggestedEntities() async throws -> [VerbAppEntity] {
+        await IntentData.verbs().map(VerbAppEntity.init)
     }
-    func entities(matching string: String) async throws -> [VerbEntity] {
-        await IntentData.verbs().filter { matchesSearch($0, query: string) }.map(VerbEntity.init)
+    func entities(matching string: String) async throws -> [VerbAppEntity] {
+        await IntentData.verbs().filter { matchesSearch($0, query: string) }.map(VerbAppEntity.init)
     }
 }
 
@@ -49,7 +49,7 @@ struct ShowVerbIntent: AppIntent {
     static let description = IntentDescription("Opens a verb's conjugation table.")
 
     @Parameter(title: "Verb")
-    var verb: VerbEntity
+    var verb: VerbAppEntity
 
     static var parameterSummary: some ParameterSummary {
         Summary("Show \(\.$verb)")
