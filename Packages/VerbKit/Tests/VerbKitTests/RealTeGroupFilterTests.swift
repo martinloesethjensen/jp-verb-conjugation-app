@@ -13,14 +13,21 @@ final class RealTeGroupFilterTests: XCTestCase {
 
     func testEachGroupFiltersToItsVerbs() throws {
         let verbs = try loadVerbs()
-        let counts = Dictionary(uniqueKeysWithValues: TeGroup.allCases.map { group in
-            (group, verbs.filter { matchesTeGroup($0, filter: group) }.count)
-        })
-        XCTAssertEqual(counts[.tte], 6)
-        XCTAssertEqual(counts[.nde], 4)
-        XCTAssertEqual(counts[.ite], 3)
-        XCTAssertEqual(counts[.ide], 2)
-        XCTAssertEqual(counts[.shite], 2)
+        // A u-verb's group follows its last kana (いく is filed under its ending too),
+        // so the expectation is derived rather than a count that every new verb breaks.
+        let byEnding: [Character: TeGroup] = [
+            "う": .tte, "つ": .tte, "る": .tte, "む": .nde, "ぶ": .nde, "ぬ": .nde,
+            "く": .ite, "ぐ": .ide, "す": .shite,
+        ]
+        for verb in verbs where verb.type == .u {
+            let expected = try XCTUnwrap(byEnding[try XCTUnwrap(verb.dict.last)], verb.dict)
+            for group in TeGroup.allCases {
+                XCTAssertEqual(matchesTeGroup(verb, filter: group), group == expected, "\(verb.dict) \(group)")
+            }
+        }
+        for group in TeGroup.allCases {
+            XCTAssertFalse(verbs.filter { matchesTeGroup($0, filter: group) }.isEmpty, "\(group) has no verbs")
+        }
         XCTAssertEqual(verbs.filter { matchesTeGroup($0, filter: nil) }.count, verbs.count)
     }
 
