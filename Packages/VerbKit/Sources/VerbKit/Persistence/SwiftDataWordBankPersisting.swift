@@ -23,7 +23,12 @@ public final class SwiftDataWordBankPersisting: WordBankPersisting {
         let customTags = try modelContext.fetch(FetchDescriptor<CustomTagEntity>())
             .map { $0.toValue() }
             .sorted { $0.name < $1.name }
-        return WordBankSnapshot(entries: entries, folders: folders, dialectTags: dialectTags, customTags: customTags)
+        let smartFolders = try modelContext.fetch(FetchDescriptor<WordBankSmartFolderEntity>())
+            .map { $0.toValue() }
+            .sorted { ($0.sortOrder, $0.name) < ($1.sortOrder, $1.name) }
+        return WordBankSnapshot(
+            entries: entries, folders: folders, dialectTags: dialectTags, customTags: customTags, smartFolders: smartFolders
+        )
     }
 
     public func upsert(entry: WordBankEntryValue) throws {
@@ -89,6 +94,25 @@ public final class SwiftDataWordBankPersisting: WordBankPersisting {
         }
         for id in customTagIDs {
             if let row = try fetch(CustomTagEntity.self, id: id) { modelContext.delete(row) }
+        }
+        try modelContext.save()
+    }
+
+    public func upsert(smartFolder: WordBankSmartFolderValue) throws {
+        let id = smartFolder.id
+        if let row = try modelContext.fetch(FetchDescriptor(predicate: #Predicate<WordBankSmartFolderEntity> { $0.id == id })).first {
+            row.update(from: smartFolder)
+        } else {
+            modelContext.insert(WordBankSmartFolderEntity(smartFolder))
+        }
+        try modelContext.save()
+    }
+
+    public func delete(smartFolderIDs: [UUID]) throws {
+        for id in smartFolderIDs {
+            if let row = try modelContext.fetch(FetchDescriptor(predicate: #Predicate<WordBankSmartFolderEntity> { $0.id == id })).first {
+                modelContext.delete(row)
+            }
         }
         try modelContext.save()
     }

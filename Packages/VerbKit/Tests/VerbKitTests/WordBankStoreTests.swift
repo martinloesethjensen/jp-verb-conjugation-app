@@ -40,6 +40,12 @@ final class WordBankStoreTests: XCTestCase {
             snapshot.dialectTags.removeAll { dialectTagIDs.contains($0.id) }
             snapshot.customTags.removeAll { customTagIDs.contains($0.id) }
         }
+        func upsert(smartFolder: WordBankSmartFolderValue) throws {
+            try write()
+            snapshot.smartFolders.removeAll { $0.id == smartFolder.id }
+            snapshot.smartFolders.append(smartFolder)
+        }
+        func delete(smartFolderIDs: [UUID]) throws { try write(); snapshot.smartFolders.removeAll { smartFolderIDs.contains($0.id) } }
     }
 
     private var clock = Date(timeIntervalSince1970: 1_000)
@@ -236,6 +242,65 @@ final class WordBankStoreTests: XCTestCase {
         XCTAssertEqual(store.entries.first?.dialectTagIDs, [])
         XCTAssertEqual(store.customTags, [])
         XCTAssertEqual(store.dialectTags, [])
+    }
+
+    // MARK: smart folders
+
+    func testSmartFolderCreateRenameAndDuplicateNames() throws {
+        let kansai = try store.createDialectTag(DialectTagValue(name: "関西弁", region: .kansai))
+        let food = try store.createCustomTag(named: "food", color: .orange)
+        let folder = try store.createSmartFolder(named: "  Kansai food ", dialectTagIDs: [kansai.id], customTagIDs: [food.id], match: .all)
+        XCTAssertEqual(folder.name, "Kansai food")
+        XCTAssertEqual(persisting.snapshot.smartFolders, [folder])
+        XCTAssertThrowsError(try store.createSmartFolder(named: "kansai FOOD", dialectTagIDs: [kansai.id], customTagIDs: [], match: .any)) {
+            XCTAssertEqual($0 as? WordBankError, .duplicateFolderName)
+        }
+        XCTAssertThrowsError(try store.createSmartFolder(named: " ", dialectTagIDs: [kansai.id], customTagIDs: [], match: .any)) {
+            XCTAssertEqual($0 as? WordBankError, .blankName)
+        }
+        var edited = folder
+        edited.name = "Kansai"
+        edited.match = .any
+        try store.update(smartFolder: edited)
+        XCTAssertEqual(store.smartFolders, [edited])
+    }
+
+    func testSmartFolderIgnoresUnknownTagsAndNewOnesGoLast() throws {
+        let tag = try store.createCustomTag(named: "slang", color: .purple)
+        let a = try store.createSmartFolder(named: "A", dialectTagIDs: [UUID()], customTagIDs: [tag.id], match: .any)
+        let b = try store.createSmartFolder(named: "B", dialectTagIDs: [], customTagIDs: [tag.id], match: .any)
+        XCTAssertEqual(a.dialectTagIDs, [])
+        XCTAssertLessThan(a.sortOrder, b.sortOrder)
+    }
+
+    func testEntriesInASmartFolder() throws {
+        let kansai = try store.createDialectTag(DialectTagValue(name: "関西弁", region: .kansai))
+        let hida = try store.createDialectTag(DialectTagValue(name: "飛騨弁", region: .chubu))
+        let first = try store.save(WordBankEntryValue(text: "おおきに", dialectTagIDs: [kansai.id]))
+        _ = try store.save(WordBankEntryValue(text: "だんだん"))
+        let third = try store.save(WordBankEntryValue(text: "あんな", dialectTagIDs: [hida.id]))
+        let folder = try store.createSmartFolder(named: "Both", dialectTagIDs: [kansai.id, hida.id], customTagIDs: [], match: .any)
+        XCTAssertEqual(Set(store.entries(in: folder).map(\.id)), [first.id, third.id])
+    }
+
+    func testDeletingATagTakesItOutOfSmartFolders() throws {
+        let a = try store.createCustomTag(named: "a", color: .red)
+        let b = try store.createCustomTag(named: "b", color: .blue)
+        let folder = try store.createSmartFolder(named: "AB", dialectTagIDs: [], customTagIDs: [a.id, b.id], match: .all)
+        store.delete(customTag: a.id)
+        XCTAssertEqual(store.smartFolders.first?.customTagIDs, [b.id])
+        XCTAssertEqual(persisting.snapshot.smartFolders.first?.customTagIDs, [b.id])
+        XCTAssertEqual(store.smartFolders.first?.id, folder.id)
+    }
+
+    func testDeleteASmartFolderKeepsEntries() throws {
+        let tag = try store.createCustomTag(named: "a", color: .red)
+        _ = try store.save(WordBankEntryValue(text: "x", customTagIDs: [tag.id]))
+        let folder = try store.createSmartFolder(named: "A", dialectTagIDs: [], customTagIDs: [tag.id], match: .any)
+        store.delete(smartFolder: folder.id)
+        XCTAssertEqual(store.smartFolders, [])
+        XCTAssertEqual(persisting.snapshot.smartFolders, [])
+        XCTAssertEqual(store.entries.count, 1)
     }
 
     // MARK: lookups

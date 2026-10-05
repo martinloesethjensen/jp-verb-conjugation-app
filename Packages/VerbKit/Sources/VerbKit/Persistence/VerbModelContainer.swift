@@ -16,6 +16,7 @@ public enum VerbModelContainer {
     /// The user's Word Bank: its own file, WordBank.sqlite, so a data re-sync can never touch it.
     static let wordBankModels: [any PersistentModel.Type] = [
         WordBankEntryEntity.self, WordBankFolderEntity.self, DialectTagEntity.self, CustomTagEntity.self,
+        WordBankSmartFolderEntity.self,
     ]
 
     public static let wordBankSchema = Schema(wordBankModels)

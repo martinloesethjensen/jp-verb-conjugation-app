@@ -122,6 +122,40 @@ public final class DialectTagEntity {
     }
 }
 
+/// A tag-defined folder. Tag ids are kept as text, not relationships: a deleted tag simply
+/// stops matching, and nothing here can cascade into entries or tags.
+@Model
+public final class WordBankSmartFolderEntity {
+    public var id: UUID = UUID()
+    public var name: String = ""
+    public var sortOrder: Int = 0
+    /// UUID strings, comma-joined.
+    public var dialectTagIDsRaw: String = ""
+    public var customTagIDsRaw: String = ""
+    public var matchRaw: String = SmartFolderMatch.any.rawValue
+
+    public init(_ value: WordBankSmartFolderValue) {
+        id = value.id
+        update(from: value)
+    }
+
+    func update(from value: WordBankSmartFolderValue) {
+        name = value.name
+        sortOrder = value.sortOrder
+        dialectTagIDsRaw = value.dialectTagIDs.map(\.uuidString).joined(separator: ",")
+        customTagIDsRaw = value.customTagIDs.map(\.uuidString).joined(separator: ",")
+        matchRaw = value.match.rawValue
+    }
+
+    func toValue() -> WordBankSmartFolderValue {
+        func ids(_ raw: String) -> [UUID] { raw.split(separator: ",").compactMap { UUID(uuidString: String($0)) } }
+        return WordBankSmartFolderValue(
+            id: id, name: name, dialectTagIDs: ids(dialectTagIDsRaw), customTagIDs: ids(customTagIDsRaw),
+            match: SmartFolderMatch(rawValue: matchRaw) ?? .any, sortOrder: sortOrder
+        )
+    }
+}
+
 @Model
 public final class CustomTagEntity {
     public var id: UUID = UUID()

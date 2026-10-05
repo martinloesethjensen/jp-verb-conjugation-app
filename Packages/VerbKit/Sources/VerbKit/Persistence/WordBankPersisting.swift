@@ -6,15 +6,18 @@ public struct WordBankSnapshot: Equatable, Sendable {
     public var folders: [WordBankFolderValue]
     public var dialectTags: [DialectTagValue]
     public var customTags: [CustomTagValue]
+    public var smartFolders: [WordBankSmartFolderValue]
 
     public init(
         entries: [WordBankEntryValue] = [], folders: [WordBankFolderValue] = [],
-        dialectTags: [DialectTagValue] = [], customTags: [CustomTagValue] = []
+        dialectTags: [DialectTagValue] = [], customTags: [CustomTagValue] = [],
+        smartFolders: [WordBankSmartFolderValue] = []
     ) {
         self.entries = entries
         self.folders = folders
         self.dialectTags = dialectTags
         self.customTags = customTags
+        self.smartFolders = smartFolders
     }
 }
 
@@ -33,4 +36,6 @@ public protocol WordBankPersisting {
     func upsert(dialectTag: DialectTagValue) throws
     func upsert(customTag: CustomTagValue) throws
     func delete(dialectTagIDs: [UUID], customTagIDs: [UUID]) throws
+    func upsert(smartFolder: WordBankSmartFolderValue) throws
+    func delete(smartFolderIDs: [UUID]) throws
 }

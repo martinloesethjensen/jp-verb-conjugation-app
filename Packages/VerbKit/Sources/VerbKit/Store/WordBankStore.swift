@@ -29,6 +29,7 @@ public final class WordBankStore {
     public private(set) var folders: [WordBankFolderValue]
     public private(set) var dialectTags: [DialectTagValue]
     public private(set) var customTags: [CustomTagValue]
+    public private(set) var smartFolders: [WordBankSmartFolderValue]
     public private(set) var lastError: WordBankError?
 
     @ObservationIgnored private let persisting: WordBankPersisting
@@ -42,6 +43,7 @@ public final class WordBankStore {
         folders = snapshot.folders
         dialectTags = snapshot.dialectTags
         customTags = snapshot.customTags
+        smartFolders = snapshot.smartFolders
     }
 
     public var tree: FolderTree { FolderTree(folders) }
@@ -197,12 +199,80 @@ public final class WordBankStore {
         dialectTags.removeAll { $0.id == id }
         for index in entries.indices { entries[index].dialectTagIDs.removeAll { $0 == id } }
         persist { try persisting.delete(dialectTagIDs: [id], customTagIDs: []) }
+        dropFromSmartFolders { $0.dialectTagIDs.removeAll { $0 == id } }
     }
 
     public func delete(customTag id: UUID) {
         customTags.removeAll { $0.id == id }
         for index in entries.indices { entries[index].customTagIDs.removeAll { $0 == id } }
         persist { try persisting.delete(dialectTagIDs: [], customTagIDs: [id]) }
+        dropFromSmartFolders { $0.customTagIDs.removeAll { $0 == id } }
+    }
+
+    // MARK: - Smart folders
+
+    /// A smart folder for one or more tags. Unknown tag ids are dropped; a folder with no
+    /// tags is allowed (it shows nothing until tags are added), so deleting a tag never
+    /// deletes the folder.
+    @discardableResult
+    public func createSmartFolder(
+        named name: String, dialectTagIDs: [UUID], customTagIDs: [UUID], match: SmartFolderMatch
+    ) throws -> WordBankSmartFolderValue {
+        let name = try validSmartFolderName(name, ignoring: nil)
+        var folder = WordBankSmartFolderValue(
+            name: name, dialectTagIDs: dialectTagIDs, customTagIDs: customTagIDs, match: match,
+            sortOrder: (smartFolders.map(\.sortOrder).max() ?? -1) + 1
+        )
+        folder = withKnownTags(folder)
+        smartFolders.append(folder)
+        persist { try persisting.upsert(smartFolder: folder) }
+        return folder
+    }
+
+    public func update(smartFolder: WordBankSmartFolderValue) throws {
+        guard let index = smartFolders.firstIndex(where: { $0.id == smartFolder.id }) else { return }
+        var folder = withKnownTags(smartFolder)
+        folder.name = try validSmartFolderName(smartFolder.name, ignoring: smartFolder.id)
+        smartFolders[index] = folder
+        persist { try persisting.upsert(smartFolder: folder) }
+    }
+
+    /// Never touches entries.
+    public func delete(smartFolder id: UUID) {
+        smartFolders.removeAll { $0.id == id }
+        persist { try persisting.delete(smartFolderIDs: [id]) }
+    }
+
+    public func entries(in smartFolder: WordBankSmartFolderValue) -> [WordBankEntryValue] {
+        entries.filter(smartFolder.matches)
+    }
+
+    private func validSmartFolderName(_ name: String, ignoring: UUID?) throws -> String {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { throw WordBankError.blankName }
+        let key = JapaneseNormalizer.key(name)
+        if smartFolders.contains(where: { $0.id != ignoring && JapaneseNormalizer.key($0.name) == key }) {
+            throw WordBankError.duplicateFolderName
+        }
+        return name
+    }
+
+    private func withKnownTags(_ folder: WordBankSmartFolderValue) -> WordBankSmartFolderValue {
+        var folder = folder
+        let dialect = Set(dialectTags.map(\.id)), custom = Set(customTags.map(\.id))
+        folder.dialectTagIDs = folder.dialectTagIDs.filter(dialect.contains)
+        folder.customTagIDs = folder.customTagIDs.filter(custom.contains)
+        return folder
+    }
+
+    private func dropFromSmartFolders(_ change: (inout WordBankSmartFolderValue) -> Void) {
+        for index in smartFolders.indices {
+            let before = smartFolders[index]
+            change(&smartFolders[index])
+            guard smartFolders[index] != before else { continue }
+            let folder = smartFolders[index]
+            persist { try persisting.upsert(smartFolder: folder) }
+        }
     }
 
     // MARK: - Lookups
