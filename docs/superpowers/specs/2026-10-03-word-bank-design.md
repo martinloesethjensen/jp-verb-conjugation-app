@@ -507,7 +507,7 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
 
 Each ships on its own:
 
-1. **Core:** models, separate store, dialect catalogue, store, tab, list,
+1. **Core (done 2026-10-05, PR #51; also brought forward from later: on-device suggestions and smart folders over tags):** models, separate store, dialect catalogue, store, tab, list,
    folders, add/edit, detail (comparison card, senses, kanji chips, speech,
    text actions), tags and tag management with suggestions, search with
    tokens, chips and folder scopes, ranking, match explanations, no-results

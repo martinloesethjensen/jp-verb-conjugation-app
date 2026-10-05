@@ -238,7 +238,7 @@ struct MatchExplanationLabel: View {
     }
 
     var body: some View {
-        (Text("\(Self.name(explanation.field)): ").foregroundStyle(.secondary) + Text(snippet))
+        Text("\(Text("\(Self.name(explanation.field)): ").foregroundStyle(.secondary))\(Text(snippet))")
             .font(.footnote)
             .lineLimit(2)
             .accessibilityLabel("Matched in \(Self.name(explanation.field)): \(explanation.snippet)")
