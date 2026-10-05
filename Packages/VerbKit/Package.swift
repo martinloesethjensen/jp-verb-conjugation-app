@@ -13,7 +13,7 @@ let package = Package(
     targets: [
         .target(
             name: "VerbKit",
-            resources: [.copy("Resources/forms.json")]
+            resources: [.copy("Resources/forms.json"), .copy("Resources/dialects.json")]
         ),
         .testTarget(
             name: "VerbKitTests",

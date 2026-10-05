@@ -20,6 +20,11 @@ public enum TextLookupURL {
         encoded(text).flatMap { URL(string: "https://jisho.org/search/" + $0) }
     }
 
+    /// Jisho's page for one kanji (a search for "大 #kanji").
+    public static func jishoKanji(_ character: Character) -> URL? {
+        jisho("\(character) #kanji")
+    }
+
     /// DeepL's translator, Japanese to English. The text rides in the fragment.
     /// DeepL splits the fragment at a `/` even when it is percent-encoded and drops
     /// everything after it, so a slash becomes the fullwidth `／`, which it keeps.

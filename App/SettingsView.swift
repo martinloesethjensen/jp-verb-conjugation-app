@@ -27,6 +27,7 @@ struct SettingsView: View {
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
     @AppStorage(Speaker.voiceDefaultsKey, store: .appGroup) private var speechVoiceID = ""
     @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
+    @AppStorage(WordBankSuggestions.enabledKey, store: .appGroup) private var wordBankSuggestions = true
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
     @AppStorage(ReminderScheduler.minutesKey, store: .appGroup) private var reminderMinutes = ReminderScheduler.defaultMinutes
@@ -159,6 +160,14 @@ struct SettingsView: View {
                 Text(reminderDenied
                      ? "Notifications are turned off for this app. Allow them in \(settingsApp) > Notifications."
                      : "A notification with the same verb the widget shows. Tap it to open the verb.")
+            }
+            Section {
+                Toggle("Suggest while typing", isOn: $wordBankSuggestions)
+            } header: {
+                Text("Word Bank")
+            } footer: {
+                Text(OnDeviceEntrySuggester.unavailableReason
+                     ?? "Suggests a reading, standard Japanese and meanings for new entries, using the model on this device. Nothing is sent anywhere.")
             }
             Section {
                 Toggle("Speak after quiz answers", isOn: $speakQuizAnswers)

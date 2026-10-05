@@ -11,6 +11,7 @@ struct JPVerbConjugationApp: App {
     @State private var verbStore: VerbStore
     @State private var furiganaStore: FuriganaStore
     @State private var quizHistory: QuizHistoryStore
+    @State private var wordBank: WordBankStore
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     init() {
@@ -35,6 +36,9 @@ struct JPVerbConjugationApp: App {
         _quizHistory = State(initialValue: QuizHistoryStore(
             persisting: SwiftDataQuizHistoryPersisting(modelContext: context)
         ))
+        _wordBank = State(initialValue: WordBankStore(
+            persisting: SwiftDataWordBankPersisting(modelContext: context)
+        ))
     }
 
     var body: some Scene {
@@ -43,6 +47,7 @@ struct JPVerbConjugationApp: App {
                 .environment(verbStore)
                 .environment(furiganaStore)
                 .environment(quizHistory)
+                .environment(wordBank)
                 .task {
                     networkMonitor.start()
                     await verbStore.start()
@@ -68,6 +73,7 @@ struct JPVerbConjugationApp: App {
             SettingsView()
                 .environment(verbStore)
                 .environment(quizHistory)
+                .environment(wordBank)
         }
         #endif
     }

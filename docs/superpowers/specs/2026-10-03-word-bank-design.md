@@ -389,6 +389,27 @@ All of this logic (`WordBankArchive` for the format, `WordBankImportPlanner`
 producing the preview plan, applied by the store) lives in VerbKit and is
 unit-tested without UI.
 
+### Suggestions while typing (added 2026-10-05)
+
+Under the text, the editor offers tap-to-apply chips for a reading, standard Japanese,
+meanings, kind and a likely dialect, with "Use all". Nothing is written until the user
+taps. They come from Apple's on-device model (`FoundationModels`, guided generation), so no
+text leaves the device; the dialect must be an id from the bundled catalogue and is checked
+afterwards, low-confidence answers are dropped, and the card says to check them because
+dialect words are often wrong. A coordinator in VerbKit (`EntrySuggestionModel`) waits for a
+pause in typing, drops stale answers and hides what the entry already has; the model itself
+is the only app-side piece, behind the `EntrySuggesting` protocol. When the model or
+Japanese isn't available the card stays hidden and Settings says why. Settings › Word Bank ›
+Suggest while typing turns it off.
+
+### Smart folders (added 2026-10-05)
+
+A smart folder is defined by one or more tags and shows every entry that has any one of
+them or all of them (a per-folder switch). It sits under "Smart folders" on the root screen
+with a live count, can be edited and deleted, and never moves or deletes entries. Deleting a
+tag takes it out of every smart folder, which stays. This is the tag-only slice of "Saved
+searches"; milestone 3 extends it to text, tokens and folder scope.
+
 ### Add / edit sheet
 
 Text first, then reading, standard equivalents (＋ to add more), senses (＋),
@@ -486,7 +507,7 @@ New SwiftData models in VerbKit, CloudKit-compatible from the start:
 
 Each ships on its own:
 
-1. **Core:** models, separate store, dialect catalogue, store, tab, list,
+1. **Core (done 2026-10-05, PR #51; also brought forward from later: on-device suggestions and smart folders over tags):** models, separate store, dialect catalogue, store, tab, list,
    folders, add/edit, detail (comparison card, senses, kanji chips, speech,
    text actions), tags and tag management with suggestions, search with
    tokens, chips and folder scopes, ranking, match explanations, no-results
