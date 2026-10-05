@@ -25,13 +25,19 @@ public enum WordBankError: Error, Equatable, Sendable {
 @MainActor
 @Observable
 public final class WordBankStore {
-    public private(set) var entries: [WordBankEntryValue]
-    public private(set) var folders: [WordBankFolderValue]
-    public private(set) var dialectTags: [DialectTagValue]
-    public private(set) var customTags: [CustomTagValue]
+    public private(set) var entries: [WordBankEntryValue] { didSet { searchDataChanged() } }
+    public private(set) var folders: [WordBankFolderValue] { didSet { searchDataChanged() } }
+    public private(set) var dialectTags: [DialectTagValue] { didSet { searchDataChanged() } }
+    public private(set) var customTags: [CustomTagValue] { didSet { searchDataChanged() } }
     public private(set) var smartFolders: [WordBankSmartFolderValue]
     public private(set) var lastError: WordBankError?
 
+    @ObservationIgnored private var cachedIndex: WordBankSearchIndex?
+    @ObservationIgnored private var cachedReadingKey = 0
+    /// Counts changes to what search reads; the cached index is valid for one revision.
+    @ObservationIgnored private(set) var searchIndexRevision = 0
+    /// How many times the index was built, so tests can see the cache working.
+    @ObservationIgnored private(set) var searchIndexBuilds = 0
     @ObservationIgnored private let persisting: WordBankPersisting
     @ObservationIgnored private let now: () -> Date
 
@@ -47,6 +53,29 @@ public final class WordBankStore {
     }
 
     public var tree: FolderTree { FolderTree(folders) }
+
+    /// The search index for the bank as it is now. Built on first use after a change and then
+    /// reused, so typing in the search field doesn't rebuild it. `readingKey` names the
+    /// `derivedReading` function (for example how many readings the furigana dictionary has):
+    /// a different key means the readings changed, so the index is rebuilt.
+    public func searchIndex(
+        readingKey: Int = 0, derivedReading: (String) -> String? = { _ in nil }
+    ) -> WordBankSearchIndex {
+        if let cachedIndex, cachedReadingKey == readingKey { return cachedIndex }
+        let index = WordBankSearchIndex(
+            entries: entries, folders: folders, dialectTags: dialectTags, customTags: customTags,
+            derivedReading: derivedReading
+        )
+        cachedIndex = index
+        cachedReadingKey = readingKey
+        searchIndexBuilds += 1
+        return index
+    }
+
+    private func searchDataChanged() {
+        cachedIndex = nil
+        searchIndexRevision += 1
+    }
 
     // MARK: - Entries
 

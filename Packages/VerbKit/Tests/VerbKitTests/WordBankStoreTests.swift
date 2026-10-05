@@ -320,6 +320,48 @@ final class WordBankStoreTests: XCTestCase {
         XCTAssertNil(store.entryWithSameText(as: "だんだん", excluding: nil))
     }
 
+    // MARK: search index
+
+    func testTheSearchIndexFollowsTheBank() throws {
+        XCTAssertEqual(store.searchIndex().search(WordBankQuery(text: "ookini")).count, 0)
+        let saved = try store.save(WordBankEntryValue(text: "おおきに"))
+        XCTAssertEqual(store.searchIndex().search(WordBankQuery(text: "ookini")).map(\.entry.id), [saved.id])
+
+        var edited = saved
+        edited.text = "ありがとう"
+        try store.save(edited)
+        XCTAssertEqual(store.searchIndex().search(WordBankQuery(text: "ookini")).count, 0)
+
+        let tag = try store.createCustomTag(named: "food", color: .orange)
+        XCTAssertEqual(store.searchIndex().suggestedTokens(for: "foo", excluding: []).count, 0, "no entry has it yet")
+        edited.customTagIDs = [tag.id]
+        try store.save(edited)
+        XCTAssertEqual(store.searchIndex().suggestedTokens(for: "foo", excluding: []), [.customTag(tag.id)])
+
+        store.delete(entryIDs: [saved.id])
+        XCTAssertEqual(store.searchIndex().search(WordBankQuery(text: "ありがとう")).count, 0)
+    }
+
+    func testTheSearchIndexIsReusedUntilSomethingChanges() throws {
+        try store.save(WordBankEntryValue(text: "おおきに"))
+        let first = store.searchIndexRevision
+        _ = store.searchIndex()
+        _ = store.searchIndex()
+        XCTAssertEqual(store.searchIndexBuilds, 1)
+        XCTAssertEqual(store.searchIndexRevision, first)
+        try store.save(WordBankEntryValue(text: "だんだん"))
+        _ = store.searchIndex()
+        XCTAssertEqual(store.searchIndexBuilds, 2)
+    }
+
+    func testADifferentReadingFunctionRebuildsTheIndex() throws {
+        try store.save(WordBankEntryValue(text: "頭"))
+        XCTAssertEqual(store.searchIndex().search(WordBankQuery(text: "atama")).count, 0)
+        let derived = store.searchIndex(readingKey: 1) { $0 == "頭" ? "あたま" : nil }
+        XCTAssertEqual(derived.search(WordBankQuery(text: "atama")).count, 1)
+        XCTAssertEqual(store.searchIndex(readingKey: 1) { _ in nil }.search(WordBankQuery(text: "atama")).count, 1, "same key reuses the cache")
+    }
+
     // MARK: persistence failures
 
     func testAFailingPersisterKeepsMemoryAndSetsLastError() throws {

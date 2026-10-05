@@ -16,6 +16,10 @@ public enum WordBankToken: Hashable, Codable, Sendable {
     case noDialectTag
 }
 
+extension WordBankToken: Identifiable {
+    public var id: Self { self }
+}
+
 /// Where in an entry a search matched, strongest first.
 public enum WordBankField: String, Sendable {
     case text, reading, kanjiSpelling, equivalent, sense, tag, senseNote, folder, notes
