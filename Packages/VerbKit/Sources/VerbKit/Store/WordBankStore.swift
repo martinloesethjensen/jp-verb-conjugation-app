@@ -333,24 +333,7 @@ public final class WordBankStore {
     }
 
     private func cleaned(_ entry: WordBankEntryValue) -> WordBankEntryValue {
-        func trimmed(_ text: String?) -> String? {
-            guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
-            return text
-        }
-        var entry = entry
-        entry.text = entry.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        entry.reading = trimmed(entry.reading)
-        entry.kanjiSpelling = trimmed(entry.kanjiSpelling)
-        entry.notes = trimmed(entry.notes)
-        entry.senses = entry.senses.compactMap { sense in
-            trimmed(sense.meaning).map { Sense(meaning: $0, note: trimmed(sense.note)) }
-        }
-        entry.equivalents = entry.equivalents.compactMap { equivalent in
-            trimmed(equivalent.written).map {
-                StandardEquivalent(written: $0, reading: trimmed(equivalent.reading), note: trimmed(equivalent.note))
-            }
-        }
-        if entry.kind != .word { entry.wordClass = nil }
+        var entry = entry.trimmed()
         if let folder = entry.folderID, !folders.contains(where: { $0.id == folder }) { entry.folderID = nil }
         let dialectIDs = Set(dialectTags.map(\.id))
         let customIDs = Set(customTags.map(\.id))
