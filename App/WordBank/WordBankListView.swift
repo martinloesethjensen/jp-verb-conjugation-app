@@ -24,6 +24,7 @@ struct WordBankListView: View {
     #if os(iOS)
     @Environment(\.editMode) private var editMode
     #endif
+    @Environment(\.dismiss) private var dismiss
     let place: WordBankPlace?
     @Binding var selection: UUID?
     let onOpen: (UUID) -> Void
@@ -304,6 +305,13 @@ struct WordBankListView: View {
             refreshSuggestions()
             if !searchActive { searchScope = .thisFolder }
         }
+        // The folder on screen was deleted (here or from a parent): go back a level.
+        .onChange(of: store.folders.map(\.id)) { _, ids in
+            if let folderID, !ids.contains(folderID) { dismiss() }
+        }
+        .onChange(of: store.smartFolders.map(\.id)) { _, ids in
+            if case .smart(let id)? = place, !ids.contains(id) { dismiss() }
+        }
         .navigationTitle(title)
         .navigationSubtitle(searchActive ? searchSubtitle(count: found.count) : subtitle)
         .toolbar { toolbar }
@@ -446,6 +454,11 @@ struct WordBankListView: View {
                 Button("Edit…", systemImage: "pencil") { smartRequest = .edit(folder) }
                 Button("Delete…", systemImage: "trash", role: .destructive) { deletingSmart = folder }
             }
+            // Red, not `.destructive`: a destructive swipe button hides the row before the user confirms.
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button("Delete", systemImage: "trash") { deletingSmart = folder }.tint(.red)
+                Button("Edit", systemImage: "pencil") { smartRequest = .edit(folder) }.tint(.gray)
+            }
     }
 
     private func folderRow(_ folder: WordBankFolderValue) -> some View {
@@ -460,6 +473,10 @@ struct WordBankListView: View {
                 ])
             }
             Button("Delete…", systemImage: "trash", role: .destructive) { deletingFolder = folder }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button("Delete", systemImage: "trash") { deletingFolder = folder }.tint(.red)
+            Button("Rename", systemImage: "pencil") { folderRequest = .rename(folder) }.tint(.gray)
         }
         .draggable("folder:\(folder.id.uuidString)")
         .dropDestination(for: String.self) { items, _ in drop(items, onto: folder.id) }
@@ -550,6 +567,18 @@ struct WordBankListView: View {
                     #endif
                     Picker("Group by", selection: $groupingRaw) {
                         ForEach(WordBankGrouping.allCases) { Text($0.title).tag($0.rawValue) }
+                    }
+                    if let folderID, let folder = store.tree.folder(folderID) {
+                        Section {
+                            Button("Rename Folder", systemImage: "pencil") { folderRequest = .rename(folder) }
+                            Button("Delete Folder…", systemImage: "trash", role: .destructive) { deletingFolder = folder }
+                        }
+                    }
+                    if let smartFolder {
+                        Section {
+                            Button("Edit Smart Folder…", systemImage: "pencil") { smartRequest = .edit(smartFolder) }
+                            Button("Delete Smart Folder…", systemImage: "trash", role: .destructive) { deletingSmart = smartFolder }
+                        }
                     }
                     Button("Manage Tags", systemImage: "tag") { managingTags = true }
                     Button("Import…", systemImage: "square.and.arrow.down") { importing = true }
