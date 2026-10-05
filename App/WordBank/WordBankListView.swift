@@ -37,6 +37,7 @@ struct WordBankListView: View {
     @State private var moveRequest: MoveRequest?
     @State private var deletingFolder: WordBankFolderValue?
     @State private var moveError: String?
+    @State private var managingTags = false
 
     private enum MoveRequest: Identifiable {
         case entries([UUID])
@@ -173,7 +174,8 @@ struct WordBankListView: View {
         .navigationSubtitle(subtitle)
         .toolbar { toolbar }
         .overlay { emptyState }
-        .sheet(item: $editorRequest) { WordBankEditor(request: $0) }
+        .sheet(item: $editorRequest) { WordBankEditor(request: $0, onOpenExisting: onOpen) }
+        .sheet(isPresented: $managingTags) { TagManagerView() }
         .sheet(item: $folderRequest) { FolderNameSheet(request: $0) }
         .sheet(item: $moveRequest) { request in
             switch request {
@@ -322,6 +324,7 @@ struct WordBankListView: View {
                     Picker("Group by", selection: $groupingRaw) {
                         ForEach(WordBankGrouping.allCases) { Text($0.title).tag($0.rawValue) }
                     }
+                    Button("Manage Tags", systemImage: "tag") { managingTags = true }
                     Button("Settings", systemImage: "gearshape", action: onSettings)
                     ReportProblemButton(item: "Word Bank")
                 }
