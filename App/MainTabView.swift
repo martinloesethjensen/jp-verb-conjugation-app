@@ -13,6 +13,7 @@ enum AppTab: Hashable {
 /// can jump to a related one.
 struct MainTabView<VerbsTab: View>: View {
     @Environment(VerbStore.self) private var verbStore
+    @Environment(WordBankTransferHub.self) private var wordBankTransfer
     @Binding var verbSelection: Verb?
     @Binding var incomingRoute: Route?
     @State private var tab: AppTab = .verbs
@@ -47,6 +48,9 @@ struct MainTabView<VerbsTab: View>: View {
         }
         .tabViewStyle(.sidebarAdaptable)
         .environment(\.openRoute, OpenRouteAction { open($0) })
+        .onChange(of: wordBankTransfer.pendingImport?.id, initial: true) { _, id in
+            if id != nil { tab = .wordBank }
+        }
         .onChange(of: incomingRoute, initial: true) { _, route in
             guard let route else { return }
             open(route)

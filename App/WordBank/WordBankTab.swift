@@ -18,6 +18,7 @@ enum WordBankPlace: Hashable {
 /// the detail column.
 struct WordBankTab: View {
     @Environment(WordBankStore.self) private var store
+    @Environment(WordBankTransferHub.self) private var transfer
     @Binding var selection: UUID?
     @Binding var preferredColumn: NavigationSplitViewColumn
     let onSettings: () -> Void
@@ -37,6 +38,15 @@ struct WordBankTab: View {
             } else {
                 ContentUnavailableView("Select an Entry", systemImage: "books.vertical")
             }
+        }
+        .sheet(item: Binding(get: { transfer.pendingImport }, set: { transfer.pendingImport = $0 })) {
+            WordBankImportSheet(request: $0)
+        }
+        .alert(
+            transfer.notice ?? "",
+            isPresented: Binding(get: { transfer.notice != nil }, set: { if !$0 { transfer.notice = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
         }
         .onChange(of: preferredColumn) { _, column in
             // Back to the list on iPhone: nothing is selected any more.
