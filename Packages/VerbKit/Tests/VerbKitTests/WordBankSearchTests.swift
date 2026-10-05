@@ -228,9 +228,17 @@ final class WordBankSearchTests: XCTestCase {
         }
         let big = index(entries: entries)
         let query = q("meaning nu")
+        // The spec's target is 16 ms per keystroke in the shipped (optimised) build.
+        // Unoptimised code runs about 9× slower, so debug builds get a looser limit
+        // that still catches a real regression without depending on machine load.
+        #if DEBUG
+        let limit = 0.25
+        #else
+        let limit = 0.016
+        #endif
         let start = Date()
         _ = big.search(query)
-        XCTAssertLessThan(Date().timeIntervalSince(start), 0.1)
+        XCTAssertLessThan(Date().timeIntervalSince(start), limit)
         measure(metrics: [XCTClockMetric()]) { _ = big.search(query) }
     }
 }
