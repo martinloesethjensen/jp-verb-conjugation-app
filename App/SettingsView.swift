@@ -32,6 +32,7 @@ struct SettingsView: View {
     @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
     @AppStorage(ReminderScheduler.minutesKey, store: .appGroup) private var reminderMinutes = ReminderScheduler.defaultMinutes
     @State private var reminderDenied = false
+    @State private var showingBackups = false
 
     private var reminderToggle: Binding<Bool> {
         Binding(
@@ -163,6 +164,7 @@ struct SettingsView: View {
             }
             Section {
                 Toggle("Suggest while typing", isOn: $wordBankSuggestions)
+                Button("Restore Backup…") { showingBackups = true }
             } header: {
                 Text("Word Bank")
             } footer: {
@@ -197,5 +199,13 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .frame(minWidth: 320, minHeight: 240)
+        .sheet(isPresented: $showingBackups) {
+            NavigationStack {
+                WordBankBackupsView()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) { Button("Done") { showingBackups = false } }
+                    }
+            }
+        }
     }
 }

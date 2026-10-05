@@ -148,4 +148,34 @@ final class SwiftDataWordBankPersistingTests: XCTestCase {
         XCTAssertEqual(snapshot.entries.first?.kind, .word)
         XCTAssertNil(snapshot.entries.first?.wordClass)
     }
+
+    func testApplyWritesAFolderTreeTagsAndEntriesInOneGo() throws {
+        let parent = WordBankFolderValue(name: "Trip"), child = WordBankFolderValue(name: "Takayama", parentID: parent.id)
+        let tag = DialectTagValue(name: "飛騨弁", region: .chubu), custom = CustomTagValue(name: "food")
+        let entry = WordBankEntryValue(text: "だちかん", folderID: child.id, dialectTagIDs: [tag.id], customTagIDs: [custom.id])
+        var changes = WordBankChanges()
+        changes.folders = [child, parent]               // child first on purpose: parents may arrive later
+        changes.dialectTags = [tag]; changes.customTags = [custom]; changes.entries = [entry]
+        changes.smartFolders = [WordBankSmartFolderValue(name: "Hida", dialectTagIDs: [tag.id])]
+        try persisting.apply(changes)
+        let loaded = try persisting.load()
+        XCTAssertEqual(loaded.entries.first?.folderID, child.id)
+        XCTAssertEqual(loaded.entries.first?.dialectTagIDs, [tag.id])
+        XCTAssertEqual(Set(loaded.folders.map(\.name)), ["Trip", "Takayama"])
+        XCTAssertEqual(loaded.folders.first { $0.id == child.id }?.parentID, parent.id)
+        XCTAssertEqual(loaded.smartFolders.count, 1)
+    }
+
+    func testApplyDeletesAndUpdates() throws {
+        let entry = WordBankEntryValue(text: "a"), gone = WordBankEntryValue(text: "b")
+        try persisting.upsert(entry: entry); try persisting.upsert(entry: gone)
+        var edited = entry
+        edited.reading = "え"
+        var changes = WordBankChanges()
+        changes.entries = [edited]; changes.deletedEntryIDs = [gone.id]
+        try persisting.apply(changes)
+        let loaded = try persisting.load()
+        XCTAssertEqual(loaded.entries.map(\.id), [entry.id])
+        XCTAssertEqual(loaded.entries.first?.reading, "え")
+    }
 }

@@ -46,6 +46,10 @@ final class WordBankStoreTests: XCTestCase {
             snapshot.smartFolders.append(smartFolder)
         }
         func delete(smartFolderIDs: [UUID]) throws { try write(); snapshot.smartFolders.removeAll { smartFolderIDs.contains($0.id) } }
+        func apply(_ changes: WordBankChanges) throws {
+            try write()
+            snapshot = changes.applied(to: snapshot)
+        }
     }
 
     private var clock = Date(timeIntervalSince1970: 1_000)
@@ -368,6 +372,23 @@ final class WordBankStoreTests: XCTestCase {
         persisting.failing = true
         let saved = try store.save(WordBankEntryValue(text: "おおきに"))
         XCTAssertEqual(store.entries, [saved])
+        XCTAssertEqual(store.lastError, .saveFailed)
+    }
+
+    func testApplyUpdatesMemoryAfterAGoodWrite() throws {
+        var changes = WordBankChanges()
+        changes.entries = [WordBankEntryValue(text: "a")]
+        try store.apply(changes)
+        XCTAssertEqual(store.entries.map(\.text), ["a"])
+        XCTAssertEqual(persisting.snapshot.entries.count, 1)
+    }
+
+    func testFailedApplyThrowsAndLeavesMemoryUntouched() {
+        persisting.failing = true
+        var changes = WordBankChanges()
+        changes.entries = [WordBankEntryValue(text: "a")]
+        XCTAssertThrowsError(try store.apply(changes)) { XCTAssertEqual($0 as? WordBankError, .saveFailed) }
+        XCTAssertTrue(store.entries.isEmpty)
         XCTAssertEqual(store.lastError, .saveFailed)
     }
 }

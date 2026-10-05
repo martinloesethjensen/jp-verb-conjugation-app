@@ -23,9 +23,16 @@ struct RootView: View {
     @State private var topicSheetVerbs: [Verb]?
     @State private var pendingQuestions: [QuizQuestion]?
     @State private var incomingRoute: Route?
+    @Environment(WordBankTransferHub.self) private var wordBankTransfer
 
     /// What a link opens: a verb or lesson page, or a quiz (from Siri and Shortcuts).
     private func open(_ url: URL) {
+        // A .wordbank file from Files, AirDrop or Mail: show what importing it would do.
+        if url.isFileURL, url.pathExtension.lowercased() == "wordbank" {
+            showingSettings = false
+            wordBankTransfer.pendingImport = WordBankImportRequest(url: url)
+            return
+        }
         let quizLink = QuizLink(url: url)
         // A link from outside the app must not dismiss anything for a page that doesn't exist.
         let route = Route(url: url).flatMap { route in

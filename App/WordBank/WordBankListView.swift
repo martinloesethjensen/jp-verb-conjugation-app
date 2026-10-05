@@ -20,6 +20,7 @@ enum WordBankGrouping: String, CaseIterable, Identifiable {
 /// Unfiled, Recently added). Folders come first, then entries.
 struct WordBankListView: View {
     @Environment(WordBankStore.self) private var store
+    @Environment(WordBankTransferHub.self) private var transfer
     #if os(iOS)
     @Environment(\.editMode) private var editMode
     #endif
@@ -40,6 +41,8 @@ struct WordBankListView: View {
     @State private var managingTags = false
     @State private var smartRequest: SmartFolderRequest?
     @State private var deletingSmart: WordBankSmartFolderValue?
+    @State private var exportRequest: WordBankExportRequest?
+    @State private var importing = false
 
     // Search
     @Environment(\.furiganaDictionary) private var furigana
@@ -132,6 +135,25 @@ struct WordBankListView: View {
         case .recent?: store.entries.filter { $0.createdAt >= recentCutoff }
         case .smart?: smartFolder.map(store.entries(in:)) ?? []
         }
+    }
+
+    // MARK: - Export
+
+    /// Everything, plus this folder, these search results or the chosen entries, as they apply.
+    private func exportOptions(selection ids: [UUID] = []) -> [WordBankExportOption] {
+        var options: [WordBankExportOption] = []
+        if !ids.isEmpty {
+            options.append(WordBankExportOption(title: ids.count == 1 ? "Selected entry" : "Selected entries", scope: .entries(ids)))
+        }
+        if searchActive {
+            let found = index.search(query).map(\.entry.id)
+            if !found.isEmpty { options.append(WordBankExportOption(title: "These search results", scope: .entries(found))) }
+        }
+        if let folderID, let name = store.tree.folder(folderID)?.name {
+            options.append(WordBankExportOption(title: "“\(name)” and its subfolders", scope: .folder(folderID)))
+        }
+        options.append(WordBankExportOption(title: "Everything (full backup)", scope: .everything))
+        return options
     }
 
     // MARK: - Search
@@ -345,6 +367,10 @@ struct WordBankListView: View {
     private func sheetsAndDialogs<Content: View>(_ content: Content) -> some View {
         content
         .sheet(item: $editorRequest) { WordBankEditor(request: $0, onOpenExisting: onOpen) }
+        .sheet(item: $exportRequest) { WordBankExportSheet(request: $0) }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.wordBank, .json]) { result in
+            if case .success(let url) = result { transfer.pendingImport = WordBankImportRequest(url: url) }
+        }
         .sheet(isPresented: $managingTags) { TagManagerView() }
         .sheet(item: $smartRequest) { SmartFolderEditor(request: $0) }
         .confirmationDialog(
@@ -427,6 +453,12 @@ struct WordBankListView: View {
         .contextMenu {
             Button("Rename", systemImage: "pencil") { folderRequest = .rename(folder) }
             Button("Move to…", systemImage: "folder") { moveRequest = .folder(folder) }
+            Button("Export…", systemImage: "square.and.arrow.up") {
+                exportRequest = WordBankExportRequest(options: [
+                    WordBankExportOption(title: "“\(folder.name)” and its subfolders", scope: .folder(folder.id)),
+                    WordBankExportOption(title: "Everything (full backup)", scope: .everything),
+                ])
+            }
             Button("Delete…", systemImage: "trash", role: .destructive) { deletingFolder = folder }
         }
         .draggable("folder:\(folder.id.uuidString)")
@@ -520,6 +552,12 @@ struct WordBankListView: View {
                         ForEach(WordBankGrouping.allCases) { Text($0.title).tag($0.rawValue) }
                     }
                     Button("Manage Tags", systemImage: "tag") { managingTags = true }
+                    Button("Import…", systemImage: "square.and.arrow.down") { importing = true }
+                    if !bankIsEmpty {
+                        Button("Export…", systemImage: "square.and.arrow.up") {
+                            exportRequest = WordBankExportRequest(options: exportOptions())
+                        }
+                    }
                     Button("Settings", systemImage: "gearshape", action: onSettings)
                     ReportProblemButton(item: "Word Bank")
                 }
@@ -530,6 +568,10 @@ struct WordBankListView: View {
             if isEditing {
                 Button("Move", systemImage: "folder") { moveRequest = .entries(Array(chosen)) }
                     .disabled(chosen.isEmpty)
+                Button("Export", systemImage: "square.and.arrow.up") {
+                    exportRequest = WordBankExportRequest(options: exportOptions(selection: Array(chosen)))
+                }
+                .disabled(chosen.isEmpty)
                 Spacer()
                 Button("Delete", systemImage: "trash", role: .destructive) {
                     store.delete(entryIDs: Array(chosen))

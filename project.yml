@@ -30,6 +30,23 @@ targets:
           - CFBundleURLName: dev.martinloeseth.jpverbconjugation
             CFBundleURLSchemes:
               - verbtable
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: dev.martinloeseth.jpverbconjugation.wordbank
+            UTTypeDescription: Word Bank
+            UTTypeConformsTo:
+              - public.json
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - wordbank
+              public.mime-type:
+                - application/x-wordbank+json
+        LSSupportsOpeningDocumentsInPlace: false
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Word Bank
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - dev.martinloeseth.jpverbconjugation.wordbank
         UILaunchScreen:
           UIImageName: LaunchImage
           UIColorName: LaunchBackground

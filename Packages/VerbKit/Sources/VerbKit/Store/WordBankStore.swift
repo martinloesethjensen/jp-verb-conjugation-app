@@ -54,6 +54,26 @@ public final class WordBankStore {
 
     public var tree: FolderTree { FolderTree(folders) }
 
+    public var snapshot: WordBankSnapshot {
+        WordBankSnapshot(entries: entries, folders: folders, dialectTags: dialectTags, customTags: customTags, smartFolders: smartFolders)
+    }
+
+    /// Applies the changes in one save. Memory changes only after the write worked, so a
+    /// failed import leaves the bank exactly as it was.
+    public func apply(_ changes: WordBankChanges) throws {
+        guard !changes.isEmpty else { return }
+        do { try persisting.apply(changes) } catch {
+            lastError = .saveFailed
+            throw WordBankError.saveFailed
+        }
+        let updated = changes.applied(to: snapshot)
+        entries = updated.entries
+        folders = updated.folders
+        dialectTags = updated.dialectTags
+        customTags = updated.customTags
+        smartFolders = updated.smartFolders
+    }
+
     /// The search index for the bank as it is now. Built on first use after a change and then
     /// reused, so typing in the search field doesn't rebuild it. `readingKey` names the
     /// `derivedReading` function (for example how many readings the furigana dictionary has):
@@ -333,24 +353,7 @@ public final class WordBankStore {
     }
 
     private func cleaned(_ entry: WordBankEntryValue) -> WordBankEntryValue {
-        func trimmed(_ text: String?) -> String? {
-            guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
-            return text
-        }
-        var entry = entry
-        entry.text = entry.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        entry.reading = trimmed(entry.reading)
-        entry.kanjiSpelling = trimmed(entry.kanjiSpelling)
-        entry.notes = trimmed(entry.notes)
-        entry.senses = entry.senses.compactMap { sense in
-            trimmed(sense.meaning).map { Sense(meaning: $0, note: trimmed(sense.note)) }
-        }
-        entry.equivalents = entry.equivalents.compactMap { equivalent in
-            trimmed(equivalent.written).map {
-                StandardEquivalent(written: $0, reading: trimmed(equivalent.reading), note: trimmed(equivalent.note))
-            }
-        }
-        if entry.kind != .word { entry.wordClass = nil }
+        var entry = entry.trimmed()
         if let folder = entry.folderID, !folders.contains(where: { $0.id == folder }) { entry.folderID = nil }
         let dialectIDs = Set(dialectTags.map(\.id))
         let customIDs = Set(customTags.map(\.id))
