@@ -80,3 +80,10 @@ final class DeepLSlashTests: XCTestCase {
         XCTAssertTrue(TextLookupURL.google("猫/犬")!.absoluteString.contains("%E7%8C%AB%2F%E7%8A%AC"))
     }
 }
+
+final class JishoKanjiURLTests: XCTestCase {
+    func testJishoKanjiSearchesTheKanjiPage() {
+        let url = TextLookupURL.jishoKanji("大")
+        XCTAssertEqual(url?.absoluteString, "https://jisho.org/search/%E5%A4%A7%20%23kanji")
+    }
+}
