@@ -7,6 +7,7 @@ enum WordBankPlace: Hashable {
     case all
     case unfiled
     case recent
+    case smart(UUID)
 }
 
 /// The Word Bank as a tab: a `NavigationSplitView` like Verbs and Grammar. The list column

@@ -38,6 +38,8 @@ struct WordBankListView: View {
     @State private var deletingFolder: WordBankFolderValue?
     @State private var moveError: String?
     @State private var managingTags = false
+    @State private var smartRequest: SmartFolderRequest?
+    @State private var deletingSmart: WordBankSmartFolderValue?
 
     private enum MoveRequest: Identifiable {
         case entries([UUID])
@@ -69,8 +71,13 @@ struct WordBankListView: View {
 
     private var bankIsEmpty: Bool { store.entries.isEmpty && store.folders.isEmpty }
 
+    private var smartFolder: WordBankSmartFolderValue? {
+        if case .smart(let id)? = place { store.smartFolders.first { $0.id == id } } else { nil }
+    }
+
     private var title: String {
         switch place {
+        case .smart?: smartFolder?.name ?? "Smart folder"
         case nil: "Word Bank"
         case .folder(let id)?: store.tree.folder(id)?.name ?? "Folder"
         case .all?: "All entries"
@@ -79,9 +86,19 @@ struct WordBankListView: View {
         }
     }
 
+    /// "Any of 関西弁, food": what a smart folder matches.
+    private var smartSubtitle: String {
+        guard let folder = smartFolder else { return "" }
+        let names = store.dialectTags.filter { folder.dialectTagIDs.contains($0.id) }.map(\.name)
+            + store.customTags.filter { folder.customTagIDs.contains($0.id) }.map(\.name)
+        guard !names.isEmpty else { return "No tags" }
+        return (folder.match == .any ? "Any of " : "All of ") + names.joined(separator: ", ")
+    }
+
     /// The folder path joined with " › ", empty outside folders and for a top-level
     /// folder, where it would only repeat the title.
     private var subtitle: String {
+        if smartFolder != nil { return smartSubtitle }
         guard let folderID else { return "" }
         let path = store.tree.path(of: folderID)
         return path.count > 1 ? path.map(\.name).joined(separator: " › ") : ""
@@ -103,6 +120,7 @@ struct WordBankListView: View {
         case .folder(let id)?: store.entries.filter { $0.folderID == id }
         case .all?: store.entries
         case .recent?: store.entries.filter { $0.createdAt >= recentCutoff }
+        case .smart?: smartFolder.map(store.entries(in:)) ?? []
         }
     }
 
@@ -164,6 +182,11 @@ struct WordBankListView: View {
                     ForEach(subfolders) { folderRow($0) }
                 }
             }
+            if place == nil, !store.smartFolders.isEmpty {
+                Section("Smart folders") {
+                    ForEach(store.smartFolders) { smartFolderRow($0) }
+                }
+            }
             ForEach(groups(of: entries)) { group in
                 Section(group.title ?? (subfolders.isEmpty && place != nil ? "" : "Entries")) {
                     ForEach(group.entries) { entryRow($0) }
@@ -176,6 +199,18 @@ struct WordBankListView: View {
         .overlay { emptyState }
         .sheet(item: $editorRequest) { WordBankEditor(request: $0, onOpenExisting: onOpen) }
         .sheet(isPresented: $managingTags) { TagManagerView() }
+        .sheet(item: $smartRequest) { SmartFolderEditor(request: $0) }
+        .confirmationDialog(
+            "Delete “\(deletingSmart?.name ?? "")”?",
+            isPresented: Binding(get: { deletingSmart != nil }, set: { if !$0 { deletingSmart = nil } }),
+            titleVisibility: .visible
+        ) {
+            if let folder = deletingSmart {
+                Button("Delete smart folder", role: .destructive) { store.delete(smartFolder: folder.id) }
+            }
+        } message: {
+            Text("Your entries and tags stay as they are.")
+        }
         .sheet(item: $folderRequest) { FolderNameSheet(request: $0) }
         .sheet(item: $moveRequest) { request in
             switch request {
@@ -232,6 +267,14 @@ struct WordBankListView: View {
         placeRow(title, systemImage: systemImage, place: place, count: count)
     }
 
+    private func smartFolderRow(_ folder: WordBankSmartFolderValue) -> some View {
+        placeRow(folder.name, systemImage: "gearshape.2", place: .smart(folder.id), count: store.entries(in: folder).count)
+            .contextMenu {
+                Button("Edit…", systemImage: "pencil") { smartRequest = .edit(folder) }
+                Button("Delete…", systemImage: "trash", role: .destructive) { deletingSmart = folder }
+            }
+    }
+
     private func folderRow(_ folder: WordBankFolderValue) -> some View {
         placeRow(folder.name, systemImage: "folder", place: .folder(folder.id), count: entryCount(in: folder.id))
         .contextMenu {
@@ -271,7 +314,7 @@ struct WordBankListView: View {
     /// Smart lists mix folders, so each row says where its entry is filed.
     private var showsFolderPath: Bool {
         switch place {
-        case .all?, .recent?: true
+        case .all?, .recent?, .smart?: true
         default: false
         }
     }
@@ -306,6 +349,7 @@ struct WordBankListView: View {
                         editorRequest = WordBankEditorRequest(folderID: folderID)
                     }
                     Button("New Folder", systemImage: "folder.badge.plus") { folderRequest = .create(parent: folderID) }
+                    Button("New Smart Folder", systemImage: "gearshape.2") { smartRequest = .create }
                 }
             }
         }
@@ -356,6 +400,14 @@ struct WordBankListView: View {
             } actions: {
                 Button("Add your first entry") { editorRequest = WordBankEditorRequest(folderID: folderID) }
                     .buttonStyle(.glassProminent)
+            }
+        } else if let folder = smartFolder, entries.isEmpty {
+            ContentUnavailableView {
+                Label("No entries match", systemImage: "gearshape.2")
+            } description: {
+                Text(folder.tagCount == 0 ? "This smart folder has no tags left. Edit it to pick some." : "Entries with these tags will show up here.")
+            } actions: {
+                Button("Edit smart folder") { smartRequest = .edit(folder) }
             }
         } else if place != nil, subfolders.isEmpty, entries.isEmpty {
             ContentUnavailableView(

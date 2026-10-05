@@ -35,7 +35,7 @@ struct FolderNameSheet: View {
                     TextField("Folder name", text: $name)
                         .autocorrectionDisabled()
                         #if os(iOS)
-                        .textInputAutocapitalization(.words)
+                        .textInputAutocapitalization(.sentences)
                         #endif
                         .focused($focused)
                         .submitLabel(.done)
