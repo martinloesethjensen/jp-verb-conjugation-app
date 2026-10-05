@@ -4,9 +4,10 @@ import VerbKit
 enum AppTab: Hashable {
     case verbs
     case grammar
+    case wordBank
 }
 
-/// Verbs and Grammar as two tabs, each its own `NavigationSplitView`
+/// Verbs, Grammar and the Word Bank as three tabs, each its own `NavigationSplitView`
 /// (list/detail at regular width, a stack on iPhone). Also owns the
 /// `openRoute` action, so a verb page can jump to a lesson and a lesson
 /// can jump to a related one.
@@ -20,6 +21,8 @@ struct MainTabView<VerbsTab: View>: View {
     /// otherwise; `open` sets this to `.detail` so a cross-link lands on
     /// the lesson even when the Grammar tab hasn't been visited yet.
     @State private var grammarColumn: NavigationSplitViewColumn = .sidebar
+    @State private var wordBankSelection: UUID?
+    @State private var wordBankColumn: NavigationSplitViewColumn = .sidebar
     let onSettings: () -> Void
     private let verbsTab: VerbsTab
 
@@ -37,6 +40,9 @@ struct MainTabView<VerbsTab: View>: View {
             }
             Tab("Grammar", systemImage: "text.book.closed", value: AppTab.grammar) {
                 GrammarTab(selection: $grammarSelection, preferredColumn: $grammarColumn, onSettings: onSettings)
+            }
+            Tab("Word Bank", systemImage: "books.vertical", value: AppTab.wordBank) {
+                WordBankTab(selection: $wordBankSelection, preferredColumn: $wordBankColumn, onSettings: onSettings)
             }
         }
         .tabViewStyle(.sidebarAdaptable)
