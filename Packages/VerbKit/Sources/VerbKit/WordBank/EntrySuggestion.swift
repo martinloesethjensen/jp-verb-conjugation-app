@@ -30,10 +30,10 @@ public struct EntrySuggestion: Equatable, Sendable {
     /// disappears and a hand-typed value is never suggested again.
     public func removing(whatIsIn entry: WordBankEntryValue, appliedDialectCatalogueIDs: Set<String>) -> EntrySuggestion {
         var rest = self
-        if let reading, let existing = entry.reading, JapaneseNormalizer.key(existing) == JapaneseNormalizer.key(reading) {
+        // Never suggest over a reading the entry has (typed, or filled in from the dictionary),
+        // and a "reading" that is just the text again is no help.
+        if entry.reading != nil || reading.map({ JapaneseNormalizer.key($0) == JapaneseNormalizer.key(entry.text) }) == true {
             rest.reading = nil
-        } else if entry.reading != nil {
-            rest.reading = nil   // never suggest over something the user has (or the dictionary filled in)
         }
         let haveForms = Set(entry.equivalents.map { JapaneseNormalizer.key($0.written) })
         rest.standardForms = standardForms.filter { !haveForms.contains(JapaneseNormalizer.key($0.written)) }

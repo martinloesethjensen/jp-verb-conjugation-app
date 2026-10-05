@@ -160,6 +160,15 @@ final class EntrySuggestionContentTests: XCTestCase {
         XCTAssertNil(tagged.dialectCatalogueID)
     }
 
+    func testAReadingThatIsTheTextAgainIsDropped() {
+        let entry = WordBankEntryValue(text: "しんどい")
+        let rest = EntrySuggestion(reading: "しんどい", meanings: ["tired"]).removing(whatIsIn: entry, appliedDialectCatalogueIDs: [])
+        XCTAssertNil(rest.reading)
+        XCTAssertEqual(rest.meanings, ["tired"])
+        let kanji = EntrySuggestion(reading: "しんどい").removing(whatIsIn: WordBankEntryValue(text: "辛い"), appliedDialectCatalogueIDs: [])
+        XCTAssertEqual(kanji.reading, "しんどい")
+    }
+
     func testApplyingFillsOnlyWhatIsAsked() {
         var entry = WordBankEntryValue(text: "おおきに")
         entry.apply(reading: "おおきに")

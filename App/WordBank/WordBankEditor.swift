@@ -24,6 +24,8 @@ struct WordBankEditor: View {
     /// The reading the dictionary filled in, so a later text edit can refresh it but a
     /// hand-typed reading is never overwritten.
     @State private var autoReading: String?
+    @State private var suggestions: EntrySuggestionModel
+    @AppStorage(WordBankSuggestions.enabledKey, store: .appGroup) private var suggestionsOn = true
     @State private var choosingFolder = false
     @State private var choosingTags = false
     @State private var failed = false
@@ -32,6 +34,8 @@ struct WordBankEditor: View {
         self.request = request
         self.onOpenExisting = onOpenExisting
         _draft = State(initialValue: request.entry ?? WordBankEntryValue(text: request.text, folderID: request.folderID))
+        let enabled = UserDefaults.appGroup.object(forKey: WordBankSuggestions.enabledKey) as? Bool ?? true
+        _suggestions = State(initialValue: EntrySuggestionModel(suggester: enabled ? OnDeviceEntrySuggester() : nil))
     }
 
     private var isNew: Bool { request.entry == nil }
@@ -46,6 +50,7 @@ struct WordBankEditor: View {
         NavigationStack {
             Form {
                 textSection
+                suggestionsSection
                 equivalentsSection
                 sensesSection
                 detailsSection
@@ -73,7 +78,13 @@ struct WordBankEditor: View {
             } message: {
                 Text("The entry needs some text.")
             }
-            .onChange(of: draft.text) { refreshReading() }
+            .onChange(of: draft.text) {
+                refreshReading()
+                if suggestionsOn { suggestions.textChanged(draft.text) }
+            }
+            .onAppear {
+                if suggestionsOn, !isNew { suggestions.textChanged(draft.text) }
+            }
         }
     }
 
@@ -105,6 +116,97 @@ struct WordBankEditor: View {
                 Text("Filled in from the furigana dictionary. Change it if it's wrong.")
             }
         }
+    }
+
+    // MARK: - Suggestions
+
+    private var appliedCatalogueIDs: Set<String> {
+        Set(store.dialectTags.filter { draft.dialectTagIDs.contains($0.id) }.compactMap(\.catalogueID))
+    }
+
+    @ViewBuilder
+    private var suggestionsSection: some View {
+        switch suggestions.state {
+        case .idle, .unavailable, .nothing:
+            EmptyView()
+        case .loading:
+            Section {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Looking for suggestions…").font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+        case .failed:
+            Section {
+                HStack {
+                    Label("Couldn't get suggestions", systemImage: "exclamationmark.circle").font(.footnote)
+                    Spacer()
+                    Button("Try again") { suggestions.retry() }.font(.footnote.weight(.semibold)).buttonStyle(.borderless)
+                }
+            }
+        case .ready(let full):
+            let rest = full.removing(whatIsIn: draft, appliedDialectCatalogueIDs: appliedCatalogueIDs)
+            if !rest.isEmpty {
+                Section {
+                    PillFlow(spacing: 8) { suggestionChips(rest) }
+                        .padding(.vertical, 4)
+                    Button("Use all", systemImage: "wand.and.stars") { useAll(rest) }
+                } header: {
+                    Text("Suggestions")
+                } footer: {
+                    Text("Suggested on this device. Check them: dialect words are often wrong.")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func suggestionChips(_ rest: EntrySuggestion) -> some View {
+        if let reading = rest.reading {
+            chip("Reading", reading) { draft.apply(reading: reading) }
+        }
+        ForEach(rest.standardForms, id: \.written) { form in
+            chip("Standard", form.written) { draft.apply(standardForm: form) }
+        }
+        ForEach(rest.meanings, id: \.self) { meaning in
+            chip("Meaning", meaning) { draft.apply(meaning: meaning) }
+        }
+        if let kind = rest.kind {
+            chip("Kind", kind.rawValue.capitalized) { draft.apply(kind: kind) }
+        }
+        if let id = rest.dialectCatalogueID, let record = DialectCatalogue.bundled.dialects.first(where: { $0.id == id }) {
+            chip("Dialect", record.name) { applyDialect(record) }
+        }
+    }
+
+    private func chip(_ label: String, _ value: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                Text(value).font(.callout)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Color.accentColor.opacity(0.12), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(label): \(value). Tap to add.")
+    }
+
+    private func useAll(_ rest: EntrySuggestion) {
+        if let reading = rest.reading { draft.apply(reading: reading) }
+        rest.standardForms.forEach { draft.apply(standardForm: $0) }
+        rest.meanings.forEach { draft.apply(meaning: $0) }
+        if let kind = rest.kind { draft.apply(kind: kind) }
+        if let id = rest.dialectCatalogueID, let record = DialectCatalogue.bundled.dialects.first(where: { $0.id == id }) {
+            applyDialect(record)
+        }
+    }
+
+    /// Reuses the tag already made from this dialect, or makes it.
+    private func applyDialect(_ record: DialectRecord) {
+        let tag = store.dialectTags.first { $0.catalogueID == record.id } ?? (try? store.createDialectTag(from: record))
+        if let tag, !draft.dialectTagIDs.contains(tag.id) { draft.dialectTagIDs.append(tag.id) }
     }
 
     private var equivalentsSection: some View {
