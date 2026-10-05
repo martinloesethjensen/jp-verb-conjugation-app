@@ -389,6 +389,95 @@ All of this logic (`WordBankArchive` for the format, `WordBankImportPlanner`
 producing the preview plan, applied by the store) lives in VerbKit and is
 unit-tested without UI.
 
+### Starter packs (added 2026-10-06)
+
+Ready-made `.wordbank` files that live in the GitHub repo and that the user can
+add from inside the app: Kansai essentials, ordering food, slang, and so on.
+A pack is an ordinary `.wordbank` file, so adding one is an import (see
+"Import and export") with a catalogue in front of it and a new folder behind
+it. It needs the archive format and `WordBankImportPlanner` from milestone 2.
+
+**Decisions.**
+
+- A pack always goes into **a new folder** at the root of the Word Bank, named
+  after the pack (the sibling-name rule makes "Name (2)" if that exists). The
+  pack's own folders become subfolders. The user can rename or delete it like
+  any folder, and deleting it removes the whole pack.
+- Tags are an **optional step**: "Also tag these", shown on the preview with
+  the pack's tags listed as chips (the dialect tag, and any custom tags the
+  pack defines), each switchable. It is on by default for the pack's own
+  dialect tags and off for anything else. With the step off, entries are added
+  with no tags and no tags are created. Tags that match existing ones are
+  reused, as in any import.
+- Nothing is downloaded until the user opens **Starter packs** (Word Bank menu
+  › Starter packs) and taps Add. No pack data is fetched at launch.
+
+**Where packs live.** `data/packs/<id>.wordbank` and `data/packs/index.json`.
+The signed manifest gets a `packs` entry with the index's version and sha256,
+exactly like `grammar` and `furigana`. The index lists each pack with its own
+sha256, so the signature covers the index and the index covers every pack.
+The app refuses an index that does not match the manifest, a pack that does not
+match the index, and an untrusted manifest (shown as "Couldn't verify the pack
+list"). Data changes need the owner's `sign_manifest.py sign` before merge.
+
+**Index entry.**
+
+```
+id, title, summary, version, sha256, entryCount, size
+region / dialect (optional), tags [names], languageNotes
+review: "native-reviewed" | "community" | "unreviewed", reviewedBy (optional)
+license, sources [text]
+```
+
+`license` and `sources` are required: a check rejects a pack without them.
+`review` is shown on the list row and the preview ("Unreviewed: written by the
+app's author, not checked by a native speaker"), so the user knows how far to
+trust the content.
+
+**Screen.** A list of packs with title, summary, entry count and review badge;
+grouped by Dialects, Food, Slang, Everyday. Tapping one opens a preview: sample
+entries, folders and tags it adds, how many entries are already in the bank,
+review status, source and licence. Below that, the "Also tag these" step and
+**Add to Word Bank**. The index is cached after the first successful fetch so
+the list still opens offline; adding a pack needs the network. Packs already
+added show "Added" and, when the index has a newer version, "Update".
+
+**Adding.** Planner run with destination "Into a folder" set to a freshly
+created folder, tags filtered by the step above, and `source` on each new
+entry set to "Starter pack: <title>". One save; the automatic backup from the
+import flow is taken first. Entries that match something already in the bank
+are combined by the usual rules and stay in their current folder; the preview
+says "n already in your Word Bank (kept where they are)".
+
+**Updating.** The app remembers per pack: id, version and the folder id it
+created (a small on-device record, not part of the bank and not synced yet).
+Update re-imports the new file into that folder. Because importing never
+overwrites or deletes, the user's edits survive, new entries appear, and
+entries removed upstream stay. If the folder is gone the record is dropped and
+the pack shows as not added.
+
+**First packs.** Three, to prove the path: a 10-entry "Try the Word Bank"
+sample (also offered from the empty state), "Kansai essentials" and "Ordering
+food". All start as **unreviewed** until a native speaker or the owner checks
+them.
+
+**Tooling.** `scripts/validate_packs.py` checks every pack parses as a
+`.wordbank` file, has required metadata, no duplicate entries, is under 2 MB
+and matches its index sha256; `update_data.py --check` runs it.
+
+**Errors.** Network failure, a hash mismatch, a newer major `version` and an
+oversized file each show a plain message and change nothing.
+
+**Testing.** VerbKit: index decoding and verification (bad hash, bad
+signature, missing licence), the add flow against the planner (new folder
+created, tags on/off, existing entries combined, second add changes nothing),
+update (new entry added, edited entry untouched, deleted folder drops the
+record), caching and offline. App: the list, preview and add on the
+simulator.
+
+**Out of scope for packs v1.** User-made or third-party packs, packs from
+other URLs, automatic update checks, and syncing the installed-pack record.
+
 ### Suggestions while typing (added 2026-10-05)
 
 Under the text, the editor offers tap-to-apply chips for a reading, standard Japanese,
@@ -514,6 +603,9 @@ Each ships on its own:
    actions, recent searches.
 2. **Import / export:** `.wordbank` format, export scopes, import preview,
    folder and tag generation, combine merge, automatic backups and restore.
+2b. **Starter packs:** catalogue on GitHub, signed index, Starter packs screen,
+   add into a new folder with the optional tag step, update, first three packs.
+   Needs milestone 2's archive format and planner.
 3. **Saved searches:** model, smart-folder section, edit, use in export
    (review and widget pick them up in their own milestones).
 4. **Links:** word links (automatic and manual, with forms), dialect-vs-
