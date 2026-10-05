@@ -38,4 +38,6 @@ public protocol WordBankPersisting {
     func delete(dialectTagIDs: [UUID], customTagIDs: [UUID]) throws
     func upsert(smartFolder: WordBankSmartFolderValue) throws
     func delete(smartFolderIDs: [UUID]) throws
+    /// Writes everything in `changes` in one save. If it throws, nothing was written.
+    func apply(_ changes: WordBankChanges) throws
 }

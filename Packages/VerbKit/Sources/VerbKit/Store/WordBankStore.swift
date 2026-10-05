@@ -54,6 +54,26 @@ public final class WordBankStore {
 
     public var tree: FolderTree { FolderTree(folders) }
 
+    public var snapshot: WordBankSnapshot {
+        WordBankSnapshot(entries: entries, folders: folders, dialectTags: dialectTags, customTags: customTags, smartFolders: smartFolders)
+    }
+
+    /// Applies the changes in one save. Memory changes only after the write worked, so a
+    /// failed import leaves the bank exactly as it was.
+    public func apply(_ changes: WordBankChanges) throws {
+        guard !changes.isEmpty else { return }
+        do { try persisting.apply(changes) } catch {
+            lastError = .saveFailed
+            throw WordBankError.saveFailed
+        }
+        let updated = changes.applied(to: snapshot)
+        entries = updated.entries
+        folders = updated.folders
+        dialectTags = updated.dialectTags
+        customTags = updated.customTags
+        smartFolders = updated.smartFolders
+    }
+
     /// The search index for the bank as it is now. Built on first use after a change and then
     /// reused, so typing in the search field doesn't rebuild it. `readingKey` names the
     /// `derivedReading` function (for example how many readings the furigana dictionary has):
