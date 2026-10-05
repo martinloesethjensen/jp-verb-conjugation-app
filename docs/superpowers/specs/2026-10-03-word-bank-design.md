@@ -385,9 +385,28 @@ missing folders or tags (which fall back to the path or name), and
 malformed values are skipped or repaired and listed in the preview. Files
 over 20 MB are refused.
 
+**As built (2026-10-06).**
+
+- The file also carries `smartFolders` (name, tag names, any/all); a full
+  backup includes them. Review history is not in the file yet: milestone 5
+  adds it, and unknown fields are ignored, so older apps still read newer files
+  of the same major version.
+- A dialect tag from a file with no region, no prefecture and no catalogue
+  match becomes a custom tag (a dialect tag needs a region). Only a hand-written
+  tag record (one with no id) has gaps such as romaji filled from the bundled
+  catalogue, so an export always imports back exactly.
+- New folders, tags and entries keep the file's ids when those are unused
+  locally, so Restore reproduces the bank exactly; otherwise they get fresh ids.
+- Import is applied through one all-or-nothing write
+  (`WordBankPersisting.apply`); a failed save leaves the bank as it was.
+- **Restore backup** (Settings › Word Bank) replaces the bank with the backup
+  after taking a backup of the current one. An empty bank is never backed up.
+- A `.wordbank` file opened from outside the app (Files, AirDrop, Mail) shows
+  the same import sheet.
+
 All of this logic (`WordBankArchive` for the format, `WordBankImportPlanner`
-producing the preview plan, applied by the store) lives in VerbKit and is
-unit-tested without UI.
+producing the preview plan, `WordBankTransfer` backing up and applying) lives
+in VerbKit and is unit-tested without UI.
 
 ### Starter packs (added 2026-10-06)
 
@@ -601,7 +620,7 @@ Each ships on its own:
    text actions), tags and tag management with suggestions, search with
    tokens, chips and folder scopes, ranking, match explanations, no-results
    actions, recent searches.
-2. **Import / export:** `.wordbank` format, export scopes, import preview,
+2. **Import / export (done 2026-10-06, PR #53; iPad and macOS checks parked):** `.wordbank` format, export scopes, import preview,
    folder and tag generation, combine merge, automatic backups and restore.
 2b. **Starter packs:** catalogue on GitHub, signed index, Starter packs screen,
    add into a new folder with the optional tag step, update, first three packs.
