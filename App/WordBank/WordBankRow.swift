@@ -8,6 +8,8 @@ struct WordBankRow: View {
     let entry: WordBankEntryValue
     /// The folder path, shown when a result is outside the folder being viewed.
     var folderPath: String?
+    /// Why a search result matched, when it isn't obvious from the text.
+    var explanation: WordBankMatch.Explanation?
 
     private var tags: [AnyView] {
         let dialect = store.dialectTags.filter { entry.dialectTagIDs.contains($0.id) }.map { AnyView(TagPill($0)) }
@@ -33,6 +35,9 @@ struct WordBankRow: View {
                     .font(.subheadline)
                     .italic()
                     .foregroundStyle(.secondary)
+            }
+            if let explanation {
+                MatchExplanationLabel(explanation: explanation)
             }
             if let folderPath {
                 Label(folderPath, systemImage: "folder").font(.caption).foregroundStyle(.secondary)

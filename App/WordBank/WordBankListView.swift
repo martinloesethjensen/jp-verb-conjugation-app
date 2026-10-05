@@ -41,6 +41,16 @@ struct WordBankListView: View {
     @State private var smartRequest: SmartFolderRequest?
     @State private var deletingSmart: WordBankSmartFolderValue?
 
+    // Search
+    @Environment(\.furiganaDictionary) private var furigana
+    @State private var searchText = ""
+    @State private var tokens: [WordBankToken] = []
+    @State private var suggestedTokens: [WordBankToken] = []
+    @State private var searchScope: WordBankSearchScope = .thisFolder
+    @FocusState private var searchFocused: Bool
+    /// The last ten searches (JSON). On this device only, never exported or synced.
+    @AppStorage(RecentSearches.defaultsKey) private var recentRaw = Data()
+
     private enum MoveRequest: Identifiable {
         case entries([UUID])
         case folder(WordBankFolderValue)
@@ -124,6 +134,55 @@ struct WordBankListView: View {
         }
     }
 
+    // MARK: - Search
+
+    private var trimmedSearch: String { searchText.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private var searchActive: Bool { !trimmedSearch.isEmpty || !tokens.isEmpty }
+
+    /// Inside a folder the search looks in it (and its subfolders) unless switched to all entries.
+    private var query: WordBankQuery {
+        WordBankQuery(
+            text: searchText, tokens: tokens,
+            scopeFolder: folderID != nil && searchScope == .thisFolder ? folderID : nil
+        )
+    }
+
+    private var index: WordBankSearchIndex {
+        let dictionary = furigana
+        return store.searchIndex(readingKey: dictionary?.readings.count ?? 0) { dictionary?.reading(of: $0) }
+    }
+
+    private var recents: [WordBankQuery] { RecentSearches(rawValue: recentRaw).items }
+
+    private func recordSearch() {
+        guard searchActive else { return }
+        var list = RecentSearches(rawValue: recentRaw)
+        list.record(WordBankQuery(text: trimmedSearch, tokens: tokens, scopeFolder: query.scopeFolder))
+        recentRaw = list.rawValue
+    }
+
+    private func restore(_ recent: WordBankQuery) {
+        searchText = recent.text
+        tokens = recent.tokens
+        searchScope = recent.scopeFolder != nil ? .thisFolder : .allEntries
+    }
+
+    /// Opens an entry, remembering the search that found it.
+    private func openEntry(_ id: UUID) {
+        if searchActive { recordSearch() }
+        onOpen(id)
+    }
+
+    private func refreshSuggestions() {
+        let fragment = searchText.split(whereSeparator: \.isWhitespace).last.map(String.init) ?? ""
+        suggestedTokens = fragment.isEmpty ? [] : index.suggestedTokens(for: fragment, excluding: tokens)
+    }
+
+    private var tokenSummary: String {
+        tokens.map { $0.title(in: store) }.joined(separator: " · ")
+    }
+
     private struct EntryGroup: Identifiable {
         let title: String?
         let entries: [WordBankEntryValue]
@@ -168,7 +227,94 @@ struct WordBankListView: View {
     // MARK: - Body
 
     var body: some View {
-        List(selection: $chosen) {
+        let found = searchActive ? index.search(query) : []
+        return list(found: found)
+    }
+
+    private func list(found: [WordBankMatch]) -> some View {
+        let base = List(selection: $chosen) {
+            if searchFocused || searchActive {
+                Section {
+                    WordBankSearchChips(tokens: $tokens)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                #if os(iOS)
+                .listSectionMargins(.horizontal, 0)
+                #endif
+            }
+            if searchActive {
+                searchResults(found)
+            } else if searchFocused, !recents.isEmpty {
+                RecentSearchesSection(
+                    searches: recents, onPick: restore,
+                    onRemove: { removed in
+                        var list = RecentSearches(rawValue: recentRaw)
+                        list.remove(removed)
+                        recentRaw = list.rawValue
+                    },
+                    onClear: {
+                        var list = RecentSearches(rawValue: recentRaw)
+                        list.clear()
+                        recentRaw = list.rawValue
+                    }
+                )
+            } else {
+                browseContent
+            }
+        }
+        .modifier(WordBankSearchable(
+            text: $searchText, tokens: $tokens, suggested: $suggestedTokens, scope: $searchScope,
+            focused: $searchFocused, hasScopes: folderID != nil, onSubmit: recordSearch
+        ))
+        .onChange(of: searchText) {
+            refreshSuggestions()
+            if !searchActive { searchScope = .thisFolder }
+        }
+        .onChange(of: tokens) { old, new in
+            // A picked suggestion replaces the fragment being typed.
+            if new.count > old.count, !searchText.isEmpty {
+                var words = searchText.split(separator: " ", omittingEmptySubsequences: false)
+                if !words.isEmpty { words.removeLast() }
+                searchText = words.joined(separator: " ")
+            }
+            refreshSuggestions()
+            if !searchActive { searchScope = .thisFolder }
+        }
+        .navigationTitle(title)
+        .navigationSubtitle(searchActive ? searchSubtitle(count: found.count) : subtitle)
+        .toolbar { toolbar }
+        .overlay { emptyState(found: found) }
+        return sheetsAndDialogs(base)
+    }
+
+    private func searchSubtitle(count: Int) -> String {
+        var parts: [String] = []
+        if !tokens.isEmpty { parts.append(tokenSummary) }
+        parts.append(count == 1 ? "1 result" : "\(count) results")
+        return parts.joined(separator: " · ")
+    }
+
+    /// Ranked results when there is text; the usual grouping, filtered, with only tokens.
+    @ViewBuilder
+    private func searchResults(_ found: [WordBankMatch]) -> some View {
+        if !trimmedSearch.isEmpty {
+            Section {
+                ForEach(found) { match in entryRow(match.entry, explanation: match.explanation) }
+            }
+        } else {
+            ForEach(groups(of: found.map(\.entry))) { group in
+                Section(group.title ?? "") {
+                    ForEach(group.entries) { entryRow($0) }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var browseContent: some View {
+        Group {
             if place == nil, !bankIsEmpty {
                 Section {
                     smartRow("All entries", systemImage: "tray.full", place: .all, count: store.entries.count)
@@ -193,10 +339,11 @@ struct WordBankListView: View {
                 }
             }
         }
-        .navigationTitle(title)
-        .navigationSubtitle(subtitle)
-        .toolbar { toolbar }
-        .overlay { emptyState }
+    }
+
+    /// The sheets, dialogs and alert this screen can present.
+    private func sheetsAndDialogs<Content: View>(_ content: Content) -> some View {
+        content
         .sheet(item: $editorRequest) { WordBankEditor(request: $0, onOpenExisting: onOpen) }
         .sheet(isPresented: $managingTags) { TagManagerView() }
         .sheet(item: $smartRequest) { SmartFolderEditor(request: $0) }
@@ -287,13 +434,17 @@ struct WordBankListView: View {
     }
 
     @ViewBuilder
-    private func entryRow(_ entry: WordBankEntryValue) -> some View {
+    private func entryRow(_ entry: WordBankEntryValue, explanation: WordBankMatch.Explanation? = nil) -> some View {
         Group {
             if isEditing {
                 WordBankRow(entry: entry)
             } else {
-                Button { onOpen(entry.id) } label: {
-                    WordBankRow(entry: entry, folderPath: showsFolderPath ? folderPath(of: entry) : nil)
+                Button { openEntry(entry.id) } label: {
+                    WordBankRow(
+                        entry: entry,
+                        folderPath: showsFolderPath(of: entry) ? folderPath(of: entry) : nil,
+                        explanation: explanation
+                    )
                 }
                 .buttonStyle(.plain)
             }
@@ -311,11 +462,11 @@ struct WordBankListView: View {
         .draggable("entry:\(entry.id.uuidString)")
     }
 
-    /// Smart lists mix folders, so each row says where its entry is filed.
-    private var showsFolderPath: Bool {
+    /// Smart lists and search results mix folders, so each row says where its entry is filed.
+    private func showsFolderPath(of entry: WordBankEntryValue) -> Bool {
         switch place {
         case .all?, .recent?, .smart?: true
-        default: false
+        default: searchActive && entry.folderID != folderID
         }
     }
 
@@ -390,9 +541,35 @@ struct WordBankListView: View {
         #endif
     }
 
+    /// No results: say so, offer ways out (drop a filter, widen the scope) and adding the text.
+    private var noResults: some View {
+        let ways = index.relaxations(of: query)
+        return ContentUnavailableView {
+            Label(trimmedSearch.isEmpty ? "No entries match" : "No results for “\(trimmedSearch)”", systemImage: "magnifyingglass")
+        } description: {
+            Text(ways.isEmpty ? "Try different words or fewer filters." : "Here are some ways to widen the search.")
+        } actions: {
+            ForEach(ways, id: \.self) { way in
+                if let token = way.dropping {
+                    Button("Without \(token.title(in: store)) (\(way.count))") { tokens.removeAll { $0 == token } }
+                } else if way.widenScope {
+                    Button("Search all entries (\(way.count))") { searchScope = .allEntries }
+                }
+            }
+            if !trimmedSearch.isEmpty {
+                Button("Add “\(trimmedSearch)” as a new entry") {
+                    editorRequest = WordBankEditorRequest(folderID: folderID, text: trimmedSearch)
+                }
+                .buttonStyle(.glassProminent)
+            }
+        }
+    }
+
     @ViewBuilder
-    private var emptyState: some View {
-        if store.entries.isEmpty && store.folders.isEmpty {
+    private func emptyState(found: [WordBankMatch]) -> some View {
+        if searchActive, found.isEmpty {
+            noResults
+        } else if store.entries.isEmpty && store.folders.isEmpty {
             ContentUnavailableView {
                 Label("Your Word Bank is empty", systemImage: "books.vertical")
             } description: {
