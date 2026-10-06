@@ -35,13 +35,25 @@ public struct AttachmentRule: Codable, Hashable, Sendable {
     public var pattern: String
     public var example: String
     public var note: String?
+    /// The building blocks the pattern attaches to. Empty for a rule that is free text only.
+    public var slots: [GrammarSlot]
+    /// For な-adjectives and nouns in the `plain` slot: だ becomes な (しずかなので).
+    public var daToNa: Bool
+    /// What follows the slot (ので, すぎる). Nil when the rule only tags its slots.
+    public var then: String?
 
-    public init(wordClass: WordClass, condition: String? = nil, pattern: String, example: String, note: String? = nil) {
+    public init(
+        wordClass: WordClass, condition: String? = nil, pattern: String, example: String, note: String? = nil,
+        slots: [GrammarSlot] = [], daToNa: Bool = false, then: String? = nil
+    ) {
         self.wordClass = wordClass
         self.condition = condition
         self.pattern = pattern
         self.example = example
         self.note = note
+        self.slots = slots
+        self.daToNa = daToNa
+        self.then = then
     }
 
     enum CodingKeys: String, CodingKey {
@@ -50,6 +62,59 @@ public struct AttachmentRule: Codable, Hashable, Sendable {
         case pattern
         case example
         case note
+        case slots
+        case daToNa = "da_to_na"
+        case then
+    }
+
+    /// The new fields may be absent, so lessons published before slots still decode.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        wordClass = try c.decode(WordClass.self, forKey: .wordClass)
+        condition = try c.decodeIfPresent(String.self, forKey: .condition)
+        pattern = try c.decode(String.self, forKey: .pattern)
+        example = try c.decode(String.self, forKey: .example)
+        note = try c.decodeIfPresent(String.self, forKey: .note)
+        slots = try c.decodeIfPresent([GrammarSlot].self, forKey: .slots) ?? []
+        daToNa = try c.decodeIfPresent(Bool.self, forKey: .daToNa) ?? false
+        then = try c.decodeIfPresent(String.self, forKey: .then)
+    }
+
+    /// The pattern built for `word` in `slot` (しずか + なので), or nil when the rule is for
+    /// another class, does not list the slot, has no ending, or the word lacks the form.
+    public func build(_ word: SlotSource, slot: GrammarSlot) -> String? {
+        guard word.wordClass == wordClass, slots.contains(slot), let then,
+              let form = word.form(for: slot, daToNa: daToNa) else { return nil }
+        return form + then
+    }
+}
+
+/// "Don't confuse with": a pattern learners mix this one up with, and how they differ.
+public struct GrammarContrast: Codable, Hashable, Sendable {
+    public var pattern: String
+    /// Another lesson's id, when the pattern has one.
+    public var id: String?
+    public var explanation: String
+    public var examples: [GrammarExample]
+
+    public init(pattern: String, id: String? = nil, explanation: String, examples: [GrammarExample] = []) {
+        self.pattern = pattern
+        self.id = id
+        self.explanation = explanation
+        self.examples = examples
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case pattern, id, explanation, examples
+    }
+
+    /// `id` and `examples` may be omitted from the JSON.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        pattern = try c.decode(String.self, forKey: .pattern)
+        id = try c.decodeIfPresent(String.self, forKey: .id)
+        explanation = try c.decode(String.self, forKey: .explanation)
+        examples = try c.decodeIfPresent([GrammarExample].self, forKey: .examples) ?? []
     }
 }
 
@@ -101,6 +166,8 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     public var conjugations: [GrammarConjugation]
     public var pitfalls: [GrammarPitfall]
     public var related: [String]
+    /// Patterns this one is often confused with. Empty for most lessons.
+    public var contrasts: [GrammarContrast]
 
     /// The id verb detail pages link to for the んです lesson.
     public static let nDesuID = "n-desu"
@@ -123,7 +190,8 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         attachment: [AttachmentRule],
         conjugations: [GrammarConjugation],
         pitfalls: [GrammarPitfall],
-        related: [String]
+        related: [String],
+        contrasts: [GrammarContrast] = []
     ) {
         self.id = id
         self.title = title
@@ -134,6 +202,26 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         self.conjugations = conjugations
         self.pitfalls = pitfalls
         self.related = related
+        self.contrasts = contrasts
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, summary, jlpt, usages, attachment, conjugations, pitfalls, related, contrasts
+    }
+
+    /// `contrasts` may be omitted from the JSON.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        summary = try c.decode(String.self, forKey: .summary)
+        jlpt = try c.decodeIfPresent(JLPTLevel.self, forKey: .jlpt)
+        usages = try c.decode([GrammarUsage].self, forKey: .usages)
+        attachment = try c.decode([AttachmentRule].self, forKey: .attachment)
+        conjugations = try c.decode([GrammarConjugation].self, forKey: .conjugations)
+        pitfalls = try c.decode([GrammarPitfall].self, forKey: .pitfalls)
+        related = try c.decode([String].self, forKey: .related)
+        contrasts = try c.decodeIfPresent([GrammarContrast].self, forKey: .contrasts) ?? []
     }
 }
 
