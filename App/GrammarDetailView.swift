@@ -23,8 +23,9 @@ struct GrammarDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 header
-                if !point.attachment.isEmpty { attachmentSection }
+                if !point.attachment.isEmpty { AttachmentSection(rules: point.attachment) }
                 usagesSection
+                if !point.contrasts.isEmpty { contrastsSection }
                 if !point.conjugations.isEmpty { conjugationsSection }
                 if !point.pitfalls.isEmpty { pitfallsSection }
                 if !relatedPoints.isEmpty { relatedSection }
@@ -76,27 +77,18 @@ struct GrammarDetailView: View {
             .glassEffect(in: RoundedRectangle(cornerRadius: 10))
     }
 
-    // MARK: How it attaches
+    // MARK: Don't confuse with
 
-    private var attachmentSection: some View {
+    private var contrastsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("How it attaches")
-            ForEach(Array(point.attachment.enumerated()), id: \.offset) { _, rule in
+            sectionHeader("Don't confuse with", systemImage: "arrow.left.arrow.right")
+            ForEach(Array(point.contrasts.enumerated()), id: \.offset) { _, contrast in
                 card {
-                    HStack(spacing: 6) {
-                        Text(rule.wordClass.displayName).font(.subheadline.weight(.semibold))
-                        if let condition = rule.condition {
-                            JapaneseText("· \(condition)").font(.subheadline).foregroundStyle(.secondary)
-                        }
-                    }
-                    JapaneseText(rule.pattern).font(.headline)
-                    // Examples are " / "-separated; one per line so long
-                    // strings never wrap mid-word.
-                    ForEach(rule.example.components(separatedBy: " / "), id: \.self) { example in
-                        JapaneseText(example).font(.title3)
-                    }
-                    if let note = rule.note {
-                        JapaneseText(note).font(.footnote).foregroundStyle(.secondary)
+                    JapaneseText(contrast.pattern).font(.headline)
+                    JapaneseText(contrast.explanation).font(.subheadline)
+                    ForEach(Array(contrast.examples.enumerated()), id: \.offset) { _, example in
+                        Divider()
+                        ExampleRow(example: example)
                     }
                 }
             }
