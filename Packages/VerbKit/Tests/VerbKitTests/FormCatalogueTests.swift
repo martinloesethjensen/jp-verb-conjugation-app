@@ -29,9 +29,12 @@ final class FormCatalogueTests: XCTestCase {
         XCTAssertTrue(catalogue.forms.allSatisfy { families.contains($0.family) })
     }
 
-    func testAllFormsApplyToVerbsForNow() {
+    func testEveryFormAppliesToVerbsAndThePlainFormsToEveryClass() {
         XCTAssertEqual(catalogue.specs(for: .verb).count, 56)
-        XCTAssertTrue(catalogue.specs(for: .iAdjective).isEmpty)
+        let shared: [FormID] = ["te", "short_pos", "short_neg", "short_past", "short_past_neg"]
+        for wordClass in [WordClass.iAdjective, .naAdjective, .noun] {
+            XCTAssertEqual(catalogue.specs(for: wordClass).map(\.id), shared, wordClass.rawValue)
+        }
     }
 
     func testTheNineAuthoredFormsAreTheOnesSearchMatches() {

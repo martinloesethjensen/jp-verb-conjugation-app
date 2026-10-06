@@ -463,6 +463,35 @@ class DumpTests(unittest.TestCase):
 
 
 class ValidateGrammarTests(unittest.TestCase):
+    def rule(self, **fields):
+        doc = valid_grammar()
+        doc["grammar"][0]["attachment"] = [dict({"word_class": "verb", "pattern": "p", "example": "x"}, **fields)]
+        return ud.validate_grammar(doc)
+
+    def test_valid_slot_rule(self):
+        self.assertEqual(self.rule(slots=["plain", "plainPast"], then="ので"), [])
+        self.assertEqual(self.rule(word_class="noun", slots=["plain"], da_to_na=True, then="ので"), [])
+        self.assertEqual(self.rule(slots=["te"]), [])
+
+    def test_slot_problems(self):
+        self.assertTrue(self.rule(slots=["dictionary"]))
+        self.assertTrue(self.rule(slots=[]))
+        self.assertTrue(self.rule(word_class="noun", slots=["stem"], then="すぎる"))
+        self.assertTrue(self.rule(slots=["plain"], da_to_na=True))
+        self.assertTrue(self.rule(word_class="na-adjective", slots=["plainPast"], da_to_na=True))
+        self.assertTrue(self.rule(then="ので"))
+        self.assertTrue(self.rule(slots=["plain"], then=""))
+
+    def test_contrasts(self):
+        doc = valid_grammar()
+        doc["grammar"][0]["contrasts"] = [{"pattern": "〜から", "explanation": "e",
+                                           "examples": [{"jp": "あ", "en": "a"}]}]
+        self.assertEqual(ud.validate_grammar(doc), [])
+        doc["grammar"][0]["contrasts"] = [{"pattern": "", "explanation": "e", "id": "nope"}]
+        problems = " ".join(ud.validate_grammar(doc))
+        self.assertIn("contrast pattern", problems)
+        self.assertIn("contrast id", problems)
+
     def test_valid_document_has_no_errors(self):
         self.assertEqual(ud.validate_grammar(valid_grammar()), [])
 
@@ -630,6 +659,7 @@ class RunTests(unittest.TestCase):
         (d / "grammar.json").write_text(json.dumps(valid_grammar(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (d / "furigana.json").write_text(json.dumps(valid_furigana(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (d / "manifest.json").write_text(json.dumps({"version": "1.0.0", "sha256": "x"}) + "\n", encoding="utf-8")
+        (d / "words.json").write_text(json.dumps({"version": "1.0.0", "description": "d", "words": []}) + "\n", encoding="utf-8")
         return d
 
     def test_check_reports_stale_then_run_fixes_then_check_passes(self):
@@ -744,6 +774,80 @@ class RunTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual((d / "verbs.json").read_bytes(), before)
         self.assertTrue(any("jlpt" in m for m in messages))
+
+
+class WordFormsTests(unittest.TestCase):
+    def test_i_adjective(self):
+        self.assertEqual(ud.word_forms({"class": "i-adjective", "dict": "たかい"}), {
+            "short_pos": "たかい", "short_neg": "たかくない", "short_past": "たかかった",
+            "short_past_neg": "たかくなかった", "stem": "たか", "te": "たかくて"})
+
+    def test_ii_and_kakkoii_take_yo(self):
+        f = ud.word_forms({"class": "i-adjective", "dict": "いい"})
+        self.assertEqual((f["short_pos"], f["short_neg"], f["short_past"], f["stem"], f["te"]),
+                         ("いい", "よくない", "よかった", "よ", "よくて"))
+        self.assertEqual(ud.word_forms({"class": "i-adjective", "dict": "かっこいい"})["short_neg"], "かっこよくない")
+
+    def test_kawaii_is_regular(self):
+        self.assertEqual(ud.word_forms({"class": "i-adjective", "dict": "かわいい"})["short_neg"], "かわいくない")
+
+    def test_na_adjective(self):
+        self.assertEqual(ud.word_forms({"class": "na-adjective", "dict": "しずか"}), {
+            "short_pos": "しずかだ", "short_neg": "しずかじゃない", "short_past": "しずかだった",
+            "short_past_neg": "しずかじゃなかった", "stem": "しずか", "te": "しずかで"})
+
+    def test_noun_has_no_stem(self):
+        f = ud.word_forms({"class": "noun", "dict": "あめ"})
+        self.assertNotIn("stem", f)
+        self.assertEqual(f["short_pos"], "あめだ")
+        self.assertEqual(f["te"], "あめで")
+
+    def test_keys_follow_the_catalogue_order_then_stem(self):
+        keys = list(ud.word_forms({"class": "i-adjective", "dict": "たかい"}))
+        self.assertEqual(keys, ud.form_catalogue.ids("i-adjective") + ["stem"])
+
+    def test_bad_input_raises(self):
+        for word in ({"class": "i-adjective", "dict": "しずか"}, {"class": "verb", "dict": "たべる"},
+                     {"class": "adverb", "dict": "とても"}, {"class": "noun", "dict": ""}):
+            with self.assertRaises(ValueError):
+                ud.word_forms(word)
+
+    def test_apply_is_idempotent_and_overwrites_hand_edits(self):
+        doc = {"words": [{"class": "noun", "dict": "あめ", "forms": {"short_pos": "x"}}]}
+        self.assertTrue(ud.apply_word_forms(doc))
+        self.assertEqual(doc["words"][0]["forms"]["short_pos"], "あめだ")
+        self.assertFalse(ud.apply_word_forms(doc))
+
+
+class CheckWordsTests(unittest.TestCase):
+    readings = {"高": "たか", "雨": "あめ"}
+
+    def test_valid(self):
+        doc = {"words": [{"class": "i-adjective", "dict": "たかい", "kanji": "高い", "meaning": "expensive", "jlpt": "N5"}]}
+        self.assertEqual(ud.check_words(doc, self.readings), [])
+
+    def test_problems(self):
+        doc = {"words": [
+            {"class": "i-adjective", "dict": "たかい", "kanji": "雨い", "meaning": "x", "jlpt": "N5"},
+            {"class": "noun", "dict": "あめ", "meaning": "", "jlpt": "N9"},
+            {"class": "noun", "dict": "あめ", "meaning": "rain", "jlpt": "N5"},
+        ]}
+        problems = " ".join(ud.check_words(doc, self.readings))
+        for fragment in ("kanji", "meaning", "jlpt", "duplicate"):
+            self.assertIn(fragment, problems)
+
+
+class WordsManifestTests(unittest.TestCase):
+    def test_words_entry_starts_at_1_0_0_and_bumps_on_change(self):
+        m = ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f", words_bytes=b"w1")
+        self.assertEqual(m["words"]["version"], "1.0.0")
+        m2 = ud.build_manifest(m, b"v", b"g", furigana_bytes=b"f", words_bytes=b"w2")
+        self.assertEqual(m2["words"]["version"], "1.1.0")
+        m3 = ud.build_manifest(m2, b"v", b"g", furigana_bytes=b"f", words_bytes=b"w2")
+        self.assertEqual(m3["words"]["version"], "1.1.0")
+
+    def test_no_words_bytes_leaves_the_entry_out(self):
+        self.assertNotIn("words", ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f"))
 
 
 if __name__ == "__main__":

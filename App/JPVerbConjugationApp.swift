@@ -10,6 +10,7 @@ struct JPVerbConjugationApp: App {
     @State private var networkMonitor: NetworkMonitor
     @State private var verbStore: VerbStore
     @State private var furiganaStore: FuriganaStore
+    @State private var wordsStore: WordsStore
     @State private var quizHistory: QuizHistoryStore
     @State private var wordBank: WordBankStore
     @State private var wordBankTransfer: WordBankTransferHub
@@ -34,6 +35,10 @@ struct JPVerbConjugationApp: App {
             syncService: FuriganaSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataFuriganaPersisting(modelContext: context)
         ))
+        _wordsStore = State(initialValue: WordsStore(
+            syncService: WordsSyncService(fetcher: fetcher, syncState: syncState),
+            persisting: SwiftDataWordsPersisting(modelContext: context)
+        ))
         _quizHistory = State(initialValue: QuizHistoryStore(
             persisting: SwiftDataQuizHistoryPersisting(modelContext: context)
         ))
@@ -47,6 +52,7 @@ struct JPVerbConjugationApp: App {
             RootView()
                 .environment(verbStore)
                 .environment(furiganaStore)
+                .environment(wordsStore)
                 .environment(quizHistory)
                 .environment(wordBank)
                 .environment(wordBankTransfer)
@@ -68,6 +74,8 @@ struct JPVerbConjugationApp: App {
                 .task {
                     // Independent of the verb sync: furigana is an enhancement.
                     await furiganaStore.start()
+                    // Also an enhancement: the grammar building blocks' adjectives and nouns.
+                    await wordsStore.start()
                 }
         }
         #if os(macOS)

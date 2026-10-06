@@ -100,6 +100,21 @@ final class GitHubVerbFetcherTests: XCTestCase {
         XCTAssertEqual(grammar, GrammarManifest(version: "1.1.0", sha256: "g"))
     }
 
+    func testFetchWordsManifestReadsTheWordsBlock() async throws {
+        try serve(manifest: #"{"version": "1.2.0", "sha256": "abc", "furigana": {"version": "3.0.0", "sha256": "f"}, "words": {"version": "1.0.0", "sha256": "w"}}"#)
+        let fetcher = makeFetcher()
+        let words = try await fetcher.fetchWordsManifest()
+        XCTAssertEqual(words, WordsManifest(version: "1.0.0", sha256: "w"))
+        let furigana = try await fetcher.fetchFuriganaManifest()
+        XCTAssertEqual(furigana, FuriganaManifest(version: "3.0.0", sha256: "f"))
+    }
+
+    func testFetchWordsManifestIsNilWithoutAWordsBlock() async throws {
+        try serve(manifest: #"{"version": "1.0.0", "sha256": "abc"}"#)
+        let words = try await makeFetcher().fetchWordsManifest()
+        XCTAssertNil(words)
+    }
+
     func testFetchFuriganaManifestIsNilWithoutAFuriganaBlock() async throws {
         try serve(manifest: #"{"version": "1.0.0", "sha256": "abc", "grammar": {"version": "1.0.0", "sha256": "g"}}"#)
         let furigana = try await makeFetcher().fetchFuriganaManifest()

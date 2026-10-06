@@ -33,6 +33,7 @@ struct GrammarListView: View {
     var onSettings: () -> Void
     @State private var search = ""
     @State private var scope: LevelScope = .mine
+    @State private var showingBlocks = false
     @FocusState private var searchFocused: Bool
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
@@ -57,6 +58,20 @@ struct GrammarListView: View {
 
     var body: some View {
         List(selection: $selection) {
+            if search.isEmpty && verbStore.hasGrammar {
+                Section {
+                    Button {
+                        showingBlocks = true
+                    } label: {
+                        Label("Building blocks", systemImage: "square.stack.3d.up")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                } footer: {
+                    Text("The forms every lesson attaches to.")
+                }
+            }
             ForEach(filtered) { point in
                 // Same row pattern as VerbListView: an explicit Button
                 // sets the selection, and .tag keeps List's own selection
@@ -78,6 +93,7 @@ struct GrammarListView: View {
         .levelScopeBar(isActive: levelsHidden, scope: $scope)
         .onChange(of: search) { if search.isEmpty { scope = .mine } }
         .navigationTitle("Grammar")
+        .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }
         .navigationSubtitle(scope == .mine ? summary : "")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

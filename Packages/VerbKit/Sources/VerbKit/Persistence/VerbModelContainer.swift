@@ -8,9 +8,10 @@ public enum VerbModelContainerError: Error {
 public enum VerbModelContainer {
     public static let appGroupIdentifier = "group.dev.martinloeseth.jpverbconjugation"
 
-    /// The synced data and quiz history: VerbKit.sqlite, unchanged since before the Word Bank.
+    /// The synced data and quiz history: VerbKit.sqlite. `WordsEntity` (the synced word
+    /// list) was added later; SwiftData adds its table to an existing store without a migration.
     static let verbModels: [any PersistentModel.Type] = [
-        VerbEntity.self, GrammarEntity.self, FuriganaEntity.self, QuizAttemptEntity.self,
+        VerbEntity.self, GrammarEntity.self, FuriganaEntity.self, QuizAttemptEntity.self, WordsEntity.self,
     ]
 
     /// The user's Word Bank: its own file, WordBank.sqlite, so a data re-sync can never touch it.
