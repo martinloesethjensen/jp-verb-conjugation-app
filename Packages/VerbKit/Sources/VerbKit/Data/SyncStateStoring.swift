@@ -8,7 +8,10 @@ public protocol SyncStateStoring: Sendable {
     func lastSyncedFuriganaManifest() -> FuriganaManifest?
     func saveLastSyncedFuriganaManifest(_ manifest: FuriganaManifest)
 
-    /// The highest data version ever accepted for `file` ("verbs", "grammar", "furigana").
+    func lastSyncedWordsManifest() -> WordsManifest?
+    func saveLastSyncedWordsManifest(_ manifest: WordsManifest)
+
+    /// The highest data version ever accepted for `file` ("verbs", "grammar", "furigana", "words").
     /// Unlike the last-synced manifests this survives app updates, so an old but validly
     /// signed manifest can never roll the data back.
     func highestAcceptedVersion(for file: String) -> String?

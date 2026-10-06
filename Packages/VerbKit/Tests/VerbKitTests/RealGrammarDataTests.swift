@@ -91,4 +91,17 @@ final class RealGrammarDataTests: XCTestCase {
             XCTAssertEqual(verb.forms.stem + "ます", verb.forms.masuPos, verb.dict)
         }
     }
+
+    private func loadWords() throws -> [Word] {
+        try JSONDecoder().decode(WordsDataFile.self, from: Data(contentsOf: dataURL("words.json"))).words
+    }
+
+    func testWordsFileMatchesTheManifestAndDecodes() throws {
+        let manifest = try JSONSerialization.jsonObject(with: Data(contentsOf: dataURL("manifest.json"))) as? [String: Any]
+        let entry = try XCTUnwrap(manifest?["words"] as? [String: Any])
+        XCTAssertEqual(entry["sha256"] as? String, sha256Hex(of: try Data(contentsOf: dataURL("words.json"))))
+        let words = try loadWords()
+        XCTAssertGreaterThanOrEqual(words.count, 30)
+        XCTAssertEqual(Set(words.map(\.wordClass)), [.iAdjective, .naAdjective, .noun])
+    }
 }
