@@ -506,6 +506,8 @@ def check_verb_forms(verbs_doc):
 # --- Adjectives and nouns (words.json) ---------------------------------------
 
 WORD_FILE_CLASSES = ("i-adjective", "na-adjective", "noun")
+# The building blocks a grammar rule attaches to (grammar.json `slots`).
+SLOTS = ("plain", "plainNeg", "plainPast", "plainPastNeg", "stem", "te")
 # いい and its compounds conjugate from よい. An explicit list: かわいい also ends in いい
 # but is regular (かわいくない).
 II_ADJECTIVES = {"いい", "かっこいい"}
@@ -650,6 +652,21 @@ def validate_grammar(doc):
             for key in ("pattern", "example"):
                 if not isinstance(a.get(key), str) or not a[key]:
                     errors.append(f"{pid}: attachment {key} missing or empty")
+            slots = a.get("slots")
+            if slots is not None:
+                if not isinstance(slots, list) or not slots or any(slot not in SLOTS for slot in slots):
+                    errors.append(f"{pid}: attachment slots must be a non-empty list of {list(SLOTS)}")
+                    slots = []
+                if a.get("word_class") == "noun" and "stem" in slots:
+                    errors.append(f"{pid}: a noun has no stem")
+            if a.get("da_to_na"):
+                if a.get("word_class") not in ("na-adjective", "noun") or "plain" not in (slots or []):
+                    errors.append(f"{pid}: da_to_na needs a na-adjective or noun rule with the plain slot")
+            if "then" in a:
+                if not isinstance(a["then"], str) or not a["then"]:
+                    errors.append(f"{pid}: attachment then must be a non-empty string")
+                if slots is None:
+                    errors.append(f"{pid}: attachment then needs slots")
 
         pitfalls = p.get("pitfalls")
         if not isinstance(pitfalls, list):
@@ -663,6 +680,16 @@ def validate_grammar(doc):
             for e in f.get("examples", []):
                 if not e.get("jp") or not e.get("en"):
                     errors.append(f"{pid}/{heading}: pitfall example needs jp and en")
+
+        for c in p.get("contrasts", []):
+            for key in ("pattern", "explanation"):
+                if not isinstance(c.get(key), str) or not c[key]:
+                    errors.append(f"{pid}: contrast {key} missing or empty")
+            if c.get("id") is not None and c["id"] not in ids:
+                errors.append(f"{pid}: contrast id '{c['id']}' does not exist")
+            for e in c.get("examples", []):
+                if not e.get("jp") or not e.get("en"):
+                    errors.append(f"{pid}: contrast example needs jp and en")
 
         conjugations = p.get("conjugations")
         if not isinstance(conjugations, list):

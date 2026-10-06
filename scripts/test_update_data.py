@@ -463,6 +463,35 @@ class DumpTests(unittest.TestCase):
 
 
 class ValidateGrammarTests(unittest.TestCase):
+    def rule(self, **fields):
+        doc = valid_grammar()
+        doc["grammar"][0]["attachment"] = [dict({"word_class": "verb", "pattern": "p", "example": "x"}, **fields)]
+        return ud.validate_grammar(doc)
+
+    def test_valid_slot_rule(self):
+        self.assertEqual(self.rule(slots=["plain", "plainPast"], then="ので"), [])
+        self.assertEqual(self.rule(word_class="noun", slots=["plain"], da_to_na=True, then="ので"), [])
+        self.assertEqual(self.rule(slots=["te"]), [])
+
+    def test_slot_problems(self):
+        self.assertTrue(self.rule(slots=["dictionary"]))
+        self.assertTrue(self.rule(slots=[]))
+        self.assertTrue(self.rule(word_class="noun", slots=["stem"], then="すぎる"))
+        self.assertTrue(self.rule(slots=["plain"], da_to_na=True))
+        self.assertTrue(self.rule(word_class="na-adjective", slots=["plainPast"], da_to_na=True))
+        self.assertTrue(self.rule(then="ので"))
+        self.assertTrue(self.rule(slots=["plain"], then=""))
+
+    def test_contrasts(self):
+        doc = valid_grammar()
+        doc["grammar"][0]["contrasts"] = [{"pattern": "〜から", "explanation": "e",
+                                           "examples": [{"jp": "あ", "en": "a"}]}]
+        self.assertEqual(ud.validate_grammar(doc), [])
+        doc["grammar"][0]["contrasts"] = [{"pattern": "", "explanation": "e", "id": "nope"}]
+        problems = " ".join(ud.validate_grammar(doc))
+        self.assertIn("contrast pattern", problems)
+        self.assertIn("contrast id", problems)
+
     def test_valid_document_has_no_errors(self):
         self.assertEqual(ud.validate_grammar(valid_grammar()), [])
 
