@@ -198,11 +198,22 @@ points per lesson.
 
 ## Milestones
 
-1. **Foundations:** words.json and its sync, form catalogue changes, slot fields on
+1. **Foundations (done 2026-10-06):** words.json and its sync, form catalogue changes, slot fields on
    grammar rules and their validation, `contrasts`, the Building blocks screen, the new
    grammar card, ので and 〜ほうがいいです, slots on existing points.
 2. **Connection quiz.**
 3. **Courses:** textbook mappings, My course, By lesson view, lesson tags on cards.
+
+**As built (milestone 1):**
+
+- `stem` is a slot form, not a form-catalogue entry: the catalogue is also the list of forms
+  shown on verb pages and quizzed, so a catalogue `stem` would have added a "Stem" row and
+  stem questions. Verbs derive it from the ます form; adjectives have it in words.json.
+- ので and 〜ほうがいいです are N4, matching the common lists the app follows for levels.
+- ている, てしまう, てみる are tagged with their slot but have no ending, because an ending
+  would build forms for verbs that do not take them (あっている).
+- Building blocks opens as a sheet (from the Grammar list and from a lesson's slot chips),
+  not a pushed screen: a link in the split view's sidebar would land in the detail column.
 
 ## Testing
 
