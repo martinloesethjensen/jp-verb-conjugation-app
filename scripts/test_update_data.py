@@ -888,6 +888,20 @@ class OtherFormsTests(unittest.TestCase):
             "volitional": "あろう", "conditional_ba": "あれば", "conditional_tara": "あったら", "tai": "ありたい",
         })
 
+    def test_non_volitional_verbs_only_have_some(self):
+        self.assertEqual(self.forms("わかる", "u", "わかった"), {
+            "causative": "わからせる", "causative_passive": "わからせられる", "conditional_ba": "わかれば",
+            "conditional_tara": "わかったら", "tai": "わかりたい",
+        })
+        self.assertEqual(self.forms("つかれる", "ru", "つかれた"), {
+            "causative": "つかれさせる", "conditional_ba": "つかれれば", "conditional_tara": "つかれたら",
+        })
+        self.assertEqual(set(self.forms("しる", "u", "しった")),
+                         {"passive", "causative", "conditional_ba", "conditional_tara", "tai"})
+        self.assertNotIn("passive", self.forms("おわる", "u", "おわった"))
+        for dict_form, kind in [("わかる", "u"), ("しる", "u"), ("つかれる", "ru")]:
+            self.assertIsNone(ud.potential_base(potential_verb(dict_form, kind)))
+
     def test_unknown_class_or_missing_past_fails(self):
         with self.assertRaises(ValueError):
             self.forms("たべる", "weird", "たべた")

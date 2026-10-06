@@ -75,8 +75,10 @@ IRREGULAR_POTENTIAL = {"する": "できる", "くる": "こられる"}
 
 # Verbs with no regular potential form. They get no potential fields at all,
 # and any stale ones are removed. This is the only hand-maintained part of the
-# potential step; extend it as verbs are added (for example わかる).
-NO_POTENTIAL = {"ある"}
+# potential step; extend it as verbs are added. わかる is already potential in
+# meaning (わかれる reads as 分かれる), つかれる is not something you choose to do,
+# and しれる is mostly heard in しれない / かもしれない.
+NO_POTENTIAL = {"ある", "わかる", "しる", "つかれる"}
 
 # A potential verb is itself an ichidan verb, so its other forms are the
 # standard ichidan endings on its stem (the base form minus る), in JSON order.
@@ -112,9 +114,21 @@ IRREGULAR_OTHER_FORMS = {
     "くる": ["こよう", "こられる", "こさせる", "こさせられる", "くれば", "きたら", "こい", "きたい"],
 }
 
-# Verbs that only have some of these forms; the rest are removed. The existential ある
-# has no passive, causative or imperative. Extend as verbs are added.
-PARTIAL_OTHER_FORMS = {"ある": {"volitional", "conditional_ba", "conditional_tara", "tai"}}
+# Verbs that only have some of these forms; the rest are removed. Extend as verbs are added.
+# - ある: no passive, causative or imperative.
+# - わかる, つかれる: not volitional, so no volitional or imperative (つかれろ, わかれ), and
+#   no passive. わからせる / つかれさせる are in common use and stay.
+# - しる: no volitional or imperative. The passive stays (しられている); the long
+#   causative-passive しらせられる is not used (people say しらされる).
+# - おわる: the passive おわられる only reads as the honorific, so it is left out.
+PARTIAL_OTHER_FORMS = {
+    "ある": {"volitional", "conditional_ba", "conditional_tara", "tai"},
+    "わかる": {"causative", "causative_passive", "conditional_ba", "conditional_tara", "tai"},
+    "しる": {"passive", "causative", "conditional_ba", "conditional_tara", "tai"},
+    "つかれる": {"causative", "conditional_ba", "conditional_tara"},
+    "おわる": {"volitional", "causative", "causative_passive", "conditional_ba", "conditional_tara",
+             "imperative", "tai"},
+}
 
 
 def other_forms(verb):
