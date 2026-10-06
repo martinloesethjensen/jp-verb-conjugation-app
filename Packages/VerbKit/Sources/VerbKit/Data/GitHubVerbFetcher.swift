@@ -63,6 +63,15 @@ public struct GitHubVerbFetcher: VerbDataFetching {
         return try await fetchData(named: "furigana.json", ref: file.furiganaRef)
     }
 
+    public func fetchWordsManifest() async throws -> WordsManifest? {
+        try await fetchVerifiedManifest().file.words
+    }
+
+    public func fetchWordsData() async throws -> Data {
+        let (_, file) = try await fetchVerifiedManifest()
+        return try await fetchData(named: "words.json", ref: file.wordsRef)
+    }
+
     /// The parts of `manifest.json` beyond the verbs entry. Each entry's `ref` is read
     /// separately from its `GrammarManifest`/`FuriganaManifest`, which stay version + hash only.
     private struct ManifestFile: Decodable {
@@ -70,14 +79,17 @@ public struct GitHubVerbFetcher: VerbDataFetching {
         let ref: String?
         let grammar: GrammarManifest?
         let furigana: FuriganaManifest?
+        let words: WordsManifest?
         private let grammarEntry: RefOnly?
         private let furiganaEntry: RefOnly?
+        private let wordsEntry: RefOnly?
 
         var grammarRef: String? { grammarEntry?.ref }
         var furiganaRef: String? { furiganaEntry?.ref }
+        var wordsRef: String? { wordsEntry?.ref }
 
         private enum CodingKeys: String, CodingKey {
-            case ref, grammar, furigana
+            case ref, grammar, furigana, words
         }
 
         init(from decoder: Decoder) throws {
@@ -87,6 +99,8 @@ public struct GitHubVerbFetcher: VerbDataFetching {
             furigana = try c.decodeIfPresent(FuriganaManifest.self, forKey: .furigana)
             grammarEntry = try c.decodeIfPresent(RefOnly.self, forKey: .grammar)
             furiganaEntry = try c.decodeIfPresent(RefOnly.self, forKey: .furigana)
+            words = try c.decodeIfPresent(WordsManifest.self, forKey: .words)
+            wordsEntry = try c.decodeIfPresent(RefOnly.self, forKey: .words)
         }
     }
 

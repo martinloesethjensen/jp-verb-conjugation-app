@@ -131,6 +131,7 @@ def _build():
         ))
     forms.append(FormSpec(
         id="te", family="basic", role="connective", source="authored", search=True, concept="te",
+        applies_to=WORD_CLASSES,
     ))
     for form_id, (polarity, tense) in zip(
         ("short_pos", "short_neg", "short_past", "short_past_neg"),
@@ -139,6 +140,7 @@ def _build():
         forms.append(FormSpec(
             id=form_id, family="basic", register="short", polarity=polarity, tense=tense,
             source="authored", search=True, concept=f"short.{polarity}.{tense}",
+            applies_to=WORD_CLASSES,
         ))
 
     # んです: the plain forms + んです (polite) or んだ (casual).

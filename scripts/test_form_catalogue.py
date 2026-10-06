@@ -85,6 +85,10 @@ class CatalogueMatchesRulesTests(unittest.TestCase):
         )
         self.assertEqual(sorted(covered), sorted(fc.ids("verb", source="derived")))
 
+    def test_plain_and_te_forms_apply_to_every_class(self):
+        for form_id in ("short_pos", "short_neg", "short_past", "short_past_neg", "te"):
+            self.assertEqual(fc.spec(form_id).applies_to, fc.WORD_CLASSES, form_id)
+
 
 class CheckVerbFormsTests(unittest.TestCase):
     def doc(self, forms=None, example_form="te"):

@@ -11,4 +11,8 @@ public protocol VerbDataFetching: Sendable {
     /// The manifest's `furigana` entry, or `nil` if none is published.
     func fetchFuriganaManifest() async throws -> FuriganaManifest?
     func fetchFuriganaData() async throws -> Data
+
+    /// The manifest's `words` entry, or `nil` if none is published.
+    func fetchWordsManifest() async throws -> WordsManifest?
+    func fetchWordsData() async throws -> Data
 }

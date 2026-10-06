@@ -172,6 +172,9 @@ final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
     /// Defaults to "no furigana published" so verb- and grammar-only tests are unaffected.
     var furiganaManifestResult: Result<FuriganaManifest?, Error> = .success(nil)
     var furiganaDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
+    /// Defaults to "no words published" so the other tests are unaffected.
+    var wordsManifestResult: Result<WordsManifest?, Error> = .success(nil)
+    var wordsDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
 
     func fetchManifest() async throws -> VerbManifest { try manifestResult.get() }
     func fetchVerbData() async throws -> Data { try verbDataResult.get() }
@@ -179,6 +182,8 @@ final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
     func fetchGrammarData() async throws -> Data { try grammarDataResult.get() }
     func fetchFuriganaManifest() async throws -> FuriganaManifest? { try furiganaManifestResult.get() }
     func fetchFuriganaData() async throws -> Data { try furiganaDataResult.get() }
+    func fetchWordsManifest() async throws -> WordsManifest? { try wordsManifestResult.get() }
+    func fetchWordsData() async throws -> Data { try wordsDataResult.get() }
 }
 
 final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
@@ -191,6 +196,9 @@ final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
     func saveLastSyncedGrammarManifest(_ manifest: GrammarManifest) { grammarManifest = manifest }
     func lastSyncedFuriganaManifest() -> FuriganaManifest? { furiganaManifest }
     func saveLastSyncedFuriganaManifest(_ manifest: FuriganaManifest) { furiganaManifest = manifest }
+    private var wordsManifest: WordsManifest?
+    func lastSyncedWordsManifest() -> WordsManifest? { wordsManifest }
+    func saveLastSyncedWordsManifest(_ manifest: WordsManifest) { wordsManifest = manifest }
     private var highest: [String: String] = [:]
     func highestAcceptedVersion(for file: String) -> String? { highest[file] }
     func saveHighestAcceptedVersion(_ version: String, for file: String) { highest[file] = version }
