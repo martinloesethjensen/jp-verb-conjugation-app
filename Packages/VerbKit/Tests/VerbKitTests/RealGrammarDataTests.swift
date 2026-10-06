@@ -104,4 +104,51 @@ final class RealGrammarDataTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(words.count, 30)
         XCTAssertEqual(Set(words.map(\.wordClass)), [.iAdjective, .naAdjective, .noun])
     }
+
+    /// Every rule with an ending builds a pattern for every word of its class and every
+    /// slot it lists, so the cards and the quiz never meet a missing form.
+    func testEverySlotRuleBuildsForEveryWordOfItsClass() throws {
+        let sources: [SlotSource] = try loadVerbs() + loadWords()
+        var built = 0
+        for point in try loadGrammar() {
+            for rule in point.attachment where rule.then != nil {
+                for word in sources where word.wordClass == rule.wordClass {
+                    for slot in rule.slots {
+                        XCTAssertNotNil(rule.build(word, slot: slot), "\(point.id) \(rule.wordClass) \(slot) \(word.dict)")
+                        built += 1
+                    }
+                }
+            }
+        }
+        XCTAssertGreaterThan(built, 200)
+    }
+
+    /// Spot checks a learner would recognise, one per tricky rule.
+    func testBuiltPatternsSpotChecks() throws {
+        let points = Dictionary(uniqueKeysWithValues: try loadGrammar().map { ($0.id, $0) })
+        let words = try loadWords()
+        let verbs = try loadVerbs()
+        func build(_ id: String, _ dict: String, _ slot: GrammarSlot) throws -> String? {
+            let source: SlotSource = try XCTUnwrap(verbs.first { $0.dict == dict } ?? words.first { $0.dict == dict }, dict)
+            let rules = try XCTUnwrap(points[id], id).attachment
+            return rules.lazy.compactMap { $0.build(source, slot: slot) }.first
+        }
+        XCTAssertEqual(try build("node", "しずか", .plain), "しずかなので")
+        XCTAssertEqual(try build("node", "あめ", .plainPast), "あめだったので")
+        XCTAssertEqual(try build("node", "たかい", .plainNeg), "たかくないので")
+        XCTAssertEqual(try build("hou-ga-ii", "ねる", .plainPast), "ねたほうがいいです")
+        XCTAssertEqual(try build("hou-ga-ii", "たべる", .plainNeg), "たべないほうがいいです")
+        XCTAssertEqual(try build("sugiru", "いい", .stem), "よすぎる")
+        XCTAssertEqual(try build("sugiru", "からい", .stem), "からすぎる")
+        XCTAssertEqual(try build("n-desu", "がくせい", .plain), "がくせいなんです")
+        XCTAssertEqual(try build("n-desu", "しずか", .plainPast), "しずかだったんです")
+    }
+
+    func testTheNewLessonsExistWithContrasts() throws {
+        let points = try loadGrammar()
+        for id in ["node", "hou-ga-ii"] {
+            let point = try XCTUnwrap(points.first { $0.id == id }, id)
+            XCTAssertFalse(point.contrasts.isEmpty, id)
+        }
+    }
 }

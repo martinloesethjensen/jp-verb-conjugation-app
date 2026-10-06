@@ -68,18 +68,25 @@
       "attachment": [
         {
           "word_class": "verb",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "んです",
           "pattern": "plain form + んです",
           "example": "食べるんです / 食べないんです / 食べたんです / 食べなかったんです",
           "note": "The polite form never comes before it: 食べますんです is wrong."
         },
         {
           "word_class": "i-adjective",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "んです",
           "pattern": "plain form + んです",
           "example": "高いんです / 高くないんです / 高かったんです / 高くなかったんです"
         },
         {
           "word_class": "na-adjective",
           "condition": "non-past, affirmative",
+          "slots": ["plain"],
+          "da_to_na": true,
+          "then": "んです",
           "pattern": "stem + なんです",
           "example": "静かなんです",
           "note": "The な is the plain だ turning into な before の, which is why it only appears here."
@@ -87,18 +94,25 @@
         {
           "word_class": "noun",
           "condition": "non-past, affirmative",
+          "slots": ["plain"],
+          "da_to_na": true,
+          "then": "んです",
           "pattern": "noun + なんです",
           "example": "学生なんです"
         },
         {
           "word_class": "na-adjective",
           "condition": "past or negative",
+          "slots": ["plainNeg", "plainPast", "plainPastNeg"],
+          "then": "んです",
           "pattern": "stem + だった / じゃない + んです",
           "example": "静かだったんです / 静かじゃないんです"
         },
         {
           "word_class": "noun",
           "condition": "past or negative",
+          "slots": ["plainNeg", "plainPast", "plainPastNeg"],
+          "then": "んです",
           "pattern": "noun + だった / じゃない + んです",
           "example": "学生だったんです / 学生じゃないんです"
         }
@@ -806,6 +820,7 @@
         {
           "word_class": "verb",
           "condition": "Most verbs",
+          "slots": ["te"],
           "pattern": "て-form + いる",
           "example": "食べる → 食べている / 飲む → 飲んでいる / 書く → 書いている / 買う → 買っている / する → している / 来る → 来ている",
           "note": "The て-form comes from the verb as usual, and いる then conjugates like any ru-verb. In speech the い is often dropped: 食べてる. Verbs of existence and ability, such as ある and できる, are the exceptions."
@@ -813,6 +828,7 @@
         {
           "word_class": "verb",
           "condition": "Verbs that take an object",
+          "slots": ["te"],
           "pattern": "て-form + ある",
           "example": "開ける → 開けてある / 書く → 書いてある / 置く → 置いてある / 予約する → 予約してある",
           "note": "Only verbs that take an object. An intransitive verb such as 開く uses ている instead: 開いている."
@@ -905,6 +921,7 @@
         {
           "word_class": "verb",
           "condition": "Any verb",
+          "slots": ["te"],
           "pattern": "て-form + しまう / おく",
           "example": "食べてしまう / 飲んでしまう / 書いてしまう / してしまう / 予約しておく / 書いておく",
           "note": "The same て-form as for ている. In casual speech: 食べちゃう, 飲んじゃう (しまう), and 書いとく, 読んどく (おく)."
@@ -988,6 +1005,7 @@
         {
           "word_class": "verb",
           "condition": "てみる",
+          "slots": ["te"],
           "pattern": "て-form + みる",
           "example": "食べる → 食べてみる / 飲む → 飲んでみる / 書く → 書いてみる / する → してみる / 来る → 来てみる",
           "note": "みる then conjugates like any ru-verb: 食べてみます, 食べてみた, 食べてみない."
@@ -995,6 +1013,7 @@
         {
           "word_class": "verb",
           "condition": "ながら",
+          "slots": ["stem"],
           "pattern": "ます-stem + ながら",
           "example": "食べる → 食べながら / 飲む → 飲みながら / 書く → 書きながら / する → しながら / 歌う → 歌いながら",
           "note": "The stem is the ます form without ます (食べ, 飲み, 書き, し, 歌い). ながら does not conjugate."
@@ -1084,18 +1103,23 @@
         {
           "word_class": "verb",
           "condition": "Any verb",
+          "slots": ["stem"],
           "pattern": "ます-stem + すぎる / やすい / にくい",
           "example": "食べる → 食べすぎる / 飲む → 飲みやすい / 読む → 読みにくい / する → しすぎる / 来る → きすぎる",
           "note": "The stem is the ます form without ます (食べ, 飲み, し, き)."
         },
         {
           "word_class": "i-adjective",
+          "slots": ["stem"],
+          "then": "すぎる",
           "pattern": "stem (drop い) + すぎる",
           "example": "高い → 高すぎる / 難しい → 難しすぎる",
           "note": "いい becomes よすぎる. The negative ない (and 〜くない) becomes なさすぎる: 味がなさすぎる. Adjectives that merely end in ない are regular: 少ない → 少なすぎる, 危ない → 危なすぎる."
         },
         {
           "word_class": "na-adjective",
+          "slots": ["stem"],
+          "then": "すぎる",
           "pattern": "stem + すぎる",
           "example": "静か → 静かすぎる / 元気 → 元気すぎる"
         }
@@ -1134,6 +1158,135 @@
         }
       ],
       "related": ["temiru", "appearance"]
+    },
+    {
+      "id": "node",
+      "title": "〜ので",
+      "summary": "Gives a reason: \"(reason), so (result)\". Softer and more polite than から.",
+      "jlpt": "N4",
+      "usages": [
+        {
+          "heading": "Reason, then result",
+          "explanation": "The reason comes first, then ので, then what follows from it. It sounds calm and considerate, so it suits explaining yourself or asking a favour.",
+          "examples": [
+            { "jp": "日本語はおもしろいので、勉強しています。", "en": "Japanese is interesting, so I study it." },
+            { "jp": "日本人の友達がいるので、日本語を勉強しています。", "en": "I have Japanese friends, so I study Japanese." },
+            { "jp": "雨なので、出かけません。", "en": "It's raining, so I'm not going out." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "ので",
+          "pattern": "short form + ので",
+          "example": "食べる → 食べるので / 食べた → 食べたので"
+        },
+        {
+          "word_class": "i-adjective",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "ので",
+          "pattern": "short form + ので",
+          "example": "高い → 高いので / 高くない → 高くないので"
+        },
+        {
+          "word_class": "na-adjective",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "da_to_na": true,
+          "then": "ので",
+          "pattern": "short form (だ → な) + ので",
+          "example": "静かだ → 静かなので / 静かだった → 静かだったので"
+        },
+        {
+          "word_class": "noun",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "da_to_na": true,
+          "then": "ので",
+          "pattern": "short form (だ → な) + ので",
+          "example": "雨だ → 雨なので / 雨だった → 雨だったので"
+        }
+      ],
+      "conjugations": [],
+      "pitfalls": [
+        {
+          "heading": "な, not だ, before ので",
+          "explanation": "In the present affirmative, な-adjectives and nouns take な before ので, never だ.",
+          "examples": [
+            { "jp": "この部屋は静かなので、よく眠れます。", "en": "This room is quiet, so I sleep well." }
+          ]
+        }
+      ],
+      "contrasts": [
+        {
+          "pattern": "〜から",
+          "explanation": "Both give a reason. ので sounds softer and more polite, so it suits explaining yourself. から is more direct and can sound like an excuse or a demand.",
+          "examples": [
+            { "jp": "電車が遅れたので、遅刻しました。", "en": "The train was late, so I was late. (polite explanation)" },
+            { "jp": "電車が遅れたから、遅刻した。", "en": "The train was late, that's why I was late. (blunt)" }
+          ]
+        }
+      ],
+      "related": []
+    },
+    {
+      "id": "hou-ga-ii",
+      "title": "〜ほうがいいです",
+      "summary": "Advice: \"you had better…\" or \"you had better not…\".",
+      "jlpt": "N4",
+      "usages": [
+        {
+          "heading": "Advice to do something",
+          "explanation": "Use the plain past (た-form) of the verb, even though the advice is about now or the future.",
+          "examples": [
+            { "jp": "早く寝たほうがいいですよ。", "en": "You had better go to bed early." }
+          ]
+        },
+        {
+          "heading": "Advice not to do something",
+          "explanation": "Use the plain negative (ない-form).",
+          "examples": [
+            { "jp": "今日は出かけないほうがいいです。", "en": "You had better not go out today." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plainPast"],
+          "then": "ほうがいいです",
+          "pattern": "た-form + ほうがいいです",
+          "example": "寝る → 寝たほうがいいです"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plainNeg"],
+          "then": "ほうがいいです",
+          "pattern": "ない-form + ほうがいいです",
+          "example": "出かける → 出かけないほうがいいです"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜ほうがいいです", "register": "polite" },
+        { "form": "〜ほうがいい", "register": "casual", "note": "Plain. Add よ to sound like friendly advice." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Never なかったほうがいい",
+          "explanation": "The negative stays in the present: 行かないほうがいい, not 行かなかったほうがいい."
+        }
+      ],
+      "contrasts": [
+        {
+          "pattern": "dictionary form + ほうがいい",
+          "explanation": "After the た-form the advice is pointed and personal. After the dictionary form it sounds like a general statement.",
+          "examples": [
+            { "jp": "薬を飲んだほうがいいですよ。", "en": "You should take some medicine." },
+            { "jp": "毎日、水を飲むほうがいいです。", "en": "Drinking water every day is better (in general)." }
+          ]
+        }
+      ],
+      "related": []
     }
   ]
 }
