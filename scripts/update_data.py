@@ -20,7 +20,9 @@ It does seven things:
      kanji in verbs.json and grammar.json has a reading in it, and that each
      verb's `kanji` spells its kana `dict` form. Missing readings fail the
      run, so new content cannot ship without furigana.
-  5. Recomputes the SHA-256 of all three files into data/manifest.json,
+  4b. Generates the forms of every adjective and noun in data/words.json
+     (hand-authored apart from `forms`) and checks its fields and furigana.
+  5. Recomputes the SHA-256 of all four files into data/manifest.json,
      bumping a file's version (minor) when its content changed.
   6. Writes forms.json (into the VerbKit package), the catalogue of conjugation forms declared in
      scripts/form_catalogue.py (the one place a form id is defined), and
@@ -448,10 +450,10 @@ def strings_in(doc, path=""):
         yield path, doc
 
 
-def check_coverage(verbs_doc, grammar_doc, readings):
+def check_coverage(verbs_doc, grammar_doc, readings, *extra_docs):
     """One problem per unread kanji per string, naming where it occurs."""
     problems = []
-    for doc in (verbs_doc, grammar_doc):
+    for doc in (verbs_doc, grammar_doc, *extra_docs):
         for path, text in strings_in(doc):
             for kanji in dict.fromkeys(uncovered_kanji(text, readings)):
                 snippet = text if len(text) <= 40 else text[:40] + "..."
@@ -499,6 +501,82 @@ def check_verb_forms(verbs_doc):
             if spec is None or "verb" not in spec.applies_to:
                 problems.append(f"{name}: example uses unknown form '{example.get('form')}'")
     return problems
+
+
+# --- Adjectives and nouns (words.json) ---------------------------------------
+
+WORD_FILE_CLASSES = ("i-adjective", "na-adjective", "noun")
+# いい and its compounds conjugate from よい. An explicit list: かわいい also ends in いい
+# but is regular (かわいくない).
+II_ADJECTIVES = {"いい", "かっこいい"}
+
+
+def word_forms(word):
+    """The generated forms of an adjective or noun: the catalogue's forms for its class in
+    catalogue order, then `stem` (a slot form the grammar patterns attach to, not a
+    catalogue form). Raises ValueError for a class words.json does not hold or a
+    malformed word."""
+    cls, d = word.get("class"), word.get("dict", "")
+    if cls == "i-adjective":
+        if not d.endswith("い") or len(d) < 2:
+            raise ValueError(f"{d}: an い-adjective must end in い")
+        base = d[:-2] + "よ" if d in II_ADJECTIVES else d[:-1]
+        forms = {"short_pos": d, "short_neg": base + "くない", "short_past": base + "かった",
+                 "short_past_neg": base + "くなかった", "te": base + "くて", "stem": base}
+    elif cls in ("na-adjective", "noun"):
+        if not d:
+            raise ValueError("a word needs a dict form")
+        forms = {"short_pos": d + "だ", "short_neg": d + "じゃない", "short_past": d + "だった",
+                 "short_past_neg": d + "じゃなかった", "te": d + "で"}
+        if cls == "na-adjective":
+            forms["stem"] = d
+    else:
+        raise ValueError(f"{d}: class must be one of {WORD_FILE_CLASSES}, got {cls!r}")
+    order = form_catalogue.ids(cls) + ["stem"]
+    return {key: forms[key] for key in order if key in forms}
+
+
+def apply_word_forms(words_doc):
+    """Set every word's `forms` (the script owns them). Returns True if anything changed."""
+    changed = False
+    for word in words_doc["words"]:
+        wanted = word_forms(word)
+        if word.get("forms") != wanted:
+            word["forms"] = wanted
+            changed = True
+    return changed
+
+
+def check_words(words_doc, readings):
+    """Problems with the hand-written fields of words.json."""
+    problems, seen = [], set()
+    for word in words_doc.get("words", []):
+        d = word.get("dict", "<no dict>")
+        key = (word.get("class"), d)
+        if key in seen:
+            problems.append(f"{d}: duplicate word")
+        seen.add(key)
+        if word.get("class") not in WORD_FILE_CLASSES:
+            problems.append(f"{d}: class must be one of {WORD_FILE_CLASSES}")
+        if not isinstance(word.get("meaning"), str) or not word["meaning"]:
+            problems.append(f"{d}: meaning missing or empty")
+        if "jlpt" in word and word["jlpt"] not in JLPT_LEVELS:
+            problems.append(f"{d}: jlpt must be one of {sorted(JLPT_LEVELS)}")
+        kanji = word.get("kanji")
+        if kanji:
+            got = kana_reading(kanji, readings)
+            if got != d:
+                problems.append(f"{d}: kanji {kanji} reads as {got}, expected {d}")
+    return problems
+
+
+def dump_words(doc):
+    """Serialize words.json: 2-space indent, non-ASCII kept, each word on one line."""
+    lines = [json.dumps(word, ensure_ascii=False) for word in doc["words"]]
+    head = {key: value for key, value in doc.items() if key != "words"}
+    text = json.dumps(head, ensure_ascii=False, indent=2)[:-2]
+    body = ",\n".join(f"    {line}" for line in lines)
+    return f'{text},\n  "words": [\n{body}\n  ]\n}}\n' if lines else f'{text},\n  "words": []\n}}\n'
 
 
 def dump_forms():
@@ -650,7 +728,7 @@ def with_ref(entry, ref):
 
 
 def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, grammar_version=None,
-                   furigana_bytes=None, furigana_version=None, ref=None):
+                   furigana_bytes=None, furigana_version=None, ref=None, words_bytes=None, words_version=None):
     """New manifest dict. A file's version is kept when its hash is
     unchanged, bumped (minor) when it changed, or forced by an explicit
     version. A grammar or furigana block that did not exist yet starts at
@@ -697,6 +775,20 @@ def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, gra
         manifest["furigana"] = with_ref(
             {"version": new_furigana_version, "sha256": furigana_hash}, entry_ref(old_furigana, furigana_hash, ref)
         )
+    if words_bytes is not None:
+        words_hash = sha256_hex(words_bytes)
+        old_words = existing.get("words")
+        if words_version:
+            new_words_version = words_version
+        elif old_words is None:
+            new_words_version = "1.0.0"
+        elif old_words.get("sha256") == words_hash:
+            new_words_version = old_words["version"]
+        else:
+            new_words_version = bump_minor(old_words["version"])
+        manifest["words"] = with_ref(
+            {"version": new_words_version, "sha256": words_hash}, entry_ref(old_words, words_hash, ref)
+        )
     return manifest
 
 
@@ -717,7 +809,7 @@ DEFAULT_FORMS_PATH = (
 
 
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
-        forms_path=None, ref=None):
+        forms_path=None, ref=None, words_version=None):
     """Returns (exit_code, messages). `forms_path` is where forms.json is
     written and checked; None leaves it alone. `ref` pins the manifest entries
     to a release tag."""
@@ -765,7 +857,19 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         apply_other_forms(verbs_doc)
     except ValueError as error:
         return 1, [f"cannot generate the other conjugations: {error}"]
-    problems = check_coverage(verbs_doc, grammar_doc, readings)
+    words_path = data_dir / "words.json"
+    words_doc = json.loads(words_path.read_text(encoding="utf-8")) if words_path.exists() else None
+    words_bytes = None
+    if words_doc is not None:
+        problems = check_words(words_doc, readings)
+        if problems:
+            return 1, capped("words.json is invalid:", problems)
+        try:
+            apply_word_forms(words_doc)
+        except ValueError as error:
+            return 1, [f"cannot generate word forms: {error}"]
+        words_bytes = dump_words(words_doc).encode("utf-8")
+    problems = check_coverage(verbs_doc, grammar_doc, readings, *([words_doc] if words_doc else []))
     if problems:
         return 1, capped("kanji without a reading in furigana.json:", problems)
     problems = check_verb_kanji(verbs_doc, readings)
@@ -778,6 +882,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     manifest = build_manifest(
         existing, verbs_bytes, grammar_bytes, verbs_version, grammar_version,
         furigana_bytes=furigana_bytes, furigana_version=furigana_version, ref=ref,
+        words_bytes=words_bytes, words_version=words_version,
     )
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
 
@@ -786,6 +891,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     stale = []
     if verbs_path.read_bytes() != verbs_bytes:
         stale.append("data/verbs.json")
+    if words_bytes is not None and words_path.read_bytes() != words_bytes:
+        stale.append("data/words.json")
     if forms_path is not None:
         forms_path = Path(forms_path)
         if not forms_path.exists() or forms_path.read_text(encoding="utf-8") != forms_text:
@@ -801,6 +908,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     if "data/verbs.json" in stale:
         verbs_path.write_bytes(verbs_bytes)
         messages.append("updated data/verbs.json")
+    if "data/words.json" in stale:
+        words_path.write_bytes(words_bytes)
+        messages.append("updated data/words.json")
     if "forms.json" in stale:
         forms_path.parent.mkdir(parents=True, exist_ok=True)
         forms_path.write_text(forms_text, encoding="utf-8")
@@ -809,7 +919,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         manifest_path.write_text(manifest_text, encoding="utf-8")
         messages.append(
             f"updated data/manifest.json (verbs {manifest['version']}, grammar {manifest['grammar']['version']}, "
-            f"furigana {manifest['furigana']['version']})"
+            f"furigana {manifest['furigana']['version']}"
+            + (f", words {manifest['words']['version']}" if "words" in manifest else "") + ")"
         )
         messages.append("the manifest changed: re-sign it with scripts/sign_manifest.py sign")
     if not stale:
@@ -824,12 +935,14 @@ def main(argv=None):
     parser.add_argument("--verbs-version", help="force the verbs.json manifest version")
     parser.add_argument("--grammar-version", help="force the grammar.json manifest version")
     parser.add_argument("--furigana-version", help="force the furigana.json manifest version")
+    parser.add_argument("--words-version", help="force the words.json manifest version")
     parser.add_argument("--forms-path", default=str(DEFAULT_FORMS_PATH),
                         help="where to write the form catalogue (forms.json)")
     parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
     args = parser.parse_args(argv)
     code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
-                         args.furigana_version, forms_path=args.forms_path, ref=args.ref)
+                         args.furigana_version, forms_path=args.forms_path, ref=args.ref,
+                         words_version=args.words_version)
     for line in messages:
         print(line)
     return code
