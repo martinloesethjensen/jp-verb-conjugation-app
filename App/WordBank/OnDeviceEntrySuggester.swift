@@ -88,7 +88,7 @@ struct OnDeviceEntrySuggester: EntrySuggesting {
             return suggestion(from: response.content, for: text)
         } catch {
             Logger(subsystem: "dev.martinloeseth.jpverbconjugation", category: "suggestions")
-                .error("On-device suggestion failed: \(String(describing: error), privacy: .public)")
+                .error("On-device suggestion failed: \(String(describing: error), privacy: .private)")
             throw error
         }
     }

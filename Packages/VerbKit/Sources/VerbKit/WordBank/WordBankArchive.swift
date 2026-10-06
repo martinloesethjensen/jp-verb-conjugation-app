@@ -7,6 +7,11 @@ public struct WordBankArchive: Equatable, Sendable {
     public static let formatName = "word-bank"
     public static let currentVersion = 1
     public static let maxBytes = 20 * 1024 * 1024
+    /// Folders, tags, smart folders and entries together. A real bank is far smaller; this keeps a
+    /// crafted file under `maxBytes` from freezing the import preview and planner.
+    public static let maxRecords = 50_000
+    /// An entry whose text, reading, kanji spelling or notes is longer than this is skipped.
+    public static let maxFieldLength = 10_000
 
     public struct Folder: Codable, Equatable, Sendable {
         public var id: UUID?
@@ -164,6 +169,7 @@ public struct WordBankArchive: Equatable, Sendable {
         case notAWordBank
         case newerVersion(Int)
         case tooLarge
+        case tooManyRecords
     }
 
     public var exportedAt: Date
@@ -237,6 +243,17 @@ public struct WordBankArchive: Equatable, Sendable {
         var entries: [Lossy<Entry>]?
     }
 
+    /// Reads at most `maxBytes + 1` bytes, so an oversized file is refused without loading it
+    /// into memory. Use this for files from outside the app (Files, AirDrop, Mail).
+    public static func read(contentsOf url: URL) throws -> WordBankArchive {
+        if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > maxBytes {
+            throw ArchiveError.tooLarge
+        }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        return try decode(try handle.read(upToCount: maxBytes + 1) ?? Data())
+    }
+
     public static func decode(_ data: Data) throws -> WordBankArchive {
         guard data.count <= maxBytes else { throw ArchiveError.tooLarge }
         let decoder = JSONDecoder()
@@ -252,6 +269,9 @@ public struct WordBankArchive: Equatable, Sendable {
         if input.format == nil, input.entries == nil { throw ArchiveError.notAWordBank }
         let version = input.version ?? 1
         guard version <= currentVersion else { throw ArchiveError.newerVersion(version) }
+        let records = [input.folders?.count, input.dialectTags?.count, input.customTags?.count,
+                       input.smartFolders?.count, input.entries?.count].reduce(0) { $0 + ($1 ?? 0) }
+        guard records <= maxRecords else { throw ArchiveError.tooManyRecords }
 
         var skipped: [Skipped] = []
         func unwrap<T>(_ section: String, _ items: [Lossy<T>]?) -> [T] {
@@ -276,6 +296,9 @@ public struct WordBankArchive: Equatable, Sendable {
             }
             if entry.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 skipped.append(Skipped(section: "entries", position: index + 1, reason: "Blank text"))
+            } else if [entry.text, entry.reading, entry.kanjiSpelling, entry.notes]
+                .contains(where: { ($0?.count ?? 0) > maxFieldLength }) {
+                skipped.append(Skipped(section: "entries", position: index + 1, reason: "Text too long"))
             } else {
                 archive.entries.append(entry)
             }
