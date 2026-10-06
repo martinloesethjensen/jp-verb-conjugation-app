@@ -10,16 +10,19 @@ public struct EntrySuggestion: Equatable, Sendable {
     public var kind: EntryKind?
     /// A `DialectRecord.id` from the bundled catalogue; never a name the model made up.
     public var dialectCatalogueID: String?
+    /// The suggester answered but said it wasn't sure, so it suggests nothing.
+    public var isUnsure: Bool
 
     public init(
         reading: String? = nil, standardForms: [StandardEquivalent] = [], meanings: [String] = [],
-        kind: EntryKind? = nil, dialectCatalogueID: String? = nil
+        kind: EntryKind? = nil, dialectCatalogueID: String? = nil, isUnsure: Bool = false
     ) {
         self.reading = reading
         self.standardForms = standardForms
         self.meanings = meanings
         self.kind = kind
         self.dialectCatalogueID = dialectCatalogueID
+        self.isUnsure = isUnsure
     }
 
     public var isEmpty: Bool {
@@ -92,6 +95,8 @@ public final class EntrySuggestionModel {
         case ready(EntrySuggestion)
         /// The suggester answered with nothing useful.
         case nothing
+        /// The suggester answered but wasn't sure enough to suggest anything.
+        case unsure
         case failed
     }
 
@@ -152,7 +157,7 @@ public final class EntrySuggestionModel {
                 try Task.checkCancellation()
                 await MainActor.run {
                     guard let self, self.lastText == text else { return }
-                    self.state = suggestion.isEmpty ? .nothing : .ready(suggestion)
+                    self.state = suggestion.isUnsure ? .unsure : suggestion.isEmpty ? .nothing : .ready(suggestion)
                 }
             } catch is CancellationError {
                 // A newer request replaced this one.

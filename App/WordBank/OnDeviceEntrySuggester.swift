@@ -94,7 +94,7 @@ struct OnDeviceEntrySuggester: EntrySuggesting {
     }
 
     private func suggestion(from hints: GeneratedEntryHints, for text: String) -> EntrySuggestion {
-        guard hints.confidence != .low else { return EntrySuggestion() }
+        guard hints.confidence != .low else { return EntrySuggestion(isUnsure: true) }
         func clean(_ values: [String], limit: Int) -> [String] {
             var seen = Set<String>()
             return values

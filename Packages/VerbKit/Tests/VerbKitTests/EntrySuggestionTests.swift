@@ -106,6 +106,17 @@ final class EntrySuggestionModelTests: XCTestCase {
         XCTAssertEqual(model.state, .failed)
     }
 
+    /// The model answered but said it wasn't sure: a state of its own, so the editor can say
+    /// so instead of showing a spinner that ends in nothing.
+    func testAnUnsureAnswerIsItsOwnState() async {
+        let fake = FakeSuggester()
+        fake.reply = { _ in EntrySuggestion(isUnsure: true) }
+        let model = model(fake)
+        model.textChanged("おおきに")
+        await settle()
+        XCTAssertEqual(model.state, .unsure)
+    }
+
     func testRetryAsksAgainForTheSameText() async {
         let fake = FakeSuggester()
         fake.reply = { _ in throw Boom() }
@@ -133,6 +144,7 @@ final class EntrySuggestionModelTests: XCTestCase {
 
 final class EntrySuggestionContentTests: XCTestCase {
     func testEmptiness() {
+        XCTAssertTrue(EntrySuggestion(isUnsure: true).isEmpty)
         XCTAssertTrue(EntrySuggestion().isEmpty)
         XCTAssertFalse(EntrySuggestion(reading: "あ").isEmpty)
         XCTAssertFalse(EntrySuggestion(kind: .phrase).isEmpty)
