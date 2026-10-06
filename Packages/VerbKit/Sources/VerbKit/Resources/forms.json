@@ -96,7 +96,10 @@
       "label": "て-form",
       "role": "connective",
       "applies_to": [
-        "verb"
+        "verb",
+        "i-adjective",
+        "na-adjective",
+        "noun"
       ],
       "source": "authored",
       "search": true,
@@ -111,7 +114,10 @@
       "polarity": "pos",
       "tense": "present",
       "applies_to": [
-        "verb"
+        "verb",
+        "i-adjective",
+        "na-adjective",
+        "noun"
       ],
       "source": "authored",
       "search": true,
@@ -126,7 +132,10 @@
       "polarity": "neg",
       "tense": "present",
       "applies_to": [
-        "verb"
+        "verb",
+        "i-adjective",
+        "na-adjective",
+        "noun"
       ],
       "source": "authored",
       "search": true,
@@ -141,7 +150,10 @@
       "polarity": "pos",
       "tense": "past",
       "applies_to": [
-        "verb"
+        "verb",
+        "i-adjective",
+        "na-adjective",
+        "noun"
       ],
       "source": "authored",
       "search": true,
@@ -156,7 +168,10 @@
       "polarity": "neg",
       "tense": "past",
       "applies_to": [
-        "verb"
+        "verb",
+        "i-adjective",
+        "na-adjective",
+        "noun"
       ],
       "source": "authored",
       "search": true,

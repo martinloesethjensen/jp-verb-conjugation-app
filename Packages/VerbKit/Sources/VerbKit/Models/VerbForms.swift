@@ -263,6 +263,12 @@ public struct VerbForms: Codable, Hashable, Sendable {
         case nagara
     }
 
+    /// The ます-stem a grammar pattern attaches to (たべ, のみ, し, き): `masuPos` without ます.
+    /// Not a catalogue form, so it is never listed on a verb page or quizzed on its own.
+    public var stem: String {
+        masuPos.hasSuffix("ます") ? String(masuPos.dropLast(2)) : masuPos
+    }
+
     public subscript(_ key: FormKey) -> String {
         switch key {
         case .masuPos: return masuPos

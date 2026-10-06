@@ -84,4 +84,11 @@ final class RealGrammarDataTests: XCTestCase {
         let grammar = try XCTUnwrap(manifest["grammar"] as? [String: String], "manifest.json has no grammar block")
         XCTAssertEqual(grammar["sha256"], sha256Hex(of: try Data(contentsOf: dataURL("grammar.json"))))
     }
+
+    func testEveryVerbHasItsMasuStem() throws {
+        for verb in try loadVerbs() {
+            XCTAssertFalse(verb.forms.stem.isEmpty, verb.dict)
+            XCTAssertEqual(verb.forms.stem + "ます", verb.forms.masuPos, verb.dict)
+        }
+    }
 }
