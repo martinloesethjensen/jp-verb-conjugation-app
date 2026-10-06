@@ -1,6 +1,10 @@
+import io
+import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import generate_audio as ga
 
@@ -70,6 +74,21 @@ class RetryTests(unittest.TestCase):
         self.assertTrue(ga.is_retryable(urllib.error.HTTPError("u", 429, "m", {}, None)))
         self.assertFalse(ga.is_retryable(urllib.error.HTTPError("u", 403, "m", {}, None)))
         self.assertFalse(ga.is_retryable(ValueError("bad")))
+
+
+class GoogleTests(unittest.TestCase):
+    def test_api_key_is_sent_in_a_header_not_the_url(self):
+        sent = []
+
+        def fake_urlopen(request, timeout):
+            sent.append(request)
+            return io.BytesIO(json.dumps({"audioContent": ""}).encode())
+
+        with mock.patch.dict(os.environ, {"GOOGLE_API_KEY": "secret-key"}), \
+                mock.patch("urllib.request.urlopen", fake_urlopen):
+            ga.synthesize_google("たべる", "ja-JP-Neural2-B")
+        self.assertNotIn("secret-key", sent[0].full_url)
+        self.assertEqual(sent[0].get_header("X-goog-api-key"), "secret-key")
 
 
 if __name__ == "__main__":

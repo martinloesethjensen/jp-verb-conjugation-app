@@ -1,0 +1,2 @@
+# Used by sign_manifest.py and the Data workflow. Dependabot keeps this pin current.
+cryptography==50.0.2

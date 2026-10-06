@@ -74,6 +74,37 @@ final class WordBankArchiveTests: XCTestCase {
         }
     }
 
+    func testReadingAnOversizedFileStopsAtTheLimit() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".wordbank")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data(count: WordBankArchive.maxBytes + 1).write(to: url)
+        XCTAssertThrowsError(try WordBankArchive.read(contentsOf: url)) {
+            XCTAssertEqual($0 as? WordBankArchive.ArchiveError, .tooLarge)
+        }
+    }
+
+    func testReadingAFileDecodesIt() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".wordbank")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data(#"{"entries":[{"text":"おおきに"}]}"#.utf8).write(to: url)
+        XCTAssertEqual(try WordBankArchive.read(contentsOf: url).entries.map(\.text), ["おおきに"])
+    }
+
+    func testTooManyRecordsIsRefused() {
+        let entries = Array(repeating: #"{"text":"x"}"#, count: WordBankArchive.maxRecords + 1).joined(separator: ",")
+        XCTAssertThrowsError(try WordBankArchive.decode(Data(#"{"entries":[\#(entries)]}"#.utf8))) {
+            XCTAssertEqual($0 as? WordBankArchive.ArchiveError, .tooManyRecords)
+        }
+    }
+
+    func testEntryWithOverlongFieldIsSkipped() throws {
+        let long = String(repeating: "あ", count: WordBankArchive.maxFieldLength + 1)
+        let json = #"{"entries":[{"text":"ok"},{"text":"x","notes":"\#(long)"}]}"#
+        let archive = try WordBankArchive.decode(Data(json.utf8))
+        XCTAssertEqual(archive.entries.map(\.text), ["ok"])
+        XCTAssertEqual(archive.skipped.map(\.reason), ["Text too long"])
+    }
+
     func testEncodedFileStartsWithHeader() throws {
         let text = String(decoding: try WordBankArchive(exportedAt: date).encoded(), as: UTF8.self)
         XCTAssertTrue(text.contains(#""format" : "word-bank""#))

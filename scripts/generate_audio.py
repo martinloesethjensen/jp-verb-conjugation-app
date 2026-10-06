@@ -113,10 +113,11 @@ def synthesize_google(text, voice):
         "voice": {"languageCode": "ja-JP", "name": voice},
         "audioConfig": {"audioEncoding": "MP3"},
     }).encode("utf-8")
+    # The key goes in a header, not the query string, so it stays out of URLs in logs and tracebacks.
     request = urllib.request.Request(
-        f"https://texttospeech.googleapis.com/v1/text:synthesize?key={key}",
+        "https://texttospeech.googleapis.com/v1/text:synthesize",
         data=body,
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "X-Goog-Api-Key": key},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         return base64.b64decode(json.load(response)["audioContent"])

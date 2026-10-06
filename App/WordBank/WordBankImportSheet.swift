@@ -46,7 +46,7 @@ struct WordBankImportSheet: View {
                     }
                 }
         }
-        .task { load() }
+        .task { await load() }
         .sheet(isPresented: $choosingFolder) {
             FolderPicker(title: "Import into…", current: destinationFolder) { target in
                 destination = target.map(ImportDestination.folder) ?? .root
@@ -144,18 +144,24 @@ struct WordBankImportSheet: View {
 
     // MARK: - Actions
 
-    private func load() {
+    /// The file can come from anyone (AirDrop, Mail), so it is read off the main actor and
+    /// never more than `WordBankArchive.maxBytes` of it.
+    private func load() async {
         let url = request.url
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        let result = await Task.detached(priority: .userInitiated) { () -> Result<WordBankArchive, Error> in
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            return Result { try WordBankArchive.read(contentsOf: url) }
+        }.value
         do {
-            let archive = try WordBankArchive.decode(try Data(contentsOf: url))
+            let archive = try result.get()
             phase = .ready(archive)
             replan()
         } catch let error as WordBankArchive.ArchiveError {
             switch error {
             case .newerVersion: phase = .failed("This file was made by a newer version of the app. Update the app to import it.")
             case .tooLarge: phase = .failed("This file is larger than 20 MB.")
+            case .tooManyRecords: phase = .failed("This file has more than \(WordBankArchive.maxRecords.formatted()) items.")
             case .notAWordBank: phase = .failed("This isn't a Word Bank file.")
             }
         } catch {
