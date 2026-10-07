@@ -6,6 +6,7 @@ struct RootView: View {
     @Environment(VerbStore.self) private var verbStore
     @Environment(FuriganaStore.self) private var furiganaStore
     @Environment(QuizHistoryStore.self) private var quizHistory
+    @Environment(WordsStore.self) private var wordsStore
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
@@ -22,6 +23,8 @@ struct RootView: View {
     @State private var quizQuestions: [QuizQuestion]?
     @State private var topicSheetVerbs: [Verb]?
     @State private var pendingQuestions: [QuizQuestion]?
+    @State private var connectionQuestions: [ConnectionQuestion]?
+    @State private var pendingConnections: [ConnectionQuestion]?
     @State private var incomingRoute: Route?
     @Environment(WordBankTransferHub.self) private var wordBankTransfer
 
@@ -47,6 +50,8 @@ struct RootView: View {
         topicSheetVerbs = nil
         pendingQuestions = nil
         quizQuestions = nil
+        connectionQuestions = nil
+        pendingConnections = nil
         if let quizLink {
             let verbs = verbStore.verbs.visible(in: LevelSettings.load())
             let topics = quizLink.topic.map { Set([$0]) } ?? Set(QuizTopic.allCases)
@@ -145,14 +150,27 @@ struct RootView: View {
                 quizQuestions = pendingQuestions
                 self.pendingQuestions = nil
             }
+            if let pendingConnections {
+                connectionQuestions = pendingConnections
+                self.pendingConnections = nil
+            }
         }) {
             if let topicSheetVerbs {
                 QuizTopicSheet(
                     verbs: topicSheetVerbs,
+                    connectionPatterns: verbStore.grammarPoints.filter(\.hasConnections).count,
                     weakSpotCount: { weakPairs(in: $0).count },
                     onStart: { verbs, selection in
-                        let questions = questions(for: selection, verbs: verbs)
-                        pendingQuestions = questions.isEmpty ? nil : questions
+                        if case .connections = selection {
+                            let built = buildConnectionQuestions(
+                                points: verbStore.grammarPoints, verbs: verbs,
+                                words: wordsStore.words, count: quizQuestionCount
+                            )
+                            pendingConnections = built.isEmpty ? nil : built
+                        } else {
+                            let questions = questions(for: selection, verbs: verbs)
+                            pendingQuestions = questions.isEmpty ? nil : questions
+                        }
                         self.topicSheetVerbs = nil
                     },
                     onCancel: { self.topicSheetVerbs = nil }
@@ -165,10 +183,23 @@ struct RootView: View {
                 QuizView(questions: quizQuestions, recorder: { quizHistory.record($0) }, onDone: { self.quizQuestions = nil })
             }
         }
+        .fullScreenCover(isPresented: connectionPresentationBinding) {
+            if let connectionQuestions {
+                ConnectionQuizView(questions: connectionQuestions, recorder: { quizHistory.record($0) },
+                                   onDone: { self.connectionQuestions = nil })
+            }
+        }
         #else
         .sheet(isPresented: quizPresentationBinding) {
             if let quizQuestions {
                 QuizView(questions: quizQuestions, recorder: { quizHistory.record($0) }, onDone: { self.quizQuestions = nil })
+                    .frame(minWidth: 560, minHeight: 640)
+            }
+        }
+        .sheet(isPresented: connectionPresentationBinding) {
+            if let connectionQuestions {
+                ConnectionQuizView(questions: connectionQuestions, recorder: { quizHistory.record($0) },
+                                   onDone: { self.connectionQuestions = nil })
                     .frame(minWidth: 560, minHeight: 640)
             }
         }
@@ -194,6 +225,8 @@ struct RootView: View {
         case .weakSpots:
             // Takes the first N buildable pairs in rank order, then shuffles the quiz.
             return buildQuestions(pairs: weakPairs(in: verbs), among: verbs, count: quizQuestionCount, kinds: QuizQuestionKind.allCases).shuffled()
+        case .connections:
+            return []  // started from onStart instead
         }
     }
 
@@ -201,6 +234,13 @@ struct RootView: View {
         Binding(
             get: { topicSheetVerbs != nil },
             set: { isPresented in if !isPresented { topicSheetVerbs = nil } }
+        )
+    }
+
+    private var connectionPresentationBinding: Binding<Bool> {
+        Binding(
+            get: { connectionQuestions != nil },
+            set: { isPresented in if !isPresented { connectionQuestions = nil } }
         )
     }
 

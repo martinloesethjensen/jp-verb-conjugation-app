@@ -5,6 +5,10 @@ struct GrammarDetailView: View {
     let point: GrammarPoint
     @Environment(VerbStore.self) private var verbStore
     @Environment(\.openRoute) private var openRoute
+    @Environment(WordsStore.self) private var wordsStore
+    @Environment(QuizHistoryStore.self) private var quizHistory
+    @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
+    @State private var connectionQuestions: [ConnectionQuestion]?
 
     private let registerOrder: [GrammarRegister] = [.polite, .casual, .formal]
 
@@ -28,12 +32,29 @@ struct GrammarDetailView: View {
                 if !point.contrasts.isEmpty { contrastsSection }
                 if !point.conjugations.isEmpty { conjugationsSection }
                 if !point.pitfalls.isEmpty { pitfallsSection }
+                if point.hasConnections { practiseSection }
                 if !relatedPoints.isEmpty { relatedSection }
             }
             .padding()
             .frame(maxWidth: 720, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
+        #if os(iOS)
+        .fullScreenCover(isPresented: connectionBinding) {
+            if let connectionQuestions {
+                ConnectionQuizView(questions: connectionQuestions, recorder: { quizHistory.record($0) },
+                                   onDone: { self.connectionQuestions = nil })
+            }
+        }
+        #else
+        .sheet(isPresented: connectionBinding) {
+            if let connectionQuestions {
+                ConnectionQuizView(questions: connectionQuestions, recorder: { quizHistory.record($0) },
+                                   onDone: { self.connectionQuestions = nil })
+                    .frame(minWidth: 560, minHeight: 640)
+            }
+        }
+        #endif
         .navigationTitle(point.title)
         .toolbar {
             ToolbarItem(placement: .secondaryAction) {
@@ -137,6 +158,28 @@ struct GrammarDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: Practise
+
+    private var practiseSection: some View {
+        Button {
+            let verbs = verbStore.verbs.visible(in: LevelSettings.load())
+            let questions = buildConnectionQuestions(points: [point], verbs: verbs, words: wordsStore.words, count: quizQuestionCount)
+            if !questions.isEmpty { connectionQuestions = questions }
+        } label: {
+            Label("Practise this pattern", systemImage: "arrow.right")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.glassProminent)
+        .controlSize(.large)
+    }
+
+    private var connectionBinding: Binding<Bool> {
+        Binding(
+            get: { connectionQuestions != nil },
+            set: { if !$0 { connectionQuestions = nil } }
+        )
     }
 
     // MARK: Watch out

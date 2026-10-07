@@ -5,12 +5,15 @@ import VerbKit
 enum QuizSelection {
     case topics(Set<QuizTopic>)
     case weakSpots
+    /// Grammar connections, built from the sheet's verbs and every word.
+    case connections
 }
 
 /// Asks what to practise before a quiz starts. Rows are the topics the verbs in
 /// play have forms in, plus Everything and, first, Weak spots.
 struct QuizTopicSheet: View {
     let verbs: [Verb]
+    let connectionPatterns: Int
     /// Weak pairs among the given verbs, so the count follows "Favourites only".
     let weakSpotCount: ([Verb]) -> Int
     var onStart: ([Verb], QuizSelection) -> Void
@@ -18,6 +21,7 @@ struct QuizTopicSheet: View {
 
     private enum Choice: Hashable {
         case weakSpots
+        case connections
         case everything
         case topic(QuizTopic)
     }
@@ -44,6 +48,7 @@ struct QuizTopicSheet: View {
     private func isAvailable(_ value: Choice) -> Bool {
         switch value {
         case .weakSpots: return weakSpots > 0
+        case .connections: return connectionPatterns > 0
         case .everything: return true
         case .topic(let topic): return choices.contains { $0.topic == topic }
         }
@@ -52,6 +57,7 @@ struct QuizTopicSheet: View {
     private var selection: QuizSelection {
         switch choice {
         case .weakSpots: return .weakSpots
+        case .connections: return .connections
         case .everything: return .topics(Set(choices.map(\.topic)))
         case .topic(let topic): return .topics([topic])
         }
@@ -71,6 +77,16 @@ struct QuizTopicSheet: View {
                         row(title: item.topic.title, detail: Self.formsText(item.count), choice: .topic(item.topic))
                     }
                     row(title: "Everything", detail: Self.formsText(choices.reduce(0) { $0 + $1.count }), choice: .everything)
+                }
+                Section {
+                    row(
+                        title: "Connections",
+                        detail: connectionPatterns == 1 ? "1 pattern" : "\(connectionPatterns) patterns",
+                        choice: .connections,
+                        enabled: connectionPatterns > 0
+                    )
+                } footer: {
+                    Text("Join verbs and adjectives to grammar patterns: しずか + ので.")
                 }
                 // Only worth offering when there is a choice to make: some, but not all, verbs starred.
                 if !favouriteVerbs.isEmpty && favouriteVerbs.count < verbs.count {
