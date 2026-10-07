@@ -240,4 +240,12 @@ final class QuizGeneratorTests: XCTestCase {
         // With other kinds allowed it still gets questions.
         XCTAssertFalse(buildQuestions(verbs: [taberu], topics: all, count: 10, kinds: [.fillIn, .conjugate]).isEmpty)
     }
+
+    func testConnectIsNeverAVerbQuestion() throws {
+        let all = Set(QuizTopic.allCases)
+        XCTAssertTrue(buildQuestions(verbs: try verbs(), topics: all, count: 10, kinds: [.connect]).isEmpty)
+        let mixed = buildQuestions(verbs: try verbs(), topics: all, count: 30, kinds: QuizQuestionKind.allCases)
+        XCTAssertFalse(mixed.isEmpty)
+        XCTAssertFalse(mixed.contains { $0.kind == .connect })
+    }
 }

@@ -293,4 +293,15 @@ final class QuizProgressTests: XCTestCase {
         // The midnight entry (date = midnight) sees yesterday's whole history.
         XCTAssertEqual([late, early].before(startOfDayOf: midnight.date, calendar: cal), [late])
     }
+
+    /// Connection answers keep the streak and totals but are not verb weak spots.
+    func testConnectionAnswersCountTowardTotalsButNotWeakSpots() {
+        let connect = QuizAttempt(verb: "しずか", formID: "connect:node:plain", kind: .connect, outcome: .wrong, date: now)
+        let p = progress([connect])
+        XCTAssertEqual(p.totalAnswered, 1)
+        XCTAssertEqual(p.currentStreak, 1)
+        XCTAssertTrue(p.weakPairs.isEmpty)
+        XCTAssertTrue(p.weakestVerbs.isEmpty)
+        XCTAssertTrue(p.weakestForms.isEmpty)
+    }
 }

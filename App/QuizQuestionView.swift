@@ -100,6 +100,9 @@ struct QuizQuestionView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
+            case .connect:
+                // Never shown here: connection questions have their own screen.
+                EmptyView()
             case .identify:
                 Text("Which form is this?")
                     .font(.caption)

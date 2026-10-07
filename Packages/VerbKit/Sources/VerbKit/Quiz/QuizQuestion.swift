@@ -5,6 +5,9 @@ public enum QuizQuestionKind: String, CaseIterable, Sendable {
     case identify
     /// Given an example sentence with the verb blanked, pick the form that fits.
     case fillIn
+    /// A connection question (しずか + ので → しずかなので). Only recorded in quiz history:
+    /// connection questions have their own screen, and `buildQuestions` never makes one.
+    case connect
 }
 
 public struct QuizQuestion: Equatable, Sendable {

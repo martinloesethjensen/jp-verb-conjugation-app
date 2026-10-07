@@ -101,6 +101,7 @@ private func makeQuestion(
         case .fillIn: return example != nil
         case .identify: return !entry.sharesString
         case .conjugate: return true
+        case .connect: return false
         }
     }
     guard let kind = usable.randomElement() else { return nil }
@@ -128,6 +129,8 @@ private func makeQuestion(
     case .identify:
         correct = entry.form.label
         distractors = pick(sameVerb.map(\.form.label).filter { $0 != correct })
+    case .connect:
+        return nil
     }
 
     guard !distractors.isEmpty else { return nil }
