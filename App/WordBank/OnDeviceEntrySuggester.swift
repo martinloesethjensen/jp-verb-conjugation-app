@@ -3,7 +3,7 @@ import FoundationModels
 import os
 import VerbKit
 
-/// How sure the model says it is. Only medium and high are shown.
+/// How sure the model says it is. Low answers are shown as guesses.
 @Generable
 private enum SuggestionConfidence: String {
     case low, medium, high
@@ -39,7 +39,7 @@ private struct GeneratedEntryHints {
 /// Suggests a reading, standard Japanese, meanings, kind and dialect for what the user typed,
 /// with Apple's on-device model. Nothing leaves the device. The model is small: expect good
 /// answers for common words and guesses for rare dialects, which is why the editor only ever
-/// offers these as tap-to-apply chips and hides low-confidence answers.
+/// offers these as tap-to-apply chips and labels low-confidence answers as guesses.
 struct OnDeviceEntrySuggester: EntrySuggesting {
     private let catalogue: DialectCatalogue
 
@@ -74,7 +74,8 @@ struct OnDeviceEntrySuggester: EntrySuggesting {
         let session = LanguageModelSession(instructions: """
             You help a Japanese learner file words, phrases and sentences they heard, many of them \
             in regional dialects (方言). For the text you are given, fill in the structure. \
-            Say you are unsure rather than guessing. Never invent a dialect: choose from this list or leave it empty.
+            Give your best answer and say honestly how sure you are: a low-confidence answer is \
+            shown to the learner as a guess to check. Never invent a dialect: choose from this list or leave it empty.
 
             Dialects:
             \(dialects)
@@ -94,7 +95,6 @@ struct OnDeviceEntrySuggester: EntrySuggesting {
     }
 
     private func suggestion(from hints: GeneratedEntryHints, for text: String) -> EntrySuggestion {
-        guard hints.confidence != .low else { return EntrySuggestion(isUnsure: true) }
         func clean(_ values: [String], limit: Int) -> [String] {
             var seen = Set<String>()
             return values
@@ -112,7 +112,8 @@ struct OnDeviceEntrySuggester: EntrySuggesting {
             standardForms: forms.map { StandardEquivalent(written: $0) },
             meanings: clean(hints.meanings, limit: 3),
             kind: EntryKind(rawValue: hints.kind.rawValue),
-            dialectCatalogueID: id
+            dialectCatalogueID: id,
+            isUnsure: hints.confidence == .low
         )
     }
 }

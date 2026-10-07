@@ -132,7 +132,7 @@ struct WordBankEditor: View {
         case .nothing:
             suggestionNote("No suggestions for this one.")
         case .unsure:
-            suggestionNote("The on-device model wasn't sure about this one, so it suggests nothing.")
+            suggestionNote("The on-device model wasn't sure about this one and had nothing to suggest.")
         case .loading:
             Section {
                 HStack(spacing: 8) {
@@ -158,9 +158,11 @@ struct WordBankEditor: View {
                         .padding(.vertical, 4)
                     Button("Use all", systemImage: "wand.and.stars") { useAll(rest) }
                 } header: {
-                    Text("Suggestions")
+                    Text(rest.isUnsure ? "Guesses" : "Suggestions")
                 } footer: {
-                    Text("Suggested on this device. Check them: dialect words are often wrong.")
+                    Text(rest.isUnsure
+                         ? "The on-device model wasn't sure about these. Check them before adding."
+                         : "Suggested on this device. Check them: dialect words are often wrong.")
                 }
             }
         }
