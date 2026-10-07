@@ -191,9 +191,15 @@ private struct ConnectionSource {
 
 private func makeConnectionQuestion(_ entry: ConnectionEntry, _ source: ConnectionSource) -> ConnectionQuestion? {
     guard let then = entry.rule.then, let correct = entry.rule.build(source.slots, slot: entry.slot) else { return nil }
-    var wrong = GrammarSlot.allCases.compactMap { source.slots.form(for: $0) }.map { $0 + then }
-    if let na = source.slots.form(for: .plain, daToNa: true) { wrong.append(na + then) }
-    wrong.append(source.slots.dict + then)
+    // The dictionary form + ending is often grammatical as a general statement (飲むほうがいい),
+    // so a lesson that picks a positive form without taking the plain one never marks it wrong.
+    let skipsPlain = entry.slot.plainShape?.negative == false && !entry.candidates.contains(.plain)
+    var wrong = GrammarSlot.allCases.filter { !(skipsPlain && $0 == .plain) }
+        .compactMap { source.slots.form(for: $0) }.map { $0 + then }
+    if !skipsPlain {
+        if let na = source.slots.form(for: .plain, daToNa: true) { wrong.append(na + then) }
+        wrong.append(source.slots.dict + then)
+    }
     var seen: Set<String> = [correct]
     let distractors = Array(wrong.shuffled().filter { seen.insert($0).inserted }.prefix(3))
     guard !distractors.isEmpty else { return nil }

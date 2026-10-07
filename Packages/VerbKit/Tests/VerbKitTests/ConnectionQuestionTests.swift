@@ -95,9 +95,16 @@ final class ConnectionQuestionTests: XCTestCase {
         XCTAssertEqual(past.cue.label, "positive")
         XCTAssertEqual(past.explanation, "Verbs take the plain past (た) form before ほうがいいです: たべたほうがいいです")
         XCTAssertTrue(Set(past.choices).isSubset(of: [
-            "たべたほうがいいです", "たべないほうがいいです", "たべるほうがいいです",
+            "たべたほうがいいです", "たべないほうがいいです",
             "たべなかったほうがいいです", "たべてほうがいいです", "たべほうがいいです",
         ]), "\(past.choices)")
+        XCTAssertFalse(past.choices.contains("たべるほうがいいです"),
+                       "the dictionary form is fine as a general statement, so it is never marked wrong")
+        let negative = try XCTUnwrap(questions.first { $0.correct == "たべないほうがいいです" })
+        XCTAssertTrue(Set(negative.choices).isSubset(of: [
+            "たべないほうがいいです", "たべたほうがいいです", "たべるほうがいいです",
+            "たべなかったほうがいいです", "たべてほうがいいです", "たべほうがいいです",
+        ]), "\(negative.choices)")
     }
 
     func testAStemPatternHasNoCueAndUsesTheWordsOtherBlocksAsTraps() throws {
