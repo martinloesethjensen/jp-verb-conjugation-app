@@ -8,18 +8,6 @@ struct QuizQuestionView: View {
 
     @State private var confirmingQuit = false
 
-    private let shapeSymbols = ["triangle.fill", "diamond.fill", "circle.fill", "square.fill"]
-    // Pastels from the app palette (labels are near-black, as on `accentPill`). The shapes carry
-    // the identity; correct/wrong use deeper green and red so they stand out from every choice.
-    private let choiceColors: [Color] = [
-        TeGroup.tte.accentColor,
-        VerbType.ru.accentColor,
-        VerbType.u.accentColor,
-        TeGroup.ite.accentColor,
-    ]
-    private let correctColor = Color(red: 0.13, green: 0.55, blue: 0.32)
-    private let wrongColor = Color(red: 0.78, green: 0.20, blue: 0.20)
-
     var body: some View {
         // A ScrollView here (matching QuizResultsView) is what makes the
         // Next/See Results button reachable once `feedback` grows this
@@ -32,7 +20,12 @@ struct QuizQuestionView: View {
                 promptCard
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     ForEach(Array(question.choices.enumerated()), id: \.offset) { index, choice in
-                        choiceButton(choice, index: index)
+                        QuizChoiceButton(
+                            choice: choice, index: index, isCorrect: choice == question.correct,
+                            isSelected: choice == viewModel.selected, isAnswered: viewModel.isAnswered
+                        ) {
+                            viewModel.choose(choice)
+                        }
                     }
                 }
                 if viewModel.isAnswered {
@@ -142,36 +135,6 @@ struct QuizQuestionView: View {
         viewModel.timeLeft > 10 ? .green : viewModel.timeLeft > 5 ? .orange : .red
     }
 
-    private func choiceButton(_ choice: String, index: Int) -> some View {
-        let isCorrect = choice == question.correct
-        let isSelected = choice == viewModel.selected
-        var background = choiceColors[index % choiceColors.count]
-        var labelColor = Color.black.opacity(0.85)
-        if viewModel.isAnswered {
-            if isCorrect { background = correctColor; labelColor = .white }
-            else if isSelected { background = wrongColor; labelColor = .white }
-        }
-        return Button {
-            viewModel.choose(choice)
-        } label: {
-            HStack {
-                Image(systemName: shapeSymbols[index % shapeSymbols.count])
-                Text(choice)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.8)
-                    .lineLimit(3)
-                if viewModel.isAnswered && isCorrect { Image(systemName: "checkmark") }
-                if viewModel.isAnswered && isSelected && !isCorrect { Image(systemName: "xmark") }
-            }
-            .frame(maxWidth: .infinity, minHeight: 60)
-            .foregroundStyle(labelColor)
-        }
-        .buttonStyle(.glassProminent)
-        .tint(background)
-        .allowsHitTesting(!viewModel.isAnswered)
-        .opacity(viewModel.isAnswered && !isCorrect && !isSelected ? 0.35 : 1)
-    }
-
     private var feedback: some View {
         Group {
             if viewModel.timedOut {
@@ -187,7 +150,7 @@ struct QuizQuestionView: View {
         .frame(maxWidth: .infinity)
         .foregroundStyle(.white)
         .glassEffect(
-            .regular.tint(viewModel.timedOut ? .orange : (viewModel.selected == question.correct ? correctColor : wrongColor)),
+            .regular.tint(viewModel.timedOut ? .orange : (viewModel.selected == question.correct ? QuizChoiceButton.correctColor : QuizChoiceButton.wrongColor)),
             in: RoundedRectangle(cornerRadius: 12)
         )
     }
