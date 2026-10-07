@@ -201,7 +201,7 @@ points per lesson.
 1. **Foundations (done 2026-10-06):** words.json and its sync, form catalogue changes, slot fields on
    grammar rules and their validation, `contrasts`, the Building blocks screen, the new
    grammar card, ので and 〜ほうがいいです, slots on existing points.
-2. **Connection quiz.**
+2. **Connection quiz (done 2026-10-07).**
 3. **Courses:** textbook mappings, My course, By lesson view, lesson tags on cards.
 
 **As built (milestone 1):**
@@ -214,6 +214,21 @@ points per lesson.
   would build forms for verbs that do not take them (あっている).
 - Building blocks opens as a sheet (from the Grammar list and from a lesson's slot chips),
   not a pushed screen: a link in the split view's sidebar would land in the detail column.
+
+**As built (milestone 2):**
+
+- The learner picks from up to four choices rather than typing, matching the existing quiz.
+  Distractors are the word's other blocks with the same ending, the な form, and the
+  dictionary form plus the ending (しずかだので, たかいすぎる). For 〜ほうがいいです the
+  dictionary form is never offered as wrong, because the lesson itself allows it as a
+  general statement (飲むほうがいい).
+- When a pattern takes more than one plain form for a class, a cue says which: positive or
+  negative, present or past. It names only what tells the forms apart, so 〜ほうがいいです
+  asks for "positive" and the た-form stays the lesson.
+- Its own screen, with no timer. Answers are recorded as `connect` attempts: they count
+  toward streaks and totals but not toward weak spots, which are verb and form pairs.
+- From the quiz sheet, "Connections" uses the sheet's verbs (one verb from a verb page,
+  favourites when toggled) and every word. From a lesson card, it uses the visible verbs.
 
 ## Testing
 
