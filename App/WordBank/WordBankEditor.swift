@@ -127,8 +127,12 @@ struct WordBankEditor: View {
     @ViewBuilder
     private var suggestionsSection: some View {
         switch suggestions.state {
-        case .idle, .unavailable, .nothing:
+        case .idle, .unavailable:
             EmptyView()
+        case .nothing:
+            suggestionNote("No suggestions for this one.")
+        case .unsure:
+            suggestionNote("The on-device model wasn't sure about this one and had nothing to suggest.")
         case .loading:
             Section {
                 HStack(spacing: 8) {
@@ -146,17 +150,30 @@ struct WordBankEditor: View {
             }
         case .ready(let full):
             let rest = full.removing(whatIsIn: draft, appliedDialectCatalogueIDs: appliedCatalogueIDs)
-            if !rest.isEmpty {
+            if rest.isEmpty {
+                suggestionNote("Nothing new to suggest: the entry already has it.")
+            } else {
                 Section {
                     PillFlow(spacing: 8) { suggestionChips(rest) }
                         .padding(.vertical, 4)
                     Button("Use all", systemImage: "wand.and.stars") { useAll(rest) }
                 } header: {
-                    Text("Suggestions")
+                    Text(rest.isUnsure ? "Guesses" : "Suggestions")
                 } footer: {
-                    Text("Suggested on this device. Check them: dialect words are often wrong.")
+                    Text(rest.isUnsure
+                         ? "The on-device model wasn't sure about these. Check them before adding."
+                         : "Suggested on this device. Check them: dialect words are often wrong.")
                 }
             }
+        }
+    }
+
+    /// A one-line note in place of the chips, so a finished request never ends in silence.
+    private func suggestionNote(_ text: String) -> some View {
+        Section {
+            Label(text, systemImage: "sparkles")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 

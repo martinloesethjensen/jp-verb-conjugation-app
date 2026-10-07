@@ -106,6 +106,29 @@ final class EntrySuggestionModelTests: XCTestCase {
         XCTAssertEqual(model.state, .failed)
     }
 
+    /// The model said it wasn't sure and had nothing: a state of its own, so the editor can say
+    /// so instead of showing a spinner that ends in nothing.
+    func testAnUnsureEmptyAnswerIsItsOwnState() async {
+        let fake = FakeSuggester()
+        fake.reply = { _ in EntrySuggestion(isUnsure: true) }
+        let model = model(fake)
+        model.textChanged("おおきに")
+        await settle()
+        XCTAssertEqual(model.state, .unsure)
+    }
+
+    /// An unsure answer with content is still shown (dialect words are often unsure), marked
+    /// so the editor can label the chips as guesses.
+    func testAnUnsureAnswerWithContentIsShownMarked() async {
+        let fake = FakeSuggester()
+        let guess = EntrySuggestion(meanings: ["thank you"], isUnsure: true)
+        fake.reply = { _ in guess }
+        let model = model(fake)
+        model.textChanged("おおきに")
+        await settle()
+        XCTAssertEqual(model.state, .ready(guess))
+    }
+
     func testRetryAsksAgainForTheSameText() async {
         let fake = FakeSuggester()
         fake.reply = { _ in throw Boom() }
@@ -133,6 +156,7 @@ final class EntrySuggestionModelTests: XCTestCase {
 
 final class EntrySuggestionContentTests: XCTestCase {
     func testEmptiness() {
+        XCTAssertTrue(EntrySuggestion(isUnsure: true).isEmpty)
         XCTAssertTrue(EntrySuggestion().isEmpty)
         XCTAssertFalse(EntrySuggestion(reading: "あ").isEmpty)
         XCTAssertFalse(EntrySuggestion(kind: .phrase).isEmpty)
@@ -158,6 +182,9 @@ final class EntrySuggestionContentTests: XCTestCase {
 
         let tagged = suggestion.removing(whatIsIn: entry, appliedDialectCatalogueIDs: ["osaka-ben"])
         XCTAssertNil(tagged.dialectCatalogueID)
+
+        let unsure = EntrySuggestion(meanings: ["many thanks"], isUnsure: true)
+        XCTAssertTrue(unsure.removing(whatIsIn: entry, appliedDialectCatalogueIDs: []).isUnsure, "the guess stays marked")
     }
 
     func testAReadingThatIsTheTextAgainIsDropped() {

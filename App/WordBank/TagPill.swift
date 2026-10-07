@@ -63,7 +63,10 @@ struct PillFlow: Layout {
         var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0, maxX: CGFloat = 0
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > width {
+            // The slack absorbs rounding: placement gets back exactly the width measured
+            // here, and re-adding the pill widths can exceed it by a hair, which would wrap
+            // a pill onto a line the row never made room for.
+            if x > 0, x + size.width > width + 0.5 {
                 x = 0
                 y += lineHeight + spacing
                 lineHeight = 0
