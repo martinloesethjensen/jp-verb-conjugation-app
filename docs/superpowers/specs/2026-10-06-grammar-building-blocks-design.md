@@ -229,6 +229,7 @@ points per lesson.
   toward streaks and totals but not toward weak spots, which are verb and form pairs.
 - From the quiz sheet, "Connections" uses the sheet's verbs (one verb from a verb page,
   favourites when toggled) and every word. From a lesson card, it uses the visible verbs.
+  Connections use the level-visible lessons and words.
 
 ## Testing
 

@@ -86,7 +86,7 @@ struct QuizTopicSheet: View {
                         enabled: connectionPatterns > 0
                     )
                 } footer: {
-                    Text("Join verbs and adjectives to grammar patterns: しずか + ので.")
+                    Text("Join verbs, adjectives and nouns to grammar patterns: しずか + ので.")
                 }
                 // Only worth offering when there is a choice to make: some, but not all, verbs starred.
                 if !favouriteVerbs.isEmpty && favouriteVerbs.count < verbs.count {

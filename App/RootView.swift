@@ -158,13 +158,14 @@ struct RootView: View {
             if let topicSheetVerbs {
                 QuizTopicSheet(
                     verbs: topicSheetVerbs,
-                    connectionPatterns: verbStore.grammarPoints.filter(\.hasConnections).count,
+                    connectionPatterns: verbStore.grammarPoints.visible(in: LevelSettings.load()).filter(\.hasConnections).count,
                     weakSpotCount: { weakPairs(in: $0).count },
                     onStart: { verbs, selection in
                         if case .connections = selection {
+                            let levels = LevelSettings.load()
                             let built = buildConnectionQuestions(
-                                points: verbStore.grammarPoints, verbs: verbs,
-                                words: wordsStore.words, count: quizQuestionCount
+                                points: verbStore.grammarPoints.visible(in: levels), verbs: verbs,
+                                words: wordsStore.words.visible(in: levels), count: quizQuestionCount
                             )
                             pendingConnections = built.isEmpty ? nil : built
                         } else {

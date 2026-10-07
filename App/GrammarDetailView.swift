@@ -164,8 +164,9 @@ struct GrammarDetailView: View {
 
     private var practiseSection: some View {
         Button {
-            let verbs = verbStore.verbs.visible(in: LevelSettings.load())
-            let questions = buildConnectionQuestions(points: [point], verbs: verbs, words: wordsStore.words, count: quizQuestionCount)
+            let levels = LevelSettings.load()
+            let verbs = verbStore.verbs.visible(in: levels)
+            let questions = buildConnectionQuestions(points: [point], verbs: verbs, words: wordsStore.words.visible(in: levels), count: quizQuestionCount)
             if !questions.isEmpty { connectionQuestions = questions }
         } label: {
             Label("Practise this pattern", systemImage: "arrow.right")

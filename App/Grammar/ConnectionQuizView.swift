@@ -92,6 +92,7 @@ struct ConnectionQuizView: View {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(question.word)
                 Image(systemName: "plus").font(.title2).foregroundStyle(.secondary)
+                    .accessibilityLabel("plus")
                 Text(question.ending)
             }
             .font(.largeTitle.weight(.heavy))
