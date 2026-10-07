@@ -151,4 +151,22 @@ final class RealGrammarDataTests: XCTestCase {
             XCTAssertFalse(point.contrasts.isEmpty, id)
         }
     }
+
+    /// Every lesson with an ending yields a full connection quiz from the real verbs and
+    /// words, each question with its answer among distinct choices.
+    func testConnectionQuestionsBuildFromTheRealData() throws {
+        let points = try loadGrammar().filter(\.hasConnections)
+        XCTAssertEqual(Set(points.map(\.id)), ["n-desu", "sugiru", "node", "hou-ga-ii"])
+        let verbs = try loadVerbs()
+        let words = try loadWords()
+        for point in points {
+            let questions = buildConnectionQuestions(points: [point], verbs: verbs, words: words, count: 20)
+            XCTAssertEqual(questions.count, 20, point.id)
+            for question in questions {
+                XCTAssertTrue(question.choices.contains(question.correct), "\(point.id) \(question.correct)")
+                XCTAssertGreaterThanOrEqual(question.choices.count, 2)
+                XCTAssertEqual(Set(question.choices).count, question.choices.count)
+            }
+        }
+    }
 }
