@@ -774,6 +774,17 @@
       "source": "derived"
     },
     {
+      "id": "causative_passive_short",
+      "family": "other",
+      "label": "Causative-passive (short)",
+      "name": "Causative-passive (short)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
       "id": "conditional_ba",
       "family": "other",
       "label": "Conditional (ば)",
@@ -798,8 +809,8 @@
     {
       "id": "imperative",
       "family": "other",
-      "label": "Imperative",
-      "name": "Imperative",
+      "label": "Imperative (blunt)",
+      "name": "Imperative (blunt)",
       "role": "derived",
       "applies_to": [
         "verb"
@@ -811,6 +822,171 @@
       "family": "other",
       "label": "たい (want to)",
       "name": "たい (want to)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "masu_volitional",
+      "family": "other",
+      "label": "Polite volitional (ましょう)",
+      "name": "Polite volitional (ましょう)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "neg_te",
+      "family": "other",
+      "label": "Negative て-form (ないで)",
+      "name": "Negative て-form (ないで)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "nakute",
+      "family": "other",
+      "label": "Negative て-form (なくて)",
+      "name": "Negative て-form (なくて)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "te_mo_ii",
+      "family": "other",
+      "label": "Permission (てもいい)",
+      "name": "Permission (てもいい)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "te_wa_ikenai",
+      "family": "other",
+      "label": "Prohibition (てはいけない)",
+      "name": "Prohibition (てはいけない)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "te_cha_dame",
+      "family": "other",
+      "label": "Casual prohibition (ちゃだめ)",
+      "name": "Casual prohibition (ちゃだめ)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "nakereba_naranai",
+      "family": "other",
+      "label": "Obligation (なければならない)",
+      "name": "Obligation (なければならない)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "nakute_wa_ikenai",
+      "family": "other",
+      "label": "Obligation (なくてはいけない)",
+      "name": "Obligation (なくてはいけない)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "nakya",
+      "family": "other",
+      "label": "Casual obligation (なきゃ)",
+      "name": "Casual obligation (なきゃ)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "nakucha",
+      "family": "other",
+      "label": "Casual obligation (なくちゃ)",
+      "name": "Casual obligation (なくちゃ)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "nakute_mo_ii",
+      "family": "other",
+      "label": "Not necessary (なくてもいい)",
+      "name": "Not necessary (なくてもいい)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "neg_imperative",
+      "family": "other",
+      "label": "Negative imperative (〜な, blunt)",
+      "name": "Negative imperative (〜な, blunt)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "nasai",
+      "family": "other",
+      "label": "Soft command (なさい)",
+      "name": "Soft command (なさい)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "conditional_to",
+      "family": "other",
+      "label": "Conditional (と)",
+      "name": "Conditional (と)",
+      "role": "derived",
+      "applies_to": [
+        "verb"
+      ],
+      "source": "derived"
+    },
+    {
+      "id": "conditional_nara",
+      "family": "other",
+      "label": "Conditional (なら)",
+      "name": "Conditional (なら)",
       "role": "derived",
       "applies_to": [
         "verb"

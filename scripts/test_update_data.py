@@ -850,10 +850,6 @@ class WordsManifestTests(unittest.TestCase):
         self.assertNotIn("words", ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f"))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class OtherFormsTests(unittest.TestCase):
     def forms(self, dict_form, vtype, short_past):
         return ud.other_forms({"type": vtype, "dict": dict_form, "forms": {"short_past": short_past}})
@@ -868,7 +864,7 @@ class OtherFormsTests(unittest.TestCase):
     def test_u_verbs(self):
         got = self.forms("のむ", "u", "のんだ")
         self.assertEqual(
-            [got[f] for f in ud.OTHER_FORM_FIELDS],
+            [got[f] for f in ud.BASE_OTHER_FIELDS],
             ["のもう", "のまれる", "のませる", "のませられる", "のめば", "のんだら", "のめ", "のみたい"],
         )
         got = self.forms("かう", "u", "かった")
@@ -911,7 +907,94 @@ class OtherFormsTests(unittest.TestCase):
             self.forms("べんきょうする", "irr.", "した")
 
     def test_apply_is_idempotent_and_removes_stale_fields(self):
-        doc = {"verbs": [{"type": "u", "dict": "ある", "forms": {"short_past": "あった", "passive": "x"}}]}
+        doc = {"verbs": [{"type": "u", "dict": "ある", "forms": dict(
+            short_past="あった", passive="x", masu_pos="あります", te="あって",
+            short_pos="ある", short_neg="ない")}]}
         self.assertTrue(ud.apply_other_forms(doc))
         self.assertNotIn("passive", doc["verbs"][0]["forms"])
         self.assertFalse(ud.apply_other_forms(doc))
+
+
+def everyday_verb(dict_form, vtype, **forms):
+    return {"type": vtype, "dict": dict_form, "forms": forms}
+
+
+NOMU = dict(masu_pos="のみます", te="のんで", short_pos="のむ", short_neg="のまない")
+TABERU = dict(masu_pos="たべます", te="たべて", short_pos="たべる", short_neg="たべない")
+
+
+class ExtraFormsTests(unittest.TestCase):
+    ALL_BASE = {"volitional", "imperative", "causative"}
+
+    def test_everyday_forms_of_a_godan_verb(self):
+        got = ud.extra_forms(everyday_verb("のむ", "u", **NOMU), self.ALL_BASE)
+        self.assertEqual(got, {
+            "causative_passive_short": "のまされる", "masu_volitional": "のみましょう",
+            "neg_te": "のまないで", "nakute": "のまなくて", "te_mo_ii": "のんでもいい",
+            "te_wa_ikenai": "のんではいけない", "te_cha_dame": "のんじゃだめ",
+            "nakereba_naranai": "のまなければならない", "nakute_wa_ikenai": "のまなくてはいけない",
+            "nakya": "のまなきゃ", "nakucha": "のまなくちゃ", "nakute_mo_ii": "のまなくてもいい",
+            "neg_imperative": "のむな", "nasai": "のみなさい", "conditional_to": "のむと",
+            "conditional_nara": "のむなら",
+        })
+
+    def test_ru_verbs_and_irregulars_have_no_short_causative_passive(self):
+        got = ud.extra_forms(everyday_verb("たべる", "ru", **TABERU), self.ALL_BASE)
+        self.assertNotIn("causative_passive_short", got)
+        self.assertEqual((got["te_cha_dame"], got["nasai"]), ("たべちゃだめ", "たべなさい"))
+        got = ud.extra_forms(everyday_verb("する", "irr.", masu_pos="します", te="して",
+                                           short_pos="する", short_neg="しない"), self.ALL_BASE)
+        self.assertNotIn("causative_passive_short", got)
+        self.assertEqual((got["neg_te"], got["nasai"], got["masu_volitional"]),
+                         ("しないで", "しなさい", "しましょう"))
+        got = ud.extra_forms(everyday_verb("くる", "irr.", masu_pos="きます", te="きて",
+                                           short_pos="くる", short_neg="こない"), self.ALL_BASE)
+        self.assertEqual((got["nakute"], got["nasai"]), ("こなくて", "きなさい"))
+
+    def test_su_verbs_have_only_the_long_causative_passive(self):
+        got = ud.extra_forms(everyday_verb("はなす", "u", masu_pos="はなします", te="はなして",
+                                           short_pos="はなす", short_neg="はなさない"), self.ALL_BASE)
+        self.assertNotIn("causative_passive_short", got)
+
+    def test_voiced_te_forms_become_ja(self):
+        got = ud.extra_forms(everyday_verb("およぐ", "u", masu_pos="およぎます", te="およいで",
+                                           short_pos="およぐ", short_neg="およがない"), self.ALL_BASE)
+        self.assertEqual(got["te_cha_dame"], "およいじゃだめ")
+        self.assertEqual(got["causative_passive_short"], "およがされる")
+
+    def test_aru_builds_its_negative_forms_from_nai(self):
+        got = ud.extra_forms(everyday_verb("ある", "u", masu_pos="あります", te="あって",
+                                           short_pos="ある", short_neg="ない"), {"volitional"})
+        self.assertEqual((got["neg_te"], got["nakute"], got["nakya"]), ("ないで", "なくて", "なきゃ"))
+        self.assertEqual(got["masu_volitional"], "ありましょう")
+        self.assertNotIn("nasai", got)
+        self.assertNotIn("neg_imperative", got)
+
+    def test_forms_that_need_another_form_follow_it(self):
+        verb = everyday_verb("のむ", "u", **NOMU)
+        got = ud.extra_forms(verb, {"causative"})
+        for name in ("masu_volitional", "nasai", "neg_imperative"):
+            self.assertNotIn(name, got)
+        self.assertIn("causative_passive_short", got)
+        self.assertNotIn("causative_passive_short", ud.extra_forms(verb, {"volitional", "imperative"}))
+
+    def test_missing_or_odd_source_forms_fail_loudly(self):
+        with self.assertRaises(ValueError):
+            ud.extra_forms(everyday_verb("のむ", "u", masu_pos="のみます"), set())
+        with self.assertRaises(ValueError):
+            ud.extra_forms(everyday_verb("のむ", "u", **dict(NOMU, short_neg="のまぬ")), set())
+        with self.assertRaises(ValueError):
+            ud.extra_forms(everyday_verb("のむ", "u", **dict(NOMU, te="のむ")), set())
+
+    def test_apply_puts_a_new_form_in_catalogue_order(self):
+        verb = {"type": "u", "dict": "のむ", "forms": dict(NOMU, short_past="のんだ")}
+        doc = {"verbs": [verb]}
+        self.assertTrue(ud.apply_other_forms(doc))
+        keys = [k for k in verb["forms"] if k in ud.OTHER_FORM_FIELDS]
+        self.assertEqual(keys, sorted(keys, key=ud.OTHER_FORM_FIELDS.index))
+        self.assertIn("causative_passive_short", keys)
+        self.assertFalse(ud.apply_other_forms(doc))
+
+
+if __name__ == "__main__":
+    unittest.main()

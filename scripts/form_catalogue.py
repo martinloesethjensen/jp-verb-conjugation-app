@@ -198,16 +198,33 @@ def _build():
     ))
 
     # More forms: each is identified by its name alone, so it is "derived". No
-    # lessons yet. ある has only some of them (update_data.py decides which).
+    # lessons yet. Some verbs have only some of them (update_data.py decides which).
     for form_id, name in (
         ("volitional", "Volitional"),
         ("passive", "Passive"),
         ("causative", "Causative"),
         ("causative_passive", "Causative-passive"),
+        ("causative_passive_short", "Causative-passive (short)"),
         ("conditional_ba", "Conditional (ば)"),
         ("conditional_tara", "Conditional (たら)"),
-        ("imperative", "Imperative"),
+        ("imperative", "Imperative (blunt)"),
         ("tai", "たい (want to)"),
+        # The everyday N5/N4 forms.
+        ("masu_volitional", "Polite volitional (ましょう)"),
+        ("neg_te", "Negative て-form (ないで)"),
+        ("nakute", "Negative て-form (なくて)"),
+        ("te_mo_ii", "Permission (てもいい)"),
+        ("te_wa_ikenai", "Prohibition (てはいけない)"),
+        ("te_cha_dame", "Casual prohibition (ちゃだめ)"),
+        ("nakereba_naranai", "Obligation (なければならない)"),
+        ("nakute_wa_ikenai", "Obligation (なくてはいけない)"),
+        ("nakya", "Casual obligation (なきゃ)"),
+        ("nakucha", "Casual obligation (なくちゃ)"),
+        ("nakute_mo_ii", "Not necessary (なくてもいい)"),
+        ("neg_imperative", "Negative imperative (〜な, blunt)"),
+        ("nasai", "Soft command (なさい)"),
+        ("conditional_to", "Conditional (と)"),
+        ("conditional_nara", "Conditional (なら)"),
     ):
         forms.append(FormSpec(id=form_id, family="other", role="derived", name=name))
     return forms

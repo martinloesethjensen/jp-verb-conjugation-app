@@ -74,9 +74,13 @@ class CatalogueMatchesRulesTests(unittest.TestCase):
     def test_other_forms_table_covers_exactly_the_other_family(self):
         self.assertEqual(ud.OTHER_FORM_FIELDS, fc.ids("verb", family="other"))
         for spellings in ud.IRREGULAR_OTHER_FORMS.values():
-            self.assertEqual(len(spellings), len(ud.OTHER_FORM_FIELDS))
+            self.assertEqual(len(spellings), len(ud.BASE_OTHER_FIELDS))
         for kept in ud.PARTIAL_OTHER_FORMS.values():
-            self.assertTrue(kept <= set(ud.OTHER_FORM_FIELDS))
+            self.assertTrue(kept <= set(ud.BASE_OTHER_FIELDS))
+        # The fields extra_forms builds are the rest of the family, in catalogue order.
+        extras = [name for name in ud.OTHER_FORM_FIELDS if name not in ud.BASE_OTHER_FIELDS]
+        self.assertEqual(len(extras), 16)
+        self.assertTrue(set(ud.EXTRA_NEEDS) <= set(extras))
 
     def test_every_derived_form_has_a_rule(self):
         covered = (
