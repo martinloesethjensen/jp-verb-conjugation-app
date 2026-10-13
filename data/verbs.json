@@ -492,7 +492,7 @@
       "meaning": "to show",
       "description": "A ru-verb meaning to show or display something to someone.",
       "notes": "みせてください is one of the most practical request phrases for travel and shopping.",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "みせます",
         "masu_neg": "みせません",
@@ -1307,7 +1307,7 @@
       "teGroup": "nde",
       "description": "A u-verb ending in ぬ — the only common ぬ-ending verb in modern Japanese.",
       "notes": "Often used hyperbolically: おなかすいてしぬ (starving to death).",
-      "jlpt": "N4",
+      "jlpt": "N5",
       "forms": {
         "masu_pos": "しにます",
         "masu_neg": "しにません",
@@ -2130,10 +2130,9 @@
       "type": "ru",
       "label": "Ru-verb",
       "dict": "つける",
-      "kanji": "付ける",
       "meaning": "to turn on / attach",
       "description": "A ru-verb. Drop the final る and add your ending.",
-      "notes": "Used for turning on lights and appliances (でんきをつける). Opposite of けす.",
+      "notes": "Used for turning on lights and appliances (でんきをつける), where it is usually written in kana. Opposite of けす. The \"attach\" meaning is 付ける.",
       "jlpt": "N5",
       "forms": {
         "masu_pos": "つけます",
@@ -3058,7 +3057,7 @@
       "meaning": "to enter",
       "teGroup": "tte",
       "description": "A u-verb ending in る. The て-form uses って/った.",
-      "notes": "Ends in る but is a u-verb: はいらない, はいって. The place entered takes に or を.",
+      "notes": "Ends in る but is a u-verb: はいらない, はいって. The place entered takes に (へやにはいる). を only marks passing through (もんをはいる), and is rare.",
       "jlpt": "N5",
       "forms": {
         "masu_pos": "はいります",
@@ -4494,7 +4493,7 @@
       "meaning": "to end / finish",
       "teGroup": "tte",
       "description": "A u-verb ending in る. The て-form uses って/った.",
-      "notes": "Intransitive: something finishes by itself. The transitive partner is おえる.",
+      "notes": "Intransitive: something finishes by itself. The transitive partner is おえる, and おわらせる is the usual \"finish something\". In speech you also hear を with it (しごとをおわる), but が is the standard particle.",
       "jlpt": "N5",
       "forms": {
         "masu_pos": "おわります",
