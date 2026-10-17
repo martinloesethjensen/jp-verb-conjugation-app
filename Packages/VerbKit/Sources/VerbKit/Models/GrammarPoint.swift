@@ -168,6 +168,8 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     public var related: [String]
     /// Patterns this one is often confused with. Empty for most lessons.
     public var contrasts: [GrammarContrast]
+    /// The textbook lessons that teach this point. Empty for most lessons.
+    public var taughtIn: [LessonRef]
 
     /// The id verb detail pages link to for the んです lesson.
     public static let nDesuID = "n-desu"
@@ -191,7 +193,8 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         conjugations: [GrammarConjugation],
         pitfalls: [GrammarPitfall],
         related: [String],
-        contrasts: [GrammarContrast] = []
+        contrasts: [GrammarContrast] = [],
+        taughtIn: [LessonRef] = []
     ) {
         self.id = id
         self.title = title
@@ -203,13 +206,15 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         self.pitfalls = pitfalls
         self.related = related
         self.contrasts = contrasts
+        self.taughtIn = taughtIn
     }
 
     enum CodingKeys: String, CodingKey {
         case id, title, summary, jlpt, usages, attachment, conjugations, pitfalls, related, contrasts
+        case taughtIn = "taught_in"
     }
 
-    /// `contrasts` may be omitted from the JSON.
+    /// `contrasts` and `taught_in` may be omitted from the JSON.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
@@ -222,6 +227,7 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         pitfalls = try c.decode([GrammarPitfall].self, forKey: .pitfalls)
         related = try c.decode([String].self, forKey: .related)
         contrasts = try c.decodeIfPresent([GrammarContrast].self, forKey: .contrasts) ?? []
+        taughtIn = try c.decodeIfPresent([LessonRef].self, forKey: .taughtIn) ?? []
     }
 }
 
@@ -229,11 +235,26 @@ public struct GrammarDataFile: Codable, Sendable {
     public var version: String
     public var description: String
     public var grammar: [GrammarPoint]
+    public var books: [Textbook]
 
-    public init(version: String, description: String, grammar: [GrammarPoint]) {
+    public init(version: String, description: String, grammar: [GrammarPoint], books: [Textbook] = []) {
         self.version = version
         self.description = description
         self.grammar = grammar
+        self.books = books
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case version, description, grammar, books
+    }
+
+    /// `books` may be omitted from the JSON.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decode(String.self, forKey: .version)
+        description = try c.decode(String.self, forKey: .description)
+        grammar = try c.decode([GrammarPoint].self, forKey: .grammar)
+        books = try c.decodeIfPresent([Textbook].self, forKey: .books) ?? []
     }
 }
 

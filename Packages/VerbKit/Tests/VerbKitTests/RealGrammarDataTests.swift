@@ -27,6 +27,26 @@ final class RealGrammarDataTests: XCTestCase {
         return try JSONDecoder().decode(GrammarDataFile.self, from: data).grammar
     }
 
+    private func loadGrammarFile() throws -> GrammarDataFile {
+        let data = try Data(contentsOf: dataURL("grammar.json"))
+        return try JSONDecoder().decode(GrammarDataFile.self, from: data)
+    }
+
+    func testEveryLessonRefPointsAtAKnownBookAndLesson() throws {
+        let file = try loadGrammarFile()
+        XCTAssertEqual(Set(file.books.map(\.id)), ["genki-1", "genki-2"])
+        let booksByID = Dictionary(uniqueKeysWithValues: file.books.map { ($0.id, $0) })
+        var refs = 0
+        for point in file.grammar {
+            for ref in point.taughtIn {
+                let book = try XCTUnwrap(booksByID[ref.book], "\(point.id) -> \(ref.book)")
+                XCTAssertTrue(book.contains(lesson: ref.lesson), "\(point.id) \(ref.book) L\(ref.lesson)")
+                refs += 1
+            }
+        }
+        XCTAssertGreaterThan(refs, 0)
+    }
+
     func testEveryVerbHasNdFormsBuiltFromItsPlainForms() throws {
         let verbs = try loadVerbs()
         XCTAssertFalse(verbs.isEmpty)
