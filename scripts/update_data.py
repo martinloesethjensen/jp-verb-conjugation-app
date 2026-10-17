@@ -104,9 +104,16 @@ A_ROW = {"う": "わ", "く": "か", "ぐ": "が", "す": "さ", "つ": "た", "
 I_ROW = {"う": "い", "く": "き", "ぐ": "ぎ", "す": "し", "つ": "ち", "ぬ": "に", "ぶ": "び", "む": "み", "る": "り"}
 O_ROW = {"う": "お", "く": "こ", "ぐ": "ご", "す": "そ", "つ": "と", "ぬ": "の", "ぶ": "ぼ", "む": "も", "る": "ろ"}
 
-# Every field this step owns, in JSON order. The ids come from the form catalogue;
-# IRREGULAR_OTHER_FORMS below lists its spellings in the same order.
+# Every field this step owns, in JSON order. The ids come from the form catalogue.
 OTHER_FORM_FIELDS = form_catalogue.ids("verb", family="other")
+
+# The eight textbook conjugations `other_forms` builds from the verb's class.
+# IRREGULAR_OTHER_FORMS below lists their spellings in this order. The remaining fields
+# (causative_passive_short and the everyday forms) come from `extra_forms`.
+BASE_OTHER_FIELDS = (
+    "volitional", "passive", "causative", "causative_passive",
+    "conditional_ba", "conditional_tara", "imperative", "tai",
+)
 
 # Irregular verbs, spelled out: only する and くる.
 IRREGULAR_OTHER_FORMS = {
@@ -132,7 +139,7 @@ PARTIAL_OTHER_FORMS = {
 
 
 def other_forms(verb):
-    """The eight other conjugations as {field: value}, built from the verb's class and its
+    """The eight textbook conjugations as {field: value}, built from the verb's class and its
     plain past (for たら). Raises ValueError for a class or ending the rules don't cover."""
     dict_form = verb["dict"]
     kind = verb["type"]
@@ -142,7 +149,7 @@ def other_forms(verb):
     if kind == "irr.":
         if dict_form not in IRREGULAR_OTHER_FORMS:
             raise ValueError(f"{dict_form}: irregular verb with no known conjugations")
-        values = dict(zip(OTHER_FORM_FIELDS, IRREGULAR_OTHER_FORMS[dict_form]))
+        values = dict(zip(BASE_OTHER_FIELDS, IRREGULAR_OTHER_FORMS[dict_form]))
     elif kind == "ru":
         stem = dict_form[:-1]
         values = {
@@ -170,13 +177,71 @@ def other_forms(verb):
     return {name: value for name, value in values.items() if keep is None or name in keep}
 
 
+# Forms that only make sense when another form exists: ましょう needs a volitional verb, and
+# the negative imperative and なさい need an imperative. Without them the verb gets none
+# (ある, わかる, しる, つかれる, おわる keep their exclusions). The short causative-passive
+# needs the causative, so おわる gets none; しる does get しらされる.
+EXTRA_NEEDS = {
+    "masu_volitional": "volitional",
+    "neg_imperative": "imperative",
+    "nasai": "imperative",
+    "causative_passive_short": "causative",
+}
+
+
+def extra_forms(verb, kept):
+    """The forms beyond the eight conjugations, as {field: value}: the short causative-passive,
+    and the everyday N5/N4 forms built from the verb's authored ます, て, plain and ない forms.
+    `kept` is the set of base forms the verb has, which decides the ones in EXTRA_NEEDS.
+    Raises ValueError for a verb missing a form they are built from."""
+    dict_form = verb["dict"]
+    forms = verb["forms"]
+    for name in ("masu_pos", "te", "short_pos", "short_neg"):
+        if not isinstance(forms.get(name), str) or not forms[name]:
+            raise ValueError(f"{dict_form}: no {name} to build the everyday forms from")
+    te = forms["te"]
+    if te[-1] not in "てで":
+        raise ValueError(f"{dict_form}: te form must end in て or で, got {te!r}")
+    negative = forms["short_neg"]
+    if not negative.endswith("ない"):
+        raise ValueError(f"{dict_form}: short_neg must end in ない, got {negative!r}")
+    base = negative[:-2]  # たべ, の ま, "" for ある (ない)
+    plain = forms["short_pos"]
+    values = {
+        "masu_volitional": masu_stem(verb) + "ましょう",
+        "neg_te": negative + "で",
+        "nakute": base + "なくて",
+        "te_mo_ii": te + "もいい",
+        "te_wa_ikenai": te + "はいけない",
+        "te_cha_dame": te[:-1] + ("ちゃ" if te[-1] == "て" else "じゃ") + "だめ",
+        "nakereba_naranai": base + "なければならない",
+        "nakute_wa_ikenai": base + "なくてはいけない",
+        "nakya": base + "なきゃ",
+        "nakucha": base + "なくちゃ",
+        "nakute_mo_ii": base + "なくてもいい",
+        "neg_imperative": plain + "な",
+        "nasai": masu_stem(verb) + "なさい",
+        "conditional_to": plain + "と",
+        "conditional_nara": plain + "なら",
+    }
+    # Only godan verbs have the short causative-passive (のまされる), and not す-verbs:
+    # はなさせられる, never ×はなさされる. Ichidan verbs, する and くる have no short form.
+    if verb["type"] == "u" and dict_form[-1] in A_ROW and dict_form[-1] != "す":
+        values["causative_passive_short"] = dict_form[:-1] + A_ROW[dict_form[-1]] + "される"
+    return {
+        name: value for name, value in values.items()
+        if EXTRA_NEEDS.get(name) is None or EXTRA_NEEDS[name] in kept
+    }
+
+
 def apply_other_forms(verbs_doc):
-    """Set the eight fields on every verb in place and remove the ones a verb must not have.
-    The script owns these fields. Returns True if anything changed."""
+    """Set the other-conjugation fields on every verb in place and remove the ones a verb must
+    not have. The script owns these fields. Returns True if anything changed."""
     changed = False
     for verb in verbs_doc["verbs"]:
         forms = verb["forms"]
         wanted = other_forms(verb)
+        wanted.update(extra_forms(verb, set(wanted)))
         for name in OTHER_FORM_FIELDS:
             if name in wanted:
                 if forms.get(name) != wanted[name]:
@@ -185,7 +250,25 @@ def apply_other_forms(verbs_doc):
             elif name in forms:
                 del forms[name]
                 changed = True
+        if in_catalogue_order(forms):
+            continue
+        # A form inserted between two older ones (causative_passive_short) is appended by the
+        # assignment above; put the keys back in the catalogue's order.
+        ordered = sorted(forms, key=catalogue_position)
+        verb["forms"] = {name: forms[name] for name in ordered}
+        changed = True
     return changed
+
+
+def catalogue_position(form_id):
+    """Where a form id sits in the catalogue; ids it does not know go last."""
+    known = form_catalogue.ids("verb")
+    return known.index(form_id) if form_id in known else len(known)
+
+
+def in_catalogue_order(forms):
+    keys = list(forms)
+    return keys == sorted(keys, key=catalogue_position)
 
 
 # --- Verb auxiliaries (grammar points `teiru`, `teshimau`, `temiru`, `sugiru`) ---
