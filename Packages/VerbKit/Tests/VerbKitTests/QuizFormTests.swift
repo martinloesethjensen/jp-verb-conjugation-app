@@ -6,10 +6,10 @@ final class QuizFormTests: XCTestCase {
         try XCTUnwrap(try RealVerbs.load().first { $0.dict == dict }, dict)
     }
 
-    func testCatalogueHasFiftySixFormsWithUniqueIds() {
-        XCTAssertEqual(QuizForm.all.count, 56)
-        XCTAssertEqual(Set(QuizForm.all.map(\.id)).count, 56)
-        XCTAssertEqual(Set(QuizForm.all.map(\.label)).count, 56, "labels must be unique so identify has one answer")
+    func testCatalogueHasSeventyTwoFormsWithUniqueIds() {
+        XCTAssertEqual(QuizForm.all.count, 72)
+        XCTAssertEqual(Set(QuizForm.all.map(\.id)).count, 72)
+        XCTAssertEqual(Set(QuizForm.all.map(\.label)).count, 72, "labels must be unique so identify has one answer")
     }
 
     func testTopicSizes() {
@@ -18,7 +18,7 @@ final class QuizFormTests: XCTestCase {
         XCTAssertEqual(count(.potential), 9)
         XCTAssertEqual(count(.nDesu), 8)
         XCTAssertEqual(count(.auxiliaries), 22)
-        XCTAssertEqual(count(.otherForms), 8)
+        XCTAssertEqual(count(.otherForms), 24)
     }
 
     func testLabelsFollowTheParts() {
@@ -66,11 +66,11 @@ final class QuizFormTests: XCTestCase {
     func testAvailableSkipsFormsAVerbLacks() throws {
         let aru = try verb("ある")
         let all = QuizForm.available(in: aru.forms, topics: Set(QuizTopic.allCases))
-        XCTAssertEqual(all.count, 28)
+        XCTAssertEqual(all.count, 41)
         XCTAssertTrue(all.allSatisfy { !$0.value.isEmpty })
         XCTAssertFalse(all.contains { $0.form.topic == .potential })
         let taberu = try verb("たべる")
-        XCTAssertEqual(QuizForm.available(in: taberu.forms, topics: Set(QuizTopic.allCases)).count, 56)
+        XCTAssertEqual(QuizForm.available(in: taberu.forms, topics: Set(QuizTopic.allCases)).count, 71)
         XCTAssertEqual(QuizForm.available(in: taberu.forms, topics: [.nDesu]).count, 8)
     }
 

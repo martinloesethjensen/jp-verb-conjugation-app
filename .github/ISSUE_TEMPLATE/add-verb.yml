@@ -9,8 +9,10 @@ body:
         Thanks for contributing! Please fill in the nine conjugation forms below as completely as possible.
         The maintainers will verify accuracy before merging.
 
-        You do **not** need to write the んです, potential (可能形) or auxiliary forms (ている, てしまう,
-        てみる, すぎる, …). The app generates those from the forms below.
+        You do **not** need to write the んです, potential (可能形), auxiliary (ている, てしまう,
+        てみる, すぎる, …) or other conjugated forms (volitional, passive, causative, ば / たら / と / なら,
+        imperative, ないで, てもいい, なければならない, …). The app generates those from the forms below,
+        so tell us below if a verb is not something you do on purpose.
 
   - type: input
     id: dict
@@ -61,6 +63,21 @@ body:
         - "ite (いて) — verb ends in く"
         - "ide (いで) — verb ends in ぐ"
         - "shite (して) — verb ends in す"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: volitional
+    attributes:
+      label: Is this something you do on purpose?
+      description: >
+        The app builds a potential, volitional, imperative, causative and more for every verb, so a verb
+        you cannot do on purpose would get nonsense forms (×わかれ, ×つかれろ, ×わかろう). Likely
+        candidates: 見える, 聞こえる, できる, いる (to need), 似る, 困る, 違う, 足りる.
+      options:
+        - "Yes — you can do it on purpose (食べる, 読む, …)"
+        - "No — it happens to you or describes a state (わかる, つかれる, 見える, …)"
+        - "Not sure"
     validations:
       required: true
 

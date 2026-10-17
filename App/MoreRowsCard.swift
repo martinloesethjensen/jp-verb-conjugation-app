@@ -33,7 +33,11 @@ struct MoreRowsCard: View {
                                       f.sugiru, f.sugiruPolite, f.yasui, f.yasuiPolite,
                                       f.nikui, f.nikuiPolite, f.nagara])),
             (.advanced, firstForm([f.volitional, f.passive, f.causative, f.causativePassive,
-                                   f.conditionalBa, f.conditionalTara, f.imperative, f.tai])),
+                                   f.causativePassiveShort, f.conditionalBa, f.conditionalTara,
+                                   f.imperative, f.tai, f.masuVolitional, f.negTe, f.nakute,
+                                   f.teMoIi, f.teWaIkenai, f.teChaDame, f.nakerebaNaranai,
+                                   f.nakuteWaIkenai, f.nakya, f.nakucha, f.nakuteMoIi,
+                                   f.negImperative, f.nasai, f.conditionalTo, f.conditionalNara])),
         ]
         for (page, preview) in groups {
             if let preview { rows.append(Row(page: page, preview: preview)) }

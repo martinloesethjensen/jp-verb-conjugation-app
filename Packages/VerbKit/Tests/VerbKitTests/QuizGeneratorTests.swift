@@ -13,7 +13,7 @@ final class QuizGeneratorTests: XCTestCase {
     func testCapsAtThePoolSize() throws {
         let taberu = try XCTUnwrap(try verbs().first { $0.dict == "たべる" })
         XCTAssertEqual(buildQuestions(verbs: [taberu], topics: [.basic], count: 100).count, 9)
-        XCTAssertEqual(buildQuestions(verbs: [taberu], topics: all, count: 100).count, 56)
+        XCTAssertEqual(buildQuestions(verbs: [taberu], topics: all, count: 100).count, 71)
     }
 
     func testOnlyTheChosenTopicsAreAsked() throws {
@@ -28,7 +28,7 @@ final class QuizGeneratorTests: XCTestCase {
         let aru = try XCTUnwrap(try verbs().first { $0.dict == "ある" })
         XCTAssertTrue(buildQuestions(verbs: [aru], topics: [.potential], count: 10).isEmpty)
         let questions = buildQuestions(verbs: [aru], topics: all, count: 100)
-        XCTAssertEqual(questions.count, 28)
+        XCTAssertEqual(questions.count, 41)
         XCTAssertFalse(questions.contains { $0.form.topic == .potential })
     }
 
