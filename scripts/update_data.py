@@ -1071,6 +1071,47 @@ def dump_verbs(doc):
     return text + "\n"
 
 
+def check_books(doc):
+    """Problems with the optional top-level `books` and each point's `taught_in`."""
+    errors = []
+    ranges = {}
+    seen = set()
+    for book in doc.get("books", []):
+        bid = book.get("id")
+        if bid in seen:
+            errors.append(f"books: duplicate id {bid}")
+        seen.add(bid)
+        for key in ("title", "edition"):
+            if not isinstance(book.get(key), str) or not book[key]:
+                errors.append(f"books: {bid} {key} missing")
+        first = book.get("first_lesson", 1)
+        last = book.get("lessons")
+        if not isinstance(first, int) or isinstance(first, bool) or first < 1:
+            errors.append(f"books: {bid} first_lesson must be a positive integer")
+        elif not isinstance(last, int) or isinstance(last, bool) or last < first:
+            errors.append(f"books: {bid} lessons must be >= first_lesson")
+        else:
+            ranges[bid] = (first, last)
+
+    for p in doc.get("grammar", []):
+        pid = p.get("id", "<no id>")
+        listed = set()
+        for ref in p.get("taught_in", []):
+            book, lesson = ref.get("book"), ref.get("lesson")
+            if book not in seen:
+                errors.append(f"{pid}: taught_in book '{book}' does not exist")
+            elif book in ranges:
+                first, last = ranges[book]
+                if not isinstance(lesson, int) or isinstance(lesson, bool) or not first <= lesson <= last:
+                    errors.append(f"{pid}: taught_in {book} lesson {lesson} is outside {first}-{last}")
+            if not isinstance(ref.get("reviewed"), bool):
+                errors.append(f"{pid}: taught_in reviewed must be true or false")
+            if (book, lesson) in listed:
+                errors.append(f"{pid}: taught_in lists {book} lesson {lesson} twice")
+            listed.add((book, lesson))
+    return errors
+
+
 def validate_grammar(doc):
     """Returns a list of human-readable problems (empty when valid)."""
     errors = []
@@ -1173,6 +1214,8 @@ def validate_grammar(doc):
                 errors.append(f"{pid}: conjugation form missing or empty")
             if c.get("register") not in REGISTERS:
                 errors.append(f"{pid}: conjugation register must be one of {sorted(REGISTERS)}")
+
+    errors.extend(check_books(doc))
 
     by_id = {p.get("id"): p for p in points}
     for p in points:

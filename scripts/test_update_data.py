@@ -462,6 +462,60 @@ class DumpTests(unittest.TestCase):
         self.assertTrue(text.endswith("\n"))
 
 
+class BooksTests(unittest.TestCase):
+    def doc(self, books=None, taught_in=None):
+        doc = valid_grammar()
+        doc["grammar"][0]["id"] = "p"
+        if books is not None:
+            doc["books"] = books
+        if taught_in is not None:
+            doc["grammar"][0]["taught_in"] = taught_in
+        return doc
+
+    def books(self):
+        return [
+            {"id": "genki-1", "title": "Genki I", "edition": "3rd", "lessons": 12},
+            {"id": "genki-2", "title": "Genki II", "edition": "3rd", "first_lesson": 13, "lessons": 23},
+        ]
+
+    def ref(self, book="genki-1", lesson=12, reviewed=False):
+        return {"book": book, "lesson": lesson, "reviewed": reviewed}
+
+    def test_books_must_have_unique_ids(self):
+        books = [self.books()[0], self.books()[0]]
+        self.assertEqual(ud.validate_grammar(self.doc(books=books)), ["books: duplicate id genki-1"])
+
+    def test_book_needs_title_and_lesson_range(self):
+        books = self.books()
+        del books[0]["title"]
+        self.assertEqual(ud.validate_grammar(self.doc(books=books)), ["books: genki-1 title missing"])
+        books = self.books()
+        books[0]["first_lesson"] = 13
+        self.assertEqual(ud.validate_grammar(self.doc(books=books)),
+                         ["books: genki-1 lessons must be >= first_lesson"])
+
+    def test_taught_in_book_must_exist(self):
+        doc = self.doc(books=self.books(), taught_in=[self.ref("minna-1", 1)])
+        self.assertEqual(ud.validate_grammar(doc), ["p: taught_in book 'minna-1' does not exist"])
+
+    def test_taught_in_lesson_in_range(self):
+        doc = self.doc(books=self.books(), taught_in=[self.ref("genki-2", 12)])
+        self.assertEqual(ud.validate_grammar(doc), ["p: taught_in genki-2 lesson 12 is outside 13-23"])
+
+    def test_taught_in_reviewed_is_bool(self):
+        doc = self.doc(books=self.books(), taught_in=[self.ref(reviewed="no")])
+        self.assertEqual(ud.validate_grammar(doc), ["p: taught_in reviewed must be true or false"])
+
+    def test_taught_in_no_duplicates(self):
+        doc = self.doc(books=self.books(), taught_in=[self.ref(), self.ref()])
+        self.assertEqual(ud.validate_grammar(doc), ["p: taught_in lists genki-1 lesson 12 twice"])
+
+    def test_books_and_taught_in_are_optional(self):
+        self.assertEqual(ud.validate_grammar(valid_grammar()), [])
+        doc = self.doc(books=self.books(), taught_in=[self.ref(), self.ref("genki-2", 20)])
+        self.assertEqual(ud.validate_grammar(doc), [])
+
+
 class ValidateGrammarTests(unittest.TestCase):
     def rule(self, **fields):
         doc = valid_grammar()

@@ -1,12 +1,19 @@
 {
   "version": "1.0.0",
   "description": "Japanese grammar points for the JP Verb Conjugation app. Hand-authored; run scripts/update_data.py after editing.",
+  "books": [
+    { "id": "genki-1", "title": "Genki I", "edition": "3rd", "lessons": 12 },
+    { "id": "genki-2", "title": "Genki II", "edition": "3rd", "first_lesson": 13, "lessons": 23 }
+  ],
   "grammar": [
     {
       "id": "n-desu",
       "title": "んです",
       "summary": "Marks a sentence as explanation, context or reason. Use んです after verbs and い-adjectives, and なんです after nouns and な-adjectives.",
       "jlpt": "N4",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 12, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "Asking for or giving a reason",
@@ -167,6 +174,9 @@
       "title": "可能形",
       "summary": "The potential form says that someone can do something, or that the situation allows it: 食べられる, 飲める, できる. It conjugates as a ru-verb.",
       "jlpt": "N4",
+      "taught_in": [
+        { "book": "genki-2", "lesson": 13, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "Ability",
@@ -296,6 +306,10 @@
       "title": "はず・かもしれない・わけ",
       "summary": "Three ways to say how things stand: はず (I expect so, because it makes sense), かもしれない (maybe), and わけ (that is how it works out). All three come after a plain form.",
       "jlpt": "N3",
+      "taught_in": [
+        { "book": "genki-2", "lesson": 14, "reviewed": false },
+        { "book": "genki-2", "lesson": 19, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "はず: what you expect",
@@ -545,6 +559,10 @@
       "title": "よう・みたい・そう・らしい",
       "summary": "Four ways to talk about what you see, hear or infer: ようだ and みたいだ (it seems, like), そうだ (it looks like, or I hear), and らしい (apparently, or typical of).",
       "jlpt": "N3",
+      "taught_in": [
+        { "book": "genki-2", "lesson": 13, "reviewed": false },
+        { "book": "genki-2", "lesson": 17, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "ようだ and みたいだ: it seems",
@@ -771,6 +789,10 @@
       "title": "ている・てある",
       "summary": "ている describes an action in progress, or a state that results from an action: 食べている (is eating), 結婚している (is married). てある describes a state that someone left behind on purpose: 窓が開けてある.",
       "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 7, "reviewed": false },
+        { "book": "genki-2", "lesson": 21, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "In progress",
@@ -875,6 +897,10 @@
       "title": "てしまう・ておく",
       "summary": "てしまう says that something is completely done, or that it happened and you regret it. ておく says that you do something in advance, or leave something as it is.",
       "jlpt": "N4",
+      "taught_in": [
+        { "book": "genki-2", "lesson": 15, "reviewed": false },
+        { "book": "genki-2", "lesson": 18, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "てしまう: done completely",
@@ -967,6 +993,10 @@
       "title": "てみる・ながら",
       "summary": "てみる means \"try doing it and see\". ながら joins two actions that happen at the same time, and the second one is the main action.",
       "jlpt": "N4",
+      "taught_in": [
+        { "book": "genki-2", "lesson": 13, "reviewed": false },
+        { "book": "genki-2", "lesson": 18, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "てみる: try it and see",
@@ -1057,6 +1087,10 @@
       "title": "すぎる・やすい・にくい",
       "summary": "All three attach to the ます-stem, and すぎる also attaches to adjectives. すぎる means \"too much\", やすい means \"easy to\", and にくい means \"hard to\". The first becomes a ru-verb, and the other two become い-adjectives.",
       "jlpt": "N4",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 12, "reviewed": false },
+        { "book": "genki-2", "lesson": 20, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "すぎる: too much",
@@ -1164,6 +1198,9 @@
       "title": "〜ので",
       "summary": "Gives a reason: \"(reason), so (result)\". Softer and more polite than から.",
       "jlpt": "N4",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 12, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "Reason, then result",
@@ -1234,6 +1271,9 @@
       "title": "〜ほうがいいです",
       "summary": "Advice: \"you had better…\" or \"you had better not…\".",
       "jlpt": "N4",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 12, "reviewed": false }
+      ],
       "usages": [
         {
           "heading": "Advice to do something",
