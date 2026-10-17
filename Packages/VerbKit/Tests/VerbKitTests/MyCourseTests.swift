@@ -95,6 +95,19 @@ final class MyCourseTests: XCTestCase {
         XCTAssertEqual(lesson(course, "Genki I · Lesson 12", points)?.grammarIDs, ["node", "hou"])
     }
 
+    func testReAddingARemovedIdThatLeftTheBaseAddsItOnce() throws {
+        var course = MyCourse.starting(from: ["genki-1"], points: points, textbooks: textbooks)
+        let l12 = try XCTUnwrap(lesson(course, "Genki I · Lesson 12", points))
+        course.remove("node", from: l12.id, points: points, textbooks: textbooks)
+        // A data update moves node out of L12.
+        let moved = [point("teiru", [("genki-1", 7)]), point("node", [("genki-1", 7)]),
+                     point("hou", [("genki-1", 12)]), point("sugiru")]
+        course.add("node", to: l12.id, points: moved, textbooks: textbooks)
+        XCTAssertEqual(lesson(course, "Genki I · Lesson 12", moved)?.grammarIDs, ["hou", "node"])
+        XCTAssertEqual(course.lessons.last?.removed, [])
+        XCTAssertEqual(course.lessons.last?.added, ["node"])
+    }
+
     func testSetOrderReorders() throws {
         var course = MyCourse.starting(from: ["genki-1"], points: points, textbooks: textbooks)
         let l12 = try XCTUnwrap(lesson(course, "Genki I · Lesson 12", points))

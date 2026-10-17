@@ -114,11 +114,9 @@ public struct MyCourse: Codable, Equatable, Sendable {
     /// Re-adding a removed base id restores it; any other id is appended to `added`.
     public mutating func add(_ grammarID: String, to lesson: UUID, points: [GrammarPoint], textbooks: [Textbook]) {
         guard let i = materialise(lesson, points: points, textbooks: textbooks) else { return }
-        if let r = lessons[i].removed.firstIndex(of: grammarID) {
-            lessons[i].removed.remove(at: r)
-            return
-        }
-        if let key = lessons[i].base, Self.baseIDs(for: key, points: points).contains(grammarID) { return }
+        let inBase = lessons[i].base.map { Self.baseIDs(for: $0, points: points).contains(grammarID) } ?? false
+        lessons[i].removed.removeAll { $0 == grammarID }
+        if inBase { return }
         if !lessons[i].added.contains(grammarID) { lessons[i].added.append(grammarID) }
     }
 
