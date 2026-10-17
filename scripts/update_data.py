@@ -678,6 +678,61 @@ def dump_words(doc):
     return f'{text},\n  "words": [\n{body}\n  ]\n}}\n' if lines else f'{text},\n  "words": []\n}}\n'
 
 
+# --- Counters (counters.json) -----------------------------------------------
+
+# The numbers a counter page shows, in order. "what" is 何.
+COUNTER_KEYS = [str(n) for n in range(1, 11)] + ["what"]
+SOUND_CLASSES = ("plain", "k", "s", "h-b", "h-p", "irregular")
+COUNTER_FITS = ("primary", "acceptable", "casual")
+BASE_NUMBERS = {"1": "いち", "2": "に", "3": "さん", "4": "よん", "5": "ご", "6": "ろく",
+                "7": "なな", "8": "はち", "9": "きゅう", "10": "じゅう", "what": "なん"}
+# The small-っ form of the numbers that can geminate (いち -> いっ).
+GEMINATED = {"1": "いっ", "6": "ろっ", "8": "はっ", "10": "じゅっ"}
+GEMINATING_KEYS = {"k": ("1", "6", "8", "10"), "s": ("1", "8", "10"),
+                   "h-b": ("1", "6", "8", "10"), "h-p": ("1", "6", "8", "10")}
+# は-row counters: the keys that voice to b or p without gemination (さんぼん, さんぷん).
+VOICED_KEYS = {"h-b": {"3": "b", "what": "b"}, "h-p": {"3": "p", "4": "p", "what": "p"}}
+HA_ROW = {"は": ("ぱ", "ば"), "ひ": ("ぴ", "び"), "ふ": ("ぷ", "ぶ"), "へ": ("ぺ", "べ"), "ほ": ("ぽ", "ぼ")}
+
+
+def _voiced(reading, kind):
+    """ほん -> ぽん (p) or ぼん (b)."""
+    p, b = HA_ROW[reading[0]]
+    return (p if kind == "p" else b) + reading[1:]
+
+
+def counter_readings(counter):
+    """Every key's readings, preferred first: the sound class's rule, then the author's
+    overrides. An irregular counter's readings are its overrides."""
+    sound, reading = counter["sound"], counter["reading"]
+    overrides = counter.get("overrides", {})
+    if sound == "irregular":
+        return {key: list(overrides[key]) for key in COUNTER_KEYS}
+    result = {}
+    for key in COUNTER_KEYS:
+        plain = BASE_NUMBERS[key] + reading
+        if key in GEMINATING_KEYS.get(sound, ()):
+            rest = _voiced(reading, "p") if sound.startswith("h-") else reading
+            readings = [GEMINATED[key] + rest]
+            if key == "8" and sound != "s":
+                readings.append(plain)        # はちほん, はちこ are heard too
+            if key == "10":
+                readings.append("じっ" + rest)
+        elif key in VOICED_KEYS.get(sound, {}):
+            readings = [BASE_NUMBERS[key] + _voiced(reading, VOICED_KEYS[sound][key])]
+        else:
+            readings = [plain]
+        result[key] = readings
+    for key, value in overrides.items():
+        result[key] = list(value)
+    return result
+
+
+def changed_keys(counter, readings):
+    """The keys whose preferred reading is not the base number plus the counter's reading."""
+    return [key for key in COUNTER_KEYS if readings[key][0] != BASE_NUMBERS[key] + counter["reading"]]
+
+
 def dump_forms():
     """Serialize the catalogue as forms.json, in the repo's style."""
     return json.dumps(form_catalogue.to_json_doc(), ensure_ascii=False, indent=2) + "\n"
