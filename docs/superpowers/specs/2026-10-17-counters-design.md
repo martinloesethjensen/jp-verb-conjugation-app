@@ -16,9 +16,14 @@ the counter alone. The app has no counters today.
 
 - **A fourth tab,** Counters, between Grammar and Word Bank. Counters are a reading
   system with their own lookup, not a grammar pattern.
-- **About 15 N5 counters in milestone 1:** つ, 人, 本, 杯, 匹, 分, 個, 回, 階, 冊, 歳, 枚,
-  台, 円, 時. Together they cover every sound class and the main irregulars, and are few
-  enough to review by hand.
+- **18 N5 counters in milestone 1:** つ, 人, 本, 杯, 匹, 分, 個, 回, 階, 冊, 歳, 枚,
+  台, 円, 時, 年, and 日 twice (day of the month, number of days). Together they cover
+  every sound class and the main irregulars, and are few enough to review by hand.
+- **Groups.** The tab opens on a grid of counting groups (Drinks, People, Days & dates,
+  Years & age, …). Each group opens a lookup table comparing its counters side by side.
+  A counter can be in several groups (本 is in Drinks and Long things).
+- **One search for everything:** groups, counters, things, and counted forms. 3本, 三本,
+  さんぼん and "sanbon" all find 本 at 3.
 - **Readings are generated in the data pipeline,** like adjective forms: authors write a
   sound class and any exceptions, and `update_data.py` fills every reading. The app has no
   reading logic.
@@ -39,22 +44,32 @@ classes say which of them change:
 
 | Class | Counters (m1) | 1 | 3 | 4 | 6 | 8 | 10 | 何 |
 |---|---|---|---|---|---|---|---|---|
-| `plain` | 枚, 台, 円 | いち | さん | よん | ろく | はち | じゅう | なん |
+| `plain` | 枚, 台, 円, 年 | いち | さん | よん | ろく | はち | じゅう | なん |
 | `k` | 個, 回, 階 | いっ | さん | よん | ろっ | はっ, はち | じゅっ, じっ | なん |
 | `s` | 冊, 歳 | いっ | さん | よん | ろく | はっ | じゅっ, じっ | なん |
 | `h-b` | 本, 杯, 匹 | いっ+p | さん+b | よん | ろっ+p | はっ+p, はち | じゅっ+p, じっ+p | なん+b |
 | `h-p` | 分 | いっ+p | さん+p | よん+p | ろっ+p | はっ+p, はち | じゅっ+p, じっ+p | なん+p |
-| `irregular` | つ, 人, 時 | written in full by the author | | | | | | |
+| `irregular` | つ, 人, 時, 日 ×2 | written in full by the author | | | | | | |
 
 - `+p` and `+b` turn the counter's は-row sound into ぱ or ば (ほん → ぽん, ぼん).
 - 2, 5, 7 and 9 never change in these classes, and 7 is always なな.
 - The first reading in a list is the preferred one. はちほん and じっぽん are accepted
   but never shown first.
-- Exceptions inside a class are overrides: 円 4 is よえん, and 階 3 and 何 are さんがい
-  and なんがい, with さんかい and なんかい accepted.
+- Exceptions inside a class are overrides: 円 4 is よえん; 年 4 is よねん and 7 is
+  ななねん or しちねん; 階 3 and 何 are さんがい and なんがい, with さんかい and なんかい
+  accepted.
 - `irregular` counters have no generated readings. Their `overrides` must cover all 11
-  keys: つ (ひとつ … とお, 何 いくつ), 人 (ひとり, ふたり, よにん, しちにん as a second
-  reading for 7), 時 (よじ, しちじ, くじ).
+  keys:
+  - つ: ひとつ … とお, 何 いくつ
+  - 人: ひとり, ふたり, よにん, with しちにん as a second reading for 7
+  - 時: よじ, しちじ, くじ
+  - 日 (day of the month, `nichi-date`): ついたち, ふつか, みっか, よっか, いつか,
+    むいか, なのか, ようか, ここのか, とおか, 何 なんにち
+  - 日 (number of days, `nichi-days`): いちにち, then the same as the date counter
+    from ふつか to とおか, 何 なんにち
+- The two 日 counters share their written form, so 一日 means ついたち in one and いちにち
+  in the other. The difference is a pitfall on both pages, and examples say which reading
+  they use (see `readings` on examples below).
 
 ### Data
 
@@ -92,12 +107,49 @@ classes say which of them change:
   匹 when 羽 is primary) or `casual` (the つ or 個 fallback). A thing may appear under
   several counters. `symbol` (an SF Symbol name) is optional and falls back to the
   counter's `symbol`.
-- `examples` and `pitfalls` reuse the grammar shapes (`GrammarExample`, `GrammarPitfall`).
+- `examples` take the grammar example shape plus an optional `readings` map
+  (`{"一日": "ついたち"}`). Its entries take priority over `furigana.json` for that
+  example, because one dictionary key can't read 一日 two ways. `pitfalls` reuse
+  `GrammarPitfall`.
+- **`groups`** is a top-level array next to `counters`, in grid order:
+
+  ```json
+  "groups": [
+    { "id": "drinks", "title": "Drinks", "symbol": "cup.and.saucer",
+      "summary": "Glasses and cups, bottles, or just \"one, two\" when ordering.",
+      "members": [ { "counter": "hai", "note": "glasses, cups, bowls" },
+                   { "counter": "hon", "note": "bottles and cans" },
+                   { "counter": "tsu", "note": "ordering casually" } ] }
+  ]
+  ```
+
+  Groups in milestone 1:
+
+  | Group | Counters |
+  |---|---|
+  | People | 人 |
+  | Animals | 匹 |
+  | Drinks | 杯, 本, つ |
+  | Long things | 本 |
+  | Flat things | 枚 |
+  | Small things | 個, つ |
+  | Books | 冊 |
+  | Machines & vehicles | 台 |
+  | Clock time | 時, 分 |
+  | Days & dates | 日 (date), 日 (days) |
+  | Years & age | 年, 歳 |
+  | Money | 円 |
+  | Times & floors | 回, 階 |
+
+  A member's `note` says what the counter covers within that group.
 - `update_data.py` checks:
   - every counter has all 11 readings and every reading is hiragana
   - `sound` is known, and `irregular` counters override every key
   - override keys are valid
   - `related` ids resolve, and `fit` and `jlpt` values are known
+  - group ids are unique, members resolve, and every counter is in at least one group
+  - every counted run in an example (三本, 一日) reads as one of that counter's readings
+    for that number, through the example's own `readings` first, then `furigana.json`
   - `--check` fails when `readings` or `changed` are stale
 - The furigana coverage check includes `counters.json`. Example sentences need their
   counted runs in `furigana.json` (二本 → にほん), because the dictionary on its own would
@@ -112,10 +164,19 @@ classes say which of them change:
 - `CounterNumber`: `.n(1...10)` or `.what`, with the JSON key and the display form
   (三本, 何本).
 - `Counter.readings(for:) -> [String]` and `Counter.isChanged(_:)` only read data.
-- `CounterSearch`: matches counter, reading, meaning, thing word, kana and meaning, with
-  romaji through the existing `Romaji`. A match on a thing returns its counters, primary
-  first.
-- `Route.counter(String)` and `verbtable://counter/<id>`. `RouteTarget` gains `.counter`.
+- `CounterGroup` and `CounterGroupMember` models, decoded from `groups`.
+- `CounterSearch` returns results in four sections:
+  - **Groups:** title and summary ("drinks", "time").
+  - **Counters:** the counter, its reading and its meaning.
+  - **Forms:** counted forms. Arabic digits become kanji numerals (3本 → 三本, 10本 → 十本)
+    and romaji becomes hiragana (sanbon → さんぼん). A form matches when its written form
+    equals the query or its reading starts with it (at least 2 kana). Every accepted
+    reading counts, so はちほん finds 本 at 8.
+  - **Things:** word, kana and meaning, each returning its counters, primary first.
+- `Route.counter(String)` with `verbtable://counter/<id>`, and `Route.counterGroup(String)`
+  with `verbtable://counters/<id>`. `RouteTarget` gains both. Inside the tab, opening a
+  counter can carry a focus number, so a Forms result lands on the page with the
+  playground set to 3 and that cell highlighted.
 - Ruby for readings cells comes from `counters.json`, never from `FuriganaDictionary`.
 - Spotlight indexes counters and their things ("umbrella" → 本).
 - Milestone 2:
@@ -129,9 +190,20 @@ classes say which of them change:
 
 **Counters tab** (`textformat.123`), a `NavigationSplitView` like Grammar:
 
-- **List:** grouped by level, filtered by the JLPT settings. Each row shows the counter
-  big, its reading, its meaning and its symbol. Search uses `CounterSearch`, so typing
-  "umbrella", "kasa" or 傘 finds 本 with "傘 · umbrella" shown as the reason.
+- **Home: the groups grid.** An adaptive grid of tiles (two columns on iPhone), each
+  showing the group's symbol, its title and its counters (杯 · 本 · つ). The last tile is
+  "All counters", which opens the full list grouped by level. Counters hidden by the JLPT
+  settings are left out of tiles and tables, and a group with none left is hidden.
+- **Group page: the lookup table.** Numbers run down the rows (1–10, 何) and the group's
+  counters run across the columns, so groups of up to three fit an iPhone without
+  scrolling; wider groups scroll sideways with the number column pinned. Column headers
+  show the counter, its reading and the member `note`. Cells show the preferred reading
+  with the written form small above it. Changed cells get the same tint and dot as the
+  counter page. Tapping a cell speaks it, long-pressing copies it, and tapping a header
+  opens that counter. The group `summary` sits above the table.
+- **Search** is on the home screen and uses `CounterSearch`. With a query, the grid is
+  replaced by the four sections (Groups, Counters, Forms, Things). A Forms row reads
+  "三本 さんぼん · 本 at 3"; a Things row reads "傘 · umbrella → 本".
 - **Counter page,** in this order:
   1. Header: 本, ほん, "long, thin things", symbol, speaker.
   2. **Count them** (playground): a 1–10 stepper (and a 何 chip), a row of the thing's
@@ -168,16 +240,22 @@ classes say which of them change:
 
 ### Content (milestone 1)
 
-- The 15 counters above, each with 3–6 things, 2–3 examples and at least one pitfall.
-  Pitfalls include: 4人 is よにん, 20歳 is はたち, 9時 is くじ, 3階 is さんがい, and
-  "when unsure, つ works up to 10".
+- The 18 counters above and 13 groups. Each counter has 3–6 things, 2–3 examples and at
+  least one pitfall. Pitfalls include:
+  - 4人 is よにん
+  - 20歳 is はたち
+  - 9時 is くじ
+  - 3階 is さんがい
+  - 一日 is ついたち as a date but いちにち as a length of time
+  - when unsure, つ works up to 10
 - Written by the assistant and unreviewed until the owner or a native speaker checks it.
   Every `data/` change is re-signed by the owner before merge.
 
 ## Milestones
 
-1. **Reference and playground:** counters.json, generation and validation, sync, models,
-   search, route, the Counters tab, the counter page with Count them.
+1. **Reference and playground:** counters.json with groups, generation and validation,
+   sync, models, search, routes, the Counters tab with the groups grid and group tables,
+   the counter page with Count them.
 2. **Counter quiz:** the `subject` rename, two question kinds, Weak spots for readings.
 3. **Patterns and widget.**
 
@@ -198,8 +276,8 @@ classes say which of them change:
 ## Out of scope
 
 - Numbers above 10 and compound readings (21本, 100本).
-- Dates (ついたち, ふつか), months and durations (〜ヶ月, 〜週間). They are their own
-  irregular system and could be a later milestone.
+- Months and other durations (〜月, 〜ヶ月, 〜週間, 〜時間). Days and years are in.
+- Dates above the 10th (はつか, じゅうよっか).
 - A counter field on Word Bank entries.
 - Recorded native audio and pitch accent.
 - Typed answers in the quiz.
