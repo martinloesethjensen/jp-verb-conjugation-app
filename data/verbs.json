@@ -1622,7 +1622,6 @@
         "passive": "しなれる",
         "causative": "しなせる",
         "causative_passive": "しなせられる",
-        "causative_passive_short": "しなされる",
         "conditional_ba": "しねば",
         "conditional_tara": "しんだら",
         "imperative": "しね",
@@ -1639,7 +1638,6 @@
         "nakucha": "しななくちゃ",
         "nakute_mo_ii": "しななくてもいい",
         "neg_imperative": "しぬな",
-        "nasai": "しになさい",
         "conditional_to": "しぬと",
         "conditional_nara": "しぬなら"
       },
@@ -5500,8 +5498,6 @@
         "nakya": "おわらなきゃ",
         "nakucha": "おわらなくちゃ",
         "nakute_mo_ii": "おわらなくてもいい",
-        "neg_imperative": "おわるな",
-        "nasai": "おわりなさい",
         "conditional_to": "おわると",
         "conditional_nara": "おわるなら"
       },

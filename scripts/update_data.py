@@ -189,6 +189,18 @@ EXTRA_NEEDS = {
 }
 
 
+# Forms the rules would build but nobody says for a particular verb, so they are left out.
+# Extend this as verbs are added (see also PARTIAL_OTHER_FORMS for the base conjugations).
+# - しぬ: しになさい is not said, and neither is the short causative-passive しなされる.
+#   しぬな ("don't die") is natural and stays. The imperative しね is a harsh insult; the verb's
+#   note says so, and the form stays for reference.
+# - おわる: おわりなさい and おわるな are not said (the event ends by itself). おわりましょう is.
+EXTRA_EXCLUDED = {
+    "しぬ": {"nasai", "causative_passive_short"},
+    "おわる": {"nasai", "neg_imperative"},
+}
+
+
 def extra_forms(verb, kept):
     """The forms beyond the eight conjugations, as {field: value}: the short causative-passive,
     and the everyday N5/N4 forms built from the verb's authored ます, て, plain and ない forms.
@@ -228,9 +240,10 @@ def extra_forms(verb, kept):
     # はなさせられる, never ×はなさされる. Ichidan verbs, する and くる have no short form.
     if verb["type"] == "u" and dict_form[-1] in A_ROW and dict_form[-1] != "す":
         values["causative_passive_short"] = dict_form[:-1] + A_ROW[dict_form[-1]] + "される"
+    excluded = EXTRA_EXCLUDED.get(dict_form, ())
     return {
         name: value for name, value in values.items()
-        if EXTRA_NEEDS.get(name) is None or EXTRA_NEEDS[name] in kept
+        if name not in excluded and (EXTRA_NEEDS.get(name) is None or EXTRA_NEEDS[name] in kept)
     }
 
 

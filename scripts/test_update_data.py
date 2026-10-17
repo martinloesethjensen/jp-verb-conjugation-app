@@ -986,6 +986,30 @@ class ExtraFormsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ud.extra_forms(everyday_verb("のむ", "u", **dict(NOMU, te="のむ")), set())
 
+    def test_exclusions_name_real_extra_forms_and_real_verbs(self):
+        extras = {name for name in ud.OTHER_FORM_FIELDS if name not in ud.BASE_OTHER_FIELDS}
+        for dict_form, names in ud.EXTRA_EXCLUDED.items():
+            self.assertTrue(names <= extras, dict_form)
+        data = json.loads((Path(__file__).resolve().parent.parent / "data" / "verbs.json")
+                          .read_text(encoding="utf-8"))
+        self.assertTrue(set(ud.EXTRA_EXCLUDED) <= {v["dict"] for v in data["verbs"]})
+
+    def test_shinu_keeps_the_natural_forms_only(self):
+        verb = everyday_verb("しぬ", "u", masu_pos="しにます", te="しんで",
+                             short_pos="しぬ", short_neg="しなない")
+        got = ud.extra_forms(verb, self.ALL_BASE)
+        self.assertNotIn("nasai", got)
+        self.assertNotIn("causative_passive_short", got)
+        self.assertEqual((got["neg_imperative"], got["te_cha_dame"]), ("しぬな", "しんじゃだめ"))
+
+    def test_owaru_keeps_mashou_but_not_nasai_or_na(self):
+        verb = everyday_verb("おわる", "u", masu_pos="おわります", te="おわって",
+                             short_pos="おわる", short_neg="おわらない")
+        got = ud.extra_forms(verb, self.ALL_BASE)
+        self.assertNotIn("nasai", got)
+        self.assertNotIn("neg_imperative", got)
+        self.assertEqual(got["masu_volitional"], "おわりましょう")
+
     def test_apply_puts_a_new_form_in_catalogue_order(self):
         verb = {"type": "u", "dict": "のむ", "forms": dict(NOMU, short_past="のんだ")}
         doc = {"verbs": [verb]}
