@@ -82,7 +82,7 @@ struct GrammarListView: View {
 
     /// Matches hidden by the level setting, for the current search.
     private var hiddenMatchCount: Int {
-        guard scope == .mine, levelsHidden, !search.isEmpty else { return 0 }
+        guard scope == .mine, levelsHidden, mode == .byLesson || !search.isEmpty else { return 0 }
         let all = mode == .byLevel ? matching(in: LevelSettings()).count
             : lessonSections(in: LevelSettings()).reduce(0) { $0 + $1.points.count }
         return all - filtered.count
@@ -118,16 +118,6 @@ struct GrammarListView: View {
                     Text("The forms every lesson attaches to.")
                 }
             }
-            if verbStore.hasGrammar {
-                Section {
-                    Picker("Group by", selection: modeBinding) {
-                        ForEach(GrammarListMode.allCases) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                }
-                .listRowBackground(Color.clear)
-            }
             if mode == .byLevel {
                 ForEach(filtered) { point in pointRow(point) }
             } else {
@@ -146,6 +136,17 @@ struct GrammarListView: View {
             }
             if !filtered.isEmpty && hiddenMatchCount > 0 {
                 HiddenMatchesRow(count: hiddenMatchCount)
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if verbStore.hasGrammar {
+                Picker("Group by", selection: modeBinding) {
+                    ForEach(GrammarListMode.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
             }
         }
         .inlineSearch(text: $search, prompt: "Search grammar…", focused: $searchFocused)
@@ -184,11 +185,20 @@ struct GrammarListView: View {
                     }
                     .buttonStyle(.glassProminent)
                 }
-            } else if mode == .byLesson && (courseStore.course == nil || (filtered.isEmpty && search.isEmpty && hiddenMatchCount == 0)) {
+            } else if mode == .byLesson && courseStore.course == nil {
                 ContentUnavailableView {
                     Label("No course yet", systemImage: "books.vertical")
                 } description: {
                     Text("Set up My course to see grammar by lesson.")
+                } actions: {
+                    Button("Set Up My Course") { showingCourse = true }
+                        .buttonStyle(.glassProminent)
+                }
+            } else if mode == .byLesson && search.isEmpty && lessonSections(in: LevelSettings()).isEmpty {
+                ContentUnavailableView {
+                    Label("No lessons yet", systemImage: "books.vertical")
+                } description: {
+                    Text("Add lessons in My course.")
                 } actions: {
                     Button("Set Up My Course") { showingCourse = true }
                         .buttonStyle(.glassProminent)
