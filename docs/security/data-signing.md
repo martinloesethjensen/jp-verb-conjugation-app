@@ -38,6 +38,13 @@ python3 scripts/sign_manifest.py keygen
 - `python3 scripts/sign_manifest.py sign`, then commit `data/manifest.sig` with the key change.
   Push these together, and only ship an app build once `main` has the signed manifest.
 
+## Signing a branch
+
+For a pull request that changes `data/`, `make sign-commit` (or `scripts/sign_and_commit.sh`, add
+`--push` to push) checks the data is up to date, signs, verifies and commits `data/manifest.sig`. It
+stops without changing anything if the data is stale, other files have uncommitted changes, or you are
+on `main`. This is the everyday step; the release steps below add the pinned tag.
+
 ## Releasing a data update
 
 ```
