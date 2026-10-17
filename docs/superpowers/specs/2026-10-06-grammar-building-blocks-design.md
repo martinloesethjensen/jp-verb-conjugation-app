@@ -202,7 +202,7 @@ points per lesson.
    grammar rules and their validation, `contrasts`, the Building blocks screen, the new
    grammar card, ので and 〜ほうがいいです, slots on existing points.
 2. **Connection quiz (done 2026-10-07).**
-3. **Courses:** textbook mappings, My course, By lesson view, lesson tags on cards.
+3. **Courses (done 2026-10-17):** textbook mappings, My course, By lesson view, lesson tags on cards.
 
 **As built (milestone 1):**
 
@@ -230,6 +230,15 @@ points per lesson.
 - From the quiz sheet, "Connections" uses the sheet's verbs (one verb from a verb page,
   favourites when toggled) and every word. From a lesson card, it uses the visible verbs.
   Connections use the level-visible lessons and words.
+
+**As built (milestone 3):**
+
+- Books are Genki I (lessons 1–12) and Genki II (lessons 13–23, `first_lesson: 13`). A book's `lessons` is its last lesson number and `first_lesson` defaults to 1.
+- Every mapping is unreviewed and matched from memory; native or textbook-in-hand review should check them, especially やすい/にくい (Genki II 20), はず (Genki II 19) and てある (Genki II 21). べき and っぽい have no Genki lesson.
+- A course's base is a list of books, so "Genki I + II" is one course. Edits are stored as deltas over the base lessons: removed and added points and a custom order per lesson, plus deleted base lessons, so later data updates still add new mappings and new base lessons.
+- Lesson tags on cards come from My course only; with no course, cards show no tag.
+- "By lesson" shows "No course yet" without a course, "No lessons yet" for a course with no grammar, and the hidden-by-level notice when the level setting hides everything. The By level / By lesson switch sits above the list.
+- Textbooks are synced and kept with the grammar (a `TextbookEntity` alongside `GrammarEntity`).
 
 ## Testing
 
