@@ -186,7 +186,7 @@ def changed_keys(counter, readings):
 - Test: `scripts/test_update_data.py`
 
 **Interfaces:**
-- Produces: `check_counters(doc, readings) -> list[str]` (counters and groups), `check_counted_runs(doc, readings) -> list[str]`, `apply_counter_readings(doc) -> bool`, `dump_counters(doc) -> str`, and `build_manifest(..., counters_bytes=None, counters_version=None)` writing a `counters` entry. Also a `--counters-version` flag.
+- Produces: `check_counters(doc) -> list[str]` (counters and groups), `counters_coverage(doc, readings) -> list[str]`, `check_counted_runs(doc, readings) -> list[str]`, `apply_counter_readings(doc) -> bool`, `dump_counters(doc) -> str`, and `build_manifest(..., counters_bytes=None, counters_version=None)` writing a `counters` entry. Also a `--counters-version` flag.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -312,6 +312,11 @@ Also add a run-level test, mirroring the existing words one: a temporary data di
 - [ ] **Step 4: Run tests, verify pass, commit**
 
 `git commit -m "Validate and publish counters.json"`
+
+**As built:**
+- `check_counters` takes no readings; it doesn't need them.
+- Coverage for counters is its own `counters_coverage` rather than the generic `check_coverage`. The counter and thing words carry their own kana, so they need no dictionary entry, and an example's own `readings` count for that example.
+- `build_manifest`'s optional entries (furigana, words, counters) share a `file_entry` helper.
 
 ---
 

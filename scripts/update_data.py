@@ -22,7 +22,11 @@ It does seven things:
      run, so new content cannot ship without furigana.
   4b. Generates the forms of every adjective and noun in data/words.json
      (hand-authored apart from `forms`) and checks its fields and furigana.
-  5. Recomputes the SHA-256 of all four files into data/manifest.json,
+  4c. Generates the readings of every counter in data/counters.json from its
+     sound class and overrides (hand-authored apart from `readings` and
+     `changed`), checks its counters and groups, and checks that every
+     counted word in its examples (三本, 一日) reads as the counter says.
+  5. Recomputes the SHA-256 of every published file into data/manifest.json,
      bumping a file's version (minor) when its content changed.
   6. Writes forms.json (into the VerbKit package), the catalogue of conjugation forms declared in
      scripts/form_catalogue.py (the one place a form id is defined), and
@@ -733,6 +737,223 @@ def changed_keys(counter, readings):
     return [key for key in COUNTER_KEYS if readings[key][0] != BASE_NUMBERS[key] + counter["reading"]]
 
 
+KANA_PATTERN = re.compile("^[ぁ-ゖァ-ヺー]+$")
+COUNTER_STRING_FIELDS = ("id", "counter", "reading", "meaning", "sound", "symbol")
+
+
+def _check_counter_examples(cid, field, examples, problems):
+    if not isinstance(examples, list):
+        problems.append(f"{cid}: {field} must be a list")
+        return
+    for i, example in enumerate(examples):
+        where = f"{cid}: {field}[{i}]"
+        if not isinstance(example, dict) or not all(isinstance(example.get(k), str) and example[k]
+                                                     for k in ("jp", "en")):
+            problems.append(f"{where}: an example needs jp and en")
+            continue
+        own = example.get("readings", {})
+        if not isinstance(own, dict):
+            problems.append(f"{where}: readings must be an object")
+            continue
+        for key, value in own.items():
+            if not KEY_PATTERN.match(key) or key not in example["jp"]:
+                problems.append(f"{where}: readings key '{key}' must be kanji that appear in the sentence")
+            if not isinstance(value, str) or not READING_PATTERN.match(value):
+                problems.append(f"{where}: readings['{key}'] must be hiragana")
+
+
+def check_counters(doc):
+    """Problems with the hand-written fields of counters.json, its counters and its groups."""
+    problems, ids = [], []
+    counters = doc.get("counters", [])
+    for counter in counters:
+        cid = counter.get("id", "<no id>")
+        ids.append(cid)
+        for key in COUNTER_STRING_FIELDS:
+            if not isinstance(counter.get(key), str) or not counter[key]:
+                problems.append(f"{cid}: {key} missing or empty")
+        reading, sound = counter.get("reading", ""), counter.get("sound")
+        if isinstance(reading, str) and reading and not READING_PATTERN.match(reading):
+            problems.append(f"{cid}: reading must be hiragana")
+        if "jlpt" in counter and counter["jlpt"] not in JLPT_LEVELS:
+            problems.append(f"{cid}: jlpt must be one of {sorted(JLPT_LEVELS)}")
+        if sound not in SOUND_CLASSES:
+            problems.append(f"{cid}: sound must be one of {SOUND_CLASSES}")
+        elif sound in ("h-b", "h-p") and reading[:1] not in HA_ROW:
+            problems.append(f"{cid}: an {sound} counter's reading must start on the は-row")
+        overrides = counter.get("overrides", {})
+        if not isinstance(overrides, dict):
+            problems.append(f"{cid}: overrides must be an object")
+            overrides = {}
+        for key, value in overrides.items():
+            if key not in COUNTER_KEYS:
+                problems.append(f"{cid}: overrides key '{key}' must be one of {COUNTER_KEYS}")
+            if (not isinstance(value, list) or not value
+                    or not all(isinstance(r, str) and READING_PATTERN.match(r) for r in value)):
+                problems.append(f"{cid}: overrides['{key}'] must be a non-empty list of hiragana")
+        if sound == "irregular":
+            missing = [key for key in COUNTER_KEYS if key not in overrides]
+            if missing:
+                problems.append(f"{cid}: an irregular counter must override every key; missing {missing}")
+        things = counter.get("things")
+        if not isinstance(things, list) or not things:
+            problems.append(f"{cid}: things must be a non-empty list")
+            things = []
+        for i, thing in enumerate(things):
+            if not all(isinstance(thing.get(k), str) and thing[k] for k in ("word", "kana", "meaning")):
+                problems.append(f"{cid}: things[{i}] needs word, kana and meaning")
+            elif not KANA_PATTERN.match(thing["kana"]):
+                problems.append(f"{cid}: things[{i}] kana must be hiragana or katakana")
+            if thing.get("fit") not in COUNTER_FITS:
+                problems.append(f"{cid}: things[{i}] fit must be one of {COUNTER_FITS}")
+        _check_counter_examples(cid, "examples", counter.get("examples", []), problems)
+        pitfalls = counter.get("pitfalls", [])
+        for i, pitfall in enumerate(pitfalls if isinstance(pitfalls, list) else []):
+            if not all(isinstance(pitfall.get(k), str) and pitfall[k] for k in ("heading", "explanation")):
+                problems.append(f"{cid}: pitfalls[{i}] needs heading and explanation")
+            _check_counter_examples(cid, f"pitfalls[{i}].examples", pitfall.get("examples", []), problems)
+    known = set(ids)
+    for cid in sorted({c for c in ids if ids.count(c) > 1}):
+        problems.append(f"{cid}: duplicate counter id")
+    for counter in counters:
+        for rid in counter.get("related", []):
+            if rid not in known:
+                problems.append(f"{counter.get('id')}: related id '{rid}' does not exist")
+
+    grouped, group_ids = set(), []
+    for group in doc.get("groups", []):
+        gid = group.get("id", "<no id>")
+        group_ids.append(gid)
+        for key in ("id", "title", "symbol", "summary"):
+            if not isinstance(group.get(key), str) or not group[key]:
+                problems.append(f"group {gid}: {key} missing or empty")
+        members = [m.get("counter") for m in group.get("members", [])]
+        if not members:
+            problems.append(f"group {gid}: needs at least one member")
+        for member in group.get("members", []):
+            if member.get("counter") not in known:
+                problems.append(f"group {gid}: member '{member.get('counter')}' is not a counter")
+            if "note" in member and not isinstance(member["note"], str):
+                problems.append(f"group {gid}: a member note must be a string")
+        for cid in sorted({c for c in members if members.count(c) > 1}):
+            problems.append(f"group {gid}: lists {cid} twice")
+        grouped.update(members)
+    for gid in sorted({g for g in group_ids if group_ids.count(g) > 1}):
+        problems.append(f"{gid}: duplicate group id")
+    for cid in ids:
+        if cid not in grouped:
+            problems.append(f"{cid}: in no group")
+    return problems
+
+
+# The numerals a counted run can start with, and the counter key each one reads as.
+NUMERAL_KEYS = {"一": "1", "二": "2", "三": "3", "四": "4", "五": "5", "六": "6",
+                "七": "7", "八": "8", "九": "9", "十": "10", "何": "what"}
+
+
+def _counter_examples(counter):
+    """(where, example) for every example and pitfall example of a counter."""
+    for i, example in enumerate(counter.get("examples", [])):
+        yield f"examples[{i}]", example
+    for i, pitfall in enumerate(counter.get("pitfalls", [])):
+        for j, example in enumerate(pitfall.get("examples", [])):
+            yield f"pitfalls[{i}].examples[{j}]", example
+
+
+def check_counted_runs(doc, readings):
+    """Every number + counter run (三本, 一日) in a counter's examples must read as one of that
+    counter's readings for that number: the example's own `readings` first, then furigana.json.
+    Without this, the dictionary reads 三本 as さん + ほん. Runs that are part of a bigger
+    number (二十本) are out of scope and skipped."""
+    problems = []
+    for counter in doc.get("counters", []):
+        word = counter["counter"]
+        accepted_by_key = counter_readings(counter)
+        pattern = re.compile("[" + "".join(NUMERAL_KEYS) + "]" + re.escape(word))
+        for where, example in _counter_examples(counter):
+            text = example["jp"]
+            merged = dict(readings, **example.get("readings", {}))
+            pieces, at = {}, 0
+            for piece, reading in scan(text, merged):
+                pieces[at] = (piece, reading)
+                at += len(piece)
+            for match in pattern.finditer(text):
+                start, run = match.start(), match.group()
+                if start > 0 and text[start - 1] in NUMERAL_KEYS:
+                    continue
+                accepted = accepted_by_key[NUMERAL_KEYS[run[0]]]
+                piece, reading = pieces.get(start, ("", None))
+                if piece == run:
+                    ok = reading in accepted
+                else:
+                    # A longer key that starts with the run (一日中) must start with an accepted reading.
+                    ok = (piece.startswith(run) and reading is not None
+                          and any(reading.startswith(a) for a in accepted))
+                if not ok:
+                    got = kana_reading(run, merged)
+                    problems.append(
+                        f'{counter["id"]}: {where}: {run} reads as {got}, not {" or ".join(accepted)} '
+                        f'(add "{run}": "{accepted[0]}" to furigana.json, or to the example\'s readings)'
+                    )
+    return problems
+
+
+def counters_coverage(doc, readings):
+    """Kanji without a reading in the counters text the app renders with the furigana
+    dictionary. The counter and thing words are left out: they carry their own kana. An
+    example's own `readings` count for that example."""
+    problems = []
+
+    def check(where, text, table):
+        for kanji in dict.fromkeys(uncovered_kanji(text, table)):
+            snippet = text if len(text) <= 40 else text[:40] + "..."
+            problems.append(f'{where}: no reading for {kanji} in "{snippet}"')
+
+    for counter in doc.get("counters", []):
+        cid = counter.get("id")
+        check(f"{cid}: meaning", counter.get("meaning", ""), readings)
+        for i, pitfall in enumerate(counter.get("pitfalls", [])):
+            for key in ("heading", "explanation"):
+                check(f"{cid}: pitfalls[{i}].{key}", pitfall.get(key, ""), readings)
+        for i, thing in enumerate(counter.get("things", [])):
+            check(f"{cid}: things[{i}].meaning", thing.get("meaning", ""), readings)
+        for where, example in _counter_examples(counter):
+            check(f"{cid}: {where}", example["jp"], dict(readings, **example.get("readings", {})))
+    for group in doc.get("groups", []):
+        for key in ("title", "summary"):
+            check(f"group {group.get('id')}: {key}", group.get(key, ""), readings)
+        for member in group.get("members", []):
+            check(f"group {group.get('id')}: note", member.get("note") or "", readings)
+    return problems
+
+
+def apply_counter_readings(doc):
+    """Set every counter's `readings` and `changed` (the script owns them). Returns True if
+    anything changed."""
+    changed = False
+    for counter in doc["counters"]:
+        readings = counter_readings(counter)
+        keys = changed_keys(counter, readings)
+        if counter.get("readings") != readings or counter.get("changed") != keys:
+            counter["readings"] = readings
+            counter["changed"] = keys
+            changed = True
+    return changed
+
+
+def dump_counters(doc):
+    """Serialize counters.json: 2-space indent, non-ASCII kept, each counter and each group on
+    one line."""
+    head = {key: value for key, value in doc.items() if key not in ("counters", "groups")}
+    text = json.dumps(head, ensure_ascii=False, indent=2)[:-2]
+    for key in ("counters", "groups"):
+        if key not in doc:
+            continue
+        lines = [f"    {json.dumps(item, ensure_ascii=False)}" for item in doc[key]]
+        text += f',\n  "{key}": [\n' + ",\n".join(lines) + "\n  ]" if lines else f',\n  "{key}": []'
+    return text + "\n}\n"
+
+
 def dump_forms():
     """Serialize the catalogue as forms.json, in the repo's style."""
     return json.dumps(form_catalogue.to_json_doc(), ensure_ascii=False, indent=2) + "\n"
@@ -906,12 +1127,28 @@ def with_ref(entry, ref):
     return entry
 
 
+def file_entry(old, data, version, ref):
+    """The manifest entry for an optional data file: a forced version, else 1.0.0 for a new
+    entry, the old version while the hash is unchanged, or the old version bumped (minor)."""
+    data_hash = sha256_hex(data)
+    if version:
+        new_version = version
+    elif old is None:
+        new_version = "1.0.0"
+    elif old.get("sha256") == data_hash:
+        new_version = old["version"]
+    else:
+        new_version = bump_minor(old["version"])
+    return with_ref({"version": new_version, "sha256": data_hash}, entry_ref(old, data_hash, ref))
+
+
 def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, grammar_version=None,
-                   furigana_bytes=None, furigana_version=None, ref=None, words_bytes=None, words_version=None):
+                   furigana_bytes=None, furigana_version=None, ref=None, words_bytes=None, words_version=None,
+                   counters_bytes=None, counters_version=None):
     """New manifest dict. A file's version is kept when its hash is
     unchanged, bumped (minor) when it changed, or forced by an explicit
     version. A grammar or furigana block that did not exist yet starts at
-    1.0.0. The furigana block is left out when no furigana bytes are given.
+    1.0.0. The furigana, words and counters blocks are left out when no bytes are given for them.
 
     `ref` pins every entry to that release tag; see `entry_ref`."""
     verbs_hash = sha256_hex(verbs_bytes)
@@ -940,34 +1177,11 @@ def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, gra
         {"version": new_grammar_version, "sha256": grammar_hash}, entry_ref(old_grammar, grammar_hash, ref)
     )
 
-    if furigana_bytes is not None:
-        furigana_hash = sha256_hex(furigana_bytes)
-        old_furigana = existing.get("furigana")
-        if furigana_version:
-            new_furigana_version = furigana_version
-        elif old_furigana is None:
-            new_furigana_version = "1.0.0"
-        elif old_furigana.get("sha256") == furigana_hash:
-            new_furigana_version = old_furigana["version"]
-        else:
-            new_furigana_version = bump_minor(old_furigana["version"])
-        manifest["furigana"] = with_ref(
-            {"version": new_furigana_version, "sha256": furigana_hash}, entry_ref(old_furigana, furigana_hash, ref)
-        )
-    if words_bytes is not None:
-        words_hash = sha256_hex(words_bytes)
-        old_words = existing.get("words")
-        if words_version:
-            new_words_version = words_version
-        elif old_words is None:
-            new_words_version = "1.0.0"
-        elif old_words.get("sha256") == words_hash:
-            new_words_version = old_words["version"]
-        else:
-            new_words_version = bump_minor(old_words["version"])
-        manifest["words"] = with_ref(
-            {"version": new_words_version, "sha256": words_hash}, entry_ref(old_words, words_hash, ref)
-        )
+    for name, data, version in (("furigana", furigana_bytes, furigana_version),
+                                ("words", words_bytes, words_version),
+                                ("counters", counters_bytes, counters_version)):
+        if data is not None:
+            manifest[name] = file_entry(existing.get(name), data, version, ref)
     return manifest
 
 
@@ -988,7 +1202,7 @@ DEFAULT_FORMS_PATH = (
 
 
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
-        forms_path=None, ref=None, words_version=None):
+        forms_path=None, ref=None, words_version=None, counters_version=None):
     """Returns (exit_code, messages). `forms_path` is where forms.json is
     written and checked; None leaves it alone. `ref` pins the manifest entries
     to a release tag."""
@@ -1048,7 +1262,21 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         except ValueError as error:
             return 1, [f"cannot generate word forms: {error}"]
         words_bytes = dump_words(words_doc).encode("utf-8")
+    counters_path = data_dir / "counters.json"
+    counters_doc = json.loads(counters_path.read_text(encoding="utf-8")) if counters_path.exists() else None
+    counters_bytes = None
+    if counters_doc is not None:
+        problems = check_counters(counters_doc)
+        if problems:
+            return 1, capped("counters.json is invalid:", problems)
+        apply_counter_readings(counters_doc)
+        problems = check_counted_runs(counters_doc, readings)
+        if problems:
+            return 1, capped("a counted word in counters.json reads wrongly:", problems)
+        counters_bytes = dump_counters(counters_doc).encode("utf-8")
     problems = check_coverage(verbs_doc, grammar_doc, readings, *([words_doc] if words_doc else []))
+    if counters_doc is not None:
+        problems += counters_coverage(counters_doc, readings)
     if problems:
         return 1, capped("kanji without a reading in furigana.json:", problems)
     problems = check_verb_kanji(verbs_doc, readings)
@@ -1062,6 +1290,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         existing, verbs_bytes, grammar_bytes, verbs_version, grammar_version,
         furigana_bytes=furigana_bytes, furigana_version=furigana_version, ref=ref,
         words_bytes=words_bytes, words_version=words_version,
+        counters_bytes=counters_bytes, counters_version=counters_version,
     )
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
 
@@ -1072,6 +1301,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         stale.append("data/verbs.json")
     if words_bytes is not None and words_path.read_bytes() != words_bytes:
         stale.append("data/words.json")
+    if counters_bytes is not None and counters_path.read_bytes() != counters_bytes:
+        stale.append("data/counters.json")
     if forms_path is not None:
         forms_path = Path(forms_path)
         if not forms_path.exists() or forms_path.read_text(encoding="utf-8") != forms_text:
@@ -1090,6 +1321,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     if "data/words.json" in stale:
         words_path.write_bytes(words_bytes)
         messages.append("updated data/words.json")
+    if "data/counters.json" in stale:
+        counters_path.write_bytes(counters_bytes)
+        messages.append("updated data/counters.json")
     if "forms.json" in stale:
         forms_path.parent.mkdir(parents=True, exist_ok=True)
         forms_path.write_text(forms_text, encoding="utf-8")
@@ -1099,7 +1333,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         messages.append(
             f"updated data/manifest.json (verbs {manifest['version']}, grammar {manifest['grammar']['version']}, "
             f"furigana {manifest['furigana']['version']}"
-            + (f", words {manifest['words']['version']}" if "words" in manifest else "") + ")"
+            + "".join(f", {name} {manifest[name]['version']}" for name in ("words", "counters") if name in manifest)
+            + ")"
         )
         messages.append("the manifest changed: re-sign it with scripts/sign_manifest.py sign")
     if not stale:
@@ -1115,13 +1350,14 @@ def main(argv=None):
     parser.add_argument("--grammar-version", help="force the grammar.json manifest version")
     parser.add_argument("--furigana-version", help="force the furigana.json manifest version")
     parser.add_argument("--words-version", help="force the words.json manifest version")
+    parser.add_argument("--counters-version", help="force the counters.json manifest version")
     parser.add_argument("--forms-path", default=str(DEFAULT_FORMS_PATH),
                         help="where to write the form catalogue (forms.json)")
     parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
     args = parser.parse_args(argv)
     code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
                          args.furigana_version, forms_path=args.forms_path, ref=args.ref,
-                         words_version=args.words_version)
+                         words_version=args.words_version, counters_version=args.counters_version)
     for line in messages:
         print(line)
     return code

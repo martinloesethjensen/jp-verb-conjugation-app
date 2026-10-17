@@ -1050,5 +1050,194 @@ class CounterReadingTests(unittest.TestCase):
         self.assertEqual(ud.changed_keys(mai, ud.counter_readings(mai)), [])
 
 
+def counter_entry(**fields):
+    base = {"id": "hon", "counter": "本", "reading": "ほん", "meaning": "long, thin things",
+            "jlpt": "N5", "sound": "h-b", "symbol": "pencil", "overrides": {},
+            "things": [{"word": "傘", "kana": "かさ", "meaning": "umbrella", "fit": "primary"}],
+            "examples": [], "pitfalls": [], "related": []}
+    base.update(fields)
+    return base
+
+
+COUNTER_READINGS = {"本": "ほん", "二本": "にほん", "三本": "さんぼん", "一日": "いちにち", "会": "あ"}
+GROUP = {"id": "long", "title": "Long things", "symbol": "pencil", "summary": "s",
+         "members": [{"counter": "hon", "note": "pencils"}]}
+
+
+def counters_doc(*counters, groups=None):
+    return {"version": "1.0.0", "description": "d", "counters": list(counters),
+            "groups": [GROUP] if groups is None else groups}
+
+
+def all_overrides(**keys):
+    overrides = {key: ["あ"] for key in ud.COUNTER_KEYS}
+    overrides.update({key.replace("n", ""): value for key, value in keys.items()})
+    return overrides
+
+
+class CheckCountersTests(unittest.TestCase):
+    def problems(self, *counters, groups=None):
+        return ud.check_counters(counters_doc(*counters, groups=groups))
+
+    def test_valid(self):
+        self.assertEqual(self.problems(counter_entry()), [])
+
+    def test_counter_problems(self):
+        cases = {
+            "sound": counter_entry(sound="x"),
+            "jlpt": counter_entry(jlpt="N9"),
+            "fit": counter_entry(things=[{"word": "傘", "kana": "かさ", "meaning": "umbrella", "fit": "maybe"}]),
+            "kana": counter_entry(things=[{"word": "傘", "kana": "kasa", "meaning": "umbrella", "fit": "primary"}]),
+            "things": counter_entry(things=[]),
+            "overrides key": counter_entry(overrides={"11": ["じゅういっぽん"]}),
+            "hiragana": counter_entry(overrides={"3": ["サンボン"]}),
+            "irregular": counter_entry(sound="irregular", overrides={"1": ["ひとつ"]}),
+            "related": counter_entry(related=["nope"]),
+            "reading": counter_entry(reading="ホン"),
+            "meaning": counter_entry(meaning=""),
+            "example": counter_entry(examples=[{"jp": "本"}]),
+            "pitfall": counter_entry(pitfalls=[{"heading": "h"}]),
+        }
+        for needle, bad in cases.items():
+            problems = self.problems(bad)
+            self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    def test_duplicate_ids(self):
+        self.assertTrue(any("duplicate" in p for p in self.problems(counter_entry(), counter_entry())))
+
+    def test_an_h_class_counter_must_start_on_the_ha_row(self):
+        self.assertTrue(any("は-row" in p for p in self.problems(counter_entry(reading="まい"))))
+
+    def test_a_complete_irregular_counter_is_valid(self):
+        self.assertEqual(self.problems(counter_entry(sound="irregular", overrides=all_overrides())), [])
+
+    def test_example_readings_must_be_hiragana_and_appear_in_the_sentence(self):
+        for readings in ({"二本": "にほん"}, {"三本": "サンボン"}):
+            bad = counter_entry(examples=[{"jp": "三本ください。", "en": "e", "readings": readings}])
+            self.assertTrue(any("readings" in p for p in self.problems(bad)), readings)
+
+    def test_group_problems(self):
+        cases = {
+            "member": [dict(GROUP, members=[{"counter": "nope"}])],
+            "duplicate group": [GROUP, GROUP],
+            "in no group": [],
+            "title": [dict(GROUP, title="")],
+            "twice": [dict(GROUP, members=[{"counter": "hon"}, {"counter": "hon"}])],
+        }
+        for needle, groups in cases.items():
+            problems = self.problems(counter_entry(), groups=groups)
+            self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+
+class CountedRunTests(unittest.TestCase):
+    def test_counted_runs_must_read_as_the_counter_says(self):
+        doc = counters_doc(counter_entry(examples=[{"jp": "三本ください。", "en": "e"}]))
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+        wrong = dict(COUNTER_READINGS, **{"三本": "さんほん"})
+        self.assertTrue(ud.check_counted_runs(doc, wrong))
+        missing = {k: v for k, v in COUNTER_READINGS.items() if k != "三本"}
+        problems = ud.check_counted_runs(doc, missing)
+        self.assertTrue(any('"三本": "さんぼん"' in p for p in problems), problems)
+
+    def test_an_accepted_second_reading_is_fine(self):
+        doc = counters_doc(counter_entry(examples=[{"jp": "八本です。", "en": "e"}]))
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"八本": "はちほん"})), [])
+
+    def test_runs_in_pitfall_examples_are_checked(self):
+        doc = counters_doc(counter_entry(pitfalls=[
+            {"heading": "h", "explanation": "x", "examples": [{"jp": "三本", "en": "e"}]}]))
+        self.assertTrue(ud.check_counted_runs(doc, {"本": "ほん", "三": "さん"}))
+
+    def test_numbers_above_ten_are_left_alone(self):
+        doc = counters_doc(counter_entry(examples=[{"jp": "二十本です。", "en": "e"}]))
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+
+    def test_an_example_reading_wins_over_the_dictionary(self):
+        date = counter_entry(id="nichi-date", counter="日", reading="にち", sound="irregular",
+                             overrides=all_overrides(n1=["ついたち"]),
+                             examples=[{"jp": "一日に会いましょう。", "en": "e", "readings": {"一日": "ついたち"}}])
+        doc = counters_doc(date, groups=[dict(GROUP, members=[{"counter": "nichi-date"}])])
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])   # the dictionary says いちにち
+        del date["examples"][0]["readings"]
+        self.assertTrue(ud.check_counted_runs(doc, COUNTER_READINGS))
+
+
+class CountersCoverageTests(unittest.TestCase):
+    def test_counter_and_thing_words_need_no_dictionary_entry(self):
+        self.assertEqual(ud.counters_coverage(counters_doc(counter_entry()), {}), [])
+
+    def test_examples_use_their_own_readings_and_other_text_the_dictionary(self):
+        doc = counters_doc(counter_entry(
+            examples=[{"jp": "一日に会う。", "en": "e", "readings": {"一日": "ついたち"}}],
+            pitfalls=[{"heading": "猫", "explanation": "x", "examples": []}]))
+        problems = ud.counters_coverage(doc, {"会": "あ"})
+        self.assertEqual(len(problems), 1)
+        self.assertIn("猫", problems[0])
+
+
+class CountersFileTests(unittest.TestCase):
+    def test_apply_fills_readings_and_changed_and_reports_staleness(self):
+        doc = counters_doc(counter_entry())
+        self.assertTrue(ud.apply_counter_readings(doc))
+        self.assertEqual(doc["counters"][0]["changed"], ["1", "3", "6", "8", "10", "what"])
+        self.assertEqual(doc["counters"][0]["readings"]["3"], ["さんぼん"])
+        self.assertFalse(ud.apply_counter_readings(doc))
+
+    def test_dump_puts_each_counter_and_group_on_one_line_and_round_trips(self):
+        doc = counters_doc(counter_entry())
+        ud.apply_counter_readings(doc)
+        text = ud.dump_counters(doc)
+        self.assertEqual(json.loads(text), doc)
+        self.assertEqual(text.count("\n    {"), 2)
+
+    def test_manifest_entry_starts_at_1_0_0_and_bumps_on_change(self):
+        m = ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c1")
+        self.assertEqual(m["counters"]["version"], "1.0.0")
+        m2 = ud.build_manifest(m, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c2")
+        self.assertEqual(m2["counters"]["version"], "1.1.0")
+        m3 = ud.build_manifest(m2, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c2")
+        self.assertEqual(m3["counters"]["version"], "1.1.0")
+        self.assertEqual(ud.build_manifest(m3, b"v", b"g", counters_bytes=b"c2", counters_version="2.0.0")
+                         ["counters"]["version"], "2.0.0")
+        self.assertNotIn("counters", ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f"))
+
+
+class CountersRunTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    def write_counters(self, d, doc):
+        (d / "counters.json").write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+
+    def test_counters_are_generated_checked_and_published(self):
+        d = self.make_dir()
+        self.write_counters(d, counters_doc(counter_entry()))
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("data/counters.json" in m for m in messages), messages)
+        code, messages = ud.run(d)
+        self.assertEqual(code, 0, messages)
+        self.assertEqual(ud.run(d, check=True), (0, ["data is up to date"]))
+        written = json.loads((d / "counters.json").read_text(encoding="utf-8"))
+        self.assertEqual(written["counters"][0]["readings"]["1"], ["いっぽん"])
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["counters"]["sha256"], ud.sha256_hex((d / "counters.json").read_bytes()))
+
+    def test_an_invalid_counter_fails_cleanly_and_writes_nothing(self):
+        d = self.make_dir()
+        self.write_counters(d, counters_doc(counter_entry(sound="x")))
+        before = (d / "manifest.json").read_bytes()
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("counters.json is invalid" in m for m in messages))
+        self.assertEqual((d / "manifest.json").read_bytes(), before)
+
+    def test_a_misread_counted_run_fails(self):
+        d = self.make_dir()
+        self.write_counters(d, counters_doc(counter_entry(examples=[{"jp": "三本", "en": "e"}])))
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("三本" in m for m in messages), messages)
+
+
 if __name__ == "__main__":
     unittest.main()
