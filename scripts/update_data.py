@@ -28,7 +28,9 @@ It does seven things:
      scripts/form_catalogue.py (the one place a form id is defined), and
      checks every form id verbs.json uses against it. forms.json is bundled
      with the app, not synced, so it has no manifest entry.
-  7. With --check, verifies all of the above without writing anything.
+  7. Checks that verb ids (`id`, else `dict`) are unique and well formed, and with
+     --published-verbs that none in the last published verbs.json has gone.
+  8. With --check, verifies all of the above without writing anything.
 
 Every manifest change must be re-signed (scripts/sign_manifest.py sign): the app
 refuses a manifest whose signature does not match its exact bytes. --ref TAG pins the
@@ -580,6 +582,43 @@ def check_verb_jlpt(verbs_doc):
     ]
 
 
+# An id is letters, digits, kana and kanji, with at most one ":" (the form `dict:kanji`). Route.encode
+# percent-encodes all of these safely.
+ID_PATTERN = re.compile(r"[^\W_]+(?::[^\W_]+)?")
+
+
+def verb_id(verb):
+    """What favourites, quiz history, widgets and links store: the explicit `id`, else `dict`."""
+    return verb.get("id") or verb["dict"]
+
+
+def check_verb_ids(verbs_doc):
+    """Ids must use the allowed characters and be unique. A verb whose kana collides with an earlier
+    one needs an explicit id, so the message suggests the `dict:kanji` form."""
+    problems = []
+    first = {}
+    for verb in verbs_doc["verbs"]:
+        ident = verb_id(verb)
+        if "id" in verb and not ID_PATTERN.fullmatch(verb["id"]):
+            problems.append(f"{verb['dict']}: id {verb['id']!r} may use letters, digits, kana and kanji, "
+                            "and one ':' between two parts")
+        if ident in first:
+            hint = f"; give the newer verb an explicit id such as {verb['dict']}:{verb['kanji']}" \
+                if "id" not in verb and verb.get("kanji") else ""
+            problems.append(f"{ident}: id used by more than one verb ({first[ident]} and {verb.get('kanji') or verb['dict']}){hint}")
+        else:
+            first[ident] = verb.get("kanji") or verb["dict"]
+    return problems
+
+
+def check_ids_kept(verbs_doc, published_doc):
+    """An id that was published must still be there: favourites, quiz history, widgets and links
+    store it. Corrections edit the other fields instead."""
+    now = {verb_id(v) for v in verbs_doc["verbs"]}
+    return [f"{ident}: published id is gone; ids never change once shipped"
+            for ident in sorted({verb_id(v) for v in published_doc["verbs"]} - now)]
+
+
 def check_verb_kanji(verbs_doc, readings):
     """Each verb's `kanji` must spell out its kana `dict` form."""
     problems = []
@@ -946,10 +985,11 @@ DEFAULT_FORMS_PATH = (
 
 
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
-        forms_path=None, ref=None, words_version=None):
+        forms_path=None, ref=None, words_version=None, published_verbs=None):
     """Returns (exit_code, messages). `forms_path` is where forms.json is
     written and checked; None leaves it alone. `ref` pins the manifest entries
-    to a release tag."""
+    to a release tag. `published_verbs` is the last published verbs.json; when given, every id in
+    it must still exist."""
     data_dir = Path(data_dir)
     verbs_path = data_dir / "verbs.json"
     grammar_path = data_dir / "grammar.json"
@@ -978,6 +1018,11 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_verb_jlpt(verbs_doc)
     if problems:
         return 1, capped("verbs.json has an invalid jlpt level:", problems)
+    problems = check_verb_ids(verbs_doc)
+    if published_verbs is not None:
+        problems += check_ids_kept(verbs_doc, json.loads(Path(published_verbs).read_text(encoding="utf-8")))
+    if problems:
+        return 1, capped("verbs.json has invalid ids:", problems)
     problems = check_verb_forms(verbs_doc)
     if problems:
         return 1, capped("verbs.json has invalid forms:", problems)
@@ -1076,10 +1121,11 @@ def main(argv=None):
     parser.add_argument("--forms-path", default=str(DEFAULT_FORMS_PATH),
                         help="where to write the form catalogue (forms.json)")
     parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
+    parser.add_argument("--published-verbs", help="the last published verbs.json; fail if an id in it has gone")
     args = parser.parse_args(argv)
     code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
                          args.furigana_version, forms_path=args.forms_path, ref=args.ref,
-                         words_version=args.words_version)
+                         words_version=args.words_version, published_verbs=args.published_verbs)
     for line in messages:
         print(line)
     return code

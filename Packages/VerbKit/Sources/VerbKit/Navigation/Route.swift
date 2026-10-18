@@ -1,7 +1,7 @@
 /// A place the app can navigate to. Both the Verbs and Grammar stacks —
 /// and, later, widget taps and Shortcuts — resolve through this one type.
 public enum Route: Hashable, Sendable {
-    /// `Verb.id` (the dictionary form).
+    /// `Verb.id` (the dictionary form, or the explicit id of a homophone).
     case verb(String)
     /// `GrammarPoint.id`.
     case grammar(String)

@@ -3,7 +3,10 @@ import SwiftData
 
 @Model
 public final class VerbEntity {
-    @Attribute(.unique) public var dict: String
+    /// Not unique: two homophones share their kana. `explicitID` tells them apart.
+    public var dict: String
+    /// `Verb.explicitID`. The default lets rows saved before this existed migrate.
+    public var explicitID: String? = nil
     public var type: String
     public var label: String
     public var kanji: String?
@@ -70,8 +73,10 @@ public final class VerbEntity {
         jlpt: String? = nil,
         forms: VerbForms,
         examples: [VerbExample],
-        sortOrder: Int = 0
+        sortOrder: Int = 0,
+        explicitID: String? = nil
     ) {
+        self.explicitID = explicitID
         self.sortOrder = sortOrder
         self.dict = dict
         self.type = type
@@ -112,7 +117,8 @@ public extension VerbEntity {
             jlpt: verb.jlpt?.rawValue,
             forms: verb.forms,
             examples: verb.examples,
-            sortOrder: sortOrder
+            sortOrder: sortOrder,
+            explicitID: verb.explicitID
         )
     }
 
@@ -133,7 +139,8 @@ public extension VerbEntity {
             teGroup: resolvedTeGroup,
             jlpt: jlpt.flatMap { JLPTLevel(rawValue: $0) },
             forms: forms,
-            examples: examples
+            examples: examples,
+            id: explicitID
         )
     }
 }

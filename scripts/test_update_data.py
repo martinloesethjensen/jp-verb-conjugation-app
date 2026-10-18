@@ -1020,5 +1020,59 @@ class ExtraFormsTests(unittest.TestCase):
         self.assertFalse(ud.apply_other_forms(doc))
 
 
+class VerbIdTests(unittest.TestCase):
+    @staticmethod
+    def doc(*verbs):
+        return {"verbs": list(verbs)}
+
+    def test_ids_default_to_dict_and_an_explicit_id_wins(self):
+        self.assertEqual(ud.verb_id({"dict": "きる"}), "きる")
+        self.assertEqual(ud.verb_id({"dict": "きる", "id": "きる:切る"}), "きる:切る")
+
+    def test_homophones_with_an_explicit_id_are_accepted(self):
+        doc = self.doc({"dict": "きる", "kanji": "着る"}, {"dict": "きる", "kanji": "切る", "id": "きる:切る"})
+        self.assertEqual(ud.check_verb_ids(doc), [])
+
+    def test_a_duplicate_dict_without_an_id_fails_and_suggests_the_form(self):
+        doc = self.doc({"dict": "きる", "kanji": "着る"}, {"dict": "きる", "kanji": "切る"})
+        problems = ud.check_verb_ids(doc)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("きる:切る", problems[0])
+
+    def test_an_explicit_id_that_collides_with_a_bare_dict_fails(self):
+        doc = self.doc({"dict": "きる"}, {"dict": "きる", "id": "きる"})
+        self.assertEqual(len(ud.check_verb_ids(doc)), 1)
+
+    def test_ids_use_only_letters_digits_kana_kanji_and_one_colon(self):
+        for bad in ("きる 切る", "きる/切る", "きる:切る:2", "きる_切る", "きる%E5", ":切る", "きる:", "../x"):
+            problems = ud.check_verb_ids(self.doc({"dict": "きる", "id": bad}))
+            self.assertEqual(len(problems), 1, bad)
+        for good in ("きる:切る", "きる2", "きる:ゐる"):
+            self.assertEqual(ud.check_verb_ids(self.doc({"dict": "きる", "id": good})), [], good)
+
+    def test_a_published_id_must_still_exist(self):
+        published = self.doc({"dict": "つける"}, {"dict": "きる", "id": "きる:切る"})
+        self.assertEqual(ud.check_ids_kept(self.doc({"dict": "つける"}, {"dict": "きる", "id": "きる:切る"}), published), [])
+        # A correction to the other fields is fine; renaming the id is not.
+        problems = ud.check_ids_kept(self.doc({"dict": "つける"}, {"dict": "きる", "id": "きる:剪る"}), published)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("きる:切る", problems[0])
+
+    def test_new_verbs_do_not_trip_the_published_check(self):
+        published = self.doc({"dict": "つける"})
+        self.assertEqual(ud.check_ids_kept(self.doc({"dict": "つける"}, {"dict": "のむ"}), published), [])
+
+    def test_run_fails_when_a_published_id_is_gone(self):
+        d = RunTests.make_dir(self)
+        published = d / "published-verbs.json"
+        published.write_text(json.dumps({"verbs": [{"dict": "する"}, {"dict": "たべる"}]}), encoding="utf-8")
+        code, messages = ud.run(d, check=True, published_verbs=published)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("たべる" in m for m in messages), messages)
+        published.write_text(json.dumps({"verbs": [{"dict": "する"}]}), encoding="utf-8")
+        code, messages = ud.run(d, check=True, published_verbs=published)
+        self.assertFalse(any("ids" in m for m in messages), messages)
+
+
 if __name__ == "__main__":
     unittest.main()

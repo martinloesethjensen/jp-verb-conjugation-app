@@ -16,7 +16,7 @@ struct VerbAppEntity: AppEntity {
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Verb"
     static let defaultQuery = VerbAppEntityQuery()
 
-    var id: String   // Verb.id (the dictionary form)
+    var id: String   // Verb.id (the dictionary form, or a homophone's explicit id)
     var title: String
     var meaning: String
 

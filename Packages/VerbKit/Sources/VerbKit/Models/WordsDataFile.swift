@@ -28,9 +28,11 @@ struct StoredWord: Codable, Equatable, Sendable {
     var meaning: String
     var jlpt: JLPTLevel?
     var forms: Conjugations
+    var explicitID: String?
 
     enum CodingKeys: String, CodingKey {
         case wordClass = "class", dict, kanji, meaning, jlpt, forms
+        case explicitID = "id"
     }
 
     init(_ word: Word) {
@@ -40,9 +42,10 @@ struct StoredWord: Codable, Equatable, Sendable {
         meaning = word.meaning
         jlpt = word.jlpt
         forms = word.forms
+        explicitID = word.explicitID
     }
 
     var word: Word {
-        Word(wordClass: wordClass, dict: dict, kanji: kanji, meaning: meaning, description: "", jlpt: jlpt, forms: forms)
+        Word(wordClass: wordClass, dict: dict, kanji: kanji, meaning: meaning, description: "", jlpt: jlpt, forms: forms, id: explicitID)
     }
 }

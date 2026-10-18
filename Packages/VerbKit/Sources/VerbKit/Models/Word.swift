@@ -44,9 +44,12 @@ public struct Word: Hashable, Identifiable, Sendable {
     public var examples: [WordExample]
     /// Set exactly when `wordClass` is `.verb`.
     public var verb: VerbTraits?
+    /// Set only where another word of the class has the same kana, for example `きる:切る`.
+    public var explicitID: String?
 
-    /// Unique across classes: the class and the citation form.
-    public var id: String { "\(wordClass.rawValue):\(dict)" }
+    /// Unique across classes: the class and the id (the citation form unless a homophone
+    /// needed an explicit one).
+    public var id: String { "\(wordClass.rawValue):\(explicitID ?? dict)" }
 
     /// The plain present affirmative form, which `FormSplit` compares other
     /// forms against; the citation form when the word has none.
@@ -63,7 +66,8 @@ public struct Word: Hashable, Identifiable, Sendable {
         forms: Conjugations,
         alternates: [String: [String]] = [:],
         examples: [WordExample] = [],
-        verb: VerbTraits? = nil
+        verb: VerbTraits? = nil,
+        id explicitID: String? = nil
     ) {
         self.wordClass = wordClass
         self.dict = dict
@@ -76,6 +80,7 @@ public struct Word: Hashable, Identifiable, Sendable {
         self.alternates = alternates
         self.examples = examples
         self.verb = verb
+        self.explicitID = explicitID
     }
 }
 
@@ -100,7 +105,8 @@ public extension Word {
             jlpt: verb.jlpt,
             forms: encoded ?? Conjugations(),
             examples: verb.examples.map { WordExample(form: FormID(rawValue: $0.form.rawValue), jp: $0.jp, en: $0.en) },
-            verb: VerbTraits(type: verb.type, label: verb.label, teGroup: verb.teGroup)
+            verb: VerbTraits(type: verb.type, label: verb.label, teGroup: verb.teGroup),
+            id: verb.explicitID
         )
     }
 }
@@ -115,6 +121,7 @@ extension Word: Codable {
         case alternates = "alt"
         case examples
         case type, label, teGroup
+        case explicitID = "id"
     }
 
     public init(from decoder: Decoder) throws {
@@ -126,6 +133,7 @@ extension Word: Codable {
         description = try c.decode(String.self, forKey: .description)
         notes = try c.decodeIfPresent(String.self, forKey: .notes)
         jlpt = try c.decodeIfPresent(JLPTLevel.self, forKey: .jlpt)
+        explicitID = try c.decodeIfPresent(String.self, forKey: .explicitID)
         forms = try c.decode(Conjugations.self, forKey: .forms)
         alternates = try c.decodeIfPresent([String: [String]].self, forKey: .alternates) ?? [:]
         examples = try c.decodeIfPresent([WordExample].self, forKey: .examples) ?? []
@@ -149,6 +157,7 @@ extension Word: Codable {
         try c.encode(description, forKey: .description)
         try c.encodeIfPresent(notes, forKey: .notes)
         try c.encodeIfPresent(jlpt, forKey: .jlpt)
+        try c.encodeIfPresent(explicitID, forKey: .explicitID)
         try c.encode(forms, forKey: .forms)
         if !alternates.isEmpty { try c.encode(alternates, forKey: .alternates) }
         try c.encode(examples, forKey: .examples)

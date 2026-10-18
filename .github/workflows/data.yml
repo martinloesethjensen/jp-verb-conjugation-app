@@ -24,5 +24,14 @@ jobs:
         run: python3 -m unittest discover -s scripts
       - name: Data is generated and valid
         run: python3 scripts/update_data.py --check
+      # Ids are stored in favourites, quiz history, widgets and links, so none may disappear.
+      - name: No published verb id is gone
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --depth=1 origin "$BASE_REF"
+          git show FETCH_HEAD:data/verbs.json > "$RUNNER_TEMP/published-verbs.json"
+          python3 scripts/update_data.py --check --published-verbs "$RUNNER_TEMP/published-verbs.json"
       - name: Manifest is signed by the key the app trusts
         run: python3 scripts/sign_manifest.py verify
