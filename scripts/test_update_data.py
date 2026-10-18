@@ -1050,5 +1050,194 @@ class CounterReadingTests(unittest.TestCase):
         self.assertEqual(ud.changed_keys(tsu, ud.counter_readings(tsu)), [])
 
 
+def counter(**fields):
+    base = {"id": "hon", "counter": "本", "reading": "ほん", "meaning": "long, thin things",
+            "jlpt": "N5", "sound": "h-b", "symbol": "pencil", "overrides": {},
+            "things": [{"word": "傘", "kana": "かさ", "meaning": "umbrella", "fit": "primary"}],
+            "examples": [], "pitfalls": [], "related": []}
+    base.update(fields)
+    return base
+
+
+COUNTER_READINGS = {"本": "ほん", "傘": "かさ", "二本": "にほん", "三本": "さんぼん", "一日": "いちにち"}
+COUNTER_GROUP = {"id": "long", "title": "Long things", "symbol": "pencil", "summary": "s",
+                 "members": [{"counter": "hon", "note": "pencils"}]}
+
+
+def counters_doc(*counters, groups=None):
+    return {"counters": list(counters), "groups": [COUNTER_GROUP] if groups is None else groups}
+
+
+class CheckCountersTests(unittest.TestCase):
+    def test_valid(self):
+        self.assertEqual(ud.check_counters(counters_doc(counter()), COUNTER_READINGS), [])
+
+    def test_group_problems(self):
+        cases = {
+            "member": [dict(COUNTER_GROUP, members=[{"counter": "nope"}])],
+            "duplicate group": [COUNTER_GROUP, COUNTER_GROUP],
+            "in no group": [],
+        }
+        for needle, groups in cases.items():
+            problems = ud.check_counters(counters_doc(counter(), groups=groups), COUNTER_READINGS)
+            self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    def test_problems(self):
+        cases = {
+            "sound": counter(sound="x"),
+            "jlpt": counter(jlpt="N9"),
+            "fit": counter(things=[{"word": "傘", "kana": "かさ", "meaning": "umbrella", "fit": "maybe"}]),
+            "overrides key": counter(overrides={"11": ["じゅういっぽん"]}),
+            "hiragana": counter(overrides={"3": ["サンボン"]}),
+            "irregular": counter(sound="irregular", overrides={"1": ["ひとつ"]}),
+            "related": counter(related=["nope"]),
+            "reading": counter(reading="ホン"),
+        }
+        for needle, bad in cases.items():
+            problems = ud.check_counters(counters_doc(bad), COUNTER_READINGS)
+            self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    def test_duplicate_ids(self):
+        problems = ud.check_counters(counters_doc(counter(), counter()), COUNTER_READINGS)
+        self.assertTrue(any("duplicate" in p for p in problems))
+
+    def test_an_h_class_counter_must_start_on_the_ha_row(self):
+        problems = ud.check_counters(counters_doc(counter(reading="まい")), COUNTER_READINGS)
+        self.assertTrue(any("は-row" in p for p in problems))
+
+    def test_a_things_kanji_must_read_as_its_kana(self):
+        bad = counter(things=[{"word": "傘", "kana": "あめ", "meaning": "umbrella", "fit": "primary"}])
+        problems = ud.check_counters(counters_doc(bad), COUNTER_READINGS)
+        self.assertTrue(any("傘" in p for p in problems), problems)
+
+    def test_example_readings_must_be_hiragana_and_cover_a_run_in_the_sentence(self):
+        bad = counter(examples=[{"jp": "傘を三本ください。", "en": "…", "readings": {"二本": "にほん"}}])
+        self.assertTrue(ud.check_counters(counters_doc(bad), COUNTER_READINGS))
+        katakana = counter(examples=[{"jp": "傘を三本ください。", "en": "…", "readings": {"三本": "サンボン"}}])
+        self.assertTrue(ud.check_counters(counters_doc(katakana), COUNTER_READINGS))
+
+    def test_examples_and_pitfalls_need_their_text(self):
+        bad = counter(examples=[{"jp": "", "en": "x"}], pitfalls=[{"heading": "h"}])
+        problems = ud.check_counters(counters_doc(bad), COUNTER_READINGS)
+        self.assertTrue(any("example" in p for p in problems), problems)
+        self.assertTrue(any("pitfall" in p for p in problems), problems)
+
+
+class CountedRunTests(unittest.TestCase):
+    def test_counted_runs_must_read_as_the_counter_says(self):
+        doc = counters_doc(counter(examples=[{"jp": "傘を三本ください。", "en": "…"}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+        wrong = dict(COUNTER_READINGS, **{"三本": "さんほん"})
+        self.assertTrue(ud.check_counted_runs(doc, wrong))
+        missing = {k: v for k, v in COUNTER_READINGS.items() if k != "三本"}
+        self.assertTrue(any("三本" in p for p in ud.check_counted_runs(doc, missing)))
+
+    def test_pitfall_examples_are_checked_too(self):
+        doc = counters_doc(counter(pitfalls=[{"heading": "h", "explanation": "e",
+                                              "examples": [{"jp": "三本です。", "en": "…"}]}]))
+        ud.apply_counter_readings(doc)
+        wrong = dict(COUNTER_READINGS, **{"三本": "さんほん"})
+        self.assertTrue(ud.check_counted_runs(doc, wrong))
+
+    def test_a_longer_number_is_not_mistaken_for_its_last_digit(self):
+        doc = counters_doc(counter(examples=[{"jp": "二十本あります。", "en": "…"}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+
+    def test_an_example_reading_wins_over_the_dictionary(self):
+        tsu = {key: ["x"] for key in ud.COUNTER_KEYS}
+        tsu["1"] = ["ついたち"]
+        date = counter(id="nichi-date", counter="日", reading="にち", sound="irregular", overrides=tsu,
+                       examples=[{"jp": "一日に会いましょう。", "en": "…", "readings": {"一日": "ついたち"}}])
+        doc = counters_doc(date, groups=[dict(COUNTER_GROUP, members=[{"counter": "nichi-date"}])])
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])   # the dictionary says いちにち
+
+
+class CountersFileTests(unittest.TestCase):
+    def test_apply_fills_readings_and_changed_and_reports_staleness(self):
+        doc = {"counters": [counter()]}
+        self.assertTrue(ud.apply_counter_readings(doc))
+        self.assertEqual(doc["counters"][0]["changed"], ["1", "3", "6", "8", "10", "what"])
+        self.assertEqual(list(doc["counters"][0]["readings"]), ud.COUNTER_KEYS)
+        self.assertFalse(ud.apply_counter_readings(doc))
+
+    def test_dump_puts_each_counter_on_one_line_and_round_trips(self):
+        doc = {"version": "1.0.0", "description": "d", "counters": [counter()]}
+        text = ud.dump_counters(doc)
+        self.assertEqual(json.loads(text), doc)
+        self.assertEqual(text.count("\n    {"), 1)
+
+    def test_dump_puts_each_group_on_one_line(self):
+        doc = {"version": "1.0.0", "description": "d", "counters": [counter()], "groups": [COUNTER_GROUP]}
+        text = ud.dump_counters(doc)
+        self.assertEqual(json.loads(text), doc)
+        self.assertEqual(text.count("\n    {"), 2)
+
+    def test_manifest_entry_starts_at_1_0_0_and_bumps_on_change(self):
+        m = ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c1")
+        self.assertEqual(m["counters"]["version"], "1.0.0")
+        m2 = ud.build_manifest(m, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c2")
+        self.assertEqual(m2["counters"]["version"], "1.1.0")
+        m3 = ud.build_manifest(m2, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c2")
+        self.assertEqual(m3["counters"]["version"], "1.1.0")
+        forced = ud.build_manifest(m3, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c2",
+                                   counters_version="2.0.0")
+        self.assertEqual(forced["counters"]["version"], "2.0.0")
+
+    def test_no_counters_bytes_leaves_the_entry_out(self):
+        self.assertNotIn("counters", ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f"))
+
+
+class CountersRunTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    def counters_dir(self):
+        d = self.make_dir()
+        furigana = {"version": "1.0.0", "description": "d",
+                    "readings": {"食": "た", "本": "ほん", "三本": "さんぼん", "傘": "かさ"}}
+        (d / "furigana.json").write_text(json.dumps(furigana, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        doc = counters_doc(counter(examples=[{"jp": "傘を三本ください。", "en": "Three umbrellas."}]))
+        doc.update(version="1.0.0", description="d")
+        (d / "counters.json").write_text(json.dumps(doc, ensure_ascii=False) + "\n", encoding="utf-8")
+        return d
+
+    def test_a_stale_counters_file_fails_check_then_run_fixes_it(self):
+        d = self.counters_dir()
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("data/counters.json" in m for m in messages), messages)
+        code, _ = ud.run(d)
+        self.assertEqual(code, 0)
+        code, _ = ud.run(d, check=True)
+        self.assertEqual(code, 0)
+        written = json.loads((d / "counters.json").read_text(encoding="utf-8"))
+        self.assertEqual(written["counters"][0]["readings"]["3"], ["さんぼん"])
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["counters"]["sha256"], ud.sha256_hex((d / "counters.json").read_bytes()))
+
+    def test_an_invalid_counters_file_blocks_everything_and_writes_nothing(self):
+        d = self.counters_dir()
+        doc = json.loads((d / "counters.json").read_text(encoding="utf-8"))
+        doc["counters"][0]["sound"] = "x"
+        (d / "counters.json").write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+        before = {n: (d / n).read_bytes() for n in ("verbs.json", "manifest.json", "counters.json")}
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("sound" in m for m in messages), messages)
+        for name, content in before.items():
+            self.assertEqual((d / name).read_bytes(), content)
+
+    def test_a_dictionary_misreading_of_a_counted_run_fails_the_run(self):
+        d = self.counters_dir()
+        furigana = json.loads((d / "furigana.json").read_text(encoding="utf-8"))
+        furigana["readings"]["三本"] = "さんほん"
+        (d / "furigana.json").write_text(json.dumps(furigana, ensure_ascii=False), encoding="utf-8")
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("三本" in m for m in messages), messages)
+
+
 if __name__ == "__main__":
     unittest.main()
