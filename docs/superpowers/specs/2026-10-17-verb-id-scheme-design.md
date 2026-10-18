@@ -1,6 +1,6 @@
 # Stable verb ids (homophones)
 
-Status: proposal, for decision. Issue #27.
+Status: decided (A, `dict:kanji`, CI guard against the published manifest). Issue #27.
 
 ## Problem
 
@@ -82,9 +82,9 @@ Steps 1 to 5 are one PR. Step 6 follows with the data change.
 - **Spotlight** re-indexes when the set of ids changes (`SpotlightIndexer`), so a new id is picked up
   automatically.
 - **Widget configuration** stored a bare `きる`, which keeps meaning 着る. Nothing to do.
-- Open: is `dict:kanji` the form you want, or a short slug such as `きる-2`? `dict:kanji` is
-  self-describing and survives reordering; a numeric suffix is shorter but depends on ship order.
-- Open: should there be a CI guard that compares ids against the last published manifest to catch an
-  accidental rename? It is cheap (a few lines in `update_data.py --check` against `git show origin/main:data/verbs.json`)
-  but makes `--check` depend on git history; the alternative is a unit test over a committed list of
-  frozen ids.
+- Decided: the explicit id has the form `dict:kanji`. It is self-describing and survives reordering; a
+  numeric suffix would depend on ship order.
+- Decided: there is a CI guard. `update_data.py --check` compares the ids in `data/verbs.json` with
+  those in the last published `data/verbs.json` (`git show origin/main:data/verbs.json`) and fails if
+  any published id has disappeared or changed. It makes `--check` depend on git history, so CI needs a
+  fetch of `origin/main` (not a shallow clone), and a first run with no published file passes.
