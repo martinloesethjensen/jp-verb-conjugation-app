@@ -1020,5 +1020,84 @@ class ExtraFormsTests(unittest.TestCase):
         self.assertFalse(ud.apply_other_forms(doc))
 
 
+def id_doc(*verbs):
+    return {"verbs": [dict(v) for v in verbs]}
+
+
+class VerbIdTests(unittest.TestCase):
+    KIRU = {"dict": "きる", "kanji": "着る"}
+    KIRU_CUT = {"dict": "きる", "kanji": "切る", "id": "きる:切る"}
+
+    def test_the_id_is_the_dict_unless_there_is_an_explicit_one(self):
+        self.assertEqual(ud.verb_id(self.KIRU), "きる")
+        self.assertEqual(ud.verb_id(self.KIRU_CUT), "きる:切る")
+
+    def test_distinct_ids_are_fine(self):
+        self.assertEqual(ud.check_verb_ids(id_doc(self.KIRU, self.KIRU_CUT, {"dict": "たべる"})), [])
+
+    def test_a_homophone_without_an_explicit_id_is_rejected_with_a_suggestion(self):
+        problems = ud.check_verb_ids(id_doc(self.KIRU, {"dict": "きる", "kanji": "切る"}))
+        self.assertEqual(len(problems), 1)
+        self.assertIn("'きる' is already used", problems[0])
+        self.assertIn("きる:<kanji>", problems[0])
+
+    def test_an_explicit_id_cannot_repeat_either(self):
+        self.assertEqual(len(ud.check_verb_ids(id_doc(self.KIRU_CUT, dict(self.KIRU_CUT)))), 1)
+
+    def test_malformed_explicit_ids_are_rejected(self):
+        for bad in ("切る", "きる:", ":切る", "きる:切る/x", "かる:切る", "kiru:切る", "きる 切る", "", None, 3):
+            problems = ud.check_verb_ids(id_doc({"dict": "きる", "id": bad}))
+            self.assertEqual(len(problems), 1, repr(bad))
+            self.assertIn("must be the verb's kana", problems[0])
+
+    def test_the_real_data_has_valid_unique_ids(self):
+        data = json.loads((Path(__file__).resolve().parent.parent / "data" / "verbs.json")
+                          .read_text(encoding="utf-8"))
+        self.assertEqual(ud.check_verb_ids(data), [])
+
+    def test_a_published_id_that_disappears_is_reported(self):
+        published = id_doc({"dict": "たべる"}, self.KIRU, self.KIRU_CUT)
+        problems = ud.check_published_ids(id_doc({"dict": "たべる"}, self.KIRU), published)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("きる:切る", problems[0])
+
+    def test_a_published_id_that_is_renamed_is_reported(self):
+        published = id_doc(self.KIRU_CUT)
+        renamed = id_doc({"dict": "きる", "id": "きる:斬る"})
+        self.assertEqual(len(ud.check_published_ids(renamed, published)), 1)
+
+    def test_new_verbs_and_unchanged_ids_pass(self):
+        published = id_doc(self.KIRU)
+        self.assertEqual(ud.check_published_ids(id_doc(self.KIRU, self.KIRU_CUT), published), [])
+
+    def test_nothing_to_compare_against_passes(self):
+        self.assertEqual(ud.check_published_ids(id_doc(self.KIRU), None), [])
+
+    def test_published_verbs_doc_reads_git_and_gives_none_when_unavailable(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(ud.published_verbs_doc("origin/main", repo=tmp))  # not a git repo
+            run = lambda *args: subprocess.run(["git", *args], cwd=tmp, check=True, capture_output=True)
+            run("init", "-q", "-b", "main")
+            (Path(tmp) / "data").mkdir()
+            (Path(tmp) / "data" / "verbs.json").write_text('{"verbs": [{"dict": "たべる"}]}', encoding="utf-8")
+            run("add", "-A")
+            run("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "x")
+            self.assertEqual(ud.published_verbs_doc("main", repo=tmp), {"verbs": [{"dict": "たべる"}]})
+            self.assertIsNone(ud.published_verbs_doc("origin/main", repo=tmp))  # ref does not exist
+
+    def test_run_fails_when_a_published_id_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data_dir = Path(tmp)
+            for name in ("verbs.json", "grammar.json", "furigana.json", "manifest.json", "words.json"):
+                (data_dir / name).write_bytes((Path(__file__).resolve().parent.parent / "data" / name).read_bytes())
+            published = json.loads((data_dir / "verbs.json").read_text(encoding="utf-8"))
+            published["verbs"].append({"dict": "きる", "id": "きる:切る"})
+            code, messages = ud.run(data_dir, check=True, published_verbs=published)
+            self.assertEqual(code, 1)
+            self.assertIn("きる:切る", "\n".join(messages))
+            self.assertEqual(ud.run(data_dir, check=True)[0], 0)  # no published data: skipped
+
+
 if __name__ == "__main__":
     unittest.main()

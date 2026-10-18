@@ -209,12 +209,12 @@ struct RootView: View {
 
     /// The ranked weak (verb, form) pairs among `verbs`, skipping any whose verb or form no longer exists.
     private func weakPairs(in verbs: [Verb]) -> [(verb: Verb, form: QuizForm)] {
-        let verbsByDict = Dictionary(verbs.map { ($0.dict, $0) }, uniquingKeysWith: { first, _ in first })
+        let verbsByID = Dictionary(verbs.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let formsByID = Dictionary(QuizForm.all.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         return QuizProgress(attempts: quizHistory.attempts)
-            .weakPairs(among: Set(verbs.map(\.dict)))
+            .weakPairs(among: Set(verbs.map(\.id)))
             .compactMap { weak in
-                guard let verb = verbsByDict[weak.verb], let form = formsByID[weak.formID] else { return nil }
+                guard let verb = verbsByID[weak.verb], let form = formsByID[weak.formID] else { return nil }
                 return (verb, form)
             }
     }

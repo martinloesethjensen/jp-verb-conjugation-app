@@ -44,9 +44,12 @@ public struct Word: Hashable, Identifiable, Sendable {
     public var examples: [WordExample]
     /// Set exactly when `wordClass` is `.verb`.
     public var verb: VerbTraits?
+    /// Set only where `dict` would collide with another word of the same class, as `dict:kanji`.
+    /// It never changes once shipped. See docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md.
+    public var explicitID: String?
 
-    /// Unique across classes: the class and the citation form.
-    public var id: String { "\(wordClass.rawValue):\(dict)" }
+    /// Unique across classes: the class and the stable id (the explicit id, else the citation form).
+    public var id: String { "\(wordClass.rawValue):\(explicitID ?? dict)" }
 
     /// The plain present affirmative form, which `FormSplit` compares other
     /// forms against; the citation form when the word has none.
@@ -63,7 +66,8 @@ public struct Word: Hashable, Identifiable, Sendable {
         forms: Conjugations,
         alternates: [String: [String]] = [:],
         examples: [WordExample] = [],
-        verb: VerbTraits? = nil
+        verb: VerbTraits? = nil,
+        id explicitID: String? = nil
     ) {
         self.wordClass = wordClass
         self.dict = dict
@@ -76,6 +80,7 @@ public struct Word: Hashable, Identifiable, Sendable {
         self.alternates = alternates
         self.examples = examples
         self.verb = verb
+        self.explicitID = explicitID
     }
 }
 
@@ -100,7 +105,8 @@ public extension Word {
             jlpt: verb.jlpt,
             forms: encoded ?? Conjugations(),
             examples: verb.examples.map { WordExample(form: FormID(rawValue: $0.form.rawValue), jp: $0.jp, en: $0.en) },
-            verb: VerbTraits(type: verb.type, label: verb.label, teGroup: verb.teGroup)
+            verb: VerbTraits(type: verb.type, label: verb.label, teGroup: verb.teGroup),
+            id: verb.explicitID
         )
     }
 }
@@ -115,6 +121,7 @@ extension Word: Codable {
         case alternates = "alt"
         case examples
         case type, label, teGroup
+        case explicitID = "id"
     }
 
     public init(from decoder: Decoder) throws {
@@ -129,6 +136,7 @@ extension Word: Codable {
         forms = try c.decode(Conjugations.self, forKey: .forms)
         alternates = try c.decodeIfPresent([String: [String]].self, forKey: .alternates) ?? [:]
         examples = try c.decodeIfPresent([WordExample].self, forKey: .examples) ?? []
+        explicitID = try c.decodeIfPresent(String.self, forKey: .explicitID)
         if wordClass == .verb {
             verb = VerbTraits(
                 type: try c.decode(VerbType.self, forKey: .type),
@@ -144,6 +152,7 @@ extension Word: Codable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(wordClass, forKey: .wordClass)
         try c.encode(dict, forKey: .dict)
+        try c.encodeIfPresent(explicitID, forKey: .explicitID)
         try c.encodeIfPresent(kanji, forKey: .kanji)
         try c.encode(meaning, forKey: .meaning)
         try c.encode(description, forKey: .description)

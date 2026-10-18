@@ -79,8 +79,9 @@ struct QuizProgressView: View {
                     ForEach(progress.weakestVerbs, id: \.verb) { weak in
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(weak.verb).font(.body)
-                                if let kanji = kanji(for: weak.verb) {
+                                // The stored name is a `Verb.id`; show the verb's kana, not `きる:切る`.
+                                Text(verb(withID: weak.verb)?.dict ?? weak.verb).font(.body)
+                                if let kanji = kanji(forID: weak.verb) {
                                     Text(kanji).font(.caption).foregroundStyle(.secondary)
                                 }
                             }
@@ -108,8 +109,12 @@ struct QuizProgressView: View {
 
     private func days(_ count: Int) -> String { count == 1 ? "1 day" : "\(count) days" }
 
-    private func kanji(for dict: String) -> String? {
-        guard let kanji = verbStore.verbs.first(where: { $0.dict == dict })?.kanji, !kanji.isEmpty, kanji != dict else { return nil }
+    private func verb(withID id: String) -> Verb? {
+        verbStore.verbs.first { $0.id == id }
+    }
+
+    private func kanji(forID id: String) -> String? {
+        guard let match = verb(withID: id), let kanji = match.kanji, !kanji.isEmpty, kanji != match.dict else { return nil }
         return kanji
     }
 }

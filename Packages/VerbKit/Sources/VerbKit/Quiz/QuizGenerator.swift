@@ -113,7 +113,7 @@ private func makeQuestion(
         correct = entry.value
         let sameVerbStrings = sameVerb.map(\.value).filter { $0 != correct }
         let otherVerbStrings = verbs
-            .filter { $0.dict != entry.verb.dict }
+            .filter { $0.id != entry.verb.id }
             .compactMap { entry.form.value(in: $0.forms) }
             .filter { $0 != correct }
         // Same verb's forms first, as before; shuffle within each group.
