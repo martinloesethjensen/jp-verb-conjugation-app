@@ -56,8 +56,8 @@ struct VerbProvider: AppIntentTimelineProvider {
         let persisting = SwiftDataQuizHistoryPersisting(modelContext: ModelContext(container))
         let attempts = (try? persisting.loadAll()) ?? []
         let settled = attempts.before(startOfDayOf: date)
-        let weak = Set(QuizProgress(attempts: settled, now: date).weakPairs(among: Set(verbs.map(\.dict))).map(\.verb))
-        let weakVerbs = verbs.filter { weak.contains($0.dict) }
+        let weak = Set(QuizProgress(attempts: settled, now: date).weakPairs(among: Set(verbs.map(\.id))).map(\.verb))
+        let weakVerbs = verbs.filter { weak.contains($0.id) }
         return weakVerbs.isEmpty ? verbs : weakVerbs
     }
 

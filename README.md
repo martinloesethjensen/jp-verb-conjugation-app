@@ -61,6 +61,12 @@ with a signature. The CI `data` check fails until that is done.
 - The key is read from `$VERBTABLE_SIGNING_KEY` or `~/.config/verbtable/manifest-signing.key`. It
   never leaves your machine and is never committed.
 
+Every verb has a stable id that favourites, quiz history, widgets and links store. It is the verb's
+`dict` unless two verbs are spelled the same in kana; the newer one then gets an explicit
+`"id": "きる:切る"`. An id never changes once published, and `make data-check` fails if one published
+on `origin/main` disappears (fetch `main` first). See
+[`docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md`](docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md).
+
 If two branches both change the data, merge one, then on the other run `make data`, commit, and
 sign again: the manifest's version and hash change every time. Key setup, data releases and key
 rotation are in [`docs/security/data-signing.md`](docs/security/data-signing.md).

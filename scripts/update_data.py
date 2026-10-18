@@ -29,6 +29,10 @@ It does seven things:
      checks every form id verbs.json uses against it. forms.json is bundled
      with the app, not synced, so it has no manifest entry.
   7. With --check, verifies all of the above without writing anything.
+  8. Checks verb ids: a verb's id is its `dict` unless it has an explicit `id` (`きる:切る`, only
+     where two verbs are spelled the same in kana). Ids must be unique, and no id published on
+     origin/main may disappear or change (--published-ref; skipped when that ref is not available).
+     See docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md.
 
 Every manifest change must be re-signed (scripts/sign_manifest.py sign): the app
 refuses a manifest whose signature does not match its exact bytes. --ref TAG pins the
@@ -40,6 +44,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -571,6 +576,70 @@ def check_coverage(verbs_doc, grammar_doc, readings, *extra_docs):
     return problems
 
 
+# --- Verb ids ----------------------------------------------------------------
+# A verb's id is its kana `dict` unless it has an explicit `id`, which exists only where two verbs
+# are spelled the same in kana (着る and 切る are both きる): the older keeps the bare `きる`, the newer
+# is `きる:切る`. An id never changes once published, even if the verb's spelling is corrected.
+# See docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md.
+EXPLICIT_ID_PATTERN = re.compile(r"^[ぁ-ゖァ-ヺー]+:[ぁ-ゖァ-ヺー一-鿿々]+$")
+PUBLISHED_REF = "origin/main"
+
+
+def verb_id(verb):
+    return verb.get("id") or verb.get("dict")
+
+
+def check_verb_ids(verbs_doc):
+    """Problems with verb ids: a malformed explicit id, or two verbs with the same id."""
+    problems = []
+    owner = {}
+    for verb in verbs_doc["verbs"]:
+        dict_form = verb.get("dict", "<no dict>")
+        if "id" in verb:
+            explicit = verb["id"]
+            if (not isinstance(explicit, str) or not EXPLICIT_ID_PATTERN.match(explicit)
+                    or not explicit.startswith(dict_form + ":")):
+                problems.append(
+                    f"{dict_form}: id {explicit!r} must be the verb's kana, a ':' and its kanji, "
+                    f"like '{dict_form}:切る'"
+                )
+        vid = verb_id(verb)
+        if vid in owner:
+            problems.append(
+                f"{dict_form}: id '{vid}' is already used by {owner[vid]}; give the newer verb an "
+                f"explicit id of the form '{dict_form}:<kanji>'"
+            )
+        else:
+            owner[vid] = dict_form
+    return problems
+
+
+def published_verbs_doc(ref=PUBLISHED_REF, repo=None):
+    """data/verbs.json as published at git `ref` (the last release on main), or None when git or
+    the ref is unavailable, for example a shallow clone that did not fetch main."""
+    try:
+        shown = subprocess.run(
+            ["git", "show", f"{ref}:data/verbs.json"], cwd=repo or Path(__file__).resolve().parent.parent,
+            capture_output=True, text=True, check=True, timeout=30,
+        ).stdout
+        return json.loads(shown)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+
+
+def check_published_ids(verbs_doc, published_doc):
+    """Ids that were published and are gone now. Favourites, quiz history, widget configuration and
+    links all store ids, so renaming or removing one breaks saved data. None means nothing to compare."""
+    if published_doc is None:
+        return []
+    now = {verb_id(v) for v in verbs_doc["verbs"]}
+    return [
+        f"id '{vid}' is published on {PUBLISHED_REF} but missing here; ids never change "
+        f"(if the verb was added on main after this branch started, merge main)"
+        for vid in (verb_id(v) for v in published_doc.get("verbs", [])) if vid not in now
+    ]
+
+
 def check_verb_jlpt(verbs_doc):
     """A verb's jlpt is optional, but when present it must be N5..N1."""
     return [
@@ -946,10 +1015,11 @@ DEFAULT_FORMS_PATH = (
 
 
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
-        forms_path=None, ref=None, words_version=None):
+        forms_path=None, ref=None, words_version=None, published_verbs=None):
     """Returns (exit_code, messages). `forms_path` is where forms.json is
     written and checked; None leaves it alone. `ref` pins the manifest entries
-    to a release tag."""
+    to a release tag. `published_verbs` is the published verbs.json (see
+    `published_verbs_doc`) that no id may disappear from; None skips that check."""
     data_dir = Path(data_dir)
     verbs_path = data_dir / "verbs.json"
     grammar_path = data_dir / "grammar.json"
@@ -978,6 +1048,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_verb_jlpt(verbs_doc)
     if problems:
         return 1, capped("verbs.json has an invalid jlpt level:", problems)
+    problems = check_verb_ids(verbs_doc) + check_published_ids(verbs_doc, published_verbs)
+    if problems:
+        return 1, capped("verbs.json has invalid ids:", problems)
     problems = check_verb_forms(verbs_doc)
     if problems:
         return 1, capped("verbs.json has invalid forms:", problems)
@@ -1076,10 +1149,14 @@ def main(argv=None):
     parser.add_argument("--forms-path", default=str(DEFAULT_FORMS_PATH),
                         help="where to write the form catalogue (forms.json)")
     parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
+    parser.add_argument("--published-ref", default=PUBLISHED_REF,
+                        help="git ref of the published data that no verb id may disappear from "
+                             f"(default {PUBLISHED_REF}; '' skips the check; skipped if the ref is not available)")
     args = parser.parse_args(argv)
+    published = published_verbs_doc(args.published_ref) if args.published_ref else None
     code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
                          args.furigana_version, forms_path=args.forms_path, ref=args.ref,
-                         words_version=args.words_version)
+                         words_version=args.words_version, published_verbs=published)
     for line in messages:
         print(line)
     return code
