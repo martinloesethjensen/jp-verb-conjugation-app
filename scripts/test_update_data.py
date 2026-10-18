@@ -996,5 +996,59 @@ class ExtraFormsTests(unittest.TestCase):
         self.assertFalse(ud.apply_other_forms(doc))
 
 
+def table(counter):
+    readings = ud.counter_readings(counter)
+    return [" / ".join(readings[key]) for key in ud.COUNTER_KEYS]
+
+
+class CounterReadingTests(unittest.TestCase):
+    def test_h_b(self):
+        self.assertEqual(table({"reading": "ほん", "sound": "h-b"}), [
+            "いっぽん", "にほん", "さんぼん", "よんほん", "ごほん", "ろっぽん", "ななほん",
+            "はっぽん / はちほん", "きゅうほん", "じゅっぽん / じっぽん", "なんぼん"])
+
+    def test_h_p(self):
+        self.assertEqual(table({"reading": "ふん", "sound": "h-p"}), [
+            "いっぷん", "にふん", "さんぷん", "よんぷん", "ごふん", "ろっぷん", "ななふん",
+            "はっぷん / はちふん", "きゅうふん", "じゅっぷん / じっぷん", "なんぷん"])
+
+    def test_k(self):
+        self.assertEqual(table({"reading": "こ", "sound": "k"}), [
+            "いっこ", "にこ", "さんこ", "よんこ", "ごこ", "ろっこ", "ななこ",
+            "はっこ / はちこ", "きゅうこ", "じゅっこ / じっこ", "なんこ"])
+
+    def test_s_keeps_rokuj_and_has_no_hachi(self):
+        self.assertEqual(table({"reading": "さつ", "sound": "s"}), [
+            "いっさつ", "にさつ", "さんさつ", "よんさつ", "ごさつ", "ろくさつ", "ななさつ",
+            "はっさつ", "きゅうさつ", "じゅっさつ / じっさつ", "なんさつ"])
+
+    def test_plain(self):
+        self.assertEqual(table({"reading": "まい", "sound": "plain"}), [
+            "いちまい", "にまい", "さんまい", "よんまい", "ごまい", "ろくまい", "ななまい",
+            "はちまい", "きゅうまい", "じゅうまい", "なんまい"])
+
+    def test_overrides_replace_generated_keys(self):
+        readings = ud.counter_readings({"reading": "かい", "sound": "k",
+                                        "overrides": {"3": ["さんがい", "さんかい"]}})
+        self.assertEqual(readings["3"], ["さんがい", "さんかい"])
+        self.assertEqual(readings["1"], ["いっかい"])
+
+    def test_irregular_takes_overrides_only(self):
+        overrides = {key: [f"x{key}"] for key in ud.COUNTER_KEYS}
+        self.assertEqual(ud.counter_readings({"reading": "つ", "sound": "irregular", "overrides": overrides}),
+                         overrides)
+
+    def test_changed_compares_the_preferred_reading_with_the_plain_one(self):
+        hon = {"reading": "ほん", "sound": "h-b"}
+        self.assertEqual(ud.changed_keys(hon, ud.counter_readings(hon)), ["1", "3", "6", "8", "10", "what"])
+        en = {"reading": "えん", "sound": "plain", "overrides": {"4": ["よえん"]}}
+        self.assertEqual(ud.changed_keys(en, ud.counter_readings(en)), ["4"])
+        mai = {"reading": "まい", "sound": "plain"}
+        self.assertEqual(ud.changed_keys(mai, ud.counter_readings(mai)), [])
+        tsu = {"reading": "つ", "sound": "irregular",
+               "overrides": {key: [f"x{key}"] for key in ud.COUNTER_KEYS}}
+        self.assertEqual(ud.changed_keys(tsu, ud.counter_readings(tsu)), [])
+
+
 if __name__ == "__main__":
     unittest.main()
