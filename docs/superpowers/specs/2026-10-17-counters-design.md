@@ -103,6 +103,8 @@ classes say which of them change:
 - `readings` is generated: the class's rule, then overrides. `changed` is generated too:
   the keys whose preferred reading is not the base number plus the counter's own reading.
   It is what the page and playground highlight, so the app does not decide what changed.
+  `irregular` counters get an empty `changed`: every cell would differ, and a tint on
+  every cell says nothing. Their pages say "Irregular: learn each reading" instead.
 - `things` are plain nouns with no forms. `fit` is `primary`, `acceptable` (rabbits under
   匹 when 羽 is primary) or `casual` (the つ or 個 fallback). A thing may appear under
   several counters. `symbol` (an SF Symbol name) is optional and falls back to the
@@ -208,8 +210,8 @@ classes say which of them change:
   1. Header: 本, ほん, "long, thin things", symbol, speaker.
   2. **Count them** (playground): a 1–10 stepper (and a 何 chip), a row of the thing's
      symbol repeated n times, and the reading below it, large, with 三本 small above.
-     When the reading is in `changed`, the changed part is tinted and the cell gets a dot
-     marker, so the change does not rely on colour alone. Changes animate (いっぽん →
+     When the number is in `changed`, the whole reading is tinted (the data does not say
+     which kana changed) and the cell gets a dot marker, so the change does not rely on colour alone. Changes animate (いっぽん →
      にほん → さんぼん). A thing picker swaps the symbol. Tapping the reading speaks it.
   3. **Readings:** a grid of 1–10 and 何 with `changed` cells marked. Tap to speak,
      long-press to copy (the `FormCell` behaviour). Second readings show small beneath.

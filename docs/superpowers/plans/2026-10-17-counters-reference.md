@@ -107,6 +107,9 @@ class CounterReadingTests(unittest.TestCase):
         self.assertEqual(ud.changed_keys(en, ud.counter_readings(en)), ["4"])
         mai = {"reading": "まい", "sound": "plain"}
         self.assertEqual(ud.changed_keys(mai, ud.counter_readings(mai)), [])
+        tsu = {"reading": "つ", "sound": "irregular",
+               "overrides": {key: [f"x{key}"] for key in ud.COUNTER_KEYS}}
+        self.assertEqual(ud.changed_keys(tsu, ud.counter_readings(tsu)), [])
 ```
 
 - [ ] **Step 2: Run them to verify they fail**
@@ -170,6 +173,8 @@ def counter_readings(counter):
 
 def changed_keys(counter, readings):
     """The keys whose preferred reading is not the base number plus the counter's reading."""
+    if counter["sound"] == "irregular":
+        return []                     # every cell differs; a tint on all of them says nothing
     return [key for key in COUNTER_KEYS if readings[key][0] != BASE_NUMBERS[key] + counter["reading"]]
 ```
 
@@ -681,7 +686,7 @@ enum CounterDestination: Hashable {
 
 - [ ] **Step 1: `ReadingCell`.**
   - It shows the written form (三本) in `.caption` secondary, the preferred reading in `.body.weight(.semibold)`, and other readings in `.caption2` below. With style `.large`, the reading is `.title3`.
-  - A changed cell gets a tinted background and a `circle.fill` corner dot. VoiceOver reads "三本, さんぼん, sound changes".
+  - A changed cell gets a tinted background over the whole reading (the data doesn't say which kana changed) and a `circle.fill` corner dot. Irregular counters have an empty `changed`, so none of their cells are marked. VoiceOver reads "三本, さんぼん, sound changes".
   - `.speakOnTap(reading)` and `.textActions(reading)`. Never feed the written form to the furigana renderer.
   - A `highlighted: Bool` parameter draws an accent ring, used for a search focus.
 - [ ] **Step 2: Table.**
@@ -718,7 +723,7 @@ enum CounterDestination: Hashable {
   7. **Related:** buttons that push `.counter(id, focus: nil)`.
 - [ ] **Step 2: `ReadingsGrid`.**
   - A `LazyVGrid` of 11 `ReadingCell(style: .large)`, with 2 columns in compact width and 4 in regular. The `focus` number is highlighted and scrolled into view.
-  - A footer line under the grid: "Marked numbers change sound: 1, 3, 6, 8, 10 and 何". It is built from `changed`. When nothing changes, it says "No sound changes".
+  - A footer line under the grid: "Marked numbers change sound: 1, 3, 6, 8, 10 and 何". It is built from `changed`. When nothing changes, it says "No sound changes"; for an `irregular` counter it says "Irregular: learn each reading".
 - [ ] **Step 3: `ThingChips`.**
   - A flow layout (`RubyFlowLayout` or the grammar chip layout) of chips: the symbol, the word with its kana as ruby from the thing's own `kana`, and the meaning.
   - `acceptable` chips are outlined and `casual` chips are dimmed, with a one-line legend under them.
@@ -744,7 +749,7 @@ enum CounterDestination: Hashable {
   - Controls: a `−`/`+` pair (1…10), a 何 chip that switches to `.what`, and a thing `Menu` when there is more than one thing.
   - Objects: `n` copies of `thing.symbol ?? counter.symbol` in a wrapping row. For 何, show one `questionmark.circle`. For the 日 and 年 counters, a calendar-style symbol per item reads better than a row of suns, but that is a content choice made through `symbol`, not code.
   - Each symbol inserts with `.transition(.scale.combined(with: .opacity))` inside `withAnimation(.snappy)`.
-  - Reading: the written form small (三本), then the preferred reading at `.system(size: 44, weight: .bold, design: .rounded)` with `.contentTransition(.numericText())`, then a line such as "傘を三本". A changed number gets the tint and dot.
+  - Reading: the written form small (三本), then the preferred reading at `.system(size: 44, weight: .bold, design: .rounded)` with `.contentTransition(.numericText())`, then a line such as "傘を三本". A changed number gets the tint (over the whole reading) and dot.
   - Tapping the reading speaks it. Moving the stepper doesn't speak; one tap is enough.
   - The grid's highlighted cell follows `number`, so the playground and the grid stay in sync.
 - [ ] **Step 2: Accessibility.**
