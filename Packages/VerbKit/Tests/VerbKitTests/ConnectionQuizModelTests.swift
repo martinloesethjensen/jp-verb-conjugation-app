@@ -33,6 +33,23 @@ final class ConnectionQuizModelTests: XCTestCase {
         XCTAssertEqual(model.missedQuestions.map(\.word), ["あめ"])
     }
 
+    func testHistoryRecordsTheWordIDNotTheCitationForm() {
+        let cut = ConnectionQuestion(
+            grammarID: "node", grammarTitle: "〜ので", wordClass: .verb, word: "きる", kanji: "切る",
+            meaning: "to cut", ending: "ので", slot: .plain, daToNa: false, cue: ConnectionCue(),
+            correct: "きるので", choices: ["きるので", "x"], wordID: "きる:切る"
+        )
+        var recorded: [QuizAttempt] = []
+        let model = ConnectionQuizModel(questions: [cut], recorder: { recorded.append($0) })
+        model.choose("きるので")
+        XCTAssertEqual(recorded.map(\.verb), ["きる:切る"])
+        XCTAssertEqual(model.currentQuestion?.word, "きる")
+    }
+
+    func testTheWordIDDefaultsToTheCitationForm() {
+        XCTAssertEqual(question("しずか", "しずかなので").wordID, "しずか")
+    }
+
     func testAdvanceWaitsForAnAnswer() {
         let model = ConnectionQuizModel(questions: [question("しずか", "しずかなので")])
         model.advance()

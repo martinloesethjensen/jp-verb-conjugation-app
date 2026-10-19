@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r scripts/requirements.txt
+      # update_data.py --check compares verb ids with the published verbs.json, so it needs main.
+      - name: Fetch the published data
+        run: git fetch --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
       - name: Script tests
         run: python3 -m unittest discover -s scripts
       - name: Data is generated and valid

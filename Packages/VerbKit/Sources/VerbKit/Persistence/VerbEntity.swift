@@ -3,7 +3,14 @@ import SwiftData
 
 @Model
 public final class VerbEntity {
+    /// The unique key, and it stores `Verb.id`, not necessarily the dictionary form: for a verb
+    /// with no explicit id they are the same string, so rows saved before explicit ids existed
+    /// need no migration. A homophone with an explicit id (`きる:切る`) keeps its id here and its
+    /// real dictionary form in `kana`, so two verbs spelled the same can both be stored.
     @Attribute(.unique) public var dict: String
+    /// The dictionary form when it differs from `dict` (the verb has an explicit id); nil
+    /// otherwise. The default lets rows saved before this existed migrate.
+    public var kana: String? = nil
     public var type: String
     public var label: String
     public var kanji: String?
@@ -70,9 +77,11 @@ public final class VerbEntity {
         jlpt: String? = nil,
         forms: VerbForms,
         examples: [VerbExample],
-        sortOrder: Int = 0
+        sortOrder: Int = 0,
+        kana: String? = nil
     ) {
         self.sortOrder = sortOrder
+        self.kana = kana
         self.dict = dict
         self.type = type
         self.label = label
@@ -101,7 +110,7 @@ private extension VerbForms {
 public extension VerbEntity {
     convenience init(_ verb: Verb, sortOrder: Int = 0) {
         self.init(
-            dict: verb.dict,
+            dict: verb.id,
             type: verb.type.rawValue,
             label: verb.label,
             kanji: verb.kanji,
@@ -112,7 +121,8 @@ public extension VerbEntity {
             jlpt: verb.jlpt?.rawValue,
             forms: verb.forms,
             examples: verb.examples,
-            sortOrder: sortOrder
+            sortOrder: sortOrder,
+            kana: verb.explicitID == nil ? nil : verb.dict
         )
     }
 
@@ -125,7 +135,7 @@ public extension VerbEntity {
         return Verb(
             type: verbType,
             label: label,
-            dict: dict,
+            dict: kana ?? dict,
             kanji: kanji,
             meaning: meaning,
             description: verbDescription,
@@ -133,7 +143,8 @@ public extension VerbEntity {
             teGroup: resolvedTeGroup,
             jlpt: jlpt.flatMap { JLPTLevel(rawValue: $0) },
             forms: forms,
-            examples: examples
+            examples: examples,
+            id: kana == nil ? nil : dict
         )
     }
 }

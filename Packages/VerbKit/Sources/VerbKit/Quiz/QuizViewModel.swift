@@ -34,7 +34,7 @@ public final class QuizViewModel {
 
     private func record(_ question: QuizQuestion, _ outcome: QuizOutcome) {
         recorder?(QuizAttempt(
-            verb: question.verb.dict, formID: question.form.id, kind: question.kind,
+            verb: question.verb.id, formID: question.form.id, kind: question.kind,
             outcome: outcome, date: now()
         ))
     }
