@@ -218,7 +218,7 @@ public struct CounterGroup: Codable, Hashable, Identifiable, Sendable {
 }
 
 /// The published `counters.json`.
-public struct CountersDataFile: Codable, Sendable {
+public struct CountersDataFile: Codable, Equatable, Sendable {
     public var version: String
     public var description: String
     public var counters: [Counter]

@@ -40,6 +40,13 @@ final class UserDefaultsSyncStateStoreTests: XCTestCase {
         XCTAssertNil(new.lastSyncedFuriganaManifest())
     }
 
+    func testCountersManifestRoundTripsAndANewBuildForgetsIt() {
+        let old = UserDefaultsSyncStateStore(defaults: defaults, build: "1")
+        old.saveLastSyncedCountersManifest(CountersManifest(version: "1.0.0", sha256: "d"))
+        XCTAssertEqual(old.lastSyncedCountersManifest(), CountersManifest(version: "1.0.0", sha256: "d"))
+        XCTAssertNil(UserDefaultsSyncStateStore(defaults: defaults, build: "2").lastSyncedCountersManifest())
+    }
+
     func testEachFileIsRetaggedOnItsOwn() {
         UserDefaultsSyncStateStore(defaults: defaults, build: "1")
             .saveLastSyncedGrammarManifest(GrammarManifest(version: "1.0.0", sha256: "b"))

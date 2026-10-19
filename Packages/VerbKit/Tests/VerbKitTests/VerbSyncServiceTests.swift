@@ -175,6 +175,9 @@ final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
     /// Defaults to "no words published" so the other tests are unaffected.
     var wordsManifestResult: Result<WordsManifest?, Error> = .success(nil)
     var wordsDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
+    /// Defaults to "no counters published" so the other tests are unaffected.
+    var countersManifestResult: Result<CountersManifest?, Error> = .success(nil)
+    var countersDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
 
     func fetchManifest() async throws -> VerbManifest { try manifestResult.get() }
     func fetchVerbData() async throws -> Data { try verbDataResult.get() }
@@ -184,6 +187,8 @@ final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
     func fetchFuriganaData() async throws -> Data { try furiganaDataResult.get() }
     func fetchWordsManifest() async throws -> WordsManifest? { try wordsManifestResult.get() }
     func fetchWordsData() async throws -> Data { try wordsDataResult.get() }
+    func fetchCountersManifest() async throws -> CountersManifest? { try countersManifestResult.get() }
+    func fetchCountersData() async throws -> Data { try countersDataResult.get() }
 }
 
 final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
@@ -199,6 +204,9 @@ final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
     private var wordsManifest: WordsManifest?
     func lastSyncedWordsManifest() -> WordsManifest? { wordsManifest }
     func saveLastSyncedWordsManifest(_ manifest: WordsManifest) { wordsManifest = manifest }
+    private var countersManifest: CountersManifest?
+    func lastSyncedCountersManifest() -> CountersManifest? { countersManifest }
+    func saveLastSyncedCountersManifest(_ manifest: CountersManifest) { countersManifest = manifest }
     private var highest: [String: String] = [:]
     func highestAcceptedVersion(for file: String) -> String? { highest[file] }
     func saveHighestAcceptedVersion(_ version: String, for file: String) { highest[file] = version }
