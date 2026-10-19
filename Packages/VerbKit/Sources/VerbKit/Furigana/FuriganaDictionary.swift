@@ -25,6 +25,11 @@ public struct FuriganaDictionary: Equatable, Sendable {
         self.init(readings: file.readings)
     }
 
+    /// This dictionary with `extra` layered on top: an entry in `extra` wins over the same key here.
+    public func merging(_ extra: [String: String]) -> FuriganaDictionary {
+        extra.isEmpty ? self : FuriganaDictionary(readings: readings.merging(extra) { _, new in new })
+    }
+
     // MARK: character classes
 
     /// CJK ideographs plus the iteration mark 々.

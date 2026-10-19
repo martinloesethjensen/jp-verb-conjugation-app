@@ -5,6 +5,7 @@ public protocol Leveled {
 
 extension Verb: Leveled {}
 extension GrammarPoint: Leveled {}
+extension Counter: Leveled {}
 
 public extension Sequence where Element: Leveled {
     /// The elements visible under `settings`, in their original order. Elements without a level are kept.
