@@ -28,6 +28,13 @@ final class VerbModelContainerTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<WordBankEntryEntity>()), 1)
     }
 
+    func testInMemoryContainerAcceptsCountersEntity() throws {
+        let context = ModelContext(try VerbModelContainer.makeInMemory())
+        context.insert(CountersEntity(CountersDataFile(version: "1.0.0", description: "d", counters: [])))
+        try context.save()
+        XCTAssertEqual(try context.fetchCount(FetchDescriptor<CountersEntity>()), 1)
+    }
+
     func testVerbSyncRewriteLeavesWordBankRowsAlone() throws {
         let context = ModelContext(try VerbModelContainer.makeInMemory())
         let bank = SwiftDataWordBankPersisting(modelContext: context)
