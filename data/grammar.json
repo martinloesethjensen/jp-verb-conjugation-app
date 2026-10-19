@@ -1287,6 +1287,272 @@
         }
       ],
       "related": []
+    },
+    {
+      "id": "tai",
+      "title": "〜たい",
+      "summary": "〜たい says that you want to do something: 食べたい, 行きたい. It attaches to the ます-stem and then conjugates like an い-adjective.",
+      "jlpt": "N5",
+      "usages": [
+        {
+          "heading": "Wanting to do something",
+          "explanation": "Add たい to the ます-stem. The wish is the speaker's own or, in a question, the listener's.",
+          "examples": [
+            { "jp": "水が飲みたいです。", "en": "I want to drink some water." },
+            { "jp": "日本へ行きたいです。", "en": "I want to go to Japan." },
+            { "jp": "何が食べたいですか。", "en": "What do you want to eat?" }
+          ]
+        },
+        {
+          "heading": "Not wanting to, and wanting to in the past",
+          "explanation": "たい is an い-adjective, so it conjugates like one: たくない (polite: たくないです or たくありません), たかった, たくなかった, and たくて to give a reason.",
+          "examples": [
+            { "jp": "今日は勉強したくありません。", "en": "I don't want to study today." },
+            { "jp": "小さいとき、先生になりたかったです。", "en": "When I was little, I wanted to become a teacher." },
+            { "jp": "疲れていて、何もしたくなかった。", "en": "I was tired and didn't want to do anything." }
+          ]
+        },
+        {
+          "heading": "を or が",
+          "explanation": "The thing you want to do can take を or が, and both are natural.",
+          "examples": [
+            { "jp": "コーヒーを飲みたいです。", "en": "I want to drink coffee." },
+            { "jp": "コーヒーが飲みたいです。", "en": "I want to drink coffee." },
+            { "jp": "日本語が話したいです。", "en": "I want to speak Japanese." }
+          ]
+        },
+        {
+          "heading": "Other people's wishes",
+          "explanation": "〜たい is for your own feelings. To say what someone else wants, use 〜たがっています, or report what they said with と言っていました.",
+          "examples": [
+            { "jp": "妹は日本へ行きたがっています。", "en": "My younger sister wants to go to Japan." },
+            { "jp": "田中さんは日本へ行きたいと言っていました。", "en": "Mr. Tanaka said he wanted to go to Japan." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["stem"],
+          "then": "たい",
+          "pattern": "ます-stem + たい",
+          "example": "食べる → 食べたい / 飲む → 飲みたい / 行く → 行きたい / する → したい / 来る → 来たい",
+          "note": "The ます-stem is the ます-form without ます: 食べます → 食べ, 飲みます → 飲み."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜たい", "register": "casual", "note": "Plain present: I want to…" },
+        { "form": "〜たいです", "register": "polite", "note": "Polite present." },
+        { "form": "〜たくない", "register": "casual" },
+        { "form": "〜たくないです", "register": "polite", "note": "〜たくありません is the same, a little more formal." },
+        { "form": "〜たかった", "register": "casual" },
+        { "form": "〜たかったです", "register": "polite" },
+        { "form": "〜たくなかった", "register": "casual" },
+        { "form": "〜たくて", "register": "casual", "note": "The て-form, for linking clauses and giving reasons, as in 行きたくて, 会いたくて." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "A thing you want: ほしい",
+          "explanation": "〜たい goes after a verb. To say you want an object, use ほしい.",
+          "examples": [
+            { "jp": "新しいかばんがほしいです。", "en": "I want a new bag." },
+            { "jp": "新しい本を買いたいです。", "en": "I want to buy a new book." }
+          ]
+        },
+        {
+          "heading": "Asking a guest what they want",
+          "explanation": "〜たいですか asks directly about the other person's wish, which is fine among friends. To a guest or a customer, an offer is politer.",
+          "examples": [
+            { "jp": "何が食べたい？", "en": "What do you want to eat? (friends)" },
+            { "jp": "コーヒーはいかがですか。", "en": "Would you like some coffee? (to a guest)" }
+          ]
+        }
+      ],
+      "related": []
+    },
+    {
+      "id": "volitional",
+      "title": "〜ましょう・意向形",
+      "summary": "〜ましょう means \"let's…\", and 〜ましょうか means \"shall I…?\" or \"shall we…?\". The plain version is the volitional form (食べよう, 飲もう), used among friends and with と思う for plans.",
+      "jlpt": "N5",
+      "usages": [
+        {
+          "heading": "Let's… (〜ましょう)",
+          "explanation": "Add ましょう to the ます-stem to suggest doing something together. It is a proposal, not an order.",
+          "examples": [
+            { "jp": "いっしょに帰りましょう。", "en": "Let's go home together." },
+            { "jp": "少し休みましょう。", "en": "Let's take a short break." },
+            { "jp": "駅で会いましょう。", "en": "Let's meet at the station." }
+          ]
+        },
+        {
+          "heading": "Shall I…? Shall we…? (〜ましょうか)",
+          "explanation": "〜ましょうか offers to do something for the other person, or asks whether to do it together.",
+          "examples": [
+            { "jp": "かばんを持ちましょうか。", "en": "Shall I carry your bag?" },
+            { "jp": "窓を開けましょうか。", "en": "Shall I open the window?" },
+            { "jp": "いっしょに行きましょうか。", "en": "Shall we go together?" }
+          ]
+        },
+        {
+          "heading": "Casual: the volitional form",
+          "explanation": "Among friends, ましょう becomes the plain volitional: ru-verbs end in よう and u-verbs in おう. The meaning is the same: let's…",
+          "examples": [
+            { "jp": "もう帰ろう。", "en": "Let's go home now." },
+            { "jp": "週末、京都へ行こう。", "en": "Let's go to Kyoto this weekend." },
+            { "jp": "少し休もう。", "en": "Let's take a short break." }
+          ]
+        },
+        {
+          "heading": "Plans: 〜(よ)うと思う",
+          "explanation": "The plain volitional + と思います says what you are thinking of doing or have decided to do.",
+          "examples": [
+            { "jp": "来月、日本へ行こうと思っています。", "en": "I'm thinking of going to Japan next month." },
+            { "jp": "今日は早く寝ようと思います。", "en": "I think I'll go to bed early today." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["stem"],
+          "then": "ましょう",
+          "pattern": "ます-stem + ましょう",
+          "example": "食べる → 食べましょう / 飲む → 飲みましょう / する → しましょう / 来る → 来ましょう"
+        },
+        {
+          "word_class": "verb",
+          "condition": "Ru-verbs",
+          "pattern": "drop る + よう",
+          "example": "食べる → 食べよう / 見る → 見よう / 起きる → 起きよう"
+        },
+        {
+          "word_class": "verb",
+          "condition": "U-verbs",
+          "pattern": "change the last kana to its お-sound, then う",
+          "example": "飲む → 飲もう / 書く → 書こう / 話す → 話そう / 買う → 買おう / 泳ぐ → 泳ごう / 待つ → 待とう / 死ぬ → 死のう / 遊ぶ → 遊ぼう / 取る → 取ろう",
+          "note": "The endings move like this: う→お, く→こ, ぐ→ご, す→そ, つ→と, ぬ→の, ぶ→ぼ, む→も, る→ろ."
+        },
+        {
+          "word_class": "verb",
+          "condition": "する and 来る",
+          "pattern": "する → しよう / 来る → 来よう",
+          "example": "勉強する → 勉強しよう / 来る → 来よう",
+          "note": "来よう is read こよう."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜ましょう", "register": "polite", "note": "Let's… A proposal." },
+        { "form": "〜ましょうか", "register": "polite", "note": "Shall I…? Shall we…?" },
+        { "form": "〜よう", "register": "casual", "note": "Ru-verbs: 食べよう, 見よう." },
+        { "form": "〜おう", "register": "casual", "note": "U-verbs: 飲もう, 書こう." },
+        { "form": "〜(よ)うか", "register": "casual", "note": "Shall I…? Shall we…? 手伝おうか。" },
+        { "form": "〜(よ)うと思います", "register": "polite", "note": "A plan or a decision." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "ましょう or ませんか?",
+          "explanation": "〜ませんか is softer: \"Won't you…?\" It invites without pushing. 〜ましょう proposes directly.",
+          "examples": [
+            { "jp": "コーヒーを飲みませんか。", "en": "Would you like to have some coffee?" },
+            { "jp": "コーヒーを飲みましょう。", "en": "Let's have some coffee." }
+          ]
+        },
+        {
+          "heading": "Verbs with no volitional",
+          "explanation": "The volitional states your will, so verbs for states or things that just happen have none: わかる (to understand), しる (to know), つかれる (to get tired). ある has あろう in writing, but it is rare in conversation."
+        }
+      ],
+      "related": []
+    },
+    {
+      "id": "nai-te",
+      "title": "〜ないで・〜なくて",
+      "summary": "Both are the negative て-form. 〜ないで means \"without doing\" and is used in \"please don't\"; 〜なくて gives a reason or links negative clauses.",
+      "jlpt": "N5",
+      "usages": [
+        {
+          "heading": "Please don't… (〜ないでください)",
+          "explanation": "The plain negative + で + ください asks someone not to do something.",
+          "examples": [
+            { "jp": "ここで写真を撮らないでください。", "en": "Please don't take photos here." },
+            { "jp": "窓を開けないでください。", "en": "Please don't open the window." },
+            { "jp": "遅れないでください。", "en": "Please don't be late." }
+          ]
+        },
+        {
+          "heading": "Without doing (〜ないで)",
+          "explanation": "〜ないで says how you did something: without doing the other thing.",
+          "examples": [
+            { "jp": "朝ごはんを食べないで学校へ行きました。", "en": "I went to school without eating breakfast." },
+            { "jp": "かさを持たないで出かけました。", "en": "I went out without taking an umbrella." }
+          ]
+        },
+        {
+          "heading": "Reasons and descriptions (〜なくて)",
+          "explanation": "〜なくて gives the reason for a feeling or result, and links negative descriptions.",
+          "examples": [
+            { "jp": "友達が来なくて、さびしかったです。", "en": "I was lonely because my friend didn't come." },
+            { "jp": "お金がなくて、買えませんでした。", "en": "I didn't have any money, so I couldn't buy it." },
+            { "jp": "このレストランは高くなくて、おいしいです。", "en": "This restaurant isn't expensive, and the food is good." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plainNeg"],
+          "then": "で",
+          "pattern": "ない-form + で",
+          "example": "食べる → 食べないで / 行く → 行かないで",
+          "note": "For a reason, drop い from ない and add くて: 食べなくて."
+        },
+        {
+          "word_class": "verb",
+          "pattern": "ない-form, drop い + くて",
+          "example": "食べない → 食べなくて / 行かない → 行かなくて / 来ない → 来なくて"
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "drop い + くなくて",
+          "example": "高い → 高くなくて / おいしい → おいしくなくて"
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "じゃなくて",
+          "example": "静か → 静かじゃなくて / 元気 → 元気じゃなくて",
+          "note": "ではなくて is the more formal version."
+        },
+        {
+          "word_class": "noun",
+          "pattern": "じゃなくて",
+          "example": "学生 → 学生じゃなくて / 雨 → 雨じゃなくて",
+          "note": "ではなくて is the more formal version."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜ないでください", "register": "polite", "note": "Please don't…" },
+        { "form": "〜ないで", "register": "casual", "note": "Without doing…, or a friendly \"don't\": 行かないで。" },
+        { "form": "〜なくて", "register": "casual", "note": "A reason, or a link between negative descriptions." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Before ください only ないで",
+          "explanation": "A request can only use 〜ないで. 〜なくてください is wrong, because なくて gives a reason, not a way of doing something.",
+          "examples": [
+            { "jp": "行かないでください。", "en": "Please don't go." },
+            { "jp": "行けなくて、すみません。", "en": "I'm sorry I couldn't go." }
+          ]
+        },
+        {
+          "heading": "Adjectives and nouns need なくて",
+          "explanation": "ないで is only for verbs. With adjectives and nouns, use なくて: 高くなくて, 静かじゃなくて, 学生じゃなくて.",
+          "examples": [
+            { "jp": "この部屋は静かじゃなくて、よく眠れません。", "en": "This room isn't quiet, so I can't sleep well." }
+          ]
+        }
+      ],
+      "related": []
     }
   ]
 }

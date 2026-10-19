@@ -738,7 +738,8 @@
       "applies_to": [
         "verb"
       ],
-      "source": "derived"
+      "source": "derived",
+      "grammar": "volitional"
     },
     {
       "id": "passive",
@@ -826,7 +827,8 @@
       "applies_to": [
         "verb"
       ],
-      "source": "derived"
+      "source": "derived",
+      "grammar": "tai"
     },
     {
       "id": "masu_volitional",
@@ -837,7 +839,8 @@
       "applies_to": [
         "verb"
       ],
-      "source": "derived"
+      "source": "derived",
+      "grammar": "volitional"
     },
     {
       "id": "neg_te",
@@ -848,7 +851,8 @@
       "applies_to": [
         "verb"
       ],
-      "source": "derived"
+      "source": "derived",
+      "grammar": "nai-te"
     },
     {
       "id": "nakute",
@@ -859,7 +863,8 @@
       "applies_to": [
         "verb"
       ],
-      "source": "derived"
+      "source": "derived",
+      "grammar": "nai-te"
     },
     {
       "id": "te_mo_ii",
