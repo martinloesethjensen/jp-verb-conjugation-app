@@ -23,15 +23,23 @@ public enum GrammarSlot: String, Codable, CaseIterable, Sendable {
 public protocol SlotSource {
     var wordClass: WordClass { get }
     var dict: String { get }
+    /// The kanji spelling, if it has one. It tells apart words spelled the same in kana.
+    var kanji: String? { get }
+    /// What identifies the word within its class: the explicit id when there is one (`きる:切る`),
+    /// otherwise the citation form. Quiz history and pickers use it, never `dict`, so two words
+    /// spelled the same stay apart.
+    var stableKey: String { get }
     func slotForm(_ id: FormID) -> String?
 }
 
 extension Word: SlotSource {
+    public var stableKey: String { explicitID ?? dict }
     public func slotForm(_ id: FormID) -> String? { forms[id] }
 }
 
 extension Verb: SlotSource {
     public var wordClass: WordClass { .verb }
+    public var stableKey: String { id }
 
     public func slotForm(_ id: FormID) -> String? {
         switch id.rawValue {

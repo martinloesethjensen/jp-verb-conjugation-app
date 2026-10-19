@@ -43,6 +43,16 @@ final class VerbIDTests: XCTestCase {
         }
     }
 
+    func testBothKirusAreInTheShippedDataAsSeparateVerbs() throws {
+        let verbs = try RealVerbs.load().filter { $0.dict == "きる" }
+        XCTAssertEqual(verbs.map(\.id), ["きる", "きる:切る"])
+        XCTAssertEqual(verbs.map(\.kanji), ["着る", "切る"])
+        XCTAssertEqual(verbs.map(\.type), [.ru, .u])
+        // Same kana, different conjugation: the て-forms tell them apart.
+        XCTAssertEqual(verbs.map(\.forms.te), ["きて", "きって"])
+        XCTAssertEqual(verbs.map(\.meaning), ["to wear (on the upper body)", "to cut"])
+    }
+
     // MARK: JSON
 
     func testTheIDIsLeftOutOfTheJSONWhenThereIsNone() throws {

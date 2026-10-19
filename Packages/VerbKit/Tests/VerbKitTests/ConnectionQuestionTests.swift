@@ -86,6 +86,21 @@ final class ConnectionQuestionTests: XCTestCase {
         XCTAssertEqual(past.correct, "しずかだったので", "the な switch touches only the plain slot")
     }
 
+    func testQuestionsCarryTheStableKeySoHomophonesStayApart() {
+        let kiru = verb("きる", "き", te: "きて", neg: "きない", past: "きた", pastNeg: "きなかった")
+        var cut = verb("きる", "きり", te: "きって", neg: "きらない", past: "きった", pastNeg: "きらなかった")
+        cut.explicitID = "きる:切る"
+        let questions = buildConnectionQuestions(points: [hou], verbs: [kiru, cut], words: [], count: 10)
+        XCTAssertEqual(Set(questions.map(\.wordID)), ["きる", "きる:切る"])
+        XCTAssertTrue(questions.allSatisfy { $0.word == "きる" })
+
+        XCTAssertEqual(kiru.stableKey, "きる")
+        XCTAssertEqual(cut.stableKey, "きる:切る")
+        XCTAssertEqual(Word(wordClass: .noun, dict: "はし", kanji: "橋", meaning: "m", description: "",
+                            forms: Conjugations(), id: "はし:橋").stableKey, "はし:橋")
+        XCTAssertEqual(shizuka.stableKey, "しずか")
+    }
+
     func testAPatternWithFewSlotsFillsTheQuizWithOtherWordsButNeverRepeatsAnAnswer() throws {
         let questions = buildConnectionQuestions(points: [hou], verbs: [taberu, neru], words: [], count: 10)
         XCTAssertEqual(Set(questions.map(\.correct)),

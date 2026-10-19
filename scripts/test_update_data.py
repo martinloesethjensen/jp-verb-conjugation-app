@@ -1092,10 +1092,10 @@ class VerbIdTests(unittest.TestCase):
             for name in ("verbs.json", "grammar.json", "furigana.json", "manifest.json", "words.json"):
                 (data_dir / name).write_bytes((Path(__file__).resolve().parent.parent / "data" / name).read_bytes())
             published = json.loads((data_dir / "verbs.json").read_text(encoding="utf-8"))
-            published["verbs"].append({"dict": "きる", "id": "きる:切る"})
+            published["verbs"].append({"dict": "ぬく", "id": "ぬく:抜く"})
             code, messages = ud.run(data_dir, check=True, published_verbs=published)
             self.assertEqual(code, 1)
-            self.assertIn("きる:切る", "\n".join(messages))
+            self.assertIn("ぬく:抜く", "\n".join(messages))
             self.assertEqual(ud.run(data_dir, check=True)[0], 0)  # no published data: skipped
 
 

@@ -54,6 +54,9 @@ public struct ConnectionQuestion: Equatable, Sendable {
     public var wordClass: WordClass
     /// The word as the prompt shows it: its citation form (たべる, しずか).
     public var word: String
+    /// What quiz history records the word under: `Verb.id` for a verb (so a homophone like
+    /// きる:切る stays apart from 着る), the explicit id or citation form for another word.
+    public var wordID: String
     public var kanji: String?
     public var meaning: String
     /// What follows the block (ので, すぎる).
@@ -67,12 +70,13 @@ public struct ConnectionQuestion: Equatable, Sendable {
     public init(
         grammarID: String, grammarTitle: String, wordClass: WordClass, word: String, kanji: String?,
         meaning: String, ending: String, slot: GrammarSlot, daToNa: Bool, cue: ConnectionCue,
-        correct: String, choices: [String]
+        correct: String, choices: [String], wordID: String? = nil
     ) {
         self.grammarID = grammarID
         self.grammarTitle = grammarTitle
         self.wordClass = wordClass
         self.word = word
+        self.wordID = wordID ?? word
         self.kanji = kanji
         self.meaning = meaning
         self.ending = ending
@@ -208,6 +212,7 @@ private func makeConnectionQuestion(_ entry: ConnectionEntry, _ source: Connecti
         word: source.slots.dict, kanji: source.kanji, meaning: source.meaning, ending: then,
         slot: entry.slot, daToNa: entry.rule.daToNa,
         cue: ConnectionCue(for: entry.slot, among: entry.candidates),
-        correct: correct, choices: ([correct] + distractors).shuffled()
+        correct: correct, choices: ([correct] + distractors).shuffled(),
+        wordID: source.slots.stableKey
     )
 }
