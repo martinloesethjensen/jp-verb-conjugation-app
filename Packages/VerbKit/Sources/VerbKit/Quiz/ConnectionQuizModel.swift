@@ -40,7 +40,7 @@ public final class ConnectionQuizModel {
         if ok { score += 1 }
         outcomes.append(ok)
         recorder?(QuizAttempt(
-            verb: question.word, formID: question.attemptFormID, kind: .connect,
+            verb: question.wordID, formID: question.attemptFormID, kind: .connect,
             outcome: ok ? .correct : .wrong, date: now()
         ))
     }

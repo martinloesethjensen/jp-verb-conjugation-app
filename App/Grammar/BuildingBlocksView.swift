@@ -45,7 +45,25 @@ struct BuildingBlocksView: View {
     private func source(_ wordClass: WordClass) -> SlotSource? {
         let wanted = picks[wordClass] ?? Self.defaults[wordClass]
         let all = candidates(wordClass)
-        return all.first { $0.dict == wanted } ?? all.first
+        return all.first { $0.stableKey == wanted } ?? all.first
+    }
+
+    private struct Option: Identifiable {
+        let id: String
+        let title: String
+    }
+
+    /// The picker's words, chosen by `stableKey` so two words spelled the same in kana stay
+    /// apart. The title is the kana, plus the kanji only where the kana alone would repeat.
+    private func pickerOptions(_ wordClass: WordClass) -> [Option] {
+        let all = candidates(wordClass)
+        var spelledTheSame: [String: Int] = [:]
+        for word in all { spelledTheSame[word.dict, default: 0] += 1 }
+        return all.map { word in
+            let repeated = (spelledTheSame[word.dict] ?? 0) > 1
+            let title = repeated ? (word.kanji.map { "\(word.dict) (\($0))" } ?? word.dict) : word.dict
+            return Option(id: word.stableKey, title: title)
+        }
     }
 
     private func lessons(using slot: GrammarSlot) -> [GrammarPoint] {
@@ -61,13 +79,13 @@ struct BuildingBlocksView: View {
             }
             Section("Example words") {
                 ForEach(Self.classes, id: \.self) { wordClass in
-                    let options = candidates(wordClass).map(\.dict)
+                    let options = pickerOptions(wordClass)
                     if !options.isEmpty {
                         Picker(wordClass.displayName, selection: Binding(
-                            get: { source(wordClass)?.dict ?? "" },
+                            get: { source(wordClass)?.stableKey ?? "" },
                             set: { picks[wordClass] = $0 }
                         )) {
-                            ForEach(options, id: \.self) { Text($0).tag($0) }
+                            ForEach(options) { Text($0.title).tag($0.id) }
                         }
                     }
                 }
