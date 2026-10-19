@@ -13,10 +13,13 @@ final class RealJishoQueryTests: XCTestCase {
 
     func testPrefersKanjiAndFallsBackToKana() throws {
         let verbs = try loadVerbs()
-        let byDict = Dictionary(uniqueKeysWithValues: verbs.map { ($0.dict, $0) })
-        XCTAssertEqual(byDict["みせる"]?.jishoQuery, "見せる")
-        XCTAssertEqual(byDict["する"]?.jishoQuery, "する")
-        XCTAssertEqual(byDict["ある"]?.jishoQuery, "ある")
+        // Keyed by id, not dict: two verbs can be spelled the same in kana (着る and 切る are both きる).
+        let byID = Dictionary(uniqueKeysWithValues: verbs.map { ($0.id, $0) })
+        XCTAssertEqual(byID["みせる"]?.jishoQuery, "見せる")
+        XCTAssertEqual(byID["する"]?.jishoQuery, "する")
+        XCTAssertEqual(byID["ある"]?.jishoQuery, "ある")
+        XCTAssertEqual(byID["きる"]?.jishoQuery, "着る")
+        XCTAssertEqual(byID["きる:切る"]?.jishoQuery, "切る")
     }
 
     func testEveryVerbHasAQueryThatBuildsAURL() throws {
