@@ -41,9 +41,10 @@ final class RealTeGroupFilterTests: XCTestCase {
 
     func testRuleTableCoversEveryGroupAndItsExamplesAreReal() throws {
         XCTAssertEqual(Set(TeFormRule.all.map(\.group)), Set(TeGroup.allCases))
-        let byDict = Dictionary(uniqueKeysWithValues: try loadVerbs().map { ($0.dict, $0) })
+        // Keyed by id, not dict: 着る and 切る are both きる. The rule examples are verbs with no explicit id.
+        let byID = Dictionary(uniqueKeysWithValues: try loadVerbs().map { ($0.id, $0) })
         for rule in TeFormRule.all {
-            let verb = try XCTUnwrap(byDict[rule.example.dict], rule.example.dict)
+            let verb = try XCTUnwrap(byID[rule.example.dict], rule.example.dict)
             XCTAssertEqual(verb.teGroup, rule.group)
             XCTAssertEqual(verb.forms.te, rule.example.te)
             XCTAssertTrue(rule.example.te.hasSuffix(rule.result))
