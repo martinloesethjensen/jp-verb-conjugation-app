@@ -22,8 +22,8 @@ It does eight things:
      run, so new content cannot ship without furigana.
   4b. Generates the forms of every adjective and noun in data/words.json
      (hand-authored apart from `forms`) and checks its fields and furigana.
-  4c. Generates the readings of every counter in data/counters.json
-      (hand-authored apart from `readings` and `changed`), checks its fields,
+  4c. Generates the readings, `changed` keys and quiz `distractors` of every counter in data/counters.json
+      (hand-authored apart from `readings`, `changed` and `distractors`), checks its fields,
       groups and furigana, and that every counted word in an example reads as
       its counter says.
   5. Recomputes the SHA-256 of all four files into data/manifest.json,
@@ -821,6 +821,54 @@ def changed_keys(counter, readings):
     return [key for key in COUNTER_KEYS if readings[key][0] != BASE_NUMBERS[key] + counter["reading"]]
 
 
+def _swap_voicing(preferred, reading, sound):
+    """The preferred reading of an h-b or h-p counter with its は-row sound flipped between ば and
+    ぱ rows; a plain は-row sound takes the class's own sound. None when it cannot be located."""
+    tail = reading[1:]
+    if len(preferred) < len(tail) + 1 or not preferred.endswith(tail):
+        return None
+    sound_at = len(preferred) - len(tail) - 1
+    plain = reading[0]
+    p, b = HA_ROW[plain]
+    current = preferred[sound_at]
+    if current == p:
+        flipped = b
+    elif current == b:
+        flipped = p
+    elif current == plain:
+        flipped = b if sound == "h-b" else p
+    else:
+        return None
+    return preferred[:sound_at] + flipped + tail
+
+
+def counter_distractors(counter, readings):
+    """Wrong readings a quiz can offer for each key, up to three, none of them an accepted reading.
+
+    Tried in order: the unchanged reading (さんほん); for h-b and h-p the preferred reading with its
+    ば/ぱ sound flipped (さんぽん); the base number's last kana turned into a small っ before the
+    counter's reading, its は-row sound as ぱ row for h-b and h-p (さっぽん). Irregular counters get
+    only the unchanged reading. A base number of one kana (に, ご) has no small-っ form."""
+    sound, reading = counter["sound"], counter["reading"]
+    result = {}
+    for key in COUNTER_KEYS:
+        accepted = set(readings[key])
+        base = BASE_NUMBERS[key]
+        candidates = [base + reading]
+        if sound != "irregular":
+            if sound in ("h-b", "h-p"):
+                candidates.append(_swap_voicing(readings[key][0], reading, sound))
+            if len(base) > 1:
+                rest = _voiced(reading, "p") if sound in ("h-b", "h-p") else reading
+                candidates.append(base[:-1] + "っ" + rest)
+        wrong = []
+        for candidate in candidates:
+            if candidate and candidate not in accepted and candidate not in wrong:
+                wrong.append(candidate)
+        result[key] = wrong[:3]
+    return result
+
+
 NUMBER_KANJI = {"一": "1", "二": "2", "三": "3", "四": "4", "五": "5", "六": "6", "七": "7",
                 "八": "8", "九": "9", "十": "10", "何": "what"}
 # A number is only a counted run when nothing numeric comes before it (二十本 is not 十本).
@@ -942,10 +990,30 @@ def apply_counter_readings(doc):
         readings = counter_readings(c)
         wanted = {key: readings[key] for key in COUNTER_KEYS}
         keys = changed_keys(c, wanted)
-        if c.get("readings") != wanted or list(c.get("readings", {})) != COUNTER_KEYS or c.get("changed") != keys:
-            c["readings"], c["changed"] = wanted, keys
+        wrong = counter_distractors(c, wanted)
+        if (c.get("readings") != wanted or list(c.get("readings", {})) != COUNTER_KEYS or c.get("changed") != keys
+                or c.get("distractors") != wrong or list(c.get("distractors", {})) != COUNTER_KEYS):
+            c["readings"], c["changed"], c["distractors"] = wanted, keys, wrong
             changed = True
     return changed
+
+
+def check_counter_distractors(doc):
+    """Problems in the generated `distractors`, run after `apply_counter_readings`: each is hiragana,
+    at most three per key, and never an accepted reading of its key."""
+    problems = []
+    for c in doc["counters"]:
+        for key in COUNTER_KEYS:
+            wrong = (c.get("distractors") or {}).get(key)
+            if not isinstance(wrong, list) or len(wrong) > 3:
+                problems.append(f"{c['id']}: distractors['{key}'] must be a list of at most three readings")
+                continue
+            for reading in wrong:
+                if not _is_hiragana(reading):
+                    problems.append(f"{c['id']}: distractors['{key}'] has '{reading}', which is not hiragana")
+                elif reading in c["readings"][key]:
+                    problems.append(f"{c['id']}: distractors['{key}'] has '{reading}', an accepted reading")
+    return problems
 
 
 def check_counted_runs(doc, readings):
@@ -1326,6 +1394,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         if problems:
             return 1, capped("counters.json is invalid:", problems)
         apply_counter_readings(counters_doc)
+        problems = check_counter_distractors(counters_doc)
+        if problems:
+            return 1, capped("counters.json has invalid distractors:", problems)
         problems = check_counted_runs(counters_doc, readings)
         if problems:
             return 1, capped("a counted word in counters.json does not read as its counter says:", problems)

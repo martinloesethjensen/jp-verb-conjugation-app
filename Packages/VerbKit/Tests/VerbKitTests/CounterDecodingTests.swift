@@ -45,6 +45,19 @@ final class CounterDecodingTests: XCTestCase {
         XCTAssertEqual(examples.map(\.readings), [["一日": "ついたち"], [:]])
     }
 
+    func testDistractorsDecodeWhenPresentAndDefaultToNone() throws {
+        let with = """
+        {"id": "hon", "counter": "本", "reading": "ほん", "meaning": "m", "sound": "h-b", "symbol": "pencil",
+         "readings": {"3": ["さんぼん"]},
+         "distractors": {"3": ["さんほん", "さんぽん", "さっぽん"], "4": []}}
+        """
+        let counter = try decode(with)
+        XCTAssertEqual(counter.distractors(for: .n(3)), ["さんほん", "さんぽん", "さっぽん"])
+        XCTAssertEqual(counter.distractors(for: .n(4)), [])
+        XCTAssertEqual(counter.distractors(for: .what), [])
+        XCTAssertEqual(try decode(honJSON).distractors(for: .n(3)), [])
+    }
+
     func testOptionalArraysMayBeOmitted() throws {
         let minimal = """
         {"id": "x", "counter": "枚", "reading": "まい", "meaning": "flat", "sound": "plain",

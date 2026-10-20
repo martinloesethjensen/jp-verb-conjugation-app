@@ -1343,5 +1343,69 @@ class VerbIdTests(unittest.TestCase):
             self.assertEqual(ud.run(data_dir, check=True)[0], 0)  # no published data: skipped
 
 
+class CounterDistractorTests(unittest.TestCase):
+    def distractors(self, counter, key):
+        return ud.counter_distractors(counter, ud.counter_readings(counter))[key]
+
+    def test_h_b_gets_unchanged_neighbour_and_misplaced_small_tsu(self):
+        hon = {"reading": "ほん", "sound": "h-b"}
+        self.assertEqual(self.distractors(hon, "3"), ["さんほん", "さんぽん", "さっぽん"])
+
+    def test_a_candidate_equal_to_an_accepted_reading_is_dropped(self):
+        hon = {"reading": "ほん", "sound": "h-b"}
+        # いっぽん is right at 1, so the misplaced-っ candidate disappears.
+        self.assertEqual(self.distractors(hon, "1"), ["いちほん", "いっぼん"])
+
+    def test_a_plain_preferred_h_reading_gets_the_class_sound_as_its_neighbour(self):
+        hon = {"reading": "ほん", "sound": "h-b"}
+        # 2 is にほん; にっぽん would put a small っ after a one-kana number, so it is skipped.
+        self.assertEqual(self.distractors(hon, "2"), ["にぼん"])
+
+    def test_h_p(self):
+        fun = {"reading": "ふん", "sound": "h-p"}
+        self.assertEqual(self.distractors(fun, "3"), ["さんふん", "さんぶん", "さっぷん"])
+
+    def test_non_h_class_gets_unchanged_and_the_geminated_wrong_form(self):
+        mai = {"reading": "まい", "sound": "plain"}
+        # さんまい is the right reading for a plain counter, so only the geminated form is left.
+        self.assertEqual(self.distractors(mai, "3"), ["さっまい"])
+        kai = {"reading": "かい", "sound": "k", "overrides": {"3": ["さんがい", "さんかい"]}}
+        self.assertEqual(self.distractors(kai, "3"), ["さっかい"])
+
+    def test_irregular_counters_get_only_the_unchanged_form(self):
+        overrides = {key: [f"x{key}"] for key in ud.COUNTER_KEYS}
+        overrides.update({"3": ["さんにん"], "4": ["よにん"]})
+        nin = {"reading": "にん", "sound": "irregular", "overrides": overrides}
+        self.assertEqual(self.distractors(nin, "4"), ["よんにん"])
+        self.assertEqual(self.distractors(nin, "3"), [])
+
+    def test_no_distractor_ever_equals_an_accepted_reading_for_any_class(self):
+        for sound, reading in (("plain", "まい"), ("k", "こ"), ("s", "さつ"), ("h-b", "ほん"), ("h-p", "ふん")):
+            counter = {"reading": reading, "sound": sound}
+            readings = ud.counter_readings(counter)
+            for key, wrong in ud.counter_distractors(counter, readings).items():
+                self.assertLessEqual(len(wrong), 3, (sound, key))
+                self.assertEqual(len(wrong), len(set(wrong)), (sound, key))
+                self.assertFalse(set(wrong) & set(readings[key]), (sound, key))
+
+    def test_apply_sets_distractors_and_reports_staleness(self):
+        doc = {"counters": [counter()]}
+        self.assertTrue(ud.apply_counter_readings(doc))
+        self.assertEqual(doc["counters"][0]["distractors"]["3"], ["さんほん", "さんぽん", "さっぽん"])
+        self.assertEqual(list(doc["counters"][0]["distractors"]), ud.COUNTER_KEYS)
+        self.assertFalse(ud.apply_counter_readings(doc))
+        del doc["counters"][0]["distractors"]
+        self.assertTrue(ud.apply_counter_readings(doc))
+
+    def test_the_check_flags_a_distractor_that_is_not_hiragana_or_is_right(self):
+        doc = {"counters": [counter()]}
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counter_distractors(doc), [])
+        doc["counters"][0]["distractors"]["3"] = ["サンボン"]
+        self.assertTrue(any("hiragana" in p for p in ud.check_counter_distractors(doc)))
+        doc["counters"][0]["distractors"]["3"] = ["さんぼん"]
+        self.assertTrue(any("accepted" in p for p in ud.check_counter_distractors(doc)))
+
+
 if __name__ == "__main__":
     unittest.main()
