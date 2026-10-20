@@ -27,7 +27,7 @@ final class ConnectionQuizModelTests: XCTestCase {
         XCTAssertTrue(model.finished)
         XCTAssertEqual(recorded.map(\.outcome), [.correct, .wrong])
         XCTAssertEqual(recorded.map(\.kind), [.connect, .connect])
-        XCTAssertEqual(recorded.first?.verb, "しずか")
+        XCTAssertEqual(recorded.first?.subject, "しずか")
         XCTAssertEqual(recorded.first?.formID, "connect:node:plain")
         XCTAssertEqual(recorded.first?.date, date)
         XCTAssertEqual(model.missedQuestions.map(\.word), ["あめ"])
@@ -42,7 +42,7 @@ final class ConnectionQuizModelTests: XCTestCase {
         var recorded: [QuizAttempt] = []
         let model = ConnectionQuizModel(questions: [cut], recorder: { recorded.append($0) })
         model.choose("きるので")
-        XCTAssertEqual(recorded.map(\.verb), ["きる:切る"])
+        XCTAssertEqual(recorded.map(\.subject), ["きる:切る"])
         XCTAssertEqual(model.currentQuestion?.word, "きる")
     }
 

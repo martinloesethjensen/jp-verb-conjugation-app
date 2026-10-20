@@ -26,7 +26,7 @@ final class QuizHistoryStoreTests: XCTestCase {
     }
 
     private func attempt(_ verb: String) -> QuizAttempt {
-        QuizAttempt(verb: verb, formID: "te", kind: .conjugate, outcome: .correct, date: Date(timeIntervalSince1970: 1))
+        QuizAttempt(subject: verb, formID: "te", kind: .conjugate, outcome: .correct, date: Date(timeIntervalSince1970: 1))
     }
 
     func testConstructionLoadsExistingAttempts() {

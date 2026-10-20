@@ -23,7 +23,7 @@ final class QuizProgressTests: XCTestCase {
         let base = cal.startOfDay(for: now)
         let day = cal.date(byAdding: .day, value: -daysAgo, to: base)!
         let d = cal.date(bySettingHour: hour, minute: minute, second: 0, of: day)!
-        return QuizAttempt(verb: verb, formID: form, kind: .conjugate, outcome: outcome, date: d)
+        return QuizAttempt(subject: verb, formID: form, kind: .conjugate, outcome: outcome, date: d)
     }
 
     private func attempt(outcome: QuizOutcome, daysAgo: Int = 0, hour: Int = 12) -> QuizAttempt {
@@ -79,8 +79,8 @@ final class QuizProgressTests: XCTestCase {
 
     func testIdenticalDatesUseInputOrderLaterIsNewer() {
         let d = now
-        let first = QuizAttempt(verb: "a", formID: "te", kind: .conjugate, outcome: .wrong, date: d)
-        let second = QuizAttempt(verb: "a", formID: "te", kind: .conjugate, outcome: .correct, date: d)
+        let first = QuizAttempt(subject: "a", formID: "te", kind: .conjugate, outcome: .wrong, date: d)
+        let second = QuizAttempt(subject: "a", formID: "te", kind: .conjugate, outcome: .correct, date: d)
         // second is newer (weight 5, correct), first older (weight 4, miss) -> 4/9
         XCTAssertEqual(progress([first, second]).weakPairs[0].weakness, 4.0 / 9.0, accuracy: 1e-9)
         // reversed input: wrong is newer -> 5/9
@@ -104,7 +104,7 @@ final class QuizProgressTests: XCTestCase {
     func testRankingTieBreaksByVerbThenFormID() {
         let d = now
         func w(_ v: String, _ f: String) -> QuizAttempt {
-            QuizAttempt(verb: v, formID: f, kind: .conjugate, outcome: .wrong, date: d)
+            QuizAttempt(subject: v, formID: f, kind: .conjugate, outcome: .wrong, date: d)
         }
         let p = progress([w("b", "te"), w("a", "short_pos"), w("a", "masu_pos")])
         XCTAssertEqual(p.weakPairs.map { "\($0.verb)/\($0.formID)" }, ["a/masu_pos", "a/short_pos", "b/te"])
@@ -168,9 +168,9 @@ final class QuizProgressTests: XCTestCase {
 
     func testMidnightPairInCopenhagenIsTwoConsecutiveDays() {
         let cph = calendar("Europe/Copenhagen")
-        let a = QuizAttempt(verb: "a", formID: "te", kind: .conjugate, outcome: .correct,
+        let a = QuizAttempt(subject: "a", formID: "te", kind: .conjugate, outcome: .correct,
                             date: date(cph, 2026, 6, 14, 23, 59))
-        let b = QuizAttempt(verb: "a", formID: "te", kind: .conjugate, outcome: .correct,
+        let b = QuizAttempt(subject: "a", formID: "te", kind: .conjugate, outcome: .correct,
                             date: date(cph, 2026, 6, 15, 0, 1))
         let p = QuizProgress(attempts: [a, b], calendar: cph, now: date(cph, 2026, 6, 15, 10))
         XCTAssertEqual(p.currentStreak, 2)
@@ -183,7 +183,7 @@ final class QuizProgressTests: XCTestCase {
         for (y, m, d) in [(2026, 3, 29), (2026, 10, 25)] {
             let days = [d - 1, d, d + 1]
             let a = days.map { day in
-                QuizAttempt(verb: "a", formID: "te", kind: .conjugate, outcome: .correct,
+                QuizAttempt(subject: "a", formID: "te", kind: .conjugate, outcome: .correct,
                             date: date(cph, y, m, day, 0, 30))
             }
             let p = QuizProgress(attempts: a, calendar: cph, now: date(cph, y, m, d + 1, 23, 30))
@@ -271,7 +271,7 @@ final class QuizProgressTests: XCTestCase {
         let cal = calendar("America/Santiago")
         let now = date(cal, 2026, 9, 6, 12)
         func a(_ d: Int) -> QuizAttempt {
-            QuizAttempt(verb: "食べる", formID: "te", kind: .conjugate, outcome: .correct, date: date(cal, 2026, 9, d, 12))
+            QuizAttempt(subject: "食べる", formID: "te", kind: .conjugate, outcome: .correct, date: date(cal, 2026, 9, d, 12))
         }
         let p = QuizProgress(attempts: [a(4), a(5), a(6)], calendar: cal, now: now)
         XCTAssertEqual(p.currentStreak, 3)
@@ -285,7 +285,7 @@ final class QuizProgressTests: XCTestCase {
     func testBeforeStartOfDayKeepsYesterdayEveningAndDropsToday() {
         let cal = calendar("Europe/Copenhagen")
         func a(_ d: Int, _ h: Int, _ m: Int) -> QuizAttempt {
-            QuizAttempt(verb: "食べる", formID: "te", kind: .conjugate, outcome: .wrong, date: date(cal, 2026, 6, d, h, m))
+            QuizAttempt(subject: "食べる", formID: "te", kind: .conjugate, outcome: .wrong, date: date(cal, 2026, 6, d, h, m))
         }
         let late = a(14, 23, 59), early = a(15, 0, 1), midnight = a(15, 0, 0)
         let kept = [late, early, midnight].before(startOfDayOf: date(cal, 2026, 6, 15, 9), calendar: cal)
@@ -296,7 +296,7 @@ final class QuizProgressTests: XCTestCase {
 
     /// Connection answers keep the streak and totals but are not verb weak spots.
     func testConnectionAnswersCountTowardTotalsButNotWeakSpots() {
-        let connect = QuizAttempt(verb: "しずか", formID: "connect:node:plain", kind: .connect, outcome: .wrong, date: now)
+        let connect = QuizAttempt(subject: "しずか", formID: "connect:node:plain", kind: .connect, outcome: .wrong, date: now)
         let p = progress([connect])
         XCTAssertEqual(p.totalAnswered, 1)
         XCTAssertEqual(p.currentStreak, 1)

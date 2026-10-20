@@ -23,6 +23,17 @@ public struct WeakForm: Equatable, Sendable {
     public let weakness: Double
 }
 
+public struct WeakCounterPair: Equatable, Sendable {
+    public let counterID: String
+    public let number: CounterNumber
+    public let weakness: Double
+}
+
+public struct WeakCounter: Equatable, Sendable {
+    public let counterID: String
+    public let weakness: Double
+}
+
 /// Weakness, streaks and statistics derived from the quiz history. Pure: no I/O;
 /// the calendar and "now" are injected.
 ///
@@ -44,6 +55,8 @@ public struct QuizProgress: Sendable {
 
 
     public let weakPairs: [WeakPair]
+    public let weakCounterPairs: [WeakCounterPair]
+    public let weakestCounters: [WeakCounter]
     public let currentStreak: Int
     public let bestStreak: Int
     public let totalAnswered: Int
@@ -56,37 +69,33 @@ public struct QuizProgress: Sendable {
     public init(attempts: [QuizAttempt], calendar: Calendar = .current, now: Date = Date()) {
         hasHistory = !attempts.isEmpty
 
-        // Weakness.
-        struct Key: Hashable { let verb: String; let formID: String }
-        var byPair: [Key: [(attempt: QuizAttempt, index: Int)]] = [:]
-        // Connection answers count toward streaks and totals below, but weak spots are
-        // verb and form pairs, which a connection (a word and a pattern) is not.
-        for (i, a) in attempts.enumerated() where a.kind != .connect {
-            byPair[Key(verb: a.verb, formID: a.formID), default: []].append((a, i))
-        }
-        var pairs: [(pair: WeakPair, newest: Date)] = []
-        for (key, list) in byPair {
-            let newestFirst = list.sorted {
-                $0.attempt.date != $1.attempt.date ? $0.attempt.date > $1.attempt.date : $0.index > $1.index
-            }.prefix(Self.window)
-            var missWeight = 0, totalWeight = 0
-            for (offset, entry) in newestFirst.enumerated() {
-                let weight = Self.window - offset
-                totalWeight += weight
-                if entry.attempt.outcome.isMiss { missWeight += weight }
+        // Weakness. Connection and counter answers count toward streaks and totals below, but weak
+        // spots are verb and form pairs, which a connection (a word and a pattern) or a counter
+        // question is not. Counter readings get their own pairs.
+        let verbPairs = Self.pairWeakness(attempts) { $0.kind != .connect && !$0.kind.isCounter }
+            .sorted { Self.ranksBefore($0, $1) }
+        weakPairs = verbPairs.map { WeakPair(verb: $0.subject, formID: $0.formID, weakness: $0.weakness) }
+
+        let numbers = Dictionary(uniqueKeysWithValues: CounterNumber.allCases.enumerated().map { ($1.key, $0) })
+        let counterPairs = Self.pairWeakness(attempts) { $0.kind == .counterReading }
+            .filter { numbers[$0.formID] != nil }
+            .sorted { a, b in
+                if a.weakness != b.weakness { return a.weakness > b.weakness }
+                if a.newest != b.newest { return a.newest > b.newest }
+                if a.subject != b.subject { return a.subject < b.subject }
+                return numbers[a.formID, default: 0] < numbers[b.formID, default: 0]
             }
-            guard missWeight > 0 else { continue }
-            pairs.append((
-                WeakPair(verb: key.verb, formID: key.formID, weakness: Double(missWeight) / Double(totalWeight)),
-                newestFirst[newestFirst.startIndex].attempt.date))
+        weakCounterPairs = counterPairs.compactMap { entry in
+            CounterNumber(key: entry.formID).map {
+                WeakCounterPair(counterID: entry.subject, number: $0, weakness: entry.weakness)
+            }
         }
-        pairs.sort { a, b in
-            if a.pair.weakness != b.pair.weakness { return a.pair.weakness > b.pair.weakness }
-            if a.newest != b.newest { return a.newest > b.newest }
-            if a.pair.verb != b.pair.verb { return a.pair.verb < b.pair.verb }
-            return a.pair.formID < b.pair.formID
-        }
-        weakPairs = pairs.map(\.pair)
+        var counterSums: [String: Double] = [:]
+        for pair in weakCounterPairs { counterSums[pair.counterID, default: 0] += pair.weakness }
+        weakestCounters = counterSums
+            .map { WeakCounter(counterID: $0.key, weakness: $0.value) }
+            .sorted { $0.weakness != $1.weakness ? $0.weakness > $1.weakness : $0.counterID < $1.counterID }
+            .prefix(5).map { $0 }
 
         // Answered counts per day, streaks, totals.
         let answered = attempts.filter { $0.outcome.isAnswered }
@@ -144,10 +153,58 @@ public struct QuizProgress: Sendable {
             .prefix(5).map { $0 }
     }
 
+    /// One (subject, form) pair's weakness over its attempts, newest attempt date and all.
+    private struct PairWeakness {
+        let subject: String
+        let formID: String
+        let weakness: Double
+        let newest: Date
+    }
+
+    /// The pairs with a miss in their window, from the attempts `include` accepts, unsorted.
+    private static func pairWeakness(_ attempts: [QuizAttempt], where include: (QuizAttempt) -> Bool) -> [PairWeakness] {
+        struct Key: Hashable { let subject: String; let formID: String }
+        var byPair: [Key: [(attempt: QuizAttempt, index: Int)]] = [:]
+        for (i, a) in attempts.enumerated() where include(a) {
+            byPair[Key(subject: a.subject, formID: a.formID), default: []].append((a, i))
+        }
+        var result: [PairWeakness] = []
+        for (key, list) in byPair {
+            let newestFirst = list.sorted {
+                $0.attempt.date != $1.attempt.date ? $0.attempt.date > $1.attempt.date : $0.index > $1.index
+            }.prefix(window)
+            var missWeight = 0, totalWeight = 0
+            for (offset, entry) in newestFirst.enumerated() {
+                let weight = window - offset
+                totalWeight += weight
+                if entry.attempt.outcome.isMiss { missWeight += weight }
+            }
+            guard missWeight > 0 else { continue }
+            result.append(PairWeakness(
+                subject: key.subject, formID: key.formID,
+                weakness: Double(missWeight) / Double(totalWeight),
+                newest: newestFirst[newestFirst.startIndex].attempt.date))
+        }
+        return result
+    }
+
+    /// Weakness descending, then newest attempt date descending, then subject and form id ascending.
+    private static func ranksBefore(_ a: PairWeakness, _ b: PairWeakness) -> Bool {
+        if a.weakness != b.weakness { return a.weakness > b.weakness }
+        if a.newest != b.newest { return a.newest > b.newest }
+        if a.subject != b.subject { return a.subject < b.subject }
+        return a.formID < b.formID
+    }
+
     /// The start of the day `days` away from `day`. Re-anchored with `startOfDay` because
     /// in zones where a DST change skips local midnight, adding a day lands on 01:00.
     private static func shifted(_ day: Date, by days: Int, _ calendar: Calendar) -> Date? {
         calendar.date(byAdding: .day, value: days, to: day).map { calendar.startOfDay(for: $0) }
+    }
+
+    /// The weak counter pairs whose counter is in `counters`, in the same order.
+    public func weakCounterPairs(among counters: Set<String>) -> [WeakCounterPair] {
+        weakCounterPairs.filter { counters.contains($0.counterID) }
     }
 
     /// The weak pairs whose verb is in `verbs`, in the same order.

@@ -8,6 +8,18 @@ public enum QuizQuestionKind: String, CaseIterable, Sendable {
     /// A connection question (しずか + ので → しずかなので). Only recorded in quiz history:
     /// connection questions have their own screen, and `buildQuestions` never makes one.
     case connect
+    /// A counter question: given a thing (傘), pick its counter (本). Only recorded in quiz
+    /// history, with the thing's word as the form id: counter questions have their own screen.
+    case counterChoice
+    /// A counter question: given a counted form (三本), pick its reading. Only recorded in quiz
+    /// history, with the number key ("3", "what") as the form id.
+    case counterReading
+
+    /// A counter question, which verb code (the verb quiz, weak spots, the widget) never handles.
+    public var isCounter: Bool { self == .counterChoice || self == .counterReading }
+
+    /// The kinds the verb quiz may build. `allCases` also holds kinds with their own screens.
+    public static let verbKinds: [QuizQuestionKind] = [.conjugate, .identify, .fillIn]
 }
 
 public struct QuizQuestion: Equatable, Sendable {

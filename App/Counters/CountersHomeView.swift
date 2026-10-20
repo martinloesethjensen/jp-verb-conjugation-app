@@ -7,6 +7,7 @@ struct CountersHomeView: View {
     @Binding var destination: CounterDestination?
     @Binding var column: NavigationSplitViewColumn
     var onSettings: () -> Void
+    var onQuiz: () -> Void
     @State private var search = ""
     @State private var scope: LevelScope = .mine
     @FocusState private var searchFocused: Bool
@@ -54,6 +55,10 @@ struct CountersHomeView: View {
             .levelScopeBar(isActive: levelsHidden, scope: $scope)
             .onChange(of: search) { if search.isEmpty { scope = .mine } }
             .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Quiz", systemImage: "gamecontroller", action: onQuiz)
+                        .disabled(store.counters.isEmpty)
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Menu("More", systemImage: "ellipsis") {
                         Button("Settings", systemImage: "gearshape", action: onSettings)

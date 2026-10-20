@@ -131,7 +131,7 @@ final class VerbIDTests: XCTestCase {
         let viewModel = QuizViewModel(questions: [question], recorder: { recorded.append($0) })
         viewModel.choose("きります")
 
-        XCTAssertEqual(recorded.map(\.verb), ["きる:切る"])
+        XCTAssertEqual(recorded.map(\.subject), ["きる:切る"])
         // The results screen still shows the kana.
         XCTAssertEqual(viewModel.results.map(\.verb), ["きる"])
     }

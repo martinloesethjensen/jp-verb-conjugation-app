@@ -8,6 +8,8 @@ struct CounterDetailView: View {
     var focus: CounterNumber?
     @Environment(CountersStore.self) private var store
     @Environment(\.furiganaDictionary) private var furigana
+    @Environment(\.startCounterQuiz) private var startQuiz
+    @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     /// The number the playground shows; the readings grid rings the same one.
     @State private var number: CounterNumber
 
@@ -33,6 +35,7 @@ struct CounterDetailView: View {
                     if !counter.examples.isEmpty { examplesSection }
                     if !counter.pitfalls.isEmpty { pitfallsSection }
                     if !store.related(to: counter).isEmpty { relatedSection }
+                    if !buildCounterQuestions(for: counter, count: 1).isEmpty { practiseSection }
                 }
                 .padding()
                 .frame(maxWidth: 720, alignment: .leading)
@@ -158,6 +161,19 @@ struct CounterDetailView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// A read-it quiz about this counter alone.
+    private var practiseSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("Practise")
+            Button {
+                startQuiz(buildCounterQuestions(for: counter, count: quizQuestionCount))
+            } label: {
+                Label("Practise this counter", systemImage: "graduationcap")
+            }
+            .buttonStyle(.glass)
         }
     }
 

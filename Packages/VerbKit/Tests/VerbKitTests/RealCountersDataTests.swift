@@ -44,6 +44,18 @@ final class RealCountersDataTests: XCTestCase {
         }
     }
 
+    func testDistractorsAreWrongReadingsNeverAcceptedOnes() throws {
+        let file = try load()
+        XCTAssertEqual(try counter("hon", in: file).distractors(for: .n(3)), ["さんほん", "さんぽん", "さっぽん"])
+        for counter in file.counters {
+            for number in CounterNumber.allCases {
+                let wrong = counter.distractors(for: number)
+                XCTAssertLessThanOrEqual(wrong.count, 3, "\(counter.id) \(number.key)")
+                XCTAssertTrue(Set(wrong).isDisjoint(with: counter.readings(for: number)), "\(counter.id) \(number.key)")
+            }
+        }
+    }
+
     func testKnownReadings() throws {
         let file = try load()
         XCTAssertEqual(try counter("hon", in: file).readings(for: .n(3)).first, "さんぼん")

@@ -68,7 +68,7 @@ final class VerbModelContainerTests: XCTestCase {
             let old = ModelConfiguration(schema: schema, url: directory.appendingPathComponent("VerbKit.sqlite"))
             let context = ModelContext(try ModelContainer(for: schema, configurations: [old]))
             context.insert(VerbEntity(verb))
-            context.insert(QuizAttemptEntity(QuizAttempt(verb: verb.dict, formID: "te", kind: .conjugate, outcome: .correct, date: Date())))
+            context.insert(QuizAttemptEntity(QuizAttempt(subject: verb.dict, formID: "te", kind: .conjugate, outcome: .correct, date: Date())))
             try context.save()
         }
 

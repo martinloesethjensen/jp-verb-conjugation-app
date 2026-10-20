@@ -59,7 +59,7 @@ struct RootView: View {
         if let quizLink {
             let verbs = verbStore.verbs.visible(in: LevelSettings.load())
             let topics = quizLink.topic.map { Set([$0]) } ?? Set(QuizTopic.allCases)
-            let questions = buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount, kinds: QuizQuestionKind.allCases)
+            let questions = buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount, kinds: QuizQuestionKind.verbKinds)
             if !questions.isEmpty { quizQuestions = questions }
         } else {
             incomingRoute = route
@@ -230,10 +230,10 @@ struct RootView: View {
     private func questions(for selection: QuizSelection, verbs: [Verb]) -> [QuizQuestion] {
         switch selection {
         case .topics(let topics):
-            return buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount, kinds: QuizQuestionKind.allCases)
+            return buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount, kinds: QuizQuestionKind.verbKinds)
         case .weakSpots:
             // Takes the first N buildable pairs in rank order, then shuffles the quiz.
-            return buildQuestions(pairs: weakPairs(in: verbs), among: verbs, count: quizQuestionCount, kinds: QuizQuestionKind.allCases).shuffled()
+            return buildQuestions(pairs: weakPairs(in: verbs), among: verbs, count: quizQuestionCount, kinds: QuizQuestionKind.verbKinds).shuffled()
         case .connections:
             return []  // started from onStart instead
         }
