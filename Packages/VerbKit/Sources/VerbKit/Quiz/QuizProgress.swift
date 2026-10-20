@@ -62,7 +62,7 @@ public struct QuizProgress: Sendable {
         // Connection answers count toward streaks and totals below, but weak spots are
         // verb and form pairs, which a connection (a word and a pattern) is not.
         for (i, a) in attempts.enumerated() where a.kind != .connect {
-            byPair[Key(verb: a.verb, formID: a.formID), default: []].append((a, i))
+            byPair[Key(verb: a.subject, formID: a.formID), default: []].append((a, i))
         }
         var pairs: [(pair: WeakPair, newest: Date)] = []
         for (key, list) in byPair {

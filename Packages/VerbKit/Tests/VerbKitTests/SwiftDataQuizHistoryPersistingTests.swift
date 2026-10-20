@@ -11,7 +11,7 @@ final class SwiftDataQuizHistoryPersistingTests: XCTestCase {
     }
 
     private func attempt(_ verb: String, _ outcome: QuizOutcome = .correct, kind: QuizQuestionKind = .conjugate, at t: TimeInterval) -> QuizAttempt {
-        QuizAttempt(verb: verb, formID: "te", kind: kind, outcome: outcome, date: Date(timeIntervalSince1970: t))
+        QuizAttempt(subject: verb, formID: "te", kind: kind, outcome: outcome, date: Date(timeIntervalSince1970: t))
     }
 
     func testLoadAllIsEmptyInitially() throws {
@@ -50,8 +50,8 @@ final class SwiftDataQuizHistoryPersistingTests: XCTestCase {
         let (p, context) = try make()
         let good = attempt("a", at: 1)
         try p.append(good)
-        context.insert(QuizAttemptEntity(id: UUID(), verb: "x", formID: "te", kindRaw: "bogus", outcomeRaw: "correct", date: Date()))
-        context.insert(QuizAttemptEntity(id: UUID(), verb: "y", formID: "te", kindRaw: "conjugate", outcomeRaw: "bogus", date: Date()))
+        context.insert(QuizAttemptEntity(id: UUID(), subject: "x", formID: "te", kindRaw: "bogus", outcomeRaw: "correct", date: Date()))
+        context.insert(QuizAttemptEntity(id: UUID(), subject: "y", formID: "te", kindRaw: "conjugate", outcomeRaw: "bogus", date: Date()))
         try context.save()
         XCTAssertEqual(try p.loadAll(), [good])
     }

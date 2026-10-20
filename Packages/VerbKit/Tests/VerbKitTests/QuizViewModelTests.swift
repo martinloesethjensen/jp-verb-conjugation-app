@@ -151,7 +151,7 @@ final class QuizViewModelTests: XCTestCase {
         vm.markTimedOut()
         vm.markTimedOut()
         XCTAssertEqual(attempts.map(\.outcome), [.correct, .wrong, .timedOut])
-        XCTAssertEqual(attempts.map(\.verb), ["v1", "v2", "v3"])
+        XCTAssertEqual(attempts.map(\.subject), ["v1", "v2", "v3"])
         XCTAssertEqual(attempts.map(\.formID), ["masu_pos", "masu_pos", "masu_pos"])
         XCTAssertEqual(attempts.map(\.kind), [.conjugate, .conjugate, .conjugate])
         XCTAssertEqual(attempts.map(\.date), [date, date, date])

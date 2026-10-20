@@ -11,18 +11,19 @@ public enum QuizOutcome: String, Sendable, Codable {
 
 public struct QuizAttempt: Equatable, Sendable, Identifiable {
     public let id: UUID
-    public var verb: String
+    /// A `Verb.id` for a verb question, a `Counter.id` for a counter question.
+    public var subject: String
     public var formID: String
     public var kind: QuizQuestionKind
     public var outcome: QuizOutcome
     public var date: Date
 
     public init(
-        id: UUID = UUID(), verb: String, formID: String,
+        id: UUID = UUID(), subject: String, formID: String,
         kind: QuizQuestionKind, outcome: QuizOutcome, date: Date
     ) {
         self.id = id
-        self.verb = verb
+        self.subject = subject
         self.formID = formID
         self.kind = kind
         self.outcome = outcome

@@ -18,7 +18,7 @@ let package = Package(
         .testTarget(
             name: "VerbKitTests",
             dependencies: ["VerbKit"],
-            resources: [.copy("Fixtures/verbs-fixture.json")]
+            resources: [.copy("Fixtures/verbs-fixture.json"), .copy("Fixtures/quiz-history-v1.sqlite")]
         )
     ],
     swiftLanguageModes: [.v5]
