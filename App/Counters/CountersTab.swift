@@ -36,16 +36,14 @@ struct CountersTab: View {
     }
 }
 
-/// The page for one destination. The group table and counter page replace the placeholders in
-/// the next two tasks.
+/// The page for one destination. The counter page replaces its placeholder in the next task.
 struct CounterDestinationView: View {
     let destination: CounterDestination
 
     var body: some View {
         switch destination {
         case let .group(group):
-            Text(group.title)
-                .navigationTitle(group.title)
+            GroupTableView(group: group)
         case let .counter(counter, _):
             Text(counter.counter)
                 .navigationTitle(counter.counter)
