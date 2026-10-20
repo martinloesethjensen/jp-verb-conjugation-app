@@ -917,6 +917,8 @@ def check_counters(doc, readings):
             problems.append(f"{cid}: sound must be one of {SOUND_CLASSES}")
         elif sound in ("h-b", "h-p") and _is_hiragana(c.get("reading")) and c["reading"][0] not in HA_ROW:
             problems.append(f"{cid}: an {sound} counter's reading must start on the は-row")
+        if "countsObjects" in c and not isinstance(c["countsObjects"], bool):
+            problems.append(f"{cid}: countsObjects must be true or false")
         overrides = c.get("overrides", {})
         if not isinstance(overrides, dict):
             problems.append(f"{cid}: overrides must be an object")

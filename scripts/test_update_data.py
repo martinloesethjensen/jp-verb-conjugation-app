@@ -1397,6 +1397,18 @@ class CounterDistractorTests(unittest.TestCase):
         del doc["counters"][0]["distractors"]
         self.assertTrue(ud.apply_counter_readings(doc))
 
+    def test_counts_objects_is_an_optional_boolean(self):
+        ok = ud.check_counters(counters_doc(counter(countsObjects=False)), COUNTER_READINGS)
+        self.assertEqual(ok, [])
+        self.assertEqual(ud.check_counters(counters_doc(counter(countsObjects=True)), COUNTER_READINGS), [])
+        for bad in ("no", 0, None):
+            problems = ud.check_counters(counters_doc(counter(countsObjects=bad)), COUNTER_READINGS)
+            self.assertTrue(any("countsObjects" in p for p in problems), (bad, problems))
+        # apply_counter_readings leaves the hand-written flag alone.
+        doc = {"counters": [counter(countsObjects=False)]}
+        ud.apply_counter_readings(doc)
+        self.assertIs(doc["counters"][0]["countsObjects"], False)
+
     def test_the_check_flags_a_distractor_that_is_not_hiragana_or_is_right(self):
         doc = {"counters": [counter()]}
         ud.apply_counter_readings(doc)

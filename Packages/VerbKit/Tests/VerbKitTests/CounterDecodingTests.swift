@@ -58,6 +58,15 @@ final class CounterDecodingTests: XCTestCase {
         XCTAssertEqual(try decode(honJSON).distractors(for: .n(3)), [])
     }
 
+    func testCountsObjectsDefaultsToTrueAndDecodesFalse() throws {
+        XCTAssertTrue(try decode(honJSON).countsObjects)
+        let json = """
+        {"id": "nen", "counter": "年", "reading": "ねん", "meaning": "years", "sound": "plain", "symbol": "calendar",
+         "readings": {"1": ["いちねん"]}, "countsObjects": false}
+        """
+        XCTAssertFalse(try decode(json).countsObjects)
+    }
+
     func testOptionalArraysMayBeOmitted() throws {
         let minimal = """
         {"id": "x", "counter": "枚", "reading": "まい", "meaning": "flat", "sound": "plain",

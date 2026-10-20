@@ -7,14 +7,14 @@ final class CounterQuestionTests: XCTestCase {
     private func make(
         _ id: String, _ written: String, _ reading: String, _ meaning: String, sound: String = "plain",
         readings: [String: [String]] = [:], distractors: [String: [String]] = [:], changed: [String] = [],
-        things: [CountedThing] = []
+        things: [CountedThing] = [], countsObjects: Bool = true
     ) -> Counter {
         var all: [String: [String]] = [:]
         for (key, base) in zip(CounterNumber.allCases.map(\.key), Self.bases) { all[key] = [base + reading] }
         all.merge(readings) { _, new in new }
         return Counter(
             id: id, counter: written, reading: reading, meaning: meaning, jlpt: .n5, sound: sound, symbol: "circle",
-            readings: all, changed: changed, distractors: distractors, things: things
+            readings: all, changed: changed, distractors: distractors, countsObjects: countsObjects, things: things
         )
     }
 
@@ -87,6 +87,19 @@ final class CounterQuestionTests: XCTestCase {
         XCTAssertNil(choice().first { $0.prompt == "椅子" })
     }
 
+    func testThingsOfACounterThatMeasuresRatherThanCountsMakeNoQuestionAndAreNeverOffered() throws {
+        // 結婚 under 年 (years of marriage) is as natural with 回: it is not a thing 年 counts.
+        let nen = make("nen", "年", "ねん", "years", things: [thing("結婚", "marriage", .primary)], countsObjects: false)
+        let kai = make("kai", "回", "かい", "times", things: [thing("試験", "exam", .primary)], countsObjects: false)
+        let questions = choice(all + [nen, kai])
+        XCTAssertNil(questions.first { $0.prompt == "結婚" })
+        XCTAssertNil(questions.first { $0.prompt == "試験" })
+        XCTAssertFalse(questions.isEmpty)
+        XCTAssertFalse(questions.contains { $0.choices.contains("年") || $0.choices.contains("回") })
+        // Read it still covers them: it asks about the counter's own readings.
+        XCTAssertFalse(reading([nen]).isEmpty)
+    }
+
     func testWrongCountersFromTheSameGroupComeFirst() throws {
         let umbrella = try XCTUnwrap(choice().first { $0.prompt == "傘" })
         // 本's group holds 匹; 杯 and 羽 follow in input order; 人 and つ are left out.
@@ -149,6 +162,13 @@ final class CounterQuestionTests: XCTestCase {
         XCTAssertTrue(q.choices.contains("さんにん"), "the nearest number's reading fills a gap")
         XCTAssertEqual(q.choices.filter { q.accepted.contains($0) }, ["よにん"])
         XCTAssertEqual(q.explanation, "人 is irregular: learn each reading. 四人 is よにん")
+    }
+
+    func testANumberThatDoesNotChangeSaysSoInsteadOfClaimingItChanges() throws {
+        let q = try XCTUnwrap(reading().first { $0.counterID == "hon" && $0.formID == "2" })
+        XCTAssertEqual(q.explanation, "本 keeps its plain reading at 2: にほん. It changes at 1, 3, 6, 8, 10 and 何.")
+        let changing = try XCTUnwrap(reading().first { $0.counterID == "hon" && $0.formID == "3" })
+        XCTAssertEqual(changing.explanation, "本 changes at 1, 3, 6, 8, 10 and 何: さんぼん")
     }
 
     func testAPlainCounterExplainsThatNothingChanges() throws {

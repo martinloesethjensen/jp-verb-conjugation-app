@@ -47,7 +47,8 @@ public struct CounterQuestion: Equatable, Sendable, Identifiable {
 
 /// Counter questions of one kind, shuffled and capped at `count`.
 ///
-/// - `.counterChoice`: one question per distinct thing word. The right counters are the ones that
+/// - `.counterChoice`: one question per distinct thing word, from counters that count objects
+///   (`countsObjects`). The right counters are the ones that
 ///   list the word with the best fit; a word whose best fit is `casual` (the つ and 個 fallbacks)
 ///   makes no question. The wrong choices are counters that do not list the word at all, those
 ///   sharing a group with a right counter first, then the rest in order. A question that cannot
@@ -87,7 +88,9 @@ public func buildCounterQuestions(
 
 // MARK: Which counter?
 
-private func whichCounterQuestions(counters: [Counter], groups: [CounterGroup]) -> [CounterQuestion] {
+private func whichCounterQuestions(counters all: [Counter], groups: [CounterGroup]) -> [CounterQuestion] {
+    // Counters that measure (年, 回) are neither answers nor wrong choices here.
+    let counters = all.filter(\.countsObjects)
     var words: [String] = []
     var listings: [String: [(counter: Counter, thing: CountedThing)]] = [:]
     for counter in counters {
@@ -176,5 +179,7 @@ private func readingExplanation(for counter: Counter, number: CounterNumber, pre
     let changed = CounterNumber.allCases.filter(counter.isChanged).map { $0 == .what ? "何" : $0.key }
     guard let last = changed.last else { return "\(counter.counter) has no sound changes: \(preferred)" }
     let list = changed.count == 1 ? last : changed.dropLast().joined(separator: ", ") + " and " + last
-    return "\(counter.counter) changes at \(list): \(preferred)"
+    if counter.isChanged(number) { return "\(counter.counter) changes at \(list): \(preferred)" }
+    // A number that keeps its plain reading: say so, or "changes at …: にほん" reads as if it changed.
+    return "\(counter.counter) keeps its plain reading at \(number == .what ? "何" : number.key): \(preferred). It changes at \(list)."
 }
