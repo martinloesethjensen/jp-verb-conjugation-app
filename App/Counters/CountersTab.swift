@@ -36,7 +36,7 @@ struct CountersTab: View {
     }
 }
 
-/// The page for one destination. The counter page replaces its placeholder in the next task.
+/// The page for one destination.
 struct CounterDestinationView: View {
     let destination: CounterDestination
 
@@ -44,9 +44,8 @@ struct CounterDestinationView: View {
         switch destination {
         case let .group(group):
             GroupTableView(group: group)
-        case let .counter(counter, _):
-            Text(counter.counter)
-                .navigationTitle(counter.counter)
+        case let .counter(counter, focus):
+            CounterDetailView(counter: counter, focus: focus)
         case .all:
             CounterListView()
         }
