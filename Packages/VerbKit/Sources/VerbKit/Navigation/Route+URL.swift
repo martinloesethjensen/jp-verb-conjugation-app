@@ -4,7 +4,8 @@ public extension Route {
     /// The custom URL scheme the app registers; widgets use it to open a verb.
     static let urlScheme = "verbtable"
 
-    /// `verbtable://verb/<id>` or `verbtable://grammar/<id>`, with the id percent-encoded.
+    /// `verbtable://verb/<id>`, `grammar/<id>`, `counter/<id>` or `counters/<id>` (a group),
+    /// with the id percent-encoded.
     var url: URL {
         var components = URLComponents()
         components.scheme = Self.urlScheme
@@ -14,6 +15,12 @@ public extension Route {
             components.percentEncodedPath = "/" + Self.encode(id)
         case let .grammar(id):
             components.host = "grammar"
+            components.percentEncodedPath = "/" + Self.encode(id)
+        case let .counter(id):
+            components.host = "counter"
+            components.percentEncodedPath = "/" + Self.encode(id)
+        case let .counterGroup(id):
+            components.host = "counters"
             components.percentEncodedPath = "/" + Self.encode(id)
         }
         return components.url!
@@ -28,6 +35,8 @@ public extension Route {
         switch host {
         case "verb": self = .verb(id)
         case "grammar": self = .grammar(id)
+        case "counter": self = .counter(id)
+        case "counters": self = .counterGroup(id)
         default: return nil
         }
     }

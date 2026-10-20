@@ -67,8 +67,8 @@ struct MainTabView<VerbsTab: View>: View {
             grammarSelection = point
             grammarColumn = .detail
             tab = .grammar
-        case nil:
-            break
+        case .counter?, .counterGroup?, nil:
+            break   // the Counters tab opens these (Task 9)
         }
     }
 }
