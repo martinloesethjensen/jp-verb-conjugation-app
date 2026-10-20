@@ -75,6 +75,16 @@ public func buildCounterQuestions(for counter: Counter, count: Int) -> [CounterQ
     return Array(readItQuestions(for: counter).shuffled().prefix(count))
 }
 
+/// Read it questions for exactly the given (counter, number) pairs, in order and unshuffled, so a
+/// caller can ask about specific weak spots. A pair with no wrong choice to offer is skipped and the
+/// result is never padded.
+public func buildCounterQuestions(
+    pairs: [(counter: Counter, number: CounterNumber)], count: Int
+) -> [CounterQuestion] {
+    guard count > 0 else { return [] }
+    return Array(pairs.compactMap { readItQuestion(for: $0.counter, number: $0.number) }.prefix(count))
+}
+
 // MARK: Which counter?
 
 private func whichCounterQuestions(counters: [Counter], groups: [CounterGroup]) -> [CounterQuestion] {
@@ -122,18 +132,20 @@ private func whichCounterQuestions(counters: [Counter], groups: [CounterGroup]) 
 // MARK: Read it
 
 private func readItQuestions(for counter: Counter) -> [CounterQuestion] {
-    CounterNumber.allCases.compactMap { number in
-        let accepted = counter.readings(for: number)
-        guard let preferred = accepted.first else { return nil }
-        let wrong = wrongReadings(for: counter, number: number, accepted: Set(accepted))
-        guard !wrong.isEmpty else { return nil }
-        return CounterQuestion(
-            kind: .counterReading, counterID: counter.id, formID: number.key,
-            prompt: counter.written(number), detail: counter.meaning, correct: preferred,
-            accepted: Set(accepted), choices: ([preferred] + wrong).shuffled(),
-            explanation: readingExplanation(for: counter, number: number, preferred: preferred)
-        )
-    }
+    CounterNumber.allCases.compactMap { readItQuestion(for: counter, number: $0) }
+}
+
+private func readItQuestion(for counter: Counter, number: CounterNumber) -> CounterQuestion? {
+    let accepted = counter.readings(for: number)
+    guard let preferred = accepted.first else { return nil }
+    let wrong = wrongReadings(for: counter, number: number, accepted: Set(accepted))
+    guard !wrong.isEmpty else { return nil }
+    return CounterQuestion(
+        kind: .counterReading, counterID: counter.id, formID: number.key,
+        prompt: counter.written(number), detail: counter.meaning, correct: preferred,
+        accepted: Set(accepted), choices: ([preferred] + wrong).shuffled(),
+        explanation: readingExplanation(for: counter, number: number, preferred: preferred)
+    )
 }
 
 /// Up to three wrong readings: the generated ones, then the preferred readings of the nearest

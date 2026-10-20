@@ -179,6 +179,21 @@ final class CounterQuestionTests: XCTestCase {
         XCTAssertEqual(buildCounterQuestions(for: hon, count: 3).count, 3)
     }
 
+    func testPairsAreAskedInOrderUnshuffledAndSkippedWhenNothingIsWrong() {
+        let questions = buildCounterQuestions(
+            pairs: [(nin, .n(4)), (hon, .n(3)), (hon, .what)], count: 100
+        )
+        XCTAssertEqual(questions.map(\.counterID), ["nin", "hon", "hon"])
+        XCTAssertEqual(questions.map(\.formID), ["4", "3", "what"])
+        XCTAssertTrue(questions.allSatisfy { $0.kind == .counterReading })
+        XCTAssertEqual(buildCounterQuestions(pairs: [(hon, .n(3)), (nin, .n(4))], count: 1).map(\.formID), ["3"])
+        let same = make("y", "枚", "まい", "m", readings: Dictionary(
+            uniqueKeysWithValues: CounterNumber.allCases.map { ($0.key, ["おなじ"]) }
+        ))
+        XCTAssertTrue(buildCounterQuestions(pairs: [(same, .n(3))], count: 5).isEmpty)
+        XCTAssertTrue(buildCounterQuestions(pairs: [], count: 5).isEmpty)
+    }
+
     func testOtherKindsBuildNothing() {
         XCTAssertTrue(buildCounterQuestions(counters: all, groups: [], kind: .conjugate, count: 10).isEmpty)
     }
