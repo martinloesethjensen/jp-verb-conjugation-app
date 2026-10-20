@@ -42,6 +42,27 @@ class CollectTests(unittest.TestCase):
     def test_dictionary_form_falls_back_to_kana(self):
         self.assertIn("ある", ga.collect_texts(self.verbs, self.grammar))
 
+    def test_counter_readings_things_and_examples_are_spoken_from_kana(self):
+        counters = {"counters": [{
+            "counter": "日",
+            "readings": {"1": ["ついたち"], "8": ["ようか", "ようか"], "what": ["なんにち"]},
+            "things": [{"word": "誕生日", "kana": "たんじょうび"}],
+            "examples": [
+                {"jp": "二日です。", "en": "x"},
+                {"jp": "一日に行く。", "en": "x", "readings": {"一日": "ついたち"}},
+            ],
+            "pitfalls": [{"examples": [{"jp": "一日休む。", "en": "x", "readings": {"一日": "いちにち"}}]}],
+        }]}
+        furigana = {"一日": "いちにち", "二日": "ふつか", "行": "い", "休": "やす"}
+        texts = ga.collect_texts({}, {}, counters, furigana)
+        for expected in ("ついたち", "ようか", "なんにち", "たんじょうび", "二日です。",
+                         "ついたちにいく。", "いちにちやすむ。"):
+            self.assertIn(expected, texts)
+        # Kanji written forms are never spoken: 一日 is not a text on its own, and an overridden
+        # example is spoken from its kana, not the written sentence.
+        self.assertNotIn("一日に行く。", texts)
+        self.assertNotIn("一日", texts)
+
     def test_real_data_is_collectable(self):
         texts = ga.load_texts()
         self.assertTrue(texts)

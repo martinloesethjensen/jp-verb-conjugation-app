@@ -98,8 +98,12 @@ struct RootView: View {
             if let url = SpotlightIndexer.url(from: activity) { open(url) }
         }
         // Keep Spotlight in step with the data (replaces the whole index, so only when ids change).
-        .task(id: verbStore.verbs.map(\.id) + verbStore.grammarPoints.map(\.id)) {
-            await SpotlightIndexer.index(verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints)
+        .task(id: verbStore.verbs.map(\.id) + verbStore.grammarPoints.map(\.id)
+            + countersStore.counters.map(\.id) + countersStore.groups.map(\.id)) {
+            await SpotlightIndexer.index(
+                verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints,
+                counters: countersStore.counters, groups: countersStore.groups
+            )
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack {

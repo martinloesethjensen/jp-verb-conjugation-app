@@ -32,6 +32,19 @@ final class CounterDecodingTests: XCTestCase {
         XCTAssertEqual(hon.related, ["hai"])
     }
 
+    func testPitfallExamplesKeepTheirReadingOverrides() throws {
+        let json = """
+        {"id": "x", "counter": "日", "reading": "にち", "meaning": "days", "sound": "irregular", "symbol": "calendar",
+         "readings": {"1": ["ついたち"]},
+         "pitfalls": [{"heading": "h", "explanation": "e",
+                       "examples": [{"jp": "一日に行きます。", "en": "x", "readings": {"一日": "ついたち"}},
+                                    {"jp": "二日です。", "en": "y"}]}]}
+        """
+        let counter = try decode(json)
+        let examples = try XCTUnwrap(counter.pitfalls.first?.examples)
+        XCTAssertEqual(examples.map(\.readings), [["一日": "ついたち"], [:]])
+    }
+
     func testOptionalArraysMayBeOmitted() throws {
         let minimal = """
         {"id": "x", "counter": "枚", "reading": "まい", "meaning": "flat", "sound": "plain",

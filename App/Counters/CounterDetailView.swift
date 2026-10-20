@@ -154,7 +154,7 @@ struct CounterDetailView: View {
                     JapaneseText(pitfall.explanation).font(.subheadline)
                     ForEach(Array(pitfall.examples.enumerated()), id: \.offset) { _, example in
                         Divider()
-                        ExampleRow(example: example)
+                        CounterExampleRow(example: example, dictionary: furigana)
                     }
                 }
             }
@@ -180,8 +180,15 @@ struct CounterExampleRow: View {
     let example: CounterExample
     let dictionary: FuriganaDictionary?
 
+    /// An example with its own readings is spoken from its kana, so the voice cannot read 一日 the
+    /// wrong way. Others are spoken as written.
+    private var speech: String? {
+        guard !example.readings.isEmpty else { return nil }
+        return (dictionary ?? .empty).merging(example.readings).reading(of: example.jp)
+    }
+
     var body: some View {
-        ExampleRow(example: GrammarExample(jp: example.jp, en: example.en))
+        ExampleRow(example: GrammarExample(jp: example.jp, en: example.en), speech: speech)
             .environment(\.furiganaDictionary, dictionary.map { example.furigana(over: $0) })
     }
 }
