@@ -2,11 +2,12 @@ import Charts
 import SwiftUI
 import VerbKit
 
-/// The Progress sheet: streaks, totals, the last 7 days and the weakest verbs and forms,
+/// The Progress sheet: streaks, totals, the last 7 days and the weakest verbs, forms and counters,
 /// all derived from the quiz history each time it renders.
 struct QuizProgressView: View {
     @Environment(QuizHistoryStore.self) private var quizHistory
     @Environment(VerbStore.self) private var verbStore
+    @Environment(CountersStore.self) private var countersStore
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -84,6 +85,26 @@ struct QuizProgressView: View {
                                 if let kanji = kanji(forID: weak.verb) {
                                     Text(kanji).font(.caption).foregroundStyle(.secondary)
                                 }
+                            }
+                            Spacer()
+                            WeaknessBar(value: weak.weakness / top)
+                        }
+                    }
+                }
+            }
+            if !progress.weakestCounters.isEmpty {
+                Section("Weakest counters") {
+                    let top = progress.weakestCounters.map(\.weakness).max() ?? 1
+                    ForEach(progress.weakestCounters, id: \.counterID) { weak in
+                        HStack {
+                            // A counter id the store no longer has shows as its id, never a crash.
+                            if let counter = countersStore.counter(id: weak.counterID) {
+                                VStack(alignment: .leading) {
+                                    Text(counter.counter).font(.title3.weight(.bold))
+                                    Text("\(counter.reading) · \(counter.meaning)").font(.caption).foregroundStyle(.secondary)
+                                }
+                            } else {
+                                Text(weak.counterID).font(.body)
                             }
                             Spacer()
                             WeaknessBar(value: weak.weakness / top)
