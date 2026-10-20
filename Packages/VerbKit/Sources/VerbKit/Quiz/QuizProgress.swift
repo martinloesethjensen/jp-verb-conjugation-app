@@ -59,9 +59,10 @@ public struct QuizProgress: Sendable {
         // Weakness.
         struct Key: Hashable { let verb: String; let formID: String }
         var byPair: [Key: [(attempt: QuizAttempt, index: Int)]] = [:]
-        // Connection answers count toward streaks and totals below, but weak spots are
-        // verb and form pairs, which a connection (a word and a pattern) is not.
-        for (i, a) in attempts.enumerated() where a.kind != .connect {
+        // Connection and counter answers count toward streaks and totals below, but weak spots
+        // are verb and form pairs, which a connection (a word and a pattern) or a counter
+        // question is not.
+        for (i, a) in attempts.enumerated() where a.kind != .connect && !a.kind.isCounter {
             byPair[Key(verb: a.subject, formID: a.formID), default: []].append((a, i))
         }
         var pairs: [(pair: WeakPair, newest: Date)] = []
