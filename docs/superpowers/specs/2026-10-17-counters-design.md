@@ -298,8 +298,11 @@ What changed from the design while building it, and what has not been checked.
 - **Data.** 55 counted runs (二本, 三本, …) and the counter and example kanji were added to
   `furigana.json`. The content is the assistant's and unreviewed.
 
+Checked afterwards on the iPhone simulator: the 人, 時, 円 and 階 pages (marks, alternate readings,
+the footer lines) and the long-press Copy and Open in Jisho menu on a table cell.
+
 Not checked on a device or simulator: VoiceOver, Reduce Motion, iPad, macOS, the Spotlight results,
-hiding N5 in Settings, a Forms search result landing on its cell, and the 人, 時, 円, 階 and days pages.
+hiding N5 in Settings, a Forms search result landing on its cell, and the 日 (days) page.
 In the simulator the counters came from a temporary seed because `counters.json` is not published
 yet; examples there read さんほん until the new `furigana.json` entries are published, but the
 pipeline check guarantees the file itself reads さんぼん.
