@@ -1,8 +1,8 @@
 import SwiftUI
 import VerbKit
 
-/// A minimal wrapping row layout for chips.
-private struct ChipFlowLayout: Layout {
+/// A minimal wrapping row layout for chips and the playground's objects.
+struct ChipFlowLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {

@@ -1,13 +1,21 @@
 import SwiftUI
 import VerbKit
 
-/// A counter's page: the counter, how to count with it (Count them, next task), every reading,
+/// A counter's page: the counter, how to count with it (Count them), every reading,
 /// what it counts, examples, traps and related counters. `focus` rings one number in the readings.
 struct CounterDetailView: View {
     let counter: Counter
     var focus: CounterNumber?
     @Environment(CountersStore.self) private var store
     @Environment(\.furiganaDictionary) private var furigana
+    /// The number the playground shows; the readings grid rings the same one.
+    @State private var number: CounterNumber
+
+    init(counter: Counter, focus: CounterNumber? = nil) {
+        self.counter = counter
+        self.focus = focus
+        _number = State(initialValue: focus ?? .n(1))
+    }
 
     /// The groups this counter belongs to, in grid order.
     private var groups: [CounterGroup] {
@@ -19,7 +27,7 @@ struct CounterDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     header
-                    // Count them (the playground) goes here.
+                    countThemSection
                     readingsSection
                     if !counter.things.isEmpty { thingsSection }
                     if !counter.examples.isEmpty { examplesSection }
@@ -104,10 +112,17 @@ struct CounterDetailView: View {
         }
     }
 
+    private var countThemSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("Count them")
+            CountThemCard(counter: counter, number: $number)
+        }
+    }
+
     private var readingsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader("Readings")
-            ReadingsGrid(counter: counter, focus: focus)
+            ReadingsGrid(counter: counter, focus: number)
         }
     }
 
