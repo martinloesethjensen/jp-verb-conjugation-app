@@ -14,6 +14,20 @@ final class RouteURLTests: XCTestCase {
         XCTAssertEqual(Route(url: route.url), route)
     }
 
+    func testCounterAndGroupRoundTripIncludingHyphenatedIDs() {
+        for route in [Route.counter("hon"), .counter("kai-floor"), .counterGroup("drinks"), .counterGroup("times-floors")] {
+            XCTAssertEqual(Route(url: route.url), route)
+        }
+        XCTAssertEqual(Route.counter("kai-floor").url.absoluteString, "verbtable://counter/kai-floor")
+        XCTAssertEqual(Route.counterGroup("times-floors").url.absoluteString, "verbtable://counters/times-floors")
+    }
+
+    func testCounterLinksNeedAnID() throws {
+        for text in ["verbtable://counter", "verbtable://counter/", "verbtable://counters/"] {
+            XCTAssertNil(Route(url: try XCTUnwrap(URL(string: text))), text)
+        }
+    }
+
     func testIdWithSpaceAndSlashRoundTrips() {
         for id in ["to eat", "a/b", "100%"] {
             XCTAssertEqual(Route(url: Route.verb(id).url), .verb(id))

@@ -115,6 +115,30 @@ final class GitHubVerbFetcherTests: XCTestCase {
         XCTAssertNil(words)
     }
 
+    func testFetchCountersManifestReadsTheCountersBlock() async throws {
+        try serve(manifest: #"{"version": "1.2.0", "sha256": "abc", "words": {"version": "1.0.0", "sha256": "w"}, "counters": {"version": "1.0.0", "sha256": "c"}}"#)
+        let fetcher = makeFetcher()
+        let counters = try await fetcher.fetchCountersManifest()
+        XCTAssertEqual(counters, CountersManifest(version: "1.0.0", sha256: "c"))
+        let words = try await fetcher.fetchWordsManifest()
+        XCTAssertEqual(words, WordsManifest(version: "1.0.0", sha256: "w"))
+    }
+
+    func testFetchCountersManifestIsNilWithoutACountersBlock() async throws {
+        try serve(manifest: #"{"version": "1.0.0", "sha256": "abc"}"#)
+        let counters = try await makeFetcher().fetchCountersManifest()
+        XCTAssertNil(counters)
+    }
+
+    func testCountersAreFetchedFromTheTagTheirEntryNames() async throws {
+        try serve(
+            manifest: #"{"version": "1.0.0", "sha256": "a", "counters": {"version": "1.0.0", "sha256": "c", "ref": "data-v3"}}"#,
+            files: ["data-v3/data/counters.json": Data("counters-at-v3".utf8)]
+        )
+        let counters = try await makeFetcher().fetchCountersData()
+        XCTAssertEqual(counters, Data("counters-at-v3".utf8))
+    }
+
     func testFetchFuriganaManifestIsNilWithoutAFuriganaBlock() async throws {
         try serve(manifest: #"{"version": "1.0.0", "sha256": "abc", "grammar": {"version": "1.0.0", "sha256": "g"}}"#)
         let furigana = try await makeFetcher().fetchFuriganaManifest()

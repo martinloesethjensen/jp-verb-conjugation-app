@@ -10,6 +10,8 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
     private let furiganaHashKey = "VerbKit.lastSyncedFuriganaManifest.sha256"
     private let wordsVersionKey = "VerbKit.lastSyncedWordsManifest.version"
     private let wordsHashKey = "VerbKit.lastSyncedWordsManifest.sha256"
+    private let countersVersionKey = "VerbKit.lastSyncedCountersManifest.version"
+    private let countersHashKey = "VerbKit.lastSyncedCountersManifest.sha256"
 
     private let build: String
 
@@ -86,6 +88,19 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
         defaults.set(manifest.version, forKey: wordsVersionKey)
         markCurrent(wordsVersionKey)
         defaults.set(manifest.sha256, forKey: wordsHashKey)
+    }
+
+    public func lastSyncedCountersManifest() -> CountersManifest? {
+        guard isCurrent(countersVersionKey),
+              let version = defaults.string(forKey: countersVersionKey),
+              let sha256 = defaults.string(forKey: countersHashKey) else { return nil }
+        return CountersManifest(version: version, sha256: sha256)
+    }
+
+    public func saveLastSyncedCountersManifest(_ manifest: CountersManifest) {
+        defaults.set(manifest.version, forKey: countersVersionKey)
+        markCurrent(countersVersionKey)
+        defaults.set(manifest.sha256, forKey: countersHashKey)
     }
 
     public func highestAcceptedVersion(for file: String) -> String? {

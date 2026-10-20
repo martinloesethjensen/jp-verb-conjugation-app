@@ -32,6 +32,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import update_data
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 DEFAULT_OUT = ROOT / "App" / "Audio"
@@ -54,7 +56,30 @@ def clip_name(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
-def collect_texts(verbs_doc, grammar_doc):
+def counter_texts(counters_doc, furigana_readings):
+    """What the Counters tab speaks: every reading of every counted form, each thing's kana and the
+    example sentences. Speech uses the kana reading, never the written form, so TTS cannot misread
+    八本 or 一日. An example that overrides a reading is spoken from its kana, built with the same
+    scan the furigana check uses; the others are spoken as written."""
+    raw = []
+    for counter in counters_doc.get("counters", []):
+        for readings in (counter.get("readings") or {}).values():
+            raw.extend(readings)
+        for thing in counter.get("things") or []:
+            raw.append(thing.get("kana"))
+        examples = list(counter.get("examples") or [])
+        for pitfall in counter.get("pitfalls") or []:
+            examples.extend(pitfall.get("examples") or [])
+        for example in examples:
+            jp = example.get("jp")
+            overrides = example.get("readings") or {}
+            if overrides and isinstance(jp, str):
+                jp = update_data.kana_reading(jp, {**(furigana_readings or {}), **overrides})
+            raw.append(jp)
+    return raw
+
+
+def collect_texts(verbs_doc, grammar_doc, counters_doc=None, furigana_readings=None):
     """Every string the app speaks, cleaned, in first-seen order without repeats."""
     raw = []
     for verb in verbs_doc.get("verbs", []):
@@ -70,6 +95,7 @@ def collect_texts(verbs_doc, grammar_doc):
             for entry in point.get(section) or []:
                 for example in entry.get("examples") or []:
                     raw.append(example.get("jp"))
+    raw.extend(counter_texts(counters_doc or {}, furigana_readings))
     seen = {}
     for item in raw:
         if not isinstance(item, str):
@@ -83,7 +109,10 @@ def collect_texts(verbs_doc, grammar_doc):
 def load_texts():
     verbs = json.loads((DATA / "verbs.json").read_text(encoding="utf-8"))
     grammar = json.loads((DATA / "grammar.json").read_text(encoding="utf-8"))
-    return collect_texts(verbs, grammar)
+    counters_path = DATA / "counters.json"
+    counters = json.loads(counters_path.read_text(encoding="utf-8")) if counters_path.exists() else None
+    furigana = json.loads((DATA / "furigana.json").read_text(encoding="utf-8")).get("readings", {})
+    return collect_texts(verbs, grammar, counters, furigana)
 
 
 # --- Engines ----------------------------------------------------------------

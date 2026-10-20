@@ -111,8 +111,8 @@ classes say which of them change:
   counter's `symbol`.
 - `examples` take the grammar example shape plus an optional `readings` map
   (`{"一日": "ついたち"}`). Its entries take priority over `furigana.json` for that
-  example, because one dictionary key can't read 一日 two ways. `pitfalls` reuse
-  `GrammarPitfall`.
+  example, because one dictionary key can't read 一日 two ways. `pitfalls` take the
+  grammar pitfall shape, but their examples take `readings` too (`CounterPitfall`).
 - **`groups`** is a top-level array next to `counters`, in grid order:
 
   ```json
@@ -274,6 +274,38 @@ classes say which of them change:
   an accepted reading.
 - **App:** simulator checks of the tab, search, counter page, playground animation and
   speech. iPad and macOS checks stay parked until the owner resumes them.
+
+## As built (milestone 1)
+
+What changed from the design while building it, and what has not been checked.
+
+- **Pitfalls have their own type.** `CounterPitfall` replaces `GrammarPitfall` because a pitfall
+  example on the 日 pages must be able to read 一日 as ついたち. Python's counted-run check already
+  honoured those overrides; the Swift model would have dropped them.
+- **Search noise rule is wider than the spec's.** A hiragana query that is a prefix of a base number
+  or of a small-っ stem (さん, いっ, じゅっ) matches no forms, not only the base numbers themselves.
+- **Navigation.** The sidebar sets the destination and switches the compact column; a group's
+  counter headers, the full list and related counters push inside the detail stack. A new choice in
+  the sidebar resets that stack. Search uses the same inline search and level scope bar as Grammar.
+- **Group table.** At accessibility text sizes even a three-counter group scrolls sideways so text
+  wraps instead of truncating. Counters that the level settings hide, and groups left empty by it, are
+  left out.
+- **Playground.** The 何 chip toggles between 何 and the last number. The readings grid rings the
+  number the playground shows.
+- **Audio.** `collect_texts` also takes `counters.json` and the furigana readings. Every reading, every
+  thing's kana and every example are texts. An example with its own `readings` is spoken from its kana,
+  and the app does the same, so the voice cannot pick the wrong reading.
+- **Data.** 55 counted runs (二本, 三本, …) and the counter and example kanji were added to
+  `furigana.json`. The content is the assistant's and unreviewed.
+
+Checked afterwards on the iPhone simulator: the 人, 時, 円 and 階 pages (marks, alternate readings,
+the footer lines) and the long-press Copy and Open in Jisho menu on a table cell.
+
+Not checked on a device or simulator: VoiceOver, Reduce Motion, iPad, macOS, the Spotlight results,
+hiding N5 in Settings, a Forms search result landing on its cell, and the 日 (days) page.
+In the simulator the counters came from a temporary seed because `counters.json` is not published
+yet; examples there read さんほん until the new `furigana.json` entries are published, but the
+pipeline check guarantees the file itself reads さんぼん.
 
 ## Out of scope
 

@@ -7,6 +7,7 @@ struct RootView: View {
     @Environment(FuriganaStore.self) private var furiganaStore
     @Environment(QuizHistoryStore.self) private var quizHistory
     @Environment(WordsStore.self) private var wordsStore
+    @Environment(CountersStore.self) private var countersStore
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
@@ -39,7 +40,10 @@ struct RootView: View {
         let quizLink = QuizLink(url: url)
         // A link from outside the app must not dismiss anything for a page that doesn't exist.
         let route = Route(url: url).flatMap { route in
-            route.resolve(verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints) == nil ? nil : route
+            route.resolve(
+                verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints,
+                counters: countersStore.counters, groups: countersStore.groups
+            ) == nil ? nil : route
         }
         guard quizLink != nil || route != nil else { return }
         // Anything presented over the list would hide the page the link opens.
@@ -94,8 +98,12 @@ struct RootView: View {
             if let url = SpotlightIndexer.url(from: activity) { open(url) }
         }
         // Keep Spotlight in step with the data (replaces the whole index, so only when ids change).
-        .task(id: verbStore.verbs.map(\.id) + verbStore.grammarPoints.map(\.id)) {
-            await SpotlightIndexer.index(verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints)
+        .task(id: verbStore.verbs.map(\.id) + verbStore.grammarPoints.map(\.id)
+            + countersStore.counters.map(\.id) + countersStore.groups.map(\.id)) {
+            await SpotlightIndexer.index(
+                verbs: verbStore.verbs, grammarPoints: verbStore.grammarPoints,
+                counters: countersStore.counters, groups: countersStore.groups
+            )
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack {
