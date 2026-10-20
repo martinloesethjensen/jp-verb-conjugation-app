@@ -307,6 +307,38 @@ In the simulator the counters came from a temporary seed because `counters.json`
 yet; examples there read さんほん until the new `furigana.json` entries are published, but the
 pipeline check guarantees the file itself reads さんぼん.
 
+## As built (milestone 2)
+
+What changed from the design while building the counter quiz, and what has not been checked.
+The plan is `docs/superpowers/plans/2026-10-20-counter-quiz.md`.
+
+- **Distractors are generated data.** The wrong readings (さんほん, さんぽん, さっぽん) are written into
+  `counters.json` by `scripts/update_data.py` (`distractors`, at most three per key, never an accepted
+  reading), because the app never derives a reading. An irregular counter only gets the unchanged
+  form (よんにん); the app fills the rest from the counter's other numbers.
+- **`countsObjects`.** *Which counter?* only uses counters that count objects. Things listed under
+  年, 回, 日 (both), 時, 分, 階, 歳 and 円 are examples of what the counter measures: 結婚 under 年 is as
+  natural with 回, so the quiz could not mark either one wrong. Those nine counters carry
+  `countsObjects: false` (optional, default true). *Read it* still covers them.
+- **One right counter on screen.** A word with two primary counters (ビール: 本 and 杯) accepts both,
+  but only one is shown among the four choices.
+- **Explanations.** A wrong reading names the pattern from the counter's own `changed` list. A number
+  that does not change says so ("本 keeps its plain reading at 2: にほん. It changes at …").
+- **Weak spots** count `.counterReading` attempts only, with the verb pairs' window, weights and
+  ranking, sharing one implementation. `.counterChoice` attempts count toward streaks and totals.
+  A counter attempt never reaches verb weak spots, the verb quiz builder or the widget.
+- **Start and entry points.** A Quiz button on the Counters tab opens its own sheet (Weak spots,
+  Which counter?, Read it, Mixed), and each counter page ends with Practise this counter. Progress
+  gains a Weakest counters section.
+- **`QuizAttempt.verb` is `subject`**, kept on disk through `@Attribute(originalName: "verb")`. A
+  fixture store written before the rename (`Fixtures/quiz-history-v1.sqlite`) proves old history
+  survives and rows with an unknown kind are skipped.
+
+Checked on the iPhone simulator: the start sheet, *Which counter?* and *Read it* starting, a wrong
+answer showing its explanation, Practise this counter on 本, and Progress showing 本 under Weakest
+counters. Not checked: Mixed and Weak spots starting, Practise on 人 and the 日 pages, hiding N5
+disabling the rows, the quiz at the largest text size, VoiceOver, iPad and macOS.
+
 ## Out of scope
 
 - Numbers above 10 and compound readings (21本, 100本).
