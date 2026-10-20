@@ -63,6 +63,8 @@ struct CounterWidgetView: View {
                     Text(counter.readings(for: number).first ?? "").font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.white).minimumScaleFactor(0.6).lineLimit(1)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(counter.written(number)), \(counter.readings(for: number).first ?? "")\(changed ? ", sound changes" : "")")
                 .frame(maxWidth: .infinity, minHeight: 30)
                 .background(changed ? Self.accent.opacity(0.28) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
                 .overlay(alignment: .topTrailing) {

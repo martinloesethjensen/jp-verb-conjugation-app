@@ -74,6 +74,9 @@ struct JPVerbConjugationApp: App {
                 .onChange(of: verbStore.grammarPoints) {
                     WidgetCenter.shared.reloadAllTimelines()
                 }
+                .onChange(of: countersStore.counters) {
+                    WidgetCenter.shared.reloadAllTimelines()
+                }
                 .onChange(of: hiddenLevelsRaw) {
                     WidgetCenter.shared.reloadAllTimelines()
                 }

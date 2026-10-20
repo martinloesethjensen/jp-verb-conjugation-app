@@ -8,9 +8,16 @@ public struct SoundPatternRow: Identifiable, Hashable, Sendable {
     public let counters: [Counter]
     /// Numbers every member changes. A single counter's exception (年 at 4) is not the class's pattern.
     public let marked: [CounterNumber]
+    /// What a counter changes beyond the class pattern (年 at 4, 階 at 3 and 何), in data order.
+    public let exceptions: [SoundPatternException]
 
     public var id: String { sound }
     public var isIrregular: Bool { sound == "irregular" }
+}
+
+public struct SoundPatternException: Hashable, Sendable {
+    public let counter: Counter
+    public let numbers: [CounterNumber]
 }
 
 private let soundClasses: [(sound: String, title: String, summary: String)] = [
@@ -30,7 +37,13 @@ public func soundPatternRows(from counters: [Counter]) -> [SoundPatternRow] {
         let marked = cls.sound == "irregular"
             ? []
             : CounterNumber.allCases.filter { number in members.allSatisfy { $0.isChanged(number) } }
-        return SoundPatternRow(sound: cls.sound, title: cls.title, summary: cls.summary, counters: members, marked: marked)
+        let exceptions = cls.sound == "irregular" ? [] : members.compactMap { member -> SoundPatternException? in
+            let extra = CounterNumber.allCases.filter { member.isChanged($0) && !marked.contains($0) }
+            return extra.isEmpty ? nil : SoundPatternException(counter: member, numbers: extra)
+        }
+        return SoundPatternRow(
+            sound: cls.sound, title: cls.title, summary: cls.summary, counters: members, marked: marked, exceptions: exceptions
+        )
     }
 }
 

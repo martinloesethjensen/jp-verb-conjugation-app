@@ -76,4 +76,29 @@ final class SoundPatternsTests: XCTestCase {
         XCTAssertEqual(try marked("h-p"), nums(["1", "3", "4", "6", "8", "10", "what"]))
         XCTAssertEqual(soundPatternStem(for: .n(6), in: rows), "ろっ")
     }
+
+    func testExceptionsListWhatEachCounterChangesBeyondTheClass() {
+        let rows = soundPatternRows(from: [
+            counter("a", sound: "plain", changed: ["4"]), counter("b", sound: "plain", changed: ["4"]),
+            counter("c", sound: "plain"),
+        ])
+        XCTAssertEqual(rows[0].exceptions.map(\.counter.id), ["a", "b"])
+        XCTAssertEqual(rows[0].exceptions.map(\.numbers), [[.n(4)], [.n(4)]])
+    }
+
+    func testIrregularRowHasNoExceptions() {
+        XCTAssertEqual(soundPatternRows(from: [counter("a", sound: "irregular", changed: ["1"])])[0].exceptions.count, 0)
+    }
+
+    func testRealDataExceptionsAreNenEnAndKaiFloor() throws {
+        var url = URL(fileURLWithPath: #filePath)
+        for _ in 0..<5 { url.deleteLastPathComponent() }
+        let file = try JSONDecoder().decode(CountersDataFile.self, from: Data(contentsOf: url.appendingPathComponent("data/counters.json")))
+        let rows = soundPatternRows(from: file.counters)
+        let plain = try XCTUnwrap(rows.first { $0.sound == "plain" })
+        XCTAssertEqual(plain.exceptions.map(\.counter.id), ["nen", "en"])
+        let k = try XCTUnwrap(rows.first { $0.sound == "k" })
+        XCTAssertEqual(k.exceptions.map(\.counter.id), ["kai-floor"])
+        XCTAssertEqual(k.exceptions.first?.numbers, [.n(3), .what])
+    }
 }

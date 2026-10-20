@@ -35,17 +35,22 @@ struct SoundPatternsView: View {
                     Text("Counters hidden by your level settings have no patterns to show.")
                 }
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(selected.map { caption($0, in: rows) } ?? "Tap a number to compare it across classes.")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel(selected.map { caption($0, in: rows) } ?? "Tap a number to compare it across classes.")
-                        ForEach(rows) { row in card(row) }
+                VStack(alignment: .leading, spacing: 0) {
+                    // Pinned above the cards so it stays visible when the tapped column is far down.
+                    Text(selected.map { caption($0, in: rows) } ?? "Tap a number to compare it across classes.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(selected.map { caption($0, in: rows) } ?? "Tap a number to compare it across classes.")
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(rows) { row in card(row) }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
                 }
             }
         }
@@ -61,6 +66,11 @@ struct SoundPatternsView: View {
                 Text("Irregular: learn each reading").font(.footnote).foregroundStyle(.secondary)
             } else {
                 strip(row)
+                if !row.exceptions.isEmpty {
+                    Text("Exceptions: " + row.exceptions.map { "\($0.counter.counter) at \($0.numbers.map(label).joined(separator: ", "))" }.joined(separator: " · "))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
