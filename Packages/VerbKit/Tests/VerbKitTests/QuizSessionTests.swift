@@ -123,6 +123,7 @@ final class QuizSessionTests: XCTestCase {
         XCTAssertEqual(QuizSessionTopic.weakSpots.title, "Weak spots")
         XCTAssertEqual(QuizSessionTopic.topics([.potential]).title, "Potential")
         XCTAssertEqual(QuizSessionTopic.topics([.basic, .potential]).title, "Everything")
+        XCTAssertEqual(QuizSessionTopic(topics: [.otherForms, .basic]), .topics([.basic, .otherForms]))
         let vm = QuizViewModel(questions: questions(verbs))
         vm.choose("たべます")
         XCTAssertEqual(QuizSession(topic: .weakSpots, questions: vm.questions, progress: vm.progress, savedAt: Date()).summary,

@@ -9,6 +9,17 @@ enum QuizSelection {
     case connections
 }
 
+extension QuizSessionTopic {
+    /// What a saved verb quiz started from the sheet was practising. Connections have their
+    /// own screen and are never saved, so they never get here.
+    init(_ selection: QuizSelection) {
+        switch selection {
+        case .topics(let topics): self.init(topics: topics)
+        case .weakSpots, .connections: self = .weakSpots
+        }
+    }
+}
+
 /// Asks what to practise before a quiz starts. Rows are the topics the verbs in
 /// play have forms in, plus Everything and, first, Weak spots.
 struct QuizTopicSheet: View {
@@ -16,6 +27,9 @@ struct QuizTopicSheet: View {
     let connectionPatterns: Int
     /// Weak pairs among the given verbs, so the count follows "Favourites only".
     let weakSpotCount: ([Verb]) -> Int
+    /// A saved quiz that can be picked up again, offered above the topics (issue #38).
+    var resumable: QuizSession? = nil
+    var onResume: () -> Void = {}
     var onStart: ([Verb], QuizSelection) -> Void
     var onCancel: () -> Void
 
@@ -66,6 +80,27 @@ struct QuizTopicSheet: View {
     var body: some View {
         NavigationStack {
             List {
+                if let resumable {
+                    Section {
+                        Button(action: onResume) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Resume \(resumable.topic.title)")
+                                    Text(resumable.summary)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "play.circle.fill")
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    } footer: {
+                        Text("A new verb quiz replaces the unfinished one.")
+                    }
+                }
                 Section("Practise") {
                     row(
                         title: "Weak spots",

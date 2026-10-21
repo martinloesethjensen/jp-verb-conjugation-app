@@ -21,16 +21,20 @@ struct RootView: View {
     @State private var showingSettings = false
     @State private var showingGuide = false
     @State private var showingProgress = false
-    @State private var quizQuestions: [QuizQuestion]?
+    @State private var quiz: QuizLaunch?
     @State private var topicSheetVerbs: [Verb]?
-    @State private var pendingQuestions: [QuizQuestion]?
+    @State private var pendingQuiz: QuizLaunch?
     @State private var connectionQuestions: [ConnectionQuestion]?
     @State private var pendingConnections: [ConnectionQuestion]?
     @State private var incomingRoute: Route?
+    /// A link that arrived during a quiz, waiting for "Leave the quiz?" to be answered.
+    @State private var linkLeavingQuiz: URL?
     @Environment(WordBankTransferHub.self) private var wordBankTransfer
+    @Environment(QuizSessionStore.self) private var quizSessions
 
     /// What a link opens: a verb or lesson page, or a quiz (from Siri and Shortcuts).
-    private func open(_ url: URL) {
+    /// During a quiz it asks first, unless `confirmed`; a verb quiz left this way can be resumed.
+    private func open(_ url: URL, confirmed: Bool = false) {
         // A .wordbank file from Files, AirDrop or Mail: show what importing it would do.
         if url.isFileURL, url.pathExtension.lowercased() == "wordbank" {
             showingSettings = false
@@ -46,21 +50,25 @@ struct RootView: View {
             ) == nil ? nil : route
         }
         guard quizLink != nil || route != nil else { return }
+        if !confirmed && (quiz != nil || connectionQuestions != nil) {
+            linkLeavingQuiz = url
+            return
+        }
         // Anything presented over the list would hide the page the link opens.
         showingExamples = false
         showingSettings = false
         showingGuide = false
         showingProgress = false
         topicSheetVerbs = nil
-        pendingQuestions = nil
-        quizQuestions = nil
+        pendingQuiz = nil
+        quiz = nil
         connectionQuestions = nil
         pendingConnections = nil
         if let quizLink {
             let verbs = verbStore.verbs.visible(in: LevelSettings.load())
             let topics = quizLink.topic.map { Set([$0]) } ?? Set(QuizTopic.allCases)
             let questions = buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount, kinds: QuizQuestionKind.verbKinds)
-            if !questions.isEmpty { quizQuestions = questions }
+            if !questions.isEmpty { quiz = QuizLaunch(questions: questions, topic: QuizSessionTopic(topics: topics)) }
         } else {
             incomingRoute = route
         }
@@ -154,9 +162,9 @@ struct RootView: View {
         }
         .sheet(isPresented: $showingProgress) { QuizProgressView() }
         .sheet(isPresented: topicSheetBinding, onDismiss: {
-            if let pendingQuestions {
-                quizQuestions = pendingQuestions
-                self.pendingQuestions = nil
+            if let pendingQuiz {
+                quiz = pendingQuiz
+                self.pendingQuiz = nil
             }
             if let pendingConnections {
                 connectionQuestions = pendingConnections
@@ -168,6 +176,8 @@ struct RootView: View {
                     verbs: topicSheetVerbs,
                     connectionPatterns: verbStore.grammarPoints.visible(in: LevelSettings.load()).filter(\.hasConnections).count,
                     weakSpotCount: { weakPairs(in: $0).count },
+                    resumable: quizSessions.resumable(verbs: verbStore.verbs) == nil ? nil : quizSessions.session,
+                    onResume: resumeQuiz,
                     onStart: { verbs, selection in
                         if case .connections = selection {
                             let levels = LevelSettings.load()
@@ -178,7 +188,7 @@ struct RootView: View {
                             pendingConnections = built.isEmpty ? nil : built
                         } else {
                             let questions = questions(for: selection, verbs: verbs)
-                            pendingQuestions = questions.isEmpty ? nil : questions
+                            pendingQuiz = questions.isEmpty ? nil : QuizLaunch(questions: questions, topic: QuizSessionTopic(selection))
                         }
                         self.topicSheetVerbs = nil
                     },
@@ -188,31 +198,72 @@ struct RootView: View {
         }
         #if os(iOS)
         .fullScreenCover(isPresented: quizPresentationBinding) {
-            if let quizQuestions {
-                QuizView(questions: quizQuestions, recorder: { quizHistory.record($0) }, onDone: { self.quizQuestions = nil })
-            }
+            if let quiz { quizScreen(quiz) }
         }
         .fullScreenCover(isPresented: connectionPresentationBinding) {
-            if let connectionQuestions {
-                ConnectionQuizView(questions: connectionQuestions, recorder: { quizHistory.record($0) },
-                                   onDone: { self.connectionQuestions = nil })
-            }
+            if let connectionQuestions { connectionScreen(connectionQuestions) }
         }
         #else
         .sheet(isPresented: quizPresentationBinding) {
-            if let quizQuestions {
-                QuizView(questions: quizQuestions, recorder: { quizHistory.record($0) }, onDone: { self.quizQuestions = nil })
+            if let quiz {
+                quizScreen(quiz)
                     .frame(minWidth: 560, minHeight: 640)
             }
         }
         .sheet(isPresented: connectionPresentationBinding) {
             if let connectionQuestions {
-                ConnectionQuizView(questions: connectionQuestions, recorder: { quizHistory.record($0) },
-                                   onDone: { self.connectionQuestions = nil })
+                connectionScreen(connectionQuestions)
                     .frame(minWidth: 560, minHeight: 640)
             }
         }
         #endif
+        // A saved quiz whose verbs or forms have since changed can't be resumed.
+        .onChange(of: verbStore.verbs, initial: true) {
+            quizSessions.discardIfStale(verbs: verbStore.verbs)
+        }
+    }
+
+    private func quizScreen(_ launch: QuizLaunch) -> some View {
+        QuizView(
+            questions: launch.questions, progress: launch.progress, topic: launch.topic,
+            recorder: { quizHistory.record($0) }, onDone: { quiz = nil }
+        )
+        // A quiz link during a quiz replaces it: a new identity gives the new quiz fresh state.
+        .id(launch.id)
+        // On the quiz itself: a cover can't show an alert presented from beneath it.
+        .alert("Leave the quiz?", isPresented: leavingQuizBinding) {
+            leaveQuizButtons
+        } message: {
+            Text("Your place is saved. Pick it up again with Resume from the quiz button.")
+        }
+    }
+
+    private func connectionScreen(_ questions: [ConnectionQuestion]) -> some View {
+        ConnectionQuizView(questions: questions, recorder: { quizHistory.record($0) },
+                           onDone: { connectionQuestions = nil })
+            .alert("Leave the quiz?", isPresented: leavingQuizBinding) {
+                leaveQuizButtons
+            } message: {
+                Text("This quiz ends here. The answers you have given are kept in your progress.")
+            }
+    }
+
+    @ViewBuilder
+    private var leaveQuizButtons: some View {
+        Button("Leave") {
+            guard let url = linkLeavingQuiz else { return }
+            linkLeavingQuiz = nil
+            open(url, confirmed: true)
+        }
+        Button("Keep Practising", role: .cancel) {}
+    }
+
+    /// Picks up the saved quiz, if it still fits the data.
+    private func resumeQuiz() {
+        if let saved = quizSessions.session, let resumable = quizSessions.resumable(verbs: verbStore.verbs) {
+            pendingQuiz = QuizLaunch(questions: resumable.questions, progress: resumable.progress, topic: saved.topic)
+        }
+        topicSheetVerbs = nil
     }
 
     /// The ranked weak (verb, form) pairs among `verbs`, skipping any whose verb or form no longer exists.
@@ -255,10 +306,25 @@ struct RootView: View {
 
     private var quizPresentationBinding: Binding<Bool> {
         Binding(
-            get: { quizQuestions != nil },
-            set: { isPresented in if !isPresented { quizQuestions = nil } }
+            get: { quiz != nil },
+            set: { isPresented in if !isPresented { quiz = nil } }
         )
     }
+
+    private var leavingQuizBinding: Binding<Bool> {
+        Binding(
+            get: { linkLeavingQuiz != nil },
+            set: { isPresented in if !isPresented { linkLeavingQuiz = nil } }
+        )
+    }
+}
+
+/// A verb quiz to present: new, or resumed from a saved `QuizSession` with its progress.
+private struct QuizLaunch {
+    let id = UUID()
+    var questions: [QuizQuestion]
+    var progress: QuizProgressState?
+    var topic: QuizSessionTopic
 }
 
 /// Everything that changes which reminders should exist; `.task(id:)` reruns when it changes.

@@ -28,6 +28,11 @@ public enum QuizSessionTopic: Codable, Equatable, Sendable {
     case topics([QuizTopic])
     case weakSpots
 
+    /// The topics in display order, so equal sets save alike.
+    public init(topics: Set<QuizTopic>) {
+        self = .topics(QuizTopic.allCases.filter(topics.contains))
+    }
+
     public var title: String {
         switch self {
         case .weakSpots: return "Weak spots"

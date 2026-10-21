@@ -13,6 +13,7 @@ struct JPVerbConjugationApp: App {
     @State private var wordsStore: WordsStore
     @State private var countersStore: CountersStore
     @State private var quizHistory: QuizHistoryStore
+    @State private var quizSessions = QuizSessionStore()
     @State private var wordBank: WordBankStore
     @State private var wordBankTransfer: WordBankTransferHub
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
@@ -60,6 +61,7 @@ struct JPVerbConjugationApp: App {
                 .environment(wordsStore)
                 .environment(countersStore)
                 .environment(quizHistory)
+                .environment(quizSessions)
                 .environment(wordBank)
                 .environment(wordBankTransfer)
                 .task {
