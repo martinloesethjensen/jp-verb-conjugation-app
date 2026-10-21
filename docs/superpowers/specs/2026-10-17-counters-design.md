@@ -339,6 +339,33 @@ answer showing its explanation, Practise this counter on 本, and Progress showi
 counters. Not checked: Mixed and Weak spots starting, Practise on 人 and the 日 pages, hiding N5
 disabling the rows, the quiz at the largest text size, VoiceOver, iPad and macOS.
 
+## As built (milestone 3)
+
+What changed from the design while building the sound patterns screen and the widget. The plan is
+`docs/superpowers/plans/2026-10-20-counter-patterns-widget.md`. There is no `data/` change.
+
+- **Marked numbers are an intersection.** A class row marks the numbers that every one of its counters
+  has in `changed`, so a single counter's exception (年 and 円 at 4, 階 at 3) is not shown as the class's
+  pattern. Plain therefore marks nothing, and irregular says "Learn each reading" instead of a strip.
+- **Exceptions are listed.** Each card ends with "Exceptions: 年 at 4 · 円 at 4" (what a counter changes beyond the class
+  marks), so the screen does not teach 4年 as regular. The selection caption is pinned above the cards.
+- **The stem comparison.** Tapping a number rings its column in every card. The caption names the classes
+  that change it and, when at least two share a stem that ends in っ, the stem (6 → ろっ). 3 and 4 get no
+  stem, because a shared さん says nothing.
+- **Entry point.** A "Sound patterns" tile after "All counters" on the Counters home grid, hidden when
+  the level settings leave no counters. It is a `CounterDestination` only; there is no route URL for it.
+- **Widget.** A static "Counter of the Day" widget (small and medium; no Lock Screen families). The pick
+  is `DailyPick` over the visible counters in stored order, falling back to all counters when the level
+  settings hide everything. It refreshes at midnight and opens `verbtable://counter/<id>`. The small size
+  lists the changed numbers; the medium size shows all eleven readings with the changed ones tinted and
+  dotted.
+
+Checked on the iPhone simulator: the tile, the screen (marks per class, tapping 6, the caption), and the
+widget gallery preview of both sizes with the real counters (階). The widget reloads when the counters
+arrive, and the medium grid's cells carry "sound changes" labels. Not checked: VoiceOver, Reduce Motion,
+the largest text size, hiding N5 in Settings, adding the widget to the Home Screen and its midnight
+rollover, iPad and macOS.
+
 ## Out of scope
 
 - Numbers above 10 and compound readings (21本, 100本).

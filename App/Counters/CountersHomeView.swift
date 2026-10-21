@@ -105,6 +105,14 @@ struct CountersHomeView: View {
                 ) {
                     go(.all)
                 }
+                if !visible.isEmpty {
+                    GroupTile(
+                        title: "Sound patterns", symbol: "waveform",
+                        counters: "ろっ · いっ", spokenCounters: "which numbers change sound"
+                    ) {
+                        go(.patterns)
+                    }
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)

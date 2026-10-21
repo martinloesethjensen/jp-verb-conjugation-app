@@ -6,5 +6,6 @@ struct VerbTableWidgets: WidgetBundle {
     var body: some Widget {
         VerbTableWidget()
         GrammarRuleWidget()
+        CounterOfTheDayWidget()
     }
 }

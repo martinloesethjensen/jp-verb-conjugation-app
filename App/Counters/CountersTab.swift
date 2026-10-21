@@ -6,6 +6,7 @@ enum CounterDestination: Hashable {
     case group(CounterGroup)
     case counter(Counter, focus: CounterNumber?)
     case all
+    case patterns
 }
 
 /// Starts a counter quiz from anywhere in the Counters tab (Practise this counter).
@@ -150,6 +151,8 @@ struct CounterDestinationView: View {
             CounterDetailView(counter: counter, focus: focus)
         case .all:
             CounterListView()
+        case .patterns:
+            SoundPatternsView()
         }
     }
 }
