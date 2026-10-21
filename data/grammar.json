@@ -192,7 +192,7 @@
           "examples": [
             { "jp": "今日は行けません。", "en": "I can't go today." },
             { "jp": "この店ではカードが使えます。", "en": "You can use cards at this shop." },
-            { "jp": "明日なら会えます。", "en": "I can meet you tomorrow." }
+            { "jp": "明日は会えます。", "en": "I can meet you tomorrow. (but not today)" }
           ]
         },
         {
@@ -254,15 +254,15 @@
         }
       ],
       "conjugations": [
-        { "form": "〜られます", "register": "polite", "note": "Polite present. A potential verb is itself a ru-verb, so it conjugates like one: drop る and add the ending. For u-verbs the ending follows the え-sound: 飲めます, 書けます, 話せます." },
-        { "form": "〜られません", "register": "polite", "note": "U-verbs: 飲めません." },
-        { "form": "〜られました", "register": "polite", "note": "U-verbs: 飲めました." },
-        { "form": "〜られませんでした", "register": "polite", "note": "U-verbs: 飲めませんでした." },
-        { "form": "〜られる", "register": "casual", "note": "The plain form, which is the potential form itself. U-verbs: 飲める, 書ける, 話せる." },
-        { "form": "〜られない", "register": "casual", "note": "U-verbs: 飲めない." },
-        { "form": "〜られた", "register": "casual", "note": "U-verbs: 飲めた." },
-        { "form": "〜られなかった", "register": "casual", "note": "U-verbs: 飲めなかった." },
-        { "form": "〜られて", "register": "casual", "note": "The て-form: for linking clauses and giving reasons, as in 会えてうれしいです. It is not used for requests (食べられてください is wrong). U-verbs: 飲めて." },
+        { "form": "〜られます / 〜えます", "register": "polite", "note": "Polite present. Ru-verbs take 〜られます (食べられます). U-verbs move the last kana to its え-sound instead: 飲めます, 書けます, 話せます, never 飲められます. A potential verb is itself a ru-verb, so it then conjugates like one." },
+        { "form": "〜られません / 〜えません", "register": "polite", "note": "U-verbs: 飲めません." },
+        { "form": "〜られました / 〜えました", "register": "polite", "note": "U-verbs: 飲めました." },
+        { "form": "〜られませんでした / 〜えませんでした", "register": "polite", "note": "U-verbs: 飲めませんでした." },
+        { "form": "〜られる / 〜える", "register": "casual", "note": "The plain form, which is the potential form itself. U-verbs: 飲める, 書ける, 話せる." },
+        { "form": "〜られない / 〜えない", "register": "casual", "note": "U-verbs: 飲めない." },
+        { "form": "〜られた / 〜えた", "register": "casual", "note": "U-verbs: 飲めた." },
+        { "form": "〜られなかった / 〜えなかった", "register": "casual", "note": "U-verbs: 飲めなかった." },
+        { "form": "〜られて / 〜えて", "register": "casual", "note": "The て-form: for linking clauses and giving reasons, as in 会えてうれしいです. It is not used for requests (食べられてください is wrong). U-verbs: 飲めて." },
         { "form": "〜ことができる", "register": "formal", "note": "Dictionary form + ことができる. Works with any verb. Stiffer, and common in writing." },
         { "form": "〜ことができません", "register": "formal" }
       ],
@@ -304,8 +304,8 @@
     {
       "id": "certainty",
       "title": "はず・かもしれない・わけ",
-      "summary": "Three ways to say how things stand: はず (I expect so, because it makes sense), かもしれない (maybe), and わけ (that is how it works out). All three come after a plain form.",
-      "jlpt": "N3",
+      "summary": "Three ways to say how things stand: はず (I expect so, because it makes sense), かもしれない (maybe), and わけ (that is how it works out). All three come after a plain form. はず and かもしれない are N4; わけ is N3.",
+      "jlpt": "N4",
       "taught_in": [
         { "book": "genki-2", "lesson": 14, "reviewed": false },
         { "book": "genki-2", "lesson": 19, "reviewed": false }
@@ -337,7 +337,7 @@
           ]
         },
         {
-          "heading": "わけ: that is how it works out",
+          "heading": "わけ: that is how it works out (N3)",
           "explanation": "わけ (訳) means a reason or a line of reasoning. 〜わけだ says that something follows naturally from what you already know, like \"no wonder\" or \"so that's why\".",
           "examples": [
             { "jp": "毎日練習しているから、上手なわけだ。", "en": "He practises every day, so no wonder he's good." },
@@ -345,7 +345,7 @@
           ]
         },
         {
-          "heading": "わけがない and わけではない",
+          "heading": "わけがない and わけではない (N3)",
           "explanation": "わけがない says that something cannot be so. わけではない does not deny the whole sentence but one conclusion that someone might draw, and so it means \"it's not that...\".",
           "examples": [
             { "jp": "そんなに早く終わるわけがない。", "en": "There's no way it'll be over that quickly." },
@@ -417,7 +417,7 @@
           ]
         },
         {
-          "heading": "わけにはいかない",
+          "heading": "わけにはいかない (N3)",
           "explanation": "This is a fixed phrase meaning \"I cannot, for some reason\", often a duty or a social rule. 行かないわけにはいかない means \"I can't not go\", that is, \"I have to go\".",
           "examples": [
             { "jp": "明日は大事な会議だから、休むわけにはいかない。", "en": "Tomorrow is an important meeting, so I can't take the day off." },
@@ -558,7 +558,7 @@
       "id": "appearance",
       "title": "よう・みたい・そう・らしい",
       "summary": "Four ways to talk about what you see, hear or infer: ようだ and みたいだ (it seems, like), そうだ (it looks like, or I hear), and らしい (apparently, or typical of).",
-      "jlpt": "N3",
+      "jlpt": "N4",
       "taught_in": [
         { "book": "genki-2", "lesson": 13, "reviewed": false },
         { "book": "genki-2", "lesson": 17, "reviewed": false }
@@ -787,7 +787,7 @@
     {
       "id": "teiru",
       "title": "ている・てある",
-      "summary": "ている describes an action in progress, or a state that results from an action: 食べている (is eating), 結婚している (is married). てある describes a state that someone left behind on purpose: 窓が開けてある.",
+      "summary": "ている describes an action in progress, or a state that results from an action: 食べている (is eating), 結婚している (is married). てある (N4) describes a state that someone left behind on purpose: 窓が開けてある.",
       "jlpt": "N5",
       "taught_in": [
         { "book": "genki-1", "lesson": 7, "reviewed": false },
@@ -821,7 +821,7 @@
           ]
         },
         {
-          "heading": "てある: a state someone left",
+          "heading": "てある: a state someone left (N4)",
           "explanation": "てある says that someone did something on purpose and the result is still there. The thing that was affected is the subject, usually marked with が (or は), and the verb is one that takes an object.",
           "examples": [
             { "jp": "窓が開けてあります。", "en": "The window has been opened. (someone did it, and it is still open)" },
@@ -830,7 +830,7 @@
           ]
         },
         {
-          "heading": "ている or てある?",
+          "heading": "ている or てある? (N4)",
           "explanation": "ている describes a state without saying who caused it, and てある says that a person did it deliberately, often to be ready for something. Compare an intransitive verb with ている and a transitive verb with てある.",
           "examples": [
             { "jp": "ドアが開いている。", "en": "The door is open." },
@@ -845,7 +845,7 @@
           "slots": ["te"],
           "pattern": "て-form + いる",
           "example": "食べる → 食べている / 飲む → 飲んでいる / 書く → 書いている / 買う → 買っている / する → している / 来る → 来ている",
-          "note": "The て-form comes from the verb as usual, and いる then conjugates like any ru-verb. In speech the い is often dropped: 食べてる. Verbs of existence and ability, such as ある and できる, are the exceptions."
+          "note": "The て-form comes from the verb as usual, and いる then conjugates like any ru-verb. In speech the い is often dropped: 食べてる. ある never takes ている: ある already describes a state. Potential verbs rarely take it either, but できる often does when it means \"be ready\" or \"be made of\": 準備ができている, 木でできている."
         },
         {
           "word_class": "verb",
@@ -1210,6 +1210,14 @@
             { "jp": "日本人の友達がいるので、日本語を勉強しています。", "en": "I have Japanese friends, so I study Japanese." },
             { "jp": "雨なので、出かけません。", "en": "It's raining, so I'm not going out." }
           ]
+        },
+        {
+          "heading": "After polite forms",
+          "explanation": "In very polite speech, such as at work, in shops and in announcements, ので can also follow a ます-form or です. Everyday polite speech normally uses the short form before ので, as above.",
+          "examples": [
+            { "jp": "会議がありますので、三時に失礼します。", "en": "I have a meeting, so I'll be leaving at three." },
+            { "jp": "今日は休みですので、明日また来てください。", "en": "We're closed today, so please come again tomorrow." }
+          ]
         }
       ],
       "attachment": [
@@ -1252,6 +1260,14 @@
           "examples": [
             { "jp": "この部屋は静かなので、よく眠れます。", "en": "This room is quiet, so I sleep well." }
           ]
+        },
+        {
+          "heading": "No ので at the end: use からです",
+          "explanation": "To give the reason as a sentence of its own, after the result or in answer to どうして, use から + です: 〜からです. ので cannot do this, so 〜のでです is wrong. A sentence may trail off with ので, leaving the result unsaid, but it cannot end in のでです.",
+          "examples": [
+            { "jp": "どうして遅れたんですか。電車が止まったからです。", "en": "Why were you late? Because the train stopped." },
+            { "jp": "すみません、ちょっと用事があるので。", "en": "Sorry, I have something to do, so… (declining)" }
+          ]
         }
       ],
       "contrasts": [
@@ -1269,7 +1285,7 @@
     {
       "id": "hou-ga-ii",
       "title": "〜ほうがいいです",
-      "summary": "Advice: \"you had better…\" or \"you had better not…\".",
+      "summary": "Advice: \"you had better…\" or \"you had better not…\". After an adjective or a noun, it says which option is better.",
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-1", "lesson": 12, "reviewed": false }
@@ -1288,6 +1304,15 @@
           "examples": [
             { "jp": "今日は出かけないほうがいいです。", "en": "You had better not go out today." }
           ]
+        },
+        {
+          "heading": "Choosing: adjectives and nouns",
+          "explanation": "ほうがいい also follows an adjective or a noun, to say which option is better. い-adjectives attach directly, な-adjectives keep な, and nouns take の. The noun pattern is also how comparisons with より work.",
+          "examples": [
+            { "jp": "かばんは安いほうがいいです。", "en": "For a bag, cheaper is better." },
+            { "jp": "部屋は静かなほうがいいです。", "en": "I'd prefer a quiet room." },
+            { "jp": "バスより電車のほうがいいです。", "en": "The train is better than the bus." }
+          ]
         }
       ],
       "attachment": [
@@ -1304,6 +1329,21 @@
           "then": "ほうがいいです",
           "pattern": "ない-form + ほうがいいです",
           "example": "出かける → 出かけないほうがいいです"
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "dictionary form + ほうがいいです",
+          "example": "安い → 安いほうがいいです"
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "な + ほうがいいです",
+          "example": "静か → 静かなほうがいいです"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "の + ほうがいいです",
+          "example": "電車 → 電車のほうがいいです"
         }
       ],
       "conjugations": [
@@ -1314,6 +1354,14 @@
         {
           "heading": "Never なかったほうがいい",
           "explanation": "The negative stays in the present: 行かないほうがいい, not 行かなかったほうがいい."
+        },
+        {
+          "heading": "Careful with teachers and bosses",
+          "explanation": "〜たほうがいいですよ tells someone what to do, so to a teacher, a boss or a customer it can sound presumptuous, even with です. Advise people above you only when they ask, and soften it: 〜たほうがいいかもしれません, or 〜たらいかがですか.",
+          "examples": [
+            { "jp": "少し休んだほうがいいかもしれません。", "en": "It might be better to take a short rest. (softer)" },
+            { "jp": "少し休んだらいかがですか。", "en": "Why not take a short rest? (polite suggestion)" }
+          ]
         }
       ],
       "contrasts": [
@@ -1413,7 +1461,7 @@
     {
       "id": "volitional",
       "title": "〜ましょう・意向形",
-      "summary": "〜ましょう means \"let's…\", and 〜ましょうか means \"shall I…?\" or \"shall we…?\". The plain version is the volitional form (食べよう, 飲もう), used among friends and with と思う for plans.",
+      "summary": "〜ましょう means \"let's…\", and 〜ましょうか means \"shall I…?\" or \"shall we…?\". The plain version is the volitional form (食べよう, 飲もう, N4), used among friends and with と思う for plans.",
       "jlpt": "N5",
       "usages": [
         {
@@ -1435,7 +1483,7 @@
           ]
         },
         {
-          "heading": "Casual: the volitional form",
+          "heading": "Casual: the volitional form (N4)",
           "explanation": "Among friends, ましょう becomes the plain volitional: ru-verbs end in よう and u-verbs in おう. The meaning is the same: let's…",
           "examples": [
             { "jp": "もう帰ろう。", "en": "Let's go home now." },
@@ -1444,7 +1492,7 @@
           ]
         },
         {
-          "heading": "Plans: 〜(よ)うと思う",
+          "heading": "Plans: 〜(よ)うと思う (N4)",
           "explanation": "The plain volitional + と思います says what you are thinking of doing or have decided to do.",
           "examples": [
             { "jp": "来月、日本へ行こうと思っています。", "en": "I'm thinking of going to Japan next month." },
@@ -1508,7 +1556,7 @@
     {
       "id": "nai-te",
       "title": "〜ないで・〜なくて",
-      "summary": "Both are the negative て-form. 〜ないで means \"without doing\" and is used in \"please don't\"; 〜なくて gives a reason or links negative clauses.",
+      "summary": "Both are the negative て-form. 〜ないで means \"without doing\" and is used in \"please don't\"; 〜なくて gives a reason, links negative clauses, or says \"not A but B\".",
       "jlpt": "N5",
       "usages": [
         {
@@ -1534,7 +1582,15 @@
           "examples": [
             { "jp": "友達が来なくて、さびしかったです。", "en": "I was lonely because my friend didn't come." },
             { "jp": "お金がなくて、買えませんでした。", "en": "I didn't have any money, so I couldn't buy it." },
-            { "jp": "このレストランは高くなくて、おいしいです。", "en": "This restaurant isn't expensive, and the food is good." }
+            { "jp": "テストが難しくなくて、よかったです。", "en": "I'm glad the test wasn't difficult." }
+          ]
+        },
+        {
+          "heading": "Not A but B (〜じゃなくて)",
+          "explanation": "Noun + じゃなくて, then the right noun, corrects a mistake or sets two things against each other: \"not A, but B\". This is the most common use of なくて in conversation. ではなくて is the more formal version.",
+          "examples": [
+            { "jp": "これは水じゃなくて、お酒です。", "en": "This isn't water, it's sake." },
+            { "jp": "会議は月曜日じゃなくて、火曜日です。", "en": "The meeting isn't on Monday, it's on Tuesday." }
           ]
         }
       ],
