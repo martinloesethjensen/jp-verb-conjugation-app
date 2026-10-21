@@ -21,15 +21,33 @@ public final class QuizViewModel {
     private let recorder: ((QuizAttempt) -> Void)?
     private let now: () -> Date
 
-    /// `recorder` is called once per answered or timed-out question.
+    /// `recorder` is called once per answered or timed-out question. `progress` picks up a
+    /// quiz saved earlier (see `QuizSession`); answers already given are not recorded again.
     public init(
         questions: [QuizQuestion],
+        progress: QuizProgressState? = nil,
         recorder: ((QuizAttempt) -> Void)? = nil,
         now: @escaping () -> Date = Date.init
     ) {
         self.questions = questions
         self.recorder = recorder
         self.now = now
+        if let progress {
+            index = progress.index
+            selected = progress.selected
+            score = progress.score
+            results = progress.results
+            timedOut = progress.timedOut
+            timeLeft = progress.timeLeft
+        }
+    }
+
+    /// Where the quiz is, for saving it. A finished quiz has nothing to resume.
+    public var progress: QuizProgressState {
+        QuizProgressState(
+            index: index, selected: selected, timedOut: timedOut,
+            timeLeft: timeLeft, score: score, results: results
+        )
     }
 
     private func record(_ question: QuizQuestion, _ outcome: QuizOutcome) {
