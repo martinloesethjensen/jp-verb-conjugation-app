@@ -1593,6 +1593,370 @@
         }
       ],
       "related": []
+    },
+    {
+      "id": "te-mo-ii",
+      "title": "〜てもいい・〜てはいけない",
+      "summary": "〜てもいい gives or asks for permission: 食べてもいいです, \"you may eat it\". 〜てはいけない forbids: 食べてはいけません, \"you must not eat it\". In speech they shorten to 〜ていい and 〜ちゃだめ.",
+      "jlpt": "N4",
+      "usages": [
+        {
+          "heading": "You may… (〜てもいいです)",
+          "explanation": "Add もいい to the て-form to give permission: doing it is fine.",
+          "examples": [
+            { "jp": "ここに座ってもいいですよ。", "en": "You can sit here." },
+            { "jp": "この本は持って帰ってもいいです。", "en": "You may take this book home." },
+            { "jp": "疲れたら、休んでもいいです。", "en": "If you get tired, you can take a break." }
+          ]
+        },
+        {
+          "heading": "May I…? (〜てもいいですか)",
+          "explanation": "Add か to ask for permission. To say yes: ええ、どうぞ or はい、いいですよ. To say no politely: すみません、ちょっと…",
+          "examples": [
+            { "jp": "窓を開けてもいいですか。", "en": "May I open the window?" },
+            { "jp": "ここで写真を撮ってもいいですか。", "en": "Is it all right to take photos here?" },
+            { "jp": "このペン、使ってもいい？", "en": "Can I use this pen? (casual)" }
+          ]
+        },
+        {
+          "heading": "You must not… (〜てはいけません)",
+          "explanation": "Add はいけない to the て-form to forbid something. It sounds like a rule, so you hear it from teachers and parents and read it on notices. The は is read わ.",
+          "examples": [
+            { "jp": "ここでたばこを吸ってはいけません。", "en": "You must not smoke here." },
+            { "jp": "試験のとき、辞書を使ってはいけません。", "en": "You may not use a dictionary in the exam." },
+            { "jp": "授業に遅れてはいけません。", "en": "You must not be late for class." }
+          ]
+        },
+        {
+          "heading": "Casual: 〜ちゃだめ, 〜ていい",
+          "explanation": "In speech ては shortens to ちゃ and では to じゃ: 食べては → 食べちゃ, 飲んでは → 飲んじゃ. Then comes だめ, or いけない. Permission shortens too: the も is often dropped, as in 使っていい？",
+          "examples": [
+            { "jp": "それ、食べちゃだめ！", "en": "Don't eat that!" },
+            { "jp": "ここで遊んじゃだめだよ。", "en": "You can't play here." },
+            { "jp": "約束を忘れちゃいけないよ。", "en": "You mustn't forget your promise." },
+            { "jp": "窓、開けていい？", "en": "Can I open the window?" }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "Permission",
+          "slots": ["te"],
+          "then": "もいい",
+          "pattern": "て-form + もいい",
+          "example": "食べる → 食べてもいい / 飲む → 飲んでもいい / 書く → 書いてもいい / する → してもいい / 来る → 来てもいい",
+          "note": "More formal: 〜てもかまいません (\"I don't mind if…\")."
+        },
+        {
+          "word_class": "verb",
+          "condition": "Prohibition",
+          "slots": ["te"],
+          "then": "はいけない",
+          "pattern": "て-form + はいけない",
+          "example": "食べる → 食べてはいけない / 飲む → 飲んではいけない / 書く → 書いてはいけない / する → してはいけない / 来る → 来てはいけない"
+        },
+        {
+          "word_class": "verb",
+          "condition": "Casual prohibition",
+          "pattern": "て-form, て → ちゃ / で → じゃ, + だめ",
+          "example": "食べる → 食べちゃだめ / 飲む → 飲んじゃだめ / 書く → 書いちゃだめ / する → しちゃだめ / 来る → 来ちゃだめ",
+          "note": "〜ちゃいけない means the same; だめ is more direct."
+        },
+        {
+          "word_class": "i-adjective",
+          "slots": ["te"],
+          "then": "もいい",
+          "pattern": "drop い + くてもいい",
+          "example": "高い → 高くてもいい / 小さい → 小さくてもいい",
+          "note": "With an adjective it means \"it's fine even if it's…\": 少し高くてもいいです."
+        },
+        {
+          "word_class": "na-adjective",
+          "slots": ["te"],
+          "then": "もいい",
+          "pattern": "stem + でもいい",
+          "example": "静か → 静かでもいい / 下手 → 下手でもいい"
+        },
+        {
+          "word_class": "noun",
+          "slots": ["te"],
+          "then": "もいい",
+          "pattern": "noun + でもいい",
+          "example": "明日 → 明日でもいい / 鉛筆 → 鉛筆でもいい"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜てもいい", "register": "casual", "note": "You can… / Can I…?" },
+        { "form": "〜ていい", "register": "casual", "note": "Spoken, without も: 使っていい？" },
+        { "form": "〜てもいいです", "register": "polite", "note": "You may…" },
+        { "form": "〜てもいいですか", "register": "polite", "note": "May I…?" },
+        { "form": "〜てもかまいません", "register": "formal", "note": "It's no problem if you…" },
+        { "form": "〜てはいけない", "register": "casual" },
+        { "form": "〜てはいけません", "register": "polite", "note": "You must not… A rule." },
+        { "form": "〜ちゃだめ", "register": "casual", "note": "Spoken. て → ちゃ, で → じゃ: 飲んじゃだめ." },
+        { "form": "〜ちゃいけない", "register": "casual" }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Saying no to 〜てもいいですか",
+          "explanation": "いいえ、〜てはいけません answers the question, but said to someone's face it sounds like a telling-off. A polite no is vaguer.",
+          "examples": [
+            { "jp": "ここに車を止めてもいいですか。", "en": "May I park my car here?" },
+            { "jp": "すみません、ここはちょっと…。", "en": "I'm sorry, that's not really possible here." }
+          ]
+        },
+        {
+          "heading": "Adjectives and nouns take でもいい",
+          "explanation": "The て-form of a な-adjective or a noun ends in で, so permission is でもいい: 静かでもいい, 明日でもいい. 静かだもいい and 明日だもいい are wrong.",
+          "examples": [
+            { "jp": "明日でもいいですか。", "en": "Is tomorrow all right?" },
+            { "jp": "下手でもいいから、歌ってください。", "en": "It doesn't matter if you're not good at it, please sing." }
+          ]
+        }
+      ],
+      "contrasts": [
+        {
+          "pattern": "〜ないでください",
+          "id": "nai-te",
+          "explanation": "ないでください asks the listener not to do something. てはいけません states a rule, so it sounds stricter and less personal.",
+          "examples": [
+            { "jp": "ここで写真を撮らないでください。", "en": "Please don't take photos here." },
+            { "jp": "この部屋で写真を撮ってはいけません。", "en": "Taking photos is not allowed in this room." }
+          ]
+        }
+      ],
+      "related": ["nakereba", "imperative"]
+    },
+    {
+      "id": "nakereba",
+      "title": "〜なければならない・〜なくてもいい",
+      "summary": "〜なければならない and 〜なくてはいけない say that you must do something: 行かなければなりません. In speech they shorten to 〜なきゃ and 〜なくちゃ. 〜なくてもいい says that you don't have to.",
+      "jlpt": "N4",
+      "usages": [
+        {
+          "heading": "Must (〜なければなりません)",
+          "explanation": "Take the ない-form, drop い and add ければならない. Word for word it is \"if you don't, it won't do\". It sounds a little formal and suits duties and rules.",
+          "examples": [
+            { "jp": "毎日薬を飲まなければなりません。", "en": "I have to take medicine every day." },
+            { "jp": "明日は早く起きなければなりません。", "en": "I have to get up early tomorrow." },
+            { "jp": "明日までにレポートを書かなければなりません。", "en": "I have to write a report by tomorrow." }
+          ]
+        },
+        {
+          "heading": "Must (〜なくてはいけません)",
+          "explanation": "Drop い from the ない-form and add くてはいけない. It means the same, and many speakers hear it as a little more personal. The two halves mix freely: なければいけない and なくてはならない are common too.",
+          "examples": [
+            { "jp": "もう帰らなくてはいけません。", "en": "I have to go home now." },
+            { "jp": "母に電話しなくてはいけない。", "en": "I need to call my mother." },
+            { "jp": "漢字をもっと覚えなければいけません。", "en": "I have to learn more kanji." }
+          ]
+        },
+        {
+          "heading": "Casual: 〜なきゃ, 〜なくちゃ",
+          "explanation": "In speech the end is dropped: なければ → なきゃ, なくては → なくちゃ. Often nothing follows, or だめ or いけない does.",
+          "examples": [
+            { "jp": "もう行かなきゃ。", "en": "I've got to go." },
+            { "jp": "明日までに宿題をしなくちゃ。", "en": "I have to do my homework by tomorrow." },
+            { "jp": "早く寝なきゃだめだよ。", "en": "You need to go to bed early." }
+          ]
+        },
+        {
+          "heading": "Don't have to (〜なくてもいい)",
+          "explanation": "Drop い from the ない-form and add くてもいい: not doing it is fine.",
+          "examples": [
+            { "jp": "明日は学校へ行かなくてもいいです。", "en": "I don't have to go to school tomorrow." },
+            { "jp": "全部食べなくてもいいですよ。", "en": "You don't have to eat it all." },
+            { "jp": "急がなくてもいいよ。", "en": "There's no need to hurry." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "Must",
+          "pattern": "ない-form, drop い + ければならない / くてはいけない",
+          "example": "食べない → 食べなければならない / 行かない → 行かなくてはいけない / しない → しなければならない / 来ない → 来なくてはいけない",
+          "note": "ある's ない-form is just ない, so it gives なければ, なくては and なくても. あらなければ does not exist."
+        },
+        {
+          "word_class": "verb",
+          "condition": "Casual",
+          "pattern": "ない-form, drop い + きゃ / くちゃ",
+          "example": "食べない → 食べなきゃ / 食べなくちゃ / 行かない → 行かなきゃ / しない → しなくちゃ / 来ない → 来なきゃ"
+        },
+        {
+          "word_class": "verb",
+          "condition": "Don't have to",
+          "pattern": "ない-form, drop い + くてもいい",
+          "example": "食べない → 食べなくてもいい / 行かない → 行かなくてもいい / しない → しなくてもいい / 来ない → 来なくてもいい"
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "drop い + くなければならない / くなくてもいい",
+          "example": "新しい → 新しくなければならない / 高い → 高くなくてもいい"
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "stem + でなければならない / じゃなくてもいい",
+          "example": "静か → 静かでなければならない / 上手 → 上手じゃなくてもいい"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "noun + でなければならない / じゃなくてもいい",
+          "example": "日本人 → 日本人でなければならない / 日本人じゃなくてもいい"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜なければならない", "register": "formal", "note": "The plain form, mostly written. In conversation it is usually shortened." },
+        { "form": "〜なければなりません", "register": "polite" },
+        { "form": "〜なくてはいけない", "register": "casual" },
+        { "form": "〜なくてはいけません", "register": "polite" },
+        { "form": "〜なければいけない", "register": "casual", "note": "A mix of the two, just as common." },
+        { "form": "〜なきゃ", "register": "casual", "note": "Spoken: 〜なきゃいけない with the end dropped." },
+        { "form": "〜なくちゃ", "register": "casual", "note": "Spoken: 〜なくちゃいけない with the end dropped." },
+        { "form": "〜なくてもいい", "register": "casual", "note": "Don't have to…" },
+        { "form": "〜なくてもいいです", "register": "polite" },
+        { "form": "〜なくてもかまいません", "register": "formal" }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Answering 〜なければなりませんか",
+          "explanation": "Yes repeats the obligation. No is 〜なくてもいいです: \"you don't have to\".",
+          "examples": [
+            { "jp": "靴を脱がなければなりませんか。", "en": "Do I have to take off my shoes?" },
+            { "jp": "はい、脱がなければなりません。", "en": "Yes, you do." },
+            { "jp": "いいえ、脱がなくてもいいです。", "en": "No, you don't have to." }
+          ]
+        },
+        {
+          "heading": "Start from the ない-form",
+          "explanation": "The pattern grows out of the ない-form, so 食べるなければ is wrong. Make the ない-form first: 食べる → 食べない → 食べなければ, 行く → 行かない → 行かなければ."
+        }
+      ],
+      "contrasts": [
+        {
+          "pattern": "〜てはいけない",
+          "id": "te-mo-ii",
+          "explanation": "なくてもいい is \"don't have to\": you are free not to. てはいけない is \"must not\".",
+          "examples": [
+            { "jp": "この薬は飲まなくてもいいです。", "en": "You don't have to take this medicine." },
+            { "jp": "この薬は飲んではいけません。", "en": "You must not take this medicine." }
+          ]
+        }
+      ],
+      "related": ["te-mo-ii"]
+    },
+    {
+      "id": "imperative",
+      "title": "命令形・〜な・〜なさい",
+      "summary": "The imperative (命令形) is a blunt order: 食べろ, 行け. The dictionary form + な is a blunt \"don't\": 行くな. The ます-stem + なさい is firm but kinder, the way parents and teachers speak.",
+      "jlpt": "N4",
+      "usages": [
+        {
+          "heading": "Blunt orders (命令形)",
+          "explanation": "The imperative is very direct. You hear it in emergencies, from coaches and in cheering, on road signs, and between close friends, mostly men. Learners rarely need to say it to anyone.",
+          "examples": [
+            { "jp": "早く起きろ！", "en": "Get up, quick!" },
+            { "jp": "危ない！逃げろ！", "en": "Look out! Run!" },
+            { "jp": "がんばれ！", "en": "Go for it!" },
+            { "jp": "止まれ", "en": "Stop (road sign)" }
+          ]
+        },
+        {
+          "heading": "Blunt \"don't\" (dictionary form + な)",
+          "explanation": "The dictionary form + な forbids, just as bluntly.",
+          "examples": [
+            { "jp": "動くな！", "en": "Don't move!" },
+            { "jp": "ここに入るな。", "en": "Keep out." },
+            { "jp": "心配するな。", "en": "Don't worry about it. (blunt, to a friend)" }
+          ]
+        },
+        {
+          "heading": "Firm but kind (〜なさい)",
+          "explanation": "The ます-stem + なさい is an order from someone in charge: a parent to a child, a teacher to a class. Exam questions use it too.",
+          "examples": [
+            { "jp": "早く寝なさい。", "en": "Go to bed now." },
+            { "jp": "野菜も食べなさい。", "en": "Eat your vegetables too." },
+            { "jp": "正しい答えを選びなさい。", "en": "Choose the correct answer." }
+          ]
+        },
+        {
+          "heading": "Reporting an order",
+          "explanation": "To say what someone told you to do, put the imperative or 〜な before と言われました (\"I was told to…\"). This is the most common place for a learner to use it.",
+          "examples": [
+            { "jp": "父に勉強しろと言われました。", "en": "My father told me to study." },
+            { "jp": "医者にお酒を飲むなと言われました。", "en": "The doctor told me not to drink alcohol." }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "condition": "Ru-verbs",
+          "pattern": "drop る + ろ",
+          "example": "食べる → 食べろ / 見る → 見ろ / 起きる → 起きろ / 寝る → 寝ろ"
+        },
+        {
+          "word_class": "verb",
+          "condition": "U-verbs",
+          "pattern": "change the last kana to its え-sound",
+          "example": "飲む → 飲め / 書く → 書け / 話す → 話せ / 買う → 買え / 泳ぐ → 泳げ / 待つ → 待て / 遊ぶ → 遊べ / 帰る → 帰れ",
+          "note": "The endings move like this: う→え, く→け, ぐ→げ, す→せ, つ→て, ぬ→ね, ぶ→べ, む→め, る→れ."
+        },
+        {
+          "word_class": "verb",
+          "condition": "する and 来る",
+          "pattern": "する → しろ / 来る → 来い",
+          "example": "勉強する → 勉強しろ / 来る → 来い",
+          "note": "来い is read こい."
+        },
+        {
+          "word_class": "verb",
+          "condition": "Don't",
+          "pattern": "dictionary form + な",
+          "example": "行く → 行くな / 食べる → 食べるな / する → するな / 来る → 来るな"
+        },
+        {
+          "word_class": "verb",
+          "condition": "なさい",
+          "pattern": "ます-stem + なさい",
+          "example": "食べる → 食べなさい / 飲む → 飲みなさい / する → しなさい / 来る → 来なさい",
+          "note": "来なさい is read きなさい."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜ろ", "register": "casual", "note": "Ru-verbs: 食べろ, 見ろ. Blunt." },
+        { "form": "〜え", "register": "casual", "note": "U-verbs end in their え-sound: 飲め, 書け. Blunt." },
+        { "form": "〜な", "register": "casual", "note": "Dictionary form + な: 行くな. A blunt \"don't\"." },
+        { "form": "〜なさい", "register": "casual", "note": "Firm but kind, from someone in charge." },
+        { "form": "〜てください", "register": "polite", "note": "The polite way to ask someone to do something." },
+        { "form": "〜ないでください", "register": "polite", "note": "The polite way to ask someone not to." }
+      ],
+      "pitfalls": [
+        {
+          "heading": "Asking people to do things",
+          "explanation": "Among friends the plain て-form is the everyday request, and 〜てください is the polite one. The imperative sounds angry or rude, and なさい talks down to the listener, so never use it with someone above you.",
+          "examples": [
+            { "jp": "ちょっと待って。", "en": "Wait a sec. (friends)" },
+            { "jp": "ちょっと待ってください。", "en": "Please wait a moment." },
+            { "jp": "ちょっと待て！", "en": "Hold it! (blunt)" }
+          ]
+        },
+        {
+          "heading": "Verbs with no imperative",
+          "explanation": "An order needs something the listener can choose to do, so verbs for states and for things that just happen have no imperative, no 〜な and no なさい: わかる (to understand), しる (to know), つかれる (to get tired), ある (to exist)."
+        },
+        {
+          "heading": "Not every な at the end is \"don't\"",
+          "explanation": "Only the dictionary form + な forbids. After other forms, a な at the end of a sentence just adds feeling: いいな, 行きたいな.",
+          "examples": [
+            { "jp": "行くな！", "en": "Don't go!" },
+            { "jp": "日本へ行きたいな。", "en": "I'd love to go to Japan." }
+          ]
+        }
+      ],
+      "related": ["te-mo-ii"]
     }
   ]
 }

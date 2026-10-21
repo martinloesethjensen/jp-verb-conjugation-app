@@ -57,7 +57,7 @@ final class RealNuanceDataTests: XCTestCase {
             try loadGrammar().attachingToVerbs.map(\.id),
             ["n-desu", "potential", "certainty", "obligation", "appearance", "ppoi",
              "teiru", "teshimau", "temiru", "sugiru", "node", "hou-ga-ii",
-             "tai", "volitional", "nai-te"]
+             "tai", "volitional", "nai-te", "te-mo-ii", "nakereba", "imperative"]
         )
     }
 }
