@@ -121,7 +121,8 @@ public extension GrammarPoint {
 /// Up to `count` connection questions for the rules of `points` that have slots and an
 /// ending. Each (rule, slot) is paired with the next verb or word of the rule's class from
 /// a shuffled deck, cycling through the pairs so a lesson with two slots still fills a quiz
-/// with other words.
+/// with other words. A verb that lacks the form a rule spells out is skipped for that rule
+/// (わかる has no ましょう form, so the quiz never asks for わかりましょう).
 /// No answer is asked twice. The distractors are the word's other blocks with the same
 /// ending, the な form, and the dictionary form plus the ending (たかいすぎる, しずかので).
 public func buildConnectionQuestions(
@@ -137,7 +138,12 @@ public func buildConnectionQuestions(
         for rule in rules where byClass[rule.wordClass] != nil {
             let candidates = Set(rules.filter { $0.wordClass == rule.wordClass && $0.then == rule.then }.flatMap(\.slots))
             for slot in rule.slots {
-                entries.append(ConnectionEntry(point: point, rule: rule, slot: slot, candidates: candidates))
+                let excluded = rule.wordClass == .verb
+                    ? Set(verbs.map(\.stableKey)).subtracting(rule.eligibleVerbs(slot, among: verbs).map(\.stableKey))
+                    : []
+                entries.append(ConnectionEntry(
+                    point: point, rule: rule, slot: slot, candidates: candidates, excludedVerbs: excluded
+                ))
             }
         }
     }
@@ -156,6 +162,7 @@ public func buildConnectionQuestions(
         let wordClass = entry.rule.wordClass
         if decks[wordClass, default: []].isEmpty { decks[wordClass] = byClass[wordClass]?.shuffled() ?? [] }
         guard let source = decks[wordClass]?.popLast(),
+              !entry.excludedVerbs.contains(source.slots.stableKey),
               let question = makeConnectionQuestion(entry, source),
               asked.insert(question.correct).inserted else { continue }
         questions.append(question)
@@ -169,6 +176,8 @@ private struct ConnectionEntry {
     let slot: GrammarSlot
     /// Every slot the lesson takes for this class and ending, for the cue.
     let candidates: Set<GrammarSlot>
+    /// `Verb.stableKey` of each verb that lacks the form this rule spells out in this slot.
+    let excludedVerbs: Set<String>
 }
 
 /// A verb or a word, with what the prompt shows.

@@ -66,3 +66,32 @@ public extension SlotSource {
         return form
     }
 }
+
+public extension AttachmentRule {
+    /// The verb forms this rule spells out in `slot`: each form some of `verbs` have, whose
+    /// value is the built pattern for every verb that has it (stem + ましょう is the polite
+    /// volitional). Empty when no stored form matches (short form + ので).
+    func practisedForms(_ slot: GrammarSlot, among verbs: [Verb]) -> [QuizForm] {
+        guard wordClass == .verb, slots.contains(slot), then != nil else { return [] }
+        let built = verbs.map { (forms: $0.forms, built: build($0, slot: slot)) }
+        return QuizForm.all.filter { form in
+            var matched = false
+            for verb in built {
+                guard let value = form.value(in: verb.forms) else { continue }
+                guard value == verb.built else { return false }
+                matched = true
+            }
+            return matched
+        }
+    }
+
+    /// The verbs this rule can be practised with in `slot`: those that have every form it
+    /// spells out. The data leaves a form out on purpose (わかる has no ましょう form, since
+    /// わかる is not volitional), so a verb without it is not asked for わかりましょう.
+    func eligibleVerbs(_ slot: GrammarSlot, among verbs: [Verb]) -> [Verb] {
+        let practised = practisedForms(slot, among: verbs)
+        return verbs.filter { verb in
+            build(verb, slot: slot) != nil && practised.allSatisfy { $0.value(in: verb.forms) != nil }
+        }
+    }
+}
