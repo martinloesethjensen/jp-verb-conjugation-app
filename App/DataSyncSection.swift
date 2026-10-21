@@ -7,6 +7,13 @@ struct DataSyncSection: View {
     @Environment(DataSyncStatus.self) private var syncStatus
 
     var body: some View {
+        // Redrawn every minute so "Updated 2 minutes ago" doesn't go stale while Settings is open.
+        TimelineView(.everyMinute) { _ in
+            section
+        }
+    }
+
+    private var section: some View {
         Section {
             ForEach(DataFile.allCases) { file in
                 DataFileRow(status: syncStatus.status(for: file))
