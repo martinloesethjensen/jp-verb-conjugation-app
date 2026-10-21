@@ -110,6 +110,11 @@ public final class DataSyncStatus {
         files[file] ?? DataFileStatus(file: file)
     }
 
+    /// The most recent time any file was checked.
+    public var lastChecked: Date? {
+        files.values.compactMap(\.lastChecked).max()
+    }
+
     /// The server answered and nothing changed (or the file isn't published yet).
     public func recordUpToDate(_ file: DataFile) {
         var status = status(for: file)

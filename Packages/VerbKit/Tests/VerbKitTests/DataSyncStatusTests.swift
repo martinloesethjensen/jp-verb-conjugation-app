@@ -69,6 +69,15 @@ final class DataSyncStatusTests: XCTestCase {
         XCTAssertEqual(grammar.lastChecked, clock)
     }
 
+    func testLastCheckedIsTheMostRecentOfAnyFile() {
+        let status = makeStatus()
+        XCTAssertNil(status.lastChecked)
+        status.recordUpToDate(.verbs)
+        clock += 60
+        status.recordUpToDate(.counters)
+        XCTAssertEqual(status.lastChecked, clock)
+    }
+
     func testVersionAndDatesSurviveARelaunch() {
         makeStatus().recordUpdated(.furigana, version: "1.0.1")
 

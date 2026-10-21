@@ -199,6 +199,7 @@ struct SettingsView: View {
             } footer: {
                 Text(audioFooter)
             }
+            DataSyncSection()
         }
         .navigationTitle("Settings")
         .frame(minWidth: 320, minHeight: 240)
