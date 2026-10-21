@@ -101,6 +101,17 @@ class FormSpec:
         return {key: value for key, value in raw.items() if value is not None}
 
 
+# The lesson in data/grammar.json that teaches each "More forms" form. Forms missing here have
+# no lesson yet; test_form_catalogue checks every id named here is a lesson.
+OTHER_FORM_LESSONS = {
+    "tai": "tai",
+    "volitional": "volitional",
+    "masu_volitional": "volitional",
+    "neg_te": "nai-te",
+    "nakute": "nai-te",
+}
+
+
 def _grid(prefix, family, name, register, grammar, *, base_id=None):
     """The four finite forms of one register: pos, neg, past, past_neg.
     `base_id` overrides the id of the positive form (`teiru`, not `teiru_pos`)."""
@@ -197,8 +208,9 @@ def _build():
         id="nagara", family="auxiliary", role="derived", name="ながら", grammar="temiru",
     ))
 
-    # More forms: each is identified by its name alone, so it is "derived". No
-    # lessons yet. Some verbs have only some of them (update_data.py decides which).
+    # More forms: each is identified by its name alone, so it is "derived". Some verbs have
+    # only some of them (update_data.py decides which). A form links to its lesson in
+    # grammar.json through OTHER_FORM_LESSONS; the rest have no lesson yet.
     for form_id, name in (
         ("volitional", "Volitional"),
         ("passive", "Passive"),
@@ -226,7 +238,10 @@ def _build():
         ("conditional_to", "Conditional (と)"),
         ("conditional_nara", "Conditional (なら)"),
     ):
-        forms.append(FormSpec(id=form_id, family="other", role="derived", name=name))
+        forms.append(FormSpec(
+            id=form_id, family="other", role="derived", name=name,
+            grammar=OTHER_FORM_LESSONS.get(form_id),
+        ))
     return forms
 
 
