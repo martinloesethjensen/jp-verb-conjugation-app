@@ -150,11 +150,14 @@ final class WordBankImportPlannerTests: XCTestCase {
     }
 
     func testFiveThousandEntriesPlanQuickly() {
-        let local = (0..<5000).map { WordBankEntryValue(text: "word\($0)", reading: "reading\($0)") }
-        let archive = WordBankArchive(entries: (0..<5000).map { .init(text: "word\($0)", reading: "reading\($0)") })
-        let started = Date()
-        let plan = plan(archive, into: WordBankSnapshot(entries: local))
-        XCTAssertEqual(plan.summary.unchangedEntries, 5000)
-        XCTAssertLessThan(Date().timeIntervalSince(started), 2)
+        func inputs(_ size: Int) -> (WordBankArchive, WordBankSnapshot) {
+            (WordBankArchive(entries: (0..<size).map { .init(text: "word\($0)", reading: "reading\($0)") }),
+             WordBankSnapshot(entries: (0..<size).map { WordBankEntryValue(text: "word\($0)", reading: "reading\($0)") }))
+        }
+        let (archive, local) = inputs(5000)
+        XCTAssertEqual(plan(archive, into: local).summary.unchangedEntries, 5000)
+        // Matching against the local bank must stay linear: 5,000 entries cost about
+        // 10× what 500 do, where an O(n²) match would cost 100×.
+        XCTAssertScalesLinearly(prepare: inputs) { _ = plan($0.0, into: $0.1) }
     }
 }

@@ -217,28 +217,23 @@ final class WordBankSearchTests: XCTestCase {
     func testSearchStaysFastForFiveThousandEntries() {
         let kana = Array("あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん")
         var generator = SystemRandomNumberGenerator()
-        let entries = (0..<5_000).map { n in
-            WordBankEntryValue(
-                text: String((0..<4).map { _ in kana.randomElement(using: &generator)! }),
-                senses: [Sense(meaning: "meaning number \(n)")],
-                equivalents: [StandardEquivalent(written: String((0..<3).map { _ in kana.randomElement(using: &generator)! }))],
-                notes: "a note about entry \(n) that runs on for a while",
-                dialectTagIDs: n.isMultiple(of: 3) ? [kansai.id] : []
-            )
+        func bank(of size: Int) -> WordBankSearchIndex {
+            index(entries: (0..<size).map { n in
+                WordBankEntryValue(
+                    text: String((0..<4).map { _ in kana.randomElement(using: &generator)! }),
+                    senses: [Sense(meaning: "meaning number \(n)")],
+                    equivalents: [StandardEquivalent(written: String((0..<3).map { _ in kana.randomElement(using: &generator)! }))],
+                    notes: "a note about entry \(n) that runs on for a while",
+                    dialectTagIDs: n.isMultiple(of: 3) ? [kansai.id] : []
+                )
+            })
         }
-        let big = index(entries: entries)
         let query = q("meaning nu")
-        // The spec's target is 16 ms per keystroke in the shipped (optimised) build.
-        // Unoptimised code runs about 9× slower, so debug builds get a looser limit
-        // that still catches a real regression without depending on machine load.
-        #if DEBUG
-        let limit = 0.25
-        #else
-        let limit = 0.016
-        #endif
-        let start = Date()
-        _ = big.search(query)
-        XCTAssertLessThan(Date().timeIntervalSince(start), limit)
+        // The spec's target is 16 ms per keystroke for 5,000 entries in the shipped build.
+        // A wall-clock limit here flaked on loaded runners, so check the shape instead:
+        // 5,000 entries must cost about 10× what 500 do, not the 100× of an O(n²) slip.
+        XCTAssertScalesLinearly(prepare: bank(of:)) { _ = $0.search(query) }
+        let big = bank(of: 5_000)
         measure(metrics: [XCTClockMetric()]) { _ = big.search(query) }
     }
 }
