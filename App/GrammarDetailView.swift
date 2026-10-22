@@ -10,6 +10,12 @@ struct GrammarDetailView: View {
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @State private var connectionQuestions: [ConnectionQuestion]?
 
+    @Environment(CourseStore.self) private var courseStore
+
+    private var lessonTag: CourseLesson? {
+        courseStore.course?.lessonTag(for: point.id, points: verbStore.grammarPoints, textbooks: verbStore.textbooks)
+    }
+
     private let registerOrder: [GrammarRegister] = [.polite, .casual, .formal]
 
     /// Related points that exist locally; a link to a lesson that hasn't
@@ -73,6 +79,17 @@ struct GrammarDetailView: View {
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 8).padding(.vertical, 2)
                     .glassEffect(in: Capsule())
+            }
+            if let lesson = lessonTag {
+                HStack(spacing: 8) {
+                    Text(lesson.name)
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .glassEffect(in: Capsule())
+                    if lesson.unreviewed {
+                        Text("unreviewed").font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
             }
             JapaneseText(point.title)
                 .font(.largeTitle.weight(.heavy))

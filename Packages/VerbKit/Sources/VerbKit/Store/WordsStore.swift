@@ -10,16 +10,23 @@ public final class WordsStore {
 
     private let syncService: WordsSyncService
     private let persisting: WordsPersisting
+    private let syncStatus: DataSyncStatus?
 
-    public init(syncService: WordsSyncService, persisting: WordsPersisting) {
+    public init(syncService: WordsSyncService, persisting: WordsPersisting, syncStatus: DataSyncStatus? = nil) {
         self.syncService = syncService
         self.persisting = persisting
+        self.syncStatus = syncStatus
     }
 
     public func start() async {
         if let cached = try? persisting.loadWords() {
             words = cached
         }
+        await sync()
+    }
+
+    /// Settings' Refresh data.
+    public func refresh() async {
         await sync()
     }
 
@@ -30,14 +37,25 @@ public final class WordsStore {
 
     /// Persist first, then confirm, so a failed save is retried next time.
     private func sync() async {
-        guard let result = try? await syncService.sync() else { return }
-        guard case let .updated(manifest, fresh) = result else { return }
+        let result: WordsSyncResult
+        do {
+            result = try await syncService.sync()
+        } catch {
+            syncStatus?.recordFailure(.words, error)
+            return
+        }
+        guard case let .updated(manifest, fresh) = result else {
+            syncStatus?.recordUpToDate(.words)
+            return
+        }
         do {
             try persisting.replaceWords(with: fresh)
         } catch {
+            syncStatus?.recordFailure(.words, error, whileSaving: true)
             return
         }
         syncService.confirmSynced(manifest)
+        syncStatus?.recordUpdated(.words, version: manifest.version)
         words = fresh
     }
 }

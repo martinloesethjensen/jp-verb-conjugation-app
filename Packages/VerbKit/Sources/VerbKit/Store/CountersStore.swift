@@ -10,16 +10,23 @@ public final class CountersStore {
 
     private let syncService: CountersSyncService
     private let persisting: CountersPersisting
+    private let syncStatus: DataSyncStatus?
 
-    public init(syncService: CountersSyncService, persisting: CountersPersisting) {
+    public init(syncService: CountersSyncService, persisting: CountersPersisting, syncStatus: DataSyncStatus? = nil) {
         self.syncService = syncService
         self.persisting = persisting
+        self.syncStatus = syncStatus
     }
 
     public func start() async {
         if let cached = try? persisting.loadCounters() {
             apply(cached)
         }
+        await sync()
+    }
+
+    /// Settings' Refresh data.
+    public func refresh() async {
         await sync()
     }
 
@@ -43,14 +50,25 @@ public final class CountersStore {
 
     /// Persist first, then confirm, so a failed save is retried next time.
     private func sync() async {
-        guard let result = try? await syncService.sync() else { return }
-        guard case let .updated(manifest, fresh) = result else { return }
+        let result: CountersSyncResult
+        do {
+            result = try await syncService.sync()
+        } catch {
+            syncStatus?.recordFailure(.counters, error)
+            return
+        }
+        guard case let .updated(manifest, fresh) = result else {
+            syncStatus?.recordUpToDate(.counters)
+            return
+        }
         do {
             try persisting.replaceCounters(with: fresh)
         } catch {
+            syncStatus?.recordFailure(.counters, error, whileSaving: true)
             return
         }
         syncService.confirmSynced(manifest)
+        syncStatus?.recordUpdated(.counters, version: manifest.version)
         apply(fresh)
     }
 }

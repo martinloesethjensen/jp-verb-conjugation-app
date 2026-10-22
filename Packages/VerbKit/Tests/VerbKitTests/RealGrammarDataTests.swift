@@ -27,6 +27,26 @@ final class RealGrammarDataTests: XCTestCase {
         return try JSONDecoder().decode(GrammarDataFile.self, from: data).grammar
     }
 
+    private func loadGrammarFile() throws -> GrammarDataFile {
+        let data = try Data(contentsOf: dataURL("grammar.json"))
+        return try JSONDecoder().decode(GrammarDataFile.self, from: data)
+    }
+
+    func testEveryLessonRefPointsAtAKnownBookAndLesson() throws {
+        let file = try loadGrammarFile()
+        XCTAssertEqual(Set(file.books.map(\.id)), ["genki-1", "genki-2"])
+        let booksByID = Dictionary(uniqueKeysWithValues: file.books.map { ($0.id, $0) })
+        var refs = 0
+        for point in file.grammar {
+            for ref in point.taughtIn {
+                let book = try XCTUnwrap(booksByID[ref.book], "\(point.id) -> \(ref.book)")
+                XCTAssertTrue(book.contains(lesson: ref.lesson), "\(point.id) \(ref.book) L\(ref.lesson)")
+                refs += 1
+            }
+        }
+        XCTAssertGreaterThan(refs, 0)
+    }
+
     func testEveryVerbHasNdFormsBuiltFromItsPlainForms() throws {
         let verbs = try loadVerbs()
         XCTAssertFalse(verbs.isEmpty)
@@ -105,22 +125,52 @@ final class RealGrammarDataTests: XCTestCase {
         XCTAssertEqual(Set(words.map(\.wordClass)), [.iAdjective, .naAdjective, .noun])
     }
 
-    /// Every rule with an ending builds a pattern for every word of its class and every
-    /// slot it lists, so the cards and the quiz never meet a missing form.
-    func testEverySlotRuleBuildsForEveryWordOfItsClass() throws {
-        let sources: [SlotSource] = try loadVerbs() + loadWords()
+    /// Every rule with an ending builds a pattern for every eligible word of its class and
+    /// every slot it lists, so the cards and the quiz never meet a missing form. A verb is
+    /// ineligible only when it lacks the form the rule spells out (わかる has no ましょう).
+    func testEverySlotRuleBuildsForEveryEligibleWordOfItsClass() throws {
+        let verbs = try loadVerbs()
+        let words = try loadWords()
         var built = 0
         for point in try loadGrammar() {
             for rule in point.attachment where rule.then != nil {
-                for word in sources where word.wordClass == rule.wordClass {
-                    for slot in rule.slots {
+                for slot in rule.slots {
+                    let sources: [SlotSource] = rule.wordClass == .verb
+                        ? rule.eligibleVerbs(slot, among: verbs)
+                        : words.filter { $0.wordClass == rule.wordClass }
+                    for word in sources {
                         XCTAssertNotNil(rule.build(word, slot: slot), "\(point.id) \(rule.wordClass) \(slot) \(word.dict)")
                         built += 1
+                    }
+                    guard rule.wordClass == .verb else { continue }
+                    let practised = rule.practisedForms(slot, among: verbs)
+                    let skipped = Set(verbs.map(\.id)).subtracting(sources.map(\.stableKey))
+                    for verb in verbs where skipped.contains(verb.id) {
+                        XCTAssertTrue(practised.contains { $0.value(in: verb.forms) == nil },
+                                      "\(point.id) \(slot) skips \(verb.dict), which has every form it spells out")
                     }
                 }
             }
         }
         XCTAssertGreaterThan(built, 200)
+    }
+
+    /// The forms the data leaves out (scripts/update_data.py, PARTIAL_OTHER_FORMS) are never
+    /// asked: わかる, しる and つかれる are not volitional, so they have no ましょう form.
+    func testTheVolitionalRuleSkipsVerbsWithoutAMasuVolitional() throws {
+        let verbs = try loadVerbs()
+        let volitional = try XCTUnwrap(try loadGrammar().first { $0.id == "volitional" })
+        let rule = try XCTUnwrap(volitional.attachment.first { $0.then == "ましょう" })
+        XCTAssertEqual(rule.practisedForms(.stem, among: verbs).map(\.id), ["masu_volitional"])
+        let skipped = Set(verbs.map(\.dict)).subtracting(rule.eligibleVerbs(.stem, among: verbs).map(\.dict))
+        XCTAssertEqual(skipped, ["わかる", "しる", "つかれる"])
+
+        let never: Set<String> = ["わかりましょう", "しりましょう", "つかれましょう"]
+        for _ in 0..<5 {
+            let questions = buildConnectionQuestions(points: [volitional], verbs: verbs, words: [], count: verbs.count)
+            XCTAssertGreaterThan(questions.count, 20)
+            XCTAssertTrue(never.isDisjoint(with: questions.map(\.correct)), "\(questions.map(\.correct))")
+        }
     }
 
     /// Spot checks a learner would recognise, one per tricky rule.
@@ -156,7 +206,7 @@ final class RealGrammarDataTests: XCTestCase {
     /// words, each question with its answer among distinct choices.
     func testConnectionQuestionsBuildFromTheRealData() throws {
         let points = try loadGrammar().filter(\.hasConnections)
-        XCTAssertEqual(Set(points.map(\.id)), ["n-desu", "sugiru", "node", "hou-ga-ii", "tai", "volitional", "nai-te"])
+        XCTAssertEqual(Set(points.map(\.id)), ["n-desu", "sugiru", "node", "hou-ga-ii", "tai", "volitional", "nai-te", "te-mo-ii"])
         let verbs = try loadVerbs()
         let words = try loadWords()
         for point in points {

@@ -131,6 +131,9 @@ struct SettingsView: View {
                     Text("Hidden levels are left out of lists, the quiz and the widgets. Search can still look at all levels. At least one level of verbs and of lessons stays visible.")
                 }
             }
+            Section("Grammar") {
+                NavigationLink("My course") { MyCourseView() }
+            }
             Section("Quiz") {
                 Picker("Number of questions", selection: $quizQuestionCount) {
                     ForEach(questionCountOptions, id: \.self) { count in
@@ -196,6 +199,7 @@ struct SettingsView: View {
             } footer: {
                 Text(audioFooter)
             }
+            DataSyncSection()
         }
         .navigationTitle("Settings")
         .frame(minWidth: 320, minHeight: 240)

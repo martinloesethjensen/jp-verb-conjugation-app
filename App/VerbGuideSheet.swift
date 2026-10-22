@@ -12,7 +12,9 @@ struct VerbGuideSheet: View {
                     Text("The pill shows a verb's type. The dot beside the name shows its て-form group, so verbs that make the same て-form share a colour. Ru-verbs and irregulars have no such group, so they have no dot.")
                 }
                 Section("Verb types") {
-                    typeRow(.ru, "Ru-verb (一段)", "Ends in -eru or -iru. Drop る and add the ending. Exceptions: はいる, かえる, きる look like ru-verbs but are u-verbs.")
+                    typeRow(.ru, "Ru-verb (一段)", "Ends in -eru or -iru. Drop る and add the ending. Exceptions: "
+                            + RuLookalike.all.map { "\($0.kana) (\($0.kanji))" }.joined(separator: ", ")
+                            + " look like ru-verbs but are u-verbs. きる (着る, to wear) is a ru-verb; きる (切る, to cut) is not.")
                     typeRow(.u, "U-verb (五段)", "Ends in any -u sound. If it is not -eru/-iru, it is a u-verb.")
                     typeRow(.irregular, "Irregular", "Only する and くる, and compounds like べんきょうする.")
                 }
@@ -21,7 +23,8 @@ struct VerbGuideSheet: View {
                     ruleRow(color: VerbType.irregular.accentColor, from: "する / くる", to: "して / きて", example: "べんきょうする → べんきょうして")
                     ForEach(TeFormRule.all, id: \.group) { rule in
                         ruleRow(color: rule.group.accentColor, from: rule.endings, to: rule.result,
-                                example: "\(rule.example.dict) → \(rule.example.te)")
+                                example: "\(rule.example.dict) → \(rule.example.te)"
+                                    + (rule.exception.map { "\nException: \($0.dict) → \($0.te) (not ×\($0.dict.dropLast())\(rule.result))" } ?? ""))
                     }
                 }
             }

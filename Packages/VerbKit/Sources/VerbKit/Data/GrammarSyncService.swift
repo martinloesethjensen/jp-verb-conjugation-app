@@ -2,7 +2,7 @@ import Foundation
 
 public enum GrammarSyncResult: Equatable, Sendable {
     case upToDate
-    case updated(manifest: GrammarManifest, points: [GrammarPoint])
+    case updated(manifest: GrammarManifest, points: [GrammarPoint], books: [Textbook])
 }
 
 /// Mirrors `VerbSyncService` for `grammar.json`, including its contract:
@@ -47,7 +47,7 @@ public struct GrammarSyncService: Sendable {
             throw VerbSyncError.malformedData
         }
 
-        return .updated(manifest: manifest, points: decoded.grammar)
+        return .updated(manifest: manifest, points: decoded.grammar, books: decoded.books)
     }
 
     /// Records `manifest` as the last successfully synced grammar

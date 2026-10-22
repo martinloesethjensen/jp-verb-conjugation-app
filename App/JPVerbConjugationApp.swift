@@ -12,10 +12,12 @@ struct JPVerbConjugationApp: App {
     @State private var furiganaStore: FuriganaStore
     @State private var wordsStore: WordsStore
     @State private var countersStore: CountersStore
+    @State private var dataSyncStatus: DataSyncStatus
     @State private var quizHistory: QuizHistoryStore
     @State private var quizSessions = QuizSessionStore()
     @State private var wordBank: WordBankStore
     @State private var wordBankTransfer: WordBankTransferHub
+    @State private var courseStore = CourseStore(defaults: .appGroup)
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     init() {
@@ -25,26 +27,43 @@ struct JPVerbConjugationApp: App {
         let fetcher = GitHubVerbFetcher.githubMain()
         let syncState = UserDefaultsSyncStateStore()
         let monitor = NetworkMonitor()
+        let status = DataSyncStatus()
         _networkMonitor = State(initialValue: monitor)
-        _verbStore = State(initialValue: VerbStore(
+        let verbs = VerbStore(
             syncService: VerbSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataVerbPersisting(modelContext: context),
             networkMonitor: monitor,
             grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
-            grammarPersisting: SwiftDataGrammarPersisting(modelContext: context)
-        ))
-        _furiganaStore = State(initialValue: FuriganaStore(
+            grammarPersisting: SwiftDataGrammarPersisting(modelContext: context),
+            syncStatus: status
+        )
+        let furigana = FuriganaStore(
             syncService: FuriganaSyncService(fetcher: fetcher, syncState: syncState),
-            persisting: SwiftDataFuriganaPersisting(modelContext: context)
-        ))
-        _wordsStore = State(initialValue: WordsStore(
+            persisting: SwiftDataFuriganaPersisting(modelContext: context),
+            syncStatus: status
+        )
+        let words = WordsStore(
             syncService: WordsSyncService(fetcher: fetcher, syncState: syncState),
-            persisting: SwiftDataWordsPersisting(modelContext: context)
-        ))
-        _countersStore = State(initialValue: CountersStore(
+            persisting: SwiftDataWordsPersisting(modelContext: context),
+            syncStatus: status
+        )
+        let counters = CountersStore(
             syncService: CountersSyncService(fetcher: fetcher, syncState: syncState),
-            persisting: SwiftDataCountersPersisting(modelContext: context)
-        ))
+            persisting: SwiftDataCountersPersisting(modelContext: context),
+            syncStatus: status
+        )
+        // Settings' Refresh data: same order as launch, verbs (and grammar) first.
+        status.refreshHandler = {
+            await verbs.refresh()
+            await furigana.refresh()
+            await words.refresh()
+            await counters.refresh()
+        }
+        _verbStore = State(initialValue: verbs)
+        _furiganaStore = State(initialValue: furigana)
+        _wordsStore = State(initialValue: words)
+        _countersStore = State(initialValue: counters)
+        _dataSyncStatus = State(initialValue: status)
         _quizHistory = State(initialValue: QuizHistoryStore(
             persisting: SwiftDataQuizHistoryPersisting(modelContext: context)
         ))
@@ -60,10 +79,12 @@ struct JPVerbConjugationApp: App {
                 .environment(furiganaStore)
                 .environment(wordsStore)
                 .environment(countersStore)
+                .environment(dataSyncStatus)
                 .environment(quizHistory)
                 .environment(quizSessions)
                 .environment(wordBank)
                 .environment(wordBankTransfer)
+                .environment(courseStore)
                 .task {
                     networkMonitor.start()
                     await verbStore.start()
@@ -93,11 +114,15 @@ struct JPVerbConjugationApp: App {
         }
         #if os(macOS)
         Settings {
-            SettingsView()
-                .environment(verbStore)
-                .environment(quizHistory)
-                .environment(wordBank)
-                .environment(wordBankTransfer)
+            NavigationStack {
+                SettingsView()
+            }
+            .environment(verbStore)
+            .environment(dataSyncStatus)
+            .environment(quizHistory)
+            .environment(wordBank)
+            .environment(wordBankTransfer)
+            .environment(courseStore)
         }
         #endif
     }

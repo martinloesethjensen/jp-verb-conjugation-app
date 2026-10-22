@@ -11,25 +11,30 @@ public final class VerbStore {
     /// a grammar failure never affects `verbs` or `firstLaunchState`.
     public private(set) var grammarPoints: [GrammarPoint] = []
     public var hasGrammar: Bool { !grammarPoints.isEmpty }
+    /// Replaced together with `grammarPoints`.
+    public private(set) var textbooks: [Textbook] = []
 
     private let syncService: VerbSyncService
     private let persisting: VerbPersisting
     private let networkMonitor: NetworkMonitor
     private let grammarSyncService: GrammarSyncService?
     private let grammarPersisting: GrammarPersisting?
+    private let syncStatus: DataSyncStatus?
 
     public init(
         syncService: VerbSyncService,
         persisting: VerbPersisting,
         networkMonitor: NetworkMonitor,
         grammarSyncService: GrammarSyncService? = nil,
-        grammarPersisting: GrammarPersisting? = nil
+        grammarPersisting: GrammarPersisting? = nil,
+        syncStatus: DataSyncStatus? = nil
     ) {
         self.syncService = syncService
         self.persisting = persisting
         self.networkMonitor = networkMonitor
         self.grammarSyncService = grammarSyncService
         self.grammarPersisting = grammarPersisting
+        self.syncStatus = syncStatus
     }
 
     public func start() async {
@@ -62,6 +67,17 @@ public final class VerbStore {
         await syncGrammar()
     }
 
+    /// Settings' Refresh data: checks verbs and grammar again. Without any
+    /// verbs yet this is the first-launch fetch.
+    public func refresh() async {
+        guard hasLocalData else {
+            await runFirstLaunchFetch()
+            return
+        }
+        await syncInBackground()
+        await syncGrammar()
+    }
+
     private func runFirstLaunchFetch() async {
         firstLaunchState = .checking
         firstLaunchState = .fetching
@@ -74,32 +90,51 @@ public final class VerbStore {
                 // treat as corrupt local state rather than silently
                 // leaving the user on an empty verb list forever.
                 firstLaunchState = .failed(.malformedData)
+                syncStatus?.recordFailure(.verbs, VerbSyncError.malformedData)
             case let .updated(manifest, fetchedVerbs):
-                try persisting.replaceAllVerbs(with: fetchedVerbs)
+                do {
+                    try persisting.replaceAllVerbs(with: fetchedVerbs)
+                } catch {
+                    syncStatus?.recordFailure(.verbs, error, whileSaving: true)
+                    throw error
+                }
                 // Only record the manifest as synced once persistence has
                 // actually succeeded — otherwise a persistence failure
                 // here would be caught below (leaving the manifest
                 // unrecorded) and a retry could genuinely re-fetch,
                 // instead of seeing `.upToDate` forever.
                 syncService.confirmSynced(manifest)
+                syncStatus?.recordUpdated(.verbs, version: manifest.version)
                 verbs = fetchedVerbs
                 firstLaunchState = .success
                 // Verbs are the gate; grammar follows once they're in.
                 await syncGrammar()
             }
         } catch let error as VerbSyncError {
+            syncStatus?.recordFailure(.verbs, error)
             firstLaunchState = .failed(error)
         } catch {
+            // Only a persistence failure, already recorded above.
             firstLaunchState = .failed(.malformedData)
         }
     }
 
     private func syncInBackground() async {
-        guard let result = try? await syncService.sync() else { return }
-        guard case let .updated(manifest, fetchedVerbs) = result else { return }
+        let result: VerbSyncResult
+        do {
+            result = try await syncService.sync()
+        } catch {
+            syncStatus?.recordFailure(.verbs, error)
+            return
+        }
+        guard case let .updated(manifest, fetchedVerbs) = result else {
+            syncStatus?.recordUpToDate(.verbs)
+            return
+        }
         do {
             try persisting.replaceAllVerbs(with: fetchedVerbs)
         } catch {
+            syncStatus?.recordFailure(.verbs, error, whileSaving: true)
             // Persistence failed — leave the manifest unrecorded so the
             // next sync (foreground or background) still sees this as
             // changed and retries, instead of reporting `.upToDate` with
@@ -107,6 +142,7 @@ public final class VerbStore {
             return
         }
         syncService.confirmSynced(manifest)
+        syncStatus?.recordUpdated(.verbs, version: manifest.version)
         verbs = fetchedVerbs
     }
 
@@ -114,22 +150,36 @@ public final class VerbStore {
         guard let grammarPersisting,
               let cached = try? grammarPersisting.loadAllGrammarPoints() else { return }
         grammarPoints = cached
+        textbooks = (try? grammarPersisting.loadAllTextbooks()) ?? []
     }
 
     /// Same contract as the verb sync: persist first, and only then
     /// confirm the manifest, so a persistence failure leaves it
     /// unrecorded and the next sync genuinely retries. Every failure
-    /// here is silent and never touches `verbs` or `firstLaunchState`.
+    /// here is silent (only reported to `syncStatus`) and never touches
+    /// `verbs` or `firstLaunchState`.
     private func syncGrammar() async {
         guard let grammarSyncService, let grammarPersisting else { return }
-        guard let result = try? await grammarSyncService.sync() else { return }
-        guard case let .updated(manifest, points) = result else { return }
+        let result: GrammarSyncResult
         do {
-            try grammarPersisting.replaceAllGrammarPoints(with: points)
+            result = try await grammarSyncService.sync()
         } catch {
+            syncStatus?.recordFailure(.grammar, error)
+            return
+        }
+        guard case let .updated(manifest, points, books) = result else {
+            syncStatus?.recordUpToDate(.grammar)
+            return
+        }
+        do {
+            try grammarPersisting.replaceAllGrammar(points: points, textbooks: books)
+        } catch {
+            syncStatus?.recordFailure(.grammar, error, whileSaving: true)
             return
         }
         grammarSyncService.confirmSynced(manifest)
+        syncStatus?.recordUpdated(.grammar, version: manifest.version)
         grammarPoints = points
+        textbooks = books
     }
 }

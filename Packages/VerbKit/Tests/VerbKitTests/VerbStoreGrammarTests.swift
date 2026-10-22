@@ -49,6 +49,8 @@ final class VerbStoreGrammarTests: XCTestCase {
 
         XCTAssertEqual(h.store.firstLaunchState, .success)
         XCTAssertEqual(h.store.grammarPoints.map(\.id), ["n-desu", "wake-desu"])
+        XCTAssertEqual(h.store.textbooks, GrammarFixture.textbooks)
+        XCTAssertEqual(try h.grammarPersisting.loadAllTextbooks(), GrammarFixture.textbooks)
         XCTAssertTrue(h.store.hasGrammar)
         XCTAssertEqual(try h.grammarPersisting.loadAllGrammarPoints().count, 2)
     }
@@ -78,13 +80,14 @@ final class VerbStoreGrammarTests: XCTestCase {
     func testCachedGrammarLoadsEvenWhenOffline() async throws {
         let h = try makeHarness()
         try h.verbPersisting.replaceAllVerbs(with: JSONDecoder().decode(VerbDataFile.self, from: verbData()).verbs)
-        try h.grammarPersisting.replaceAllGrammarPoints(with: GrammarFixture.points)
+        try h.grammarPersisting.replaceAllGrammar(points: GrammarFixture.points, textbooks: GrammarFixture.textbooks)
         h.fetcher.manifestResult = .failure(VerbSyncError.offline)
         h.fetcher.grammarManifestResult = .failure(VerbSyncError.offline)
 
         await h.store.start()
 
         XCTAssertEqual(h.store.grammarPoints.map(\.id), ["n-desu", "wake-desu"])
+        XCTAssertEqual(h.store.textbooks, GrammarFixture.textbooks)
         XCTAssertEqual(h.store.verbs.count, 2)
     }
 
@@ -179,7 +182,7 @@ final class VerbStoreGrammarTests: XCTestCase {
     }
 }
 
-/// A `GrammarPersisting` whose `replaceAllGrammarPoints(with:)` can be made
+/// A `GrammarPersisting` whose `replaceAllGrammar(points:textbooks:)` can be made
 /// to throw on demand, to simulate a persistence failure.
 private enum FailingGrammarPersistingError: Error {
     case persistFailed
@@ -189,6 +192,7 @@ private enum FailingGrammarPersistingError: Error {
 private final class FailingGrammarPersisting: GrammarPersisting {
     var shouldFail: Bool
     private var stored: [GrammarPoint] = []
+    private var storedBooks: [Textbook] = []
 
     init(shouldFail: Bool) {
         self.shouldFail = shouldFail
@@ -196,8 +200,11 @@ private final class FailingGrammarPersisting: GrammarPersisting {
 
     func loadAllGrammarPoints() throws -> [GrammarPoint] { stored }
 
-    func replaceAllGrammarPoints(with points: [GrammarPoint]) throws {
+    func loadAllTextbooks() throws -> [Textbook] { storedBooks }
+
+    func replaceAllGrammar(points: [GrammarPoint], textbooks: [Textbook]) throws {
         if shouldFail { throw FailingGrammarPersistingError.persistFailed }
         stored = points
+        storedBooks = textbooks
     }
 }
