@@ -11,6 +11,8 @@ public final class VerbStore {
     /// a grammar failure never affects `verbs` or `firstLaunchState`.
     public private(set) var grammarPoints: [GrammarPoint] = []
     public var hasGrammar: Bool { !grammarPoints.isEmpty }
+    /// Replaced together with `grammarPoints`.
+    public private(set) var textbooks: [Textbook] = []
 
     private let syncService: VerbSyncService
     private let persisting: VerbPersisting
@@ -114,6 +116,7 @@ public final class VerbStore {
         guard let grammarPersisting,
               let cached = try? grammarPersisting.loadAllGrammarPoints() else { return }
         grammarPoints = cached
+        textbooks = (try? grammarPersisting.loadAllTextbooks()) ?? []
     }
 
     /// Same contract as the verb sync: persist first, and only then
@@ -123,13 +126,14 @@ public final class VerbStore {
     private func syncGrammar() async {
         guard let grammarSyncService, let grammarPersisting else { return }
         guard let result = try? await grammarSyncService.sync() else { return }
-        guard case let .updated(manifest, points) = result else { return }
+        guard case let .updated(manifest, points, books) = result else { return }
         do {
-            try grammarPersisting.replaceAllGrammarPoints(with: points)
+            try grammarPersisting.replaceAllGrammar(points: points, textbooks: books)
         } catch {
             return
         }
         grammarSyncService.confirmSynced(manifest)
         grammarPoints = points
+        textbooks = books
     }
 }

@@ -45,6 +45,26 @@ final class GrammarDecodingTests: XCTestCase {
         try JSONDecoder().decode(GrammarDataFile.self, from: Data(json.utf8))
     }
 
+    func testOldGrammarJSONWithoutBooksOrTaughtInDecodes() throws {
+        let file = try decode()
+        XCTAssertEqual(file.books, [])
+        XCTAssertEqual(file.grammar[0].taughtIn, [])
+    }
+
+    func testBooksAndTaughtInDecode() throws {
+        let file = try JSONDecoder().decode(GrammarDataFile.self, from: GrammarFixture.data)
+        XCTAssertEqual(file.books.map(\.id), ["genki-1", "genki-2"])
+        XCTAssertEqual(file.books[0].firstLesson, 1)
+        XCTAssertEqual(file.books[0].edition, "3rd")
+        XCTAssertNil(file.books[1].edition)
+        XCTAssertEqual(file.books[1].firstLesson, 13)
+        XCTAssertFalse(file.books[1].contains(lesson: 12))
+        XCTAssertTrue(file.books[1].contains(lesson: 13))
+        XCTAssertTrue(file.books[1].contains(lesson: 23))
+        XCTAssertFalse(file.books[1].contains(lesson: 24))
+        XCTAssertEqual(file.grammar[0].taughtIn, [LessonRef(book: "genki-2", lesson: 21, reviewed: true)])
+    }
+
     func testDecodesGrammarDataFile() throws {
         let file = try decode()
         XCTAssertEqual(file.grammar.count, 1)

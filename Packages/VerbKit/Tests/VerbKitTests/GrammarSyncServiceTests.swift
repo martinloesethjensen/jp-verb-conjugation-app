@@ -39,11 +39,13 @@ final class GrammarSyncServiceTests: XCTestCase {
         let syncState = InMemorySyncStateStore()
         let result = try await GrammarSyncService(fetcher: fetcher, syncState: syncState).sync()
 
-        guard case let .updated(updatedManifest, points) = result else {
+        guard case let .updated(updatedManifest, points, books) = result else {
             return XCTFail("expected .updated")
         }
         XCTAssertEqual(updatedManifest, entry)
         XCTAssertEqual(points.map(\.id), ["n-desu", "wake-desu"])
+        XCTAssertEqual(books, GrammarFixture.textbooks)
+        XCTAssertEqual(books.map(\.id), ["genki-1", "genki-2"])
         // Recording is the caller's job, after it has persisted the points.
         XCTAssertNil(syncState.lastSyncedGrammarManifest())
     }

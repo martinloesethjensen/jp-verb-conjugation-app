@@ -20,10 +20,12 @@ final class RealNuanceDataTests: XCTestCase {
     private let nuanceIDs = ["certainty", "obligation", "appearance", "ppoi"]
 
     func testTheFourLessonsExistWithTheirCuratedLevels() throws {
+        // Tanos: はず, かもしれない and the appearance endings are N4; べき/ものだ are N3.
+        let levels: [String: JLPTLevel] = ["certainty": .n4, "obligation": .n3, "appearance": .n4, "ppoi": .n2]
         let points = try loadGrammar()
         for id in nuanceIDs {
             let lesson = try XCTUnwrap(points.first { $0.id == id }, id)
-            XCTAssertEqual(lesson.jlpt, id == "ppoi" ? .n2 : .n3, id)
+            XCTAssertEqual(lesson.jlpt, levels[id], id)
             XCTAssertFalse(lesson.usages.isEmpty, id)
             XCTAssertFalse(lesson.pitfalls.isEmpty, id)
         }
@@ -57,7 +59,7 @@ final class RealNuanceDataTests: XCTestCase {
             try loadGrammar().attachingToVerbs.map(\.id),
             ["n-desu", "potential", "certainty", "obligation", "appearance", "ppoi",
              "teiru", "teshimau", "temiru", "sugiru", "node", "hou-ga-ii",
-             "tai", "volitional", "nai-te"]
+             "tai", "volitional", "nai-te", "te-mo-ii", "nakereba", "imperative"]
         )
     }
 }
