@@ -21,6 +21,7 @@ final class RealJLPTDataTests: XCTestCase {
             "appearance": .n3, "ppoi": .n2, "teiru": .n5, "teshimau": .n4,
             "temiru": .n4, "sugiru": .n4, "node": .n4, "hou-ga-ii": .n4,
             "tai": .n5, "volitional": .n5, "nai-te": .n5,
+            "te-mo-ii": .n4, "nakereba": .n4, "imperative": .n4,
         ]
         let points = try loadGrammar()
         XCTAssertEqual(Set(points.map(\.id)), Set(expected.keys))
