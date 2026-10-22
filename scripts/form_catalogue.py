@@ -109,6 +109,17 @@ OTHER_FORM_LESSONS = {
     "masu_volitional": "volitional",
     "neg_te": "nai-te",
     "nakute": "nai-te",
+    "te_mo_ii": "te-mo-ii",
+    "te_wa_ikenai": "te-mo-ii",
+    "te_cha_dame": "te-mo-ii",
+    "nakereba_naranai": "nakereba",
+    "nakute_wa_ikenai": "nakereba",
+    "nakya": "nakereba",
+    "nakucha": "nakereba",
+    "nakute_mo_ii": "nakereba",
+    "imperative": "imperative",
+    "neg_imperative": "imperative",
+    "nasai": "imperative",
 }
 
 

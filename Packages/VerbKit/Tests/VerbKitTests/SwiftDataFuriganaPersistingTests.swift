@@ -47,7 +47,7 @@ final class SwiftDataFuriganaPersistingTests: XCTestCase {
         let grammar = SwiftDataGrammarPersisting(modelContext: context)
         let verbs = SwiftDataVerbPersisting(modelContext: context)
 
-        try grammar.replaceAllGrammarPoints(with: GrammarFixture.points)
+        try grammar.replaceAllGrammar(points: GrammarFixture.points, textbooks: GrammarFixture.textbooks)
         try verbs.replaceAllVerbs(with: [])
         try furigana.replaceFuriganaDictionary(with: FuriganaFixture.dictionary)
 

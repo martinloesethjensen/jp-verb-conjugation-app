@@ -22,7 +22,7 @@ final class SwiftDataGrammarPersistingTests: XCTestCase {
 
     func testReplaceInsertsAndRoundTripsEveryField() throws {
         let persisting = try makePersisting()
-        try persisting.replaceAllGrammarPoints(with: GrammarFixture.points)
+        try persisting.replaceAllGrammar(points: GrammarFixture.points, textbooks: GrammarFixture.textbooks)
 
         let loaded = try persisting.loadAllGrammarPoints()
         XCTAssertEqual(loaded, GrammarFixture.points)
@@ -30,24 +30,42 @@ final class SwiftDataGrammarPersistingTests: XCTestCase {
 
     func testAttachmentWordClassSurvivesTheRoundTrip() throws {
         let persisting = try makePersisting()
-        try persisting.replaceAllGrammarPoints(with: GrammarFixture.points)
+        try persisting.replaceAllGrammar(points: GrammarFixture.points, textbooks: GrammarFixture.textbooks)
 
         let nDesu = try XCTUnwrap(try persisting.loadAllGrammarPoints().first { $0.id == "n-desu" })
         XCTAssertEqual(nDesu.attachment.first?.wordClass, .verb)
     }
 
+    func testTextbooksRoundTripInOrder() throws {
+        let persisting = try makePersisting()
+        XCTAssertEqual(try persisting.loadAllTextbooks(), [])
+        try persisting.replaceAllGrammar(points: GrammarFixture.points, textbooks: GrammarFixture.textbooks)
+
+        XCTAssertEqual(try persisting.loadAllTextbooks(), GrammarFixture.textbooks)
+        XCTAssertEqual(try persisting.loadAllGrammarPoints().first?.taughtIn.first?.book, "genki-2")
+    }
+
+    func testReplaceRemovesStaleTextbooks() throws {
+        let persisting = try makePersisting()
+        try persisting.replaceAllGrammar(points: [], textbooks: GrammarFixture.textbooks)
+        let only = Textbook(id: "other", title: "Other", edition: nil, firstLesson: 1, lessons: 5)
+        try persisting.replaceAllGrammar(points: [], textbooks: [only])
+
+        XCTAssertEqual(try persisting.loadAllTextbooks(), [only])
+    }
+
     func testLoadPreservesAuthoredOrder() throws {
         let persisting = try makePersisting()
         let ids = ["c", "a", "d", "b"]
-        try persisting.replaceAllGrammarPoints(with: ids.map(makePoint))
+        try persisting.replaceAllGrammar(points: ids.map(makePoint), textbooks: [])
 
         XCTAssertEqual(try persisting.loadAllGrammarPoints().map(\.id), ids)
     }
 
     func testReplaceRemovesStaleEntries() throws {
         let persisting = try makePersisting()
-        try persisting.replaceAllGrammarPoints(with: [makePoint(id: "old")])
-        try persisting.replaceAllGrammarPoints(with: [makePoint(id: "new")])
+        try persisting.replaceAllGrammar(points: [makePoint(id: "old")], textbooks: [])
+        try persisting.replaceAllGrammar(points: [makePoint(id: "new")], textbooks: [])
 
         XCTAssertEqual(try persisting.loadAllGrammarPoints().map(\.id), ["new"])
     }
@@ -58,7 +76,7 @@ final class SwiftDataGrammarPersistingTests: XCTestCase {
         let grammar = SwiftDataGrammarPersisting(modelContext: context)
         let verbs = SwiftDataVerbPersisting(modelContext: context)
 
-        try grammar.replaceAllGrammarPoints(with: [makePoint(id: "g")])
+        try grammar.replaceAllGrammar(points: [makePoint(id: "g")], textbooks: [])
         try verbs.replaceAllVerbs(with: [])
 
         XCTAssertEqual(try grammar.loadAllGrammarPoints().map(\.id), ["g"])

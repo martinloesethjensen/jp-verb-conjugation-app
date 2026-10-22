@@ -15,6 +15,7 @@ struct JPVerbConjugationApp: App {
     @State private var quizHistory: QuizHistoryStore
     @State private var wordBank: WordBankStore
     @State private var wordBankTransfer: WordBankTransferHub
+    @State private var courseStore = CourseStore(defaults: .appGroup)
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     init() {
@@ -62,6 +63,7 @@ struct JPVerbConjugationApp: App {
                 .environment(quizHistory)
                 .environment(wordBank)
                 .environment(wordBankTransfer)
+                .environment(courseStore)
                 .task {
                     networkMonitor.start()
                     await verbStore.start()
@@ -91,11 +93,14 @@ struct JPVerbConjugationApp: App {
         }
         #if os(macOS)
         Settings {
-            SettingsView()
-                .environment(verbStore)
-                .environment(quizHistory)
-                .environment(wordBank)
-                .environment(wordBankTransfer)
+            NavigationStack {
+                SettingsView()
+            }
+            .environment(verbStore)
+            .environment(quizHistory)
+            .environment(wordBank)
+            .environment(wordBankTransfer)
+            .environment(courseStore)
         }
         #endif
     }
