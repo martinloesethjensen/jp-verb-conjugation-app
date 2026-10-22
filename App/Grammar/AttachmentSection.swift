@@ -17,13 +17,21 @@ struct AttachmentSection: View {
 
     /// The first word (from `offset` on) that the rule builds a pattern for. Each step also
     /// moves to the rule's next slot, so "Try another word" shows the past and negative too.
+    /// A verb that lacks the form the rule spells out is skipped for that slot, so the
+    /// volitional lesson never shows わかりましょう.
     private func example(_ rule: AttachmentRule) -> (base: String, built: String)? {
         let pool = words(rule.wordClass)
         guard !pool.isEmpty, !rule.slots.isEmpty, rule.then != nil else { return nil }
         let slots = rule.slots.indices.map { rule.slots[($0 + offset) % rule.slots.count] }
+        let eligible: [GrammarSlot: Set<String>] = rule.wordClass == .verb
+            ? Dictionary(rule.slots.map { slot in
+                (slot, Set(rule.eligibleVerbs(slot, among: verbStore.verbs).map(\.stableKey)))
+            }, uniquingKeysWith: { first, _ in first })
+            : [:]
         for step in 0..<pool.count {
             let word = pool[(offset + step) % pool.count]
             for slot in slots {
+                if let keys = eligible[slot], !keys.contains(word.stableKey) { continue }
                 if let built = rule.build(word, slot: slot), let base = word.form(for: slot) {
                     return (base, built)
                 }
