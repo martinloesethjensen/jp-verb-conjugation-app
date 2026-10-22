@@ -8,6 +8,10 @@ enum GrammarFixture {
     {
       "version": "test-fixture",
       "description": "Fixture for grammar tests.",
+      "books": [
+        { "id": "genki-1", "title": "Genki I", "edition": "3rd", "lessons": 12 },
+        { "id": "genki-2", "title": "Genki II", "first_lesson": 13, "lessons": 23 }
+      ],
       "grammar": [
         {
           "id": "n-desu",
@@ -26,7 +30,8 @@ enum GrammarFixture {
           ],
           "conjugations": [ { "form": "んです", "register": "polite" } ],
           "pitfalls": [],
-          "related": [ "wake-desu" ]
+          "related": [ "wake-desu" ],
+          "taught_in": [ { "book": "genki-2", "lesson": 21, "reviewed": true } ]
         },
         {
           "id": "wake-desu",
@@ -50,6 +55,10 @@ enum GrammarFixture {
     """
 
     static var data: Data { Data(json.utf8) }
+
+    static var textbooks: [Textbook] {
+        try! JSONDecoder().decode(GrammarDataFile.self, from: data).books
+    }
 
     static var points: [GrammarPoint] {
         // Force-try is fine: the fixture is a compile-time constant.
