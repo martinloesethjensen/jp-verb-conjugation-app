@@ -136,6 +136,27 @@ final class ConnectionQuestionTests: XCTestCase {
         XCTAssertEqual(question.explanation, "い-adjectives take the stem before すぎる: たかすぎる")
     }
 
+    /// わかる is not volitional, so the data gives it no ましょう form; the rule that spells
+    /// that form out skips it, while a rule with no stored form (ほうがいい) still asks it.
+    func testAVerbWithoutTheFormARuleSpellsOutIsSkippedForThatRule() throws {
+        var tabe = taberu
+        tabe.forms.masuVolitional = "たべましょう"
+        var neru = neru
+        neru.forms.masuVolitional = "ねましょう"
+        let wakaru = verb("わかる", "わかり", te: "わかって", neg: "わからない", past: "わかった", pastNeg: "わからなかった")
+        let rule = AttachmentRule(wordClass: .verb, pattern: "p", example: "e", slots: [.stem], then: "ましょう")
+        let verbs = [tabe, neru, wakaru]
+
+        XCTAssertEqual(rule.practisedForms(.stem, among: verbs).map(\.id), ["masu_volitional"])
+        XCTAssertEqual(rule.eligibleVerbs(.stem, among: verbs).map(\.dict), ["たべる", "ねる"])
+        let questions = buildConnectionQuestions(points: [point("volitional", [rule])], verbs: verbs, words: [], count: 10)
+        XCTAssertEqual(Set(questions.map(\.correct)), ["たべましょう", "ねましょう"])
+
+        XCTAssertEqual(hou.attachment[0].practisedForms(.plainPast, among: verbs), [])
+        let advice = buildConnectionQuestions(points: [hou], verbs: [wakaru], words: [], count: 10)
+        XCTAssertEqual(Set(advice.map(\.correct)), ["わかったほうがいいです", "わからないほうがいいです"])
+    }
+
     func testNothingIsAskedWithoutAnEndingOrWordsOfTheRulesClass() {
         let tagOnly = point("teiru", [AttachmentRule(wordClass: .verb, pattern: "p", example: "e", slots: [.te])])
         XCTAssertFalse(tagOnly.hasConnections)
