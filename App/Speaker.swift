@@ -127,18 +127,31 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegat
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
     }
 
+    #if os(iOS)
+    /// Audio session calls can block while the system reconfigures audio, so they run off the
+    /// main thread. One serial queue keeps activations and deactivations in the order they were made.
+    private static let sessionQueue = DispatchQueue(label: "Speaker.audioSession", qos: .userInitiated)
+    nonisolated(unsafe) private static var categoryIsSet = false
+    #endif
+
     private func activateSession() {
         #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-        try? session.setActive(true)
+        Self.sessionQueue.async {
+            let session = AVAudioSession.sharedInstance()
+            if !Self.categoryIsSet {
+                Self.categoryIsSet = (try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])) != nil
+            }
+            try? session.setActive(true)
+        }
         #endif
     }
 
     private func deactivateSessionIfIdle() {
         #if os(iOS)
         guard currentUtterance == nil, player == nil, !synthesizer.isSpeaking else { return }
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        Self.sessionQueue.async {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
         #endif
     }
 
