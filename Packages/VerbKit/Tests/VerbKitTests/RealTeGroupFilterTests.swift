@@ -48,6 +48,26 @@ final class RealTeGroupFilterTests: XCTestCase {
             XCTAssertEqual(verb.teGroup, rule.group)
             XCTAssertEqual(verb.forms.te, rule.example.te)
             XCTAssertTrue(rule.example.te.hasSuffix(rule.result))
+            if let exception = rule.exception {
+                let irregular = try XCTUnwrap(byID[exception.dict], exception.dict)
+                XCTAssertEqual(irregular.teGroup, rule.group, exception.dict)
+                XCTAssertEqual(irregular.forms.te, exception.te, exception.dict)
+                XCTAssertFalse(exception.te.hasSuffix(rule.result), exception.dict)
+            }
         }
+        // The guide must not hide the most common て-form mistake.
+        XCTAssertEqual(TeFormRule.all.first { $0.group == .ite }?.exception?.dict, "いく")
+    }
+
+    func testRuLookalikesAreEveryUVerbEndingInIruOrEru() throws {
+        let iOrE = Set("いきしちにひみりぎじびぴえけせてねへめれげぜべぺ")
+        let lookalikes = try loadVerbs().filter { verb in
+            guard verb.type == .u, verb.dict.hasSuffix("る"), verb.dict.count >= 2 else { return false }
+            return iOrE.contains(verb.dict[verb.dict.index(verb.dict.endIndex, offsetBy: -2)])
+        }
+        XCTAssertEqual(
+            Set(lookalikes.map { "\($0.dict)|\($0.kanji ?? "")" }),
+            Set(RuLookalike.all.map { "\($0.kana)|\($0.kanji)" })
+        )
     }
 }
