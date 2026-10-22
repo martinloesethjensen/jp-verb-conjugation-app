@@ -1,5 +1,5 @@
 /// What a quiz can practise. "Everything" is not a topic: it is all of them at once.
-public enum QuizTopic: String, CaseIterable, Sendable {
+public enum QuizTopic: String, CaseIterable, Codable, Sendable {
     case basic, potential, nDesu, auxiliaries, otherForms
 
     public var title: String {

@@ -1,4 +1,4 @@
-public struct QuizResult: Equatable, Sendable {
+public struct QuizResult: Codable, Equatable, Sendable {
     public var verb: String
     public var formLabel: String
     public var formID: String

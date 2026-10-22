@@ -14,6 +14,7 @@ struct JPVerbConjugationApp: App {
     @State private var countersStore: CountersStore
     @State private var dataSyncStatus: DataSyncStatus
     @State private var quizHistory: QuizHistoryStore
+    @State private var quizSessions = QuizSessionStore()
     @State private var wordBank: WordBankStore
     @State private var wordBankTransfer: WordBankTransferHub
     @State private var courseStore = CourseStore(defaults: .appGroup)
@@ -80,6 +81,7 @@ struct JPVerbConjugationApp: App {
                 .environment(countersStore)
                 .environment(dataSyncStatus)
                 .environment(quizHistory)
+                .environment(quizSessions)
                 .environment(wordBank)
                 .environment(wordBankTransfer)
                 .environment(courseStore)
