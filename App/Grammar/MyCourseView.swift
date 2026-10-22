@@ -12,6 +12,7 @@ struct MyCourseView: View {
     @State private var renaming: CourseLesson?
     @State private var renameText = ""
     @State private var pickingFor: CourseLesson?
+    @State private var deleting: CourseLesson?
 
     private var points: [GrammarPoint] { verbStore.grammarPoints }
     private var textbooks: [Textbook] { verbStore.textbooks }
@@ -104,6 +105,19 @@ struct MyCourseView: View {
             Button("Reset course", role: .destructive) { courseStore.clear() }
             Button("Cancel", role: .cancel) {}
         }
+        .confirmationDialog(deleting.map { "Delete “\($0.name)”?" } ?? "Delete lesson?",
+                            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                            titleVisibility: .visible, presenting: deleting) { lesson in
+            Button("Delete lesson", role: .destructive) {
+                courseStore.edit { $0.deleteLesson(lesson.id, points: points, textbooks: textbooks) }
+                deleting = nil
+            }
+            Button("Cancel", role: .cancel) { deleting = nil }
+        } message: { lesson in
+            Text(lesson.base == nil
+                 ? "Its grammar list will be removed."
+                 : "Its grammar list will be removed. A textbook lesson can only come back with Reset course.")
+        }
         .alert("Add lesson", isPresented: $addingLesson) {
             TextField("Name", text: $newLessonName)
             Button("Add") {
@@ -146,7 +160,7 @@ struct MyCourseView: View {
                 Button("Add grammar…") { pickingFor = lesson }
                 Button("Rename…") { renameText = lesson.name; renaming = lesson }
                 Button("Delete lesson", role: .destructive) {
-                    courseStore.edit { $0.deleteLesson(lesson.id, points: points, textbooks: textbooks) }
+                    deleting = lesson
                 }
             } label: {
                 Image(systemName: "ellipsis.circle").accessibilityLabel("Lesson actions")

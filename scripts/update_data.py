@@ -1081,9 +1081,10 @@ def check_books(doc):
         if bid in seen:
             errors.append(f"books: duplicate id {bid}")
         seen.add(bid)
-        for key in ("title", "edition"):
-            if not isinstance(book.get(key), str) or not book[key]:
-                errors.append(f"books: {bid} {key} missing")
+        if not isinstance(book.get("title"), str) or not book["title"]:
+            errors.append(f"books: {bid} title missing")
+        if "edition" in book and (not isinstance(book["edition"], str) or not book["edition"]):
+            errors.append(f"books: {bid} edition must be a non-empty string when present")
         first = book.get("first_lesson", 1)
         last = book.get("lessons")
         if not isinstance(first, int) or isinstance(first, bool) or first < 1:

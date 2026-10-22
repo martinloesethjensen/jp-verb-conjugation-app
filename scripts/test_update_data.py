@@ -494,6 +494,14 @@ class BooksTests(unittest.TestCase):
         self.assertEqual(ud.validate_grammar(self.doc(books=books)),
                          ["books: genki-1 lessons must be >= first_lesson"])
 
+    def test_book_edition_is_optional_but_not_empty(self):
+        books = self.books()
+        del books[0]["edition"]
+        self.assertEqual(ud.validate_grammar(self.doc(books=books)), [])
+        books[0]["edition"] = ""
+        self.assertEqual(ud.validate_grammar(self.doc(books=books)),
+                         ["books: genki-1 edition must be a non-empty string when present"])
+
     def test_taught_in_book_must_exist(self):
         doc = self.doc(books=self.books(), taught_in=[self.ref("minna-1", 1)])
         self.assertEqual(ud.validate_grammar(doc), ["p: taught_in book 'minna-1' does not exist"])

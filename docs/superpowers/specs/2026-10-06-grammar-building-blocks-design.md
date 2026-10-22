@@ -237,6 +237,7 @@ points per lesson.
 - Every mapping is unreviewed and matched from memory; native or textbook-in-hand review should check them, especially やすい/にくい (Genki II 20), はず (Genki II 19) and てある (Genki II 21). べき and っぽい have no Genki lesson.
 - A course's base is a list of books, so "Genki I + II" is one course. Edits are stored as deltas over the base lessons: removed and added points and a custom order per lesson, plus deleted base lessons, so later data updates still add new mappings and new base lessons.
 - Lesson tags on cards come from My course only; with no course, cards show no tag.
+- The lesson tag sits in the card header next to the JLPT level, not after Practise as the card order above lists.
 - "By lesson" shows "No course yet" without a course, "No lessons yet" for a course with no grammar, and the hidden-by-level notice when the level setting hides everything. The By level / By lesson switch sits above the list.
 - Textbooks are synced and kept with the grammar (a `TextbookEntity` alongside `GrammarEntity`).
 

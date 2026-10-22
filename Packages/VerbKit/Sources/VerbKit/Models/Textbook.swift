@@ -33,7 +33,7 @@ public struct Textbook: Codable, Hashable, Sendable, Identifiable {
     }
 
     public func contains(lesson: Int) -> Bool {
-        (firstLesson...lessons).contains(lesson)
+        firstLesson <= lesson && lesson <= lessons
     }
 }
 
