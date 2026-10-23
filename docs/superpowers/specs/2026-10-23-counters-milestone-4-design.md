@@ -93,3 +93,41 @@ gains an "Ask it" row; Mixed includes it.
 
 Exact things, examples and pitfall wording within the constraints above; the choice of one or two
 questions per counter; the "Ask it" copy.
+
+## As built
+
+What changed from the design while building it, and what has not been checked. The plan is
+`docs/superpowers/plans/2026-10-23-counters-milestone-4.md`.
+
+- **The months counter is written か月, not ヶ月.** Furigana keys cannot hold ヶ, and 三ヶ月 would be spoken
+  as さんヶげつ. The meaning line lists ヶ月 and カ月, so search still finds it, and a pitfall lists the four
+  spellings. `furigana.json` gained 月 → げつ and the stems 一か, 三か, 六か, 八か, 十か, which means a lone 月
+  in future text now reads げつ silently. 何か月 takes its own example `readings` (`何か` is なに elsewhere).
+- **The comparison is a section.** "When or how long?" (時, 時間, 日 date, 日間, 年, 年間) is a home section whose
+  Compare table sets each point in time beside its duration; the pitfalls and `related` links say it in words.
+- **羽 stays class `plain` with overrides**, so the Sound patterns exceptions line now also names 時間, 年間
+  and 羽. An existing test that expected two exceptions was updated, and the counts (28 counters, 17 groups,
+  8 sections) too.
+- **The validator** skips a counted run followed by 間 (三時間 is not a run of 時), checks the optional
+  `questions` field, and reads each question's 何 phrase like any counted run. It caught 何人, 何本 and nine
+  more that the dictionary would have read as なに….
+- **Ask it** shows the English question, offers four 何 phrases (same-group counters first, never the same
+  text twice), and always shows the Japanese sentence and the phrase's reading after answering. It has no
+  speak button. Attempts count toward streaks and totals, not Weak spots.
+- **An app-side check of counted-run ruby** (`RealCountersDataTests`) runs the Swift matcher on the real
+  `furigana.json`. The seeded simulator run used the old published furigana and showed 七時 間 with あいだ over
+  間; the test fails on the old dictionary and passes on the new one. **The new `furigana.json` must be
+  published with the counters**, or the new examples show wrong ruby until it is.
+
+Checked on the iPhone simulator (counters seeded from the local file, furigana not): the new home sections,
+the When or how long? Compare table, the 時間 page, and an Ask it question with its feedback. Checked by
+tests: every reading in the spec table, all counted runs in examples and questions, the 27 questions
+building choices.
+
+Not checked: Ask it with levels hidden, with VoiceOver, at the largest text size, a wrong answer, Mixed,
+Weak spots, the new pages on iPad and macOS, and the ruby on screen with the new furigana published.
+
+**The content is unreviewed.** Readings are generated and validated, but the things, example sentences,
+pitfall wording and question sentences were written without a native speaker; issue 124 stays labelled
+`teacher-review`. Still out of scope: numbers above 10 (and so months of the year), pitch accent, audio, and
+the Android and watchOS counterparts of the new counters and Ask it.
