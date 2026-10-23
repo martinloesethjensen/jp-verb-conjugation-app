@@ -186,4 +186,20 @@ final class RealCountersDataTests: XCTestCase {
         let pitfall = try XCTUnwrap(counter("kagetsu", in: file).pitfalls.flatMap(\.examples).first { $0.jp == "三月に行きます。" })
         XCTAssertEqual(furigana.merging(pitfall.readings).reading(of: pitfall.jp), "さんがつにいきます。")
     }
+
+    /// The teacher's review of milestone 4: よんじかん is a learner error, なんわ comes before なんば,
+    /// きゅうねんかん before くねんかん, and a price is asked with いくら.
+    func testTheTeachersReadingChoices() throws {
+        let file = try load()
+        XCTAssertEqual(try counter("jikan", in: file).readings(for: .n(4)), ["よじかん"])
+        XCTAssertEqual(try counter("wa", in: file).readings(for: .what), ["なんわ", "なんば"])
+        XCTAssertFalse(try counter("wa", in: file).isChanged(.what))
+        XCTAssertEqual(try counter("nenkan", in: file).readings(for: .n(9)), ["きゅうねんかん", "くねんかん"])
+        let yen = try counter("en", in: file)
+        XCTAssertTrue(yen.pitfalls.contains { $0.heading.contains("いくら") })
+        XCTAssertFalse(yen.askings.contains { $0.jp.contains("これは何円") }, "a price is asked with いくら")
+        XCTAssertTrue(try counter("wa", in: file).pitfalls.contains {
+            $0.explanation.contains("匹") && $0.explanation.contains("traditionally")
+        })
+    }
 }

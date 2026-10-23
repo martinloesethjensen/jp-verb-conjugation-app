@@ -36,7 +36,7 @@ not existing.
 
 | id | counter | reading | sound | overrides (first is preferred) | jlpt | countsObjects |
 |---|---|---|---|---|---|---|
-| `jikan` | 時間 | じかん | plain | 4 よじかん, よんじかん · 7 ななじかん, しちじかん · 9 くじかん, きゅうじかん | N5 | false |
+| `jikan` | 時間 | じかん | plain | 4 よじかん · 7 ななじかん, しちじかん · 9 くじかん, きゅうじかん | N5 | false |
 | `shuukan` | 週間 | しゅうかん | s | 8 はっしゅうかん, はちしゅうかん | N5 | false |
 | `kagetsu` | ヶ月 | かげつ | k | 7 ななかげつ, しちかげつ | N5 | false |
 | `nenkan` | 年間 | ねんかん | plain | 4 よねんかん · 7 ななねんかん, しちねんかん · 9 きゅうねんかん, くねんかん | N5 | false |
@@ -45,7 +45,7 @@ not existing.
 | `chaku` | 着 | ちゃく | s | none | N4 | true |
 | `ban` | 番 | ばん | plain | 7 ななばん, しちばん | N5 | false |
 | `tou` | 頭 | とう | s | none | N3 | true |
-| `wa` | 羽 | わ | plain | 3 さんば, さんわ · 6 ろっぱ, ろくわ · 8 はっぱ, はちわ · 10 じゅっぱ, じっぱ · 何 なんば, なんわ | N4 | true |
+| `wa` | 羽 | わ | plain | 3 さんば, さんわ · 6 ろっぱ, ろくわ · 8 はっぱ, はちわ · 10 じゅっぱ, じっぱ, じゅうわ · 何 なんわ, なんば | N4 | true |
 
 Each gets 3 to 5 things, 2 or 3 examples and at least one pitfall, like the existing counters. Pitfalls
 include: 時 is a clock time and 時間 a length (7時 しちじ vs 7時間 ななじかん), 日 vs 日間, 4時間 よじかん,
@@ -138,12 +138,17 @@ Weak spots, the new pages on iPad and macOS, and the ruby on screen with the new
 - 十羽 also reads じゅうわ and 七週間 also しちしゅうかん; 部屋 was replaced by the platform under 番.
 - The Swift ruby test now covers pitfall text, and a test pins the month names.
 
-**For the teacher review** (the reviewer rated these doubtful, not wrong): 九年間 くねんかん and 四時間
-よんじかん as accepted readings; whether 何羽 should show なんわ before なんば; 羽 for rabbits (今は匹 is the usual
-counter); the JLPT levels of 年間 and 日間 (N5 may be generous); これは何円ですか versus いくらですか as a
-question.
+**Teacher review (2026-10-24)** of the doubtful points, applied:
+- 四時間 is よじかん only; よんじかん is not accepted (a learner error). 九年間 keeps きゅうねんかん first with
+  くねんかん accepted.
+- 何羽 shows なんわ first; なんば is accepted as the variant (and 何 is no longer marked as changing for 羽).
+- 羽 stays the counter taught for rabbits, with the note that 匹 is heard more often in modern speech.
+- 年間 and 日間 stay at N5.
+- A price is asked with いくら. 円 gained a pitfall saying so, and its example and 何 question now ask how
+  many yen are in a wallet. 何円 is kept for asking an amount.
 
-**The content is unreviewed.** Readings are generated and validated, but the things, example sentences,
-pitfall wording and question sentences were written without a native speaker; issue 124 stays labelled
+**The rest of the content is unreviewed.** Readings are generated and validated, and the teacher ruled on the
+doubtful points above, but the things, example sentences, pitfall wording and question sentences were written
+without a native speaker; issue 124 stays labelled
 `teacher-review`. Still out of scope: numbers above 10 (and so months of the year), pitch accent, audio, and
 the Android and watchOS counterparts of the new counters and Ask it.

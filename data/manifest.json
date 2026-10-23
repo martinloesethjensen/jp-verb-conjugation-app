@@ -6,16 +6,16 @@
     "sha256": "9822f41e380346397973a182f836f443e76a78b5d2eb391a7babcc59c5b55f24"
   },
   "furigana": {
-    "version": "1.13.0",
-    "sha256": "ac45be877041ec89c87a2ed616260fb58296be2632de0ad3259a05352a789362"
+    "version": "1.14.0",
+    "sha256": "c39680ab46435947cfcec39093d3b9548fa200fd074f29e7a70bf43b5ae9c56b"
   },
   "words": {
     "version": "1.0.0",
     "sha256": "a75e7b8b6d0812f08cf31b2c3fbffd170968254bfc1e0e3ea30f7d0eedf758f1"
   },
   "counters": {
-    "version": "1.7.0",
-    "sha256": "00066c914e881d465c9c3cb9f4ae0ad4a3e944ef870e6a7a78cbf1950042c1f6"
+    "version": "1.8.0",
+    "sha256": "999aaa978c9e97285ccd2b055841c91781e91269ed50d5659224340b0f688664"
   },
   "forms": {
     "version": "1.0.0",
