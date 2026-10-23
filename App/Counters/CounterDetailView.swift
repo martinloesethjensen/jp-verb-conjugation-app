@@ -1,8 +1,9 @@
 import SwiftUI
 import VerbKit
 
-/// A counter's page: the counter, how to count with it (Count them), every reading,
-/// what it counts, examples, traps and related counters. `focus` rings one number in the readings.
+/// A counter's page: the counter and what it is, the pitfall in one line, the reading for the selected
+/// number with a 1 to 10 strip to change it, then Examples, Things and Related behind a control, and
+/// Practise. `focus` selects a number (a Forms search result lands on it).
 struct CounterDetailView: View {
     let counter: Counter
     var focus: CounterNumber?
@@ -10,8 +11,14 @@ struct CounterDetailView: View {
     @Environment(\.furiganaDictionary) private var furigana
     @Environment(\.startCounterQuiz) private var startQuiz
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
-    /// The number the playground shows; the readings grid rings the same one.
     @State private var number: CounterNumber
+    @State private var segment: Segment = .examples
+    @State private var showAllPitfalls = false
+
+    private enum Segment: String, CaseIterable, Identifiable {
+        case examples = "Examples", things = "Things", related = "Related"
+        var id: String { rawValue }
+    }
 
     init(counter: Counter, focus: CounterNumber? = nil) {
         self.counter = counter
@@ -19,34 +26,36 @@ struct CounterDetailView: View {
         _number = State(initialValue: focus ?? .n(1))
     }
 
-    /// The groups this counter belongs to, in grid order.
-    private var groups: [CounterGroup] {
-        store.groups.filter { group in group.members.contains { $0.counter == counter.id } }
+    /// The home-list sections this counter is in, when there is something to compare it with.
+    private var sections: [CounterSection] {
+        store.sections.filter { $0.counters.contains(counter.id) && $0.counters.count > 1 }
     }
 
+    private var segments: [Segment] {
+        Segment.allCases.filter { segment in
+            switch segment {
+            case .examples: !counter.examples.isEmpty
+            case .things: !counter.things.isEmpty
+            case .related: !store.related(to: counter).isEmpty
+            }
+        }
+    }
+
+    private var shownSegment: Segment? { segments.contains(segment) ? segment : segments.first }
+
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    header
-                    countThemSection
-                    readingsSection
-                    if !counter.things.isEmpty { thingsSection }
-                    if !counter.examples.isEmpty { examplesSection }
-                    if !counter.pitfalls.isEmpty { pitfallsSection }
-                    if !store.related(to: counter).isEmpty { relatedSection }
-                    if !buildCounterQuestions(for: counter, count: 1).isEmpty { practiseSection }
-                }
-                .padding()
-                .frame(maxWidth: 720, alignment: .leading)
-                .frame(maxWidth: .infinity)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                header
+                if !counter.pitfalls.isEmpty { pitfalls }
+                ReadingBlock(counter: counter, number: number)
+                NumberStrip(counter: counter, selection: $number)
+                if let shown = shownSegment { segmented(shown) }
+                if !buildCounterQuestions(for: counter, count: 1).isEmpty { practise }
             }
-            .onAppear {
-                guard let focus else { return }
-                DispatchQueue.main.async {
-                    withAnimation { proxy.scrollTo(focus, anchor: .center) }
-                }
-            }
+            .padding()
+            .frame(maxWidth: 720, alignment: .leading)
+            .frame(maxWidth: .infinity)
         }
         .navigationTitle(counter.counter)
         .toolbar {
@@ -57,15 +66,6 @@ struct CounterDetailView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-    }
-
-    private func sectionHeader(_ title: String, systemImage: String? = nil) -> some View {
-        Label {
-            Text(title)
-        } icon: {
-            if let systemImage { Image(systemName: systemImage) }
-        }
-        .font(.title3.weight(.semibold))
     }
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
@@ -83,11 +83,6 @@ struct CounterDetailView: View {
                 Text(counter.reading)
                     .font(.title2)
                 SpeakButton(text: counter.reading)
-                Spacer(minLength: 0)
-                Image(systemName: counter.symbol)
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
             }
             HStack(spacing: 8) {
                 if let level = counter.jlpt {
@@ -100,12 +95,12 @@ struct CounterDetailView: View {
                     .font(.headline)
                     .foregroundStyle(.secondary)
             }
-            if !groups.isEmpty {
+            if !sections.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {
-                        ForEach(groups) { group in
-                            NavigationLink(value: CounterDestination.group(group)) {
-                                Label(group.title, systemImage: group.symbol)
+                        ForEach(sections) { section in
+                            NavigationLink(value: CounterDestination.section(section)) {
+                                Text(section.title)
                             }
                             .buttonStyle(.glass)
                         }
@@ -115,42 +110,9 @@ struct CounterDetailView: View {
         }
     }
 
-    private var countThemSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Count them")
-            CountThemCard(counter: counter, number: $number)
-        }
-    }
-
-    private var readingsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Readings")
-            ReadingsGrid(counter: counter, focus: number)
-        }
-    }
-
-    private var thingsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("What it counts")
-            ThingChips(counter: counter)
-        }
-    }
-
-    private var examplesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Examples")
-            card {
-                ForEach(Array(counter.examples.enumerated()), id: \.offset) { index, example in
-                    if index > 0 { Divider() }
-                    CounterExampleRow(example: example, dictionary: furigana)
-                }
-            }
-        }
-    }
-
-    private var pitfallsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Watch out", systemImage: "exclamationmark.triangle")
+    /// The first pitfall in one line, with More for all of them (and their examples).
+    @ViewBuilder private var pitfalls: some View {
+        if showAllPitfalls {
             ForEach(Array(counter.pitfalls.enumerated()), id: \.offset) { _, pitfall in
                 card {
                     JapaneseText(pitfall.heading).font(.headline)
@@ -161,32 +123,60 @@ struct CounterDetailView: View {
                     }
                 }
             }
+            Button("Less") { showAllPitfalls = false }
+                .font(.subheadline)
+        } else if let first = counter.pitfalls.first {
+            let hint = pitfallHint(first)
+            card {
+                Label {
+                    JapaneseText(hint.heading).font(.subheadline.weight(.semibold))
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle")
+                }
+                JapaneseText(hint.firstSentence).font(.subheadline)
+                Button("More") { showAllPitfalls = true }
+                    .font(.subheadline)
+            }
+        }
+    }
+
+    private func segmented(_ shown: Segment) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if segments.count > 1 {
+                Picker("Show", selection: Binding(get: { shown }, set: { segment = $0 })) {
+                    ForEach(segments) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
+            switch shown {
+            case .examples:
+                card {
+                    ForEach(Array(counter.examples.enumerated()), id: \.offset) { index, example in
+                        if index > 0 { Divider() }
+                        CounterExampleRow(example: example, dictionary: furigana)
+                    }
+                }
+            case .things:
+                ThingChips(counter: counter)
+            case .related:
+                ForEach(store.related(to: counter)) { related in
+                    NavigationLink(value: CounterDestination.counter(related, focus: nil)) {
+                        Label("\(related.counter)  \(related.meaning)", systemImage: "arrow.right.circle")
+                    }
+                    .buttonStyle(.glass)
+                }
+            }
         }
     }
 
     /// A read-it quiz about this counter alone.
-    private var practiseSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Practise")
-            Button {
-                startQuiz(buildCounterQuestions(for: counter, count: quizQuestionCount))
-            } label: {
-                Label("Practise this counter", systemImage: "graduationcap")
-            }
-            .buttonStyle(.glass)
+    private var practise: some View {
+        Button {
+            startQuiz(buildCounterQuestions(for: counter, count: quizQuestionCount))
+        } label: {
+            Label("Practise this counter", systemImage: "graduationcap")
         }
-    }
-
-    private var relatedSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Related")
-            ForEach(store.related(to: counter)) { related in
-                NavigationLink(value: CounterDestination.counter(related, focus: nil)) {
-                    Label("\(related.counter)  \(related.meaning)", systemImage: "arrow.right.circle")
-                }
-                .buttonStyle(.glass)
-            }
-        }
+        .buttonStyle(.glass)
     }
 }
 
