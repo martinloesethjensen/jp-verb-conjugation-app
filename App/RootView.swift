@@ -8,6 +8,7 @@ struct RootView: View {
     @Environment(QuizHistoryStore.self) private var quizHistory
     @Environment(WordsStore.self) private var wordsStore
     @Environment(CountersStore.self) private var countersStore
+    @Environment(DataSyncStatus.self) private var dataSyncStatus
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
@@ -16,6 +17,8 @@ struct RootView: View {
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @Environment(\.scenePhase) private var scenePhase
     @State private var reminderRouter = ReminderRouter.shared
+    /// "What form is this?" (#110): its index is built here once the verbs are in, not per lookup.
+    @State private var formLookup = FormLookupStore()
     @State private var selection: Verb?
     @State private var showingExamples = false
     @State private var showingSettings = false
@@ -123,6 +126,11 @@ struct RootView: View {
                     }
             }
         }
+        // Rebuilds only when the verb data's version changes (FormIndexCache).
+        .onChange(of: verbStore.verbs, initial: true) {
+            formLookup.update(verbs: verbStore.verbs, verbsVersion: dataSyncStatus.status(for: .verbs).version)
+        }
+        .environment(formLookup)
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
         // Applied to the windows rather than with preferredColorScheme: see AppearanceApplier.

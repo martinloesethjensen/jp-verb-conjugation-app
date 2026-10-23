@@ -1,10 +1,11 @@
 import SwiftUI
 import VerbKit
 
-private let githubSuggestVerbURL = URL(string: "https://github.com/martinloesethjensen/jp-verb-conjugation-app/issues/new?template=add-verb.yml")!
+private let githubSuggestVerbURL = IssueReportURL.suggestVerb()
 
 struct VerbListView: View {
     @Environment(VerbStore.self) private var verbStore
+    @Environment(FormLookupStore.self) private var formLookup: FormLookupStore?
     @Binding var selection: Verb?
     @Binding var showGuide: Bool
     var onProgress: () -> Void
@@ -14,6 +15,7 @@ struct VerbListView: View {
     @State private var typeFilter: VerbType?
     @State private var teFilter: TeGroup?
     @State private var favouritesOnly = false
+    @State private var formLookupRequest: FormLookupRequest?
     @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
     /// True once the filters block has scrolled off screen, which is when the
     /// back-to-top button appears.
@@ -59,6 +61,15 @@ struct VerbListView: View {
         return matching(in: LevelSettings()).count - filtered.count
     }
 
+    /// Conjugated verbs in the search text (食べさせられなかった → 食べる), for "What form is
+    /// this?". A plain dictionary form is left to the list itself.
+    private var formMatches: [FormLookup.Item] {
+        guard let formLookup, !search.isEmpty else { return [] }
+        return formLookup.items(in: search).filter { item in
+            item.status == .notInApp || !item.readings.allSatisfy(\.isDictionaryForm)
+        }
+    }
+
     private var hasFilters: Bool { typeFilter != nil || teFilter != nil || favouritesOnly }
 
     /// "って · Ru-verbs": which filters are on, shown under the title so they stay
@@ -92,8 +103,22 @@ struct VerbListView: View {
                 .listSectionMargins(.horizontal, 0)
                 #endif
 
+                if !formMatches.isEmpty {
+                    Section("What form is this?") {
+                        ForEach(formMatches) { item in
+                            Button {
+                                formLookupRequest = FormLookupRequest(text: search)
+                            } label: {
+                                FormLookupRow(item: item)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
                 Section {
-                    if filtered.isEmpty {
+                    // A form match above already answers the search, so no "No Results" under it.
+                    if filtered.isEmpty && formMatches.isEmpty {
                         if hiddenMatchCount > 0 {
                             NoMatchInLevelsView(
                                 summary: settings.summary(among: availableLevels) ?? "",
@@ -169,6 +194,7 @@ struct VerbListView: View {
         .navigationTitle("早見表")
         .navigationSubtitle(filterSummary)
         .sheet(isPresented: $showGuide) { VerbGuideSheet() }
+        .formLookupSheet($formLookupRequest)
         .toolbar {
             #if os(iOS)
             if scrolledAwayFromTop {
@@ -192,6 +218,11 @@ struct VerbListView: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu("More", systemImage: "ellipsis") {
                     Toggle("Favourites only", systemImage: "star", isOn: $favouritesOnly)
+                    if formLookup?.isReady == true {
+                        Button("What form is this?", systemImage: "text.magnifyingglass") {
+                            formLookupRequest = FormLookupRequest()
+                        }
+                    }
                     Button("Progress", systemImage: "chart.bar", action: onProgress)
                     Button("Guide", systemImage: "info.circle") { showGuide = true }
                     Button("Settings", systemImage: "gearshape", action: onSettings)
