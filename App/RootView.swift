@@ -9,6 +9,7 @@ struct RootView: View {
     @Environment(WordsStore.self) private var wordsStore
     @Environment(CountersStore.self) private var countersStore
     @Environment(DataSyncStatus.self) private var dataSyncStatus
+    @Environment(FormCatalogueStore.self) private var formCatalogueStore
     @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
@@ -126,10 +127,9 @@ struct RootView: View {
                     }
             }
         }
-        // Rebuilds only when the verb data's version changes (FormIndexCache).
-        .onChange(of: verbStore.verbs, initial: true) {
-            formLookup.update(verbs: verbStore.verbs, verbsVersion: dataSyncStatus.status(for: .verbs).version)
-        }
+        // Rebuilds only when the verb data's or the form catalogue's version changes (FormIndexCache).
+        .onChange(of: verbStore.verbs, initial: true) { updateFormLookup() }
+        .onChange(of: formCatalogueStore.catalogue.version) { updateFormLookup() }
         .environment(formLookup)
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
@@ -296,6 +296,14 @@ struct RootView: View {
         case .connections:
             return []  // started from onStart instead
         }
+    }
+
+    private func updateFormLookup() {
+        let catalogue = formCatalogueStore.catalogue
+        formLookup.update(
+            verbs: verbStore.verbs, verbsVersion: dataSyncStatus.status(for: .verbs).version,
+            catalogue: catalogue, catalogueVersion: catalogue.version
+        )
     }
 
     private var topicSheetBinding: Binding<Bool> {
