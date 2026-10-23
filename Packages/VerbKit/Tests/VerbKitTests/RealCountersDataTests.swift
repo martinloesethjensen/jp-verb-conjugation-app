@@ -31,7 +31,7 @@ final class RealCountersDataTests: XCTestCase {
         let file = try load()
         let ids = file.counters.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)
-        XCTAssertEqual(ids.count, 18)
+        XCTAssertEqual(ids.count, 28)
         for counter in file.counters {
             for related in counter.related { XCTAssertTrue(ids.contains(related), "\(counter.id) → \(related)") }
         }
@@ -70,7 +70,7 @@ final class RealCountersDataTests: XCTestCase {
         let ids = Set(file.counters.map(\.id))
         let groupIDs = file.groups.map(\.id)
         XCTAssertEqual(Set(groupIDs).count, groupIDs.count)
-        XCTAssertEqual(groupIDs.count, 13)
+        XCTAssertEqual(groupIDs.count, 17)
         var grouped = Set<String>()
         for group in file.groups {
             for member in group.members {
@@ -84,8 +84,36 @@ final class RealCountersDataTests: XCTestCase {
     func testTheHomeSectionsCoverEveryCounterInTheChosenOrder() throws {
         let file = try load()
         let home = homeSections(file.sections, counters: file.counters)
-        XCTAssertEqual(home.map(\.id), ["drinks", "people-animals", "things", "time-dates-age", "money-events"])
-        XCTAssertEqual(home.map(\.rows.count), [3, 2, 6, 6, 3])
+        XCTAssertEqual(home.map(\.id), [
+            "drinks", "people-animals", "things", "clothes-shoes", "how-long", "time-dates-age",
+            "when-or-how-long", "money-events",
+        ])
+        XCTAssertEqual(home.map(\.rows.count), [3, 4, 6, 2, 5, 6, 6, 4])
         XCTAssertEqual(Set(home.flatMap(\.rows).map(\.counter.id)), Set(file.counters.map(\.id)))
+    }
+
+    func testTheNewCountersReadAsTheSpecSays() throws {
+        let file = try load()
+        func preferred(_ id: String, _ number: CounterNumber) throws -> String? {
+            try counter(id, in: file).readings(for: number).first
+        }
+        XCTAssertEqual(try preferred("jikan", .n(4)), "よじかん")
+        XCTAssertEqual(try preferred("jikan", .n(7)), "ななじかん")
+        XCTAssertEqual(try preferred("jikan", .n(9)), "くじかん")
+        XCTAssertEqual(try preferred("shuukan", .n(8)), "はっしゅうかん")
+        XCTAssertEqual(try preferred("kagetsu", .n(6)), "ろっかげつ")
+        XCTAssertEqual(try preferred("nenkan", .n(4)), "よねんかん")
+        XCTAssertEqual(try preferred("nichikan", .n(2)), "ふつかかん")
+        XCTAssertEqual(try preferred("soku", .n(3)), "さんぞく")
+        XCTAssertEqual(try preferred("soku", .what), "なんぞく")
+        XCTAssertEqual(try preferred("chaku", .n(8)), "はっちゃく")
+        XCTAssertEqual(try preferred("wa", .n(3)), "さんば")
+        XCTAssertEqual(try preferred("wa", .n(6)), "ろっぱ")
+        XCTAssertEqual(try preferred("tou", .n(3)), "さんとう")
+        XCTAssertEqual(try preferred("ban", .what), "なんばん")
+        XCTAssertEqual(try counter("wa", in: file).things.first { $0.word == "うさぎ" }?.fit, .primary)
+        for id in ["jikan", "shuukan", "kagetsu", "nenkan", "nichikan", "ban"] {
+            XCTAssertFalse(try counter(id, in: file).countsObjects, id)
+        }
     }
 }

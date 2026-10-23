@@ -90,13 +90,14 @@ final class SoundPatternsTests: XCTestCase {
         XCTAssertEqual(soundPatternRows(from: [counter("a", sound: "irregular", changed: ["1"])])[0].exceptions.count, 0)
     }
 
-    func testRealDataExceptionsAreNenEnAndKaiFloor() throws {
+    func testRealDataExceptionsAreTheOneOffCounters() throws {
         var url = URL(fileURLWithPath: #filePath)
         for _ in 0..<5 { url.deleteLastPathComponent() }
         let file = try JSONDecoder().decode(CountersDataFile.self, from: Data(contentsOf: url.appendingPathComponent("data/counters.json")))
         let rows = soundPatternRows(from: file.counters)
         let plain = try XCTUnwrap(rows.first { $0.sound == "plain" })
-        XCTAssertEqual(plain.exceptions.map(\.counter.id), ["nen", "en"])
+        // 年 and 円 at 4, 時間 at 4 and 9, 年間 at 4, and 羽, which voices at 3, 6, 8, 10 and 何
+        XCTAssertEqual(plain.exceptions.map(\.counter.id), ["nen", "en", "jikan", "nenkan", "wa"])
         let k = try XCTUnwrap(rows.first { $0.sound == "k" })
         XCTAssertEqual(k.exceptions.map(\.counter.id), ["kai-floor"])
         XCTAssertEqual(k.exceptions.first?.numbers, [.n(3), .what])
