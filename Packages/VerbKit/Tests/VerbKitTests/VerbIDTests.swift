@@ -158,4 +158,43 @@ final class VerbIDTests: XCTestCase {
         let decoded = try JSONDecoder().decode(StoredWord.self, from: JSONEncoder().encode(stored))
         XCTAssertEqual(decoded, stored)
     }
+
+    // MARK: Quiz
+
+    func testQuizHistoryRecordsTheIDSoHomophonesKeepSeparateHistory() throws {
+        var attempts: [QuizAttempt] = []
+        let form = try XCTUnwrap(QuizForm.all.first { $0.id == "masu_pos" })
+        let questions = [kiru, kiruCut].map {
+            QuizQuestion(verb: $0, form: form, kind: .conjugate, formString: "x", correct: "x", choices: ["x", "y"])
+        }
+        let vm = QuizViewModel(questions: questions, recorder: { attempts.append($0) })
+        vm.choose("x")
+        vm.advance()
+        vm.choose("x")
+        XCTAssertEqual(attempts.map(\.subject), ["きる", "きる:切る"])
+        // The results screen shows the kana, not the id.
+        XCTAssertEqual(vm.results.map(\.verb), ["きる", "きる"])
+    }
+
+    func testAHomophoneIsNotDroppedFromTheDistractors() throws {
+        // Every form of the first verb is "A", so its only possible distractors are the other
+        // verb's forms. Comparing by dict would drop the homophone and leave no question.
+        func verb(_ strings: [String], id: String?) -> Verb {
+            Verb(
+                type: .ru, label: "Ru-verb", dict: "きる", kanji: nil, meaning: "m", description: "d",
+                forms: VerbForms(
+                    masuPos: strings[0], masuNeg: strings[1], masuPast: strings[2], masuPastNeg: strings[3],
+                    te: strings[4], shortPos: strings[5], shortNeg: strings[6], shortPast: strings[7], shortPastNeg: strings[8]
+                ),
+                examples: [], id: id
+            )
+        }
+        let same = verb(Array(repeating: "A", count: 9), id: nil)
+        let other = verb(["B", "C", "D", "E", "F", "G", "H", "I", "J"], id: "きる:切る")
+        let form = try XCTUnwrap(QuizForm.all.first { $0.id == "masu_pos" })
+        let questions = buildQuestions(pairs: [(same, form)], among: [same, other], count: 1, kinds: [.conjugate])
+        XCTAssertEqual(questions.count, 1)
+        XCTAssertTrue(Set(questions[0].choices).isSuperset(of: ["A"]))
+        XCTAssertGreaterThan(questions[0].choices.count, 1)
+    }
 }
