@@ -923,6 +923,8 @@ def check_counters(doc, readings):
             problems.append(f"{cid}: an {sound} counter's reading must start on the は-row")
         if "countsObjects" in c and not isinstance(c["countsObjects"], bool):
             problems.append(f"{cid}: countsObjects must be true or false")
+        if "questions" in c:
+            _check_questions(c, problems)
         overrides = c.get("overrides", {})
         if not isinstance(overrides, dict):
             problems.append(f"{cid}: overrides must be an object")
@@ -989,6 +991,26 @@ def check_counters(doc, readings):
     if "sections" in doc:
         problems.extend(_check_sections(doc["sections"], ids))
     return problems
+
+
+def _check_questions(c, problems):
+    """The optional 何 questions of one counter: each an object with a Japanese sentence that holds
+    何 plus the counter, and an English question."""
+    cid, questions = c.get("id", "<no id>"), c["questions"]
+    if not isinstance(questions, list):
+        problems.append(f"{cid}: questions must be a list")
+        return
+    for index, question in enumerate(questions):
+        where = f"{cid}: questions[{index}]"
+        if not isinstance(question, dict):
+            problems.append(f"{where}: question must be an object")
+            continue
+        for key in ("jp", "en"):
+            if not isinstance(question.get(key), str) or not question[key].strip():
+                problems.append(f"{where}: question {key} missing or empty")
+        asked = "何" + str(c.get("counter", ""))
+        if isinstance(question.get("jp"), str) and question["jp"].strip() and asked not in question["jp"]:
+            problems.append(f"{where}: jp must contain {asked}")
 
 
 def _check_sections(sections, ids):
@@ -1064,8 +1086,12 @@ def check_counted_runs(doc, readings):
     for that number. The example's own `readings` come first, then furigana.json."""
     problems = []
     for c in doc["counters"]:
-        pattern = re.compile(f"(?<![{NUMERAL_CHARS}])([{''.join(NUMBER_KANJI)}]){re.escape(c['counter'])}")
+        # 三時間 is a run of 時間, not of 時: leave a run followed by 間 to the longer counter.
+        longer = "" if c["counter"].endswith("間") else "(?!間)"
+        pattern = re.compile(
+            f"(?<![{NUMERAL_CHARS}])([{''.join(NUMBER_KANJI)}]){re.escape(c['counter'])}{longer}")
         sources = [(f"examples[{i}]", e) for i, e in enumerate(c.get("examples", []))]
+        sources += [(f"questions[{i}]", q) for i, q in enumerate(c.get("questions", [])) if isinstance(q, dict)]
         for pitfall in c.get("pitfalls", []):
             sources += [(f"{pitfall.get('heading', 'pitfall')} example {i}", e)
                         for i, e in enumerate(pitfall.get("examples", []))]
