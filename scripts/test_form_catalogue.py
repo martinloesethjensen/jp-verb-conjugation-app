@@ -1,5 +1,4 @@
 import json
-import re
 import unittest
 from pathlib import Path
 
@@ -8,8 +7,7 @@ import update_data as ud
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
-FORMS_JSON = ud.DEFAULT_FORMS_PATH
-QUIZ_FORM_SWIFT = ROOT / "Packages/VerbKit/Sources/VerbKit/Quiz/QuizForm.swift"
+BUNDLED_FORMS_JSON = ud.DEFAULT_BUNDLED_FORMS_PATH
 
 
 class CatalogueInvariantTests(unittest.TestCase):
@@ -121,11 +119,17 @@ class CheckVerbFormsTests(unittest.TestCase):
 class RealDataTests(unittest.TestCase):
     def test_data_is_up_to_date(self):
         """The golden check: regenerating the repo's data changes nothing."""
-        code, messages = ud.run(DATA, check=True, forms_path=FORMS_JSON)
+        code, messages = ud.run(DATA, check=True, bundled_forms_path=BUNDLED_FORMS_JSON)
         self.assertEqual((code, messages), (0, ["data is up to date"]))
 
     def test_forms_json_is_the_generated_catalogue(self):
-        self.assertEqual(FORMS_JSON.read_text(encoding="utf-8"), ud.dump_forms())
+        self.assertEqual((DATA / "forms.json").read_text(encoding="utf-8"), ud.dump_forms())
+
+    def test_the_bundled_copy_is_the_published_file_with_its_manifest_entry(self):
+        self.assertEqual(BUNDLED_FORMS_JSON.read_bytes(), (DATA / "forms.json").read_bytes())
+        manifest = json.loads((DATA / "manifest.json").read_text(encoding="utf-8"))
+        sidecar = json.loads(ud.bundled_forms_manifest_path(BUNDLED_FORMS_JSON).read_text(encoding="utf-8"))
+        self.assertEqual(sidecar, {"version": manifest["forms"]["version"], "sha256": manifest["forms"]["sha256"]})
 
     def test_every_verb_key_is_known_and_in_catalogue_order(self):
         verbs = json.loads((DATA / "verbs.json").read_text(encoding="utf-8"))["verbs"]
@@ -146,39 +150,6 @@ class RealDataTests(unittest.TestCase):
         for s in fc.FORMS:
             if s.grammar is not None:
                 self.assertIn(s.grammar, lessons, s.id)
-
-
-@unittest.skipUnless(QUIZ_FORM_SWIFT.exists(), "QuizForm.swift not present")
-class MatchesTheQuizTests(unittest.TestCase):
-    """Until the quiz reads the catalogue, the two must agree on id, order
-    within a family and label. Delete with `QuizForm.all`."""
-
-    PATTERN = re.compile(
-        r'make\("(\w+)", \.(\w+), name: (nil|"[^"]*"), register: (nil|"[^"]*")(.*?)\) \{'
-    )
-
-    def swift_forms(self):
-        text = QUIZ_FORM_SWIFT.read_text(encoding="utf-8")
-        forms = []
-        for m in self.PATTERN.finditer(text):
-            form_id, _topic, name, register, rest = m.groups()
-            name = None if name == "nil" else name.strip('"')
-            register = None if register == "nil" else register.strip('"')
-            label = " · ".join(part for part in [
-                name, register,
-                "past" if "past: true" in rest else None,
-                "negative" if "negative: true" in rest else None,
-            ] if part)
-            forms.append((form_id, label))
-        return forms
-
-    def test_same_forms_and_labels(self):
-        swift = self.swift_forms()
-        self.assertEqual(len(swift), len(fc.FORMS))
-        for form_id, label in swift:
-            spec = fc.spec(form_id)
-            self.assertIsNotNone(spec, form_id)
-            self.assertEqual(spec.label, label, form_id)
 
 
 if __name__ == "__main__":
