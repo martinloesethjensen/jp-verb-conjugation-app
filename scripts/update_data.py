@@ -982,6 +982,35 @@ def check_counters(doc, readings):
     for cid in ids:
         if cid not in grouped:
             problems.append(f"{cid}: counter is in no group")
+    if "sections" in doc:
+        problems.extend(_check_sections(doc["sections"], ids))
+    return problems
+
+
+def _check_sections(sections, ids):
+    """Problems with the optional home-list `sections` of counters.json."""
+    if not isinstance(sections, list):
+        return ["sections: must be a list"]
+    problems = []
+    section_ids = [s.get("id") for s in sections]
+    for dup in sorted({i for i in section_ids if section_ids.count(i) > 1}):
+        problems.append(f"{dup}: duplicate section id")
+    listed = set()
+    for s in sections:
+        sid = s.get("id", "<no id>")
+        for key in ("id", "title"):
+            if not isinstance(s.get(key), str) or not s[key]:
+                problems.append(f"section {sid}: {key} missing or empty")
+        members = s.get("counters", [])
+        for member in members:
+            if member not in ids:
+                problems.append(f"section {sid}: '{member}' is not a counter")
+            listed.add(member)
+        for dup in sorted({m for m in members if members.count(m) > 1}):
+            problems.append(f"section {sid}: '{dup}' listed twice")
+    for cid in ids:
+        if cid not in listed:
+            problems.append(f"{cid}: counter is in no section")
     return problems
 
 
@@ -1044,10 +1073,10 @@ def check_counted_runs(doc, readings):
 
 def dump_counters(doc):
     """Serialize counters.json: 2-space indent, non-ASCII kept, each counter and group on one line."""
-    head = {key: value for key, value in doc.items() if key not in ("counters", "groups")}
+    head = {key: value for key, value in doc.items() if key not in ("counters", "groups", "sections")}
     text = json.dumps(head, ensure_ascii=False, indent=2)[:-2]
     sections = []
-    for name in ("counters", "groups"):
+    for name in ("counters", "groups", "sections"):
         if name in doc:
             body = ",\n".join(f"    {json.dumps(item, ensure_ascii=False)}" for item in doc[name])
             sections.append(f'  "{name}": [\n{body}\n  ]' if body else f'  "{name}": []')

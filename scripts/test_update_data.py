@@ -1150,8 +1150,14 @@ COUNTER_GROUP = {"id": "long", "title": "Long things", "symbol": "pencil", "summ
                  "members": [{"counter": "hon", "note": "pencils"}]}
 
 
-def counters_doc(*counters, groups=None):
-    return {"counters": list(counters), "groups": [COUNTER_GROUP] if groups is None else groups}
+COUNTER_SECTION = {"id": "things", "title": "Things", "counters": ["hon"]}
+
+
+def counters_doc(*counters, groups=None, sections=None):
+    doc = {"counters": list(counters), "groups": [COUNTER_GROUP] if groups is None else groups}
+    if sections is not None:
+        doc["sections"] = sections
+    return doc
 
 
 class CheckCountersTests(unittest.TestCase):
@@ -1167,6 +1173,25 @@ class CheckCountersTests(unittest.TestCase):
         for needle, groups in cases.items():
             problems = ud.check_counters(counters_doc(counter(), groups=groups), COUNTER_READINGS)
             self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    def test_section_problems(self):
+        cases = {
+            "duplicate section": [COUNTER_SECTION, COUNTER_SECTION],
+            "not a counter": [dict(COUNTER_SECTION, counters=["nope"])],
+            "listed twice": [dict(COUNTER_SECTION, counters=["hon", "hon"])],
+            "in no section": [],
+            "title": [dict(COUNTER_SECTION, title="")],
+        }
+        for needle, sections in cases.items():
+            problems = ud.check_counters(counters_doc(counter(), sections=sections), COUNTER_READINGS)
+            self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    def test_sections_are_optional(self):
+        self.assertEqual(ud.check_counters(counters_doc(counter()), COUNTER_READINGS), [])
+
+    def test_a_counter_may_be_in_two_sections(self):
+        sections = [COUNTER_SECTION, dict(COUNTER_SECTION, id="drinks", title="Drinks")]
+        self.assertEqual(ud.check_counters(counters_doc(counter(), sections=sections), COUNTER_READINGS), [])
 
     def test_problems(self):
         cases = {
@@ -1260,6 +1285,14 @@ class CountersFileTests(unittest.TestCase):
         text = ud.dump_counters(doc)
         self.assertEqual(json.loads(text), doc)
         self.assertEqual(text.count("\n    {"), 2)
+
+    def test_dump_puts_each_section_on_one_line(self):
+        doc = {"version": "1.0.0", "description": "d", "counters": [counter()], "groups": [COUNTER_GROUP],
+               "sections": [COUNTER_SECTION]}
+        text = ud.dump_counters(doc)
+        self.assertEqual(json.loads(text), doc)
+        self.assertEqual(text.count("\n    {"), 3)
+        self.assertIn('    {"id": "things", "title": "Things", "counters": ["hon"]}', text)
 
     def test_manifest_entry_starts_at_1_0_0_and_bumps_on_change(self):
         m = ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c1")
