@@ -116,4 +116,19 @@ final class RealCountersDataTests: XCTestCase {
             XCTAssertFalse(try counter(id, in: file).countsObjects, id)
         }
     }
+
+    func testEveryCounterButTsuHasAWhatQuestionAndAskItBuildsThemAll() throws {
+        let file = try load()
+        XCTAssertEqual(file.counters.filter { $0.askings.isEmpty }.map(\.id), ["tsu"])
+        let questions = buildCounterQuestions(
+            counters: file.counters, groups: file.groups, kind: .counterAsk, count: 1000
+        )
+        XCTAssertEqual(questions.count, file.counters.reduce(0) { $0 + $1.askings.count })
+        for question in questions {
+            XCTAssertTrue(question.correct.hasPrefix("何"), question.prompt)
+            XCTAssertTrue(question.choices.contains(question.correct), question.prompt)
+            XCTAssertEqual(Set(question.choices).count, question.choices.count, question.prompt)
+            XCTAssertGreaterThanOrEqual(question.choices.count, 3, question.prompt)
+        }
+    }
 }

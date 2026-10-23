@@ -164,4 +164,15 @@ final class CounterDecodingTests: XCTestCase {
         let without = #"{"version": "1.0.0", "description": "d", "counters": []}"#
         XCTAssertEqual(try JSONDecoder().decode(CountersDataFile.self, from: Data(without.utf8)).sections, [])
     }
+
+    func testAskingsDecodeFromQuestionsAndDefaultToNone() throws {
+        let withQuestions = """
+        {"id": "nin", "counter": "人", "reading": "にん", "meaning": "people", "sound": "irregular", "symbol": "person",
+         "readings": {"what": ["なんにん"]},
+         "questions": [{"jp": "教室に何人いますか。", "en": "How many people are in the classroom?"}]}
+        """
+        let counter = try decode(withQuestions)
+        XCTAssertEqual(counter.askings, [CounterAsking(jp: "教室に何人いますか。", en: "How many people are in the classroom?")])
+        XCTAssertTrue(try decode(honJSON).askings.isEmpty)
+    }
 }

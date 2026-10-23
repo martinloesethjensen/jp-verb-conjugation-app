@@ -7,14 +7,15 @@ final class CounterQuestionTests: XCTestCase {
     private func make(
         _ id: String, _ written: String, _ reading: String, _ meaning: String, sound: String = "plain",
         readings: [String: [String]] = [:], distractors: [String: [String]] = [:], changed: [String] = [],
-        things: [CountedThing] = [], countsObjects: Bool = true
+        things: [CountedThing] = [], countsObjects: Bool = true, askings: [CounterAsking] = []
     ) -> Counter {
         var all: [String: [String]] = [:]
         for (key, base) in zip(CounterNumber.allCases.map(\.key), Self.bases) { all[key] = [base + reading] }
         all.merge(readings) { _, new in new }
         return Counter(
             id: id, counter: written, reading: reading, meaning: meaning, jlpt: .n5, sound: sound, symbol: "circle",
-            readings: all, changed: changed, distractors: distractors, countsObjects: countsObjects, things: things
+            readings: all, changed: changed, distractors: distractors, countsObjects: countsObjects, things: things,
+            askings: askings
         )
     }
 
@@ -216,5 +217,70 @@ final class CounterQuestionTests: XCTestCase {
 
     func testOtherKindsBuildNothing() {
         XCTAssertTrue(buildCounterQuestions(counters: all, groups: [], kind: .conjugate, count: 10).isEmpty)
+    }
+
+    // MARK: Ask it
+
+    private func asking(_ jp: String, _ en: String) -> CounterAsking { CounterAsking(jp: jp, en: en) }
+
+    private lazy var askHon = make("hon", "本", "ほん", "long, thin things", readings: ["what": ["なんぼん"]],
+                                   askings: [asking("鉛筆は何本ありますか。", "How many pencils are there?")])
+    private lazy var askHai = make("hai", "杯", "はい", "cups", readings: ["what": ["なんばい"]],
+                                   askings: [asking("コーヒーを何杯飲みましたか。", "How many cups of coffee did you drink?")])
+    private lazy var askHiki = make("hiki", "匹", "ひき", "small animals", readings: ["what": ["なんびき"]],
+                                    askings: [asking("猫は何匹いますか。", "How many cats are there?")])
+    private lazy var askNin = make("nin", "人", "にん", "people", sound: "irregular", readings: ["what": ["なんにん"]],
+                                   askings: [asking("教室に何人いますか。", "How many people are in the classroom?")])
+    private lazy var askDate = make("nichi-date", "日", "にち", "day of the month", sound: "irregular",
+                                    readings: ["what": ["なんにち"]],
+                                    askings: [asking("今日は何日ですか。", "What is the date today?")])
+    private lazy var askDays = make("nichi-days", "日", "にち", "number of days", sound: "irregular",
+                                    readings: ["what": ["なんにち"]],
+                                    askings: [asking("何日休みますか。", "How many days will you take off?")])
+
+    private func ask(_ counters: [Counter], count: Int = 200) -> [CounterQuestion] {
+        buildCounterQuestions(counters: counters, groups: [longGroup], kind: .counterAsk, count: count)
+    }
+
+    func testAskItMakesOneQuestionPerAskingWithTheWhatPhraseAsTheAnswer() throws {
+        let questions = ask([askHon, askHai, askHiki, askNin])
+        XCTAssertEqual(questions.count, 4)
+        let hon = try XCTUnwrap(questions.first { $0.counterID == "hon" })
+        XCTAssertEqual(hon.kind, .counterAsk)
+        XCTAssertEqual(hon.prompt, "How many pencils are there?")
+        XCTAssertEqual(hon.formID, "鉛筆は何本ありますか。")
+        XCTAssertEqual(hon.correct, "何本")
+        XCTAssertEqual(hon.accepted, ["何本"])
+        XCTAssertTrue(hon.explanation.contains("鉛筆は何本ありますか。"))
+        XCTAssertTrue(hon.explanation.contains("なんぼん"))
+    }
+
+    func testAskItOffersOtherCountersPhrasesAndSameGroupFirst() throws {
+        let hon = try XCTUnwrap(ask([askHon, askHai, askHiki, askNin]).first { $0.counterID == "hon" })
+        XCTAssertEqual(hon.choices.count, 4)
+        XCTAssertEqual(Set(hon.choices), ["何本", "何杯", "何匹", "何人"])
+        let few = try XCTUnwrap(ask([askHon, askHai, askHiki, askNin, askDate]).first { $0.counterID == "hon" })
+        XCTAssertTrue(few.choices.contains("何匹"), "the counter sharing hon's group comes before the rest")
+    }
+
+    func testAskItNeverShowsTheSamePhraseTwice() throws {
+        let questions = ask([askDate, askDays, askHon, askHai])
+        for question in questions {
+            XCTAssertEqual(Set(question.choices).count, question.choices.count, question.prompt)
+        }
+        let date = try XCTUnwrap(questions.first { $0.counterID == "nichi-date" })
+        XCTAssertEqual(date.choices.filter { $0 == "何日" }.count, 1)
+    }
+
+    func testAskItSkipsCountersWithoutAskingsAndLoneQuestions() {
+        XCTAssertTrue(ask([tsu]).isEmpty)
+        XCTAssertTrue(ask([]).isEmpty)
+        XCTAssertTrue(ask([askHon, tsu]).isEmpty, "with one phrase there is nothing wrong to offer")
+        XCTAssertEqual(ask([askHon, askHai, tsu]).count, 2)
+    }
+
+    func testAskItRespectsTheCount() {
+        XCTAssertEqual(ask([askHon, askHai, askHiki, askNin], count: 2).count, 2)
+        XCTAssertTrue(ask([askHon, askHai], count: 0).isEmpty)
     }
 }
