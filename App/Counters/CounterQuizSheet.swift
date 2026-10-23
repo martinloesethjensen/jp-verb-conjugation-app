@@ -3,7 +3,7 @@ import VerbKit
 
 /// What the counter quiz sheet reports.
 enum CounterQuizSelection {
-    case whichCounter, readIt, mixed, weakSpots
+    case whichCounter, readIt, askIt, mixed, weakSpots
 }
 
 /// Asks what to practise before a counter quiz starts. A row is disabled when it would build no
@@ -12,19 +12,21 @@ struct CounterQuizSheet: View {
     /// How many questions each row can build, and how many weak reading pairs there are.
     let whichCounterAvailable: Bool
     let readItAvailable: Bool
+    let askItAvailable: Bool
     let weakSpotCount: Int
     var onStart: (CounterQuizSelection) -> Void
     var onCancel: () -> Void
 
     @State private var choice: CounterQuizSelection = .mixed
 
-    private var mixedAvailable: Bool { whichCounterAvailable || readItAvailable }
+    private var mixedAvailable: Bool { whichCounterAvailable || readItAvailable || askItAvailable }
 
     private func isAvailable(_ value: CounterQuizSelection) -> Bool {
         switch value {
         case .weakSpots: weakSpotCount > 0
         case .whichCounter: whichCounterAvailable
         case .readIt: readItAvailable
+        case .askIt: askItAvailable
         case .mixed: mixedAvailable
         }
     }
@@ -36,7 +38,8 @@ struct CounterQuizSheet: View {
                     row("Weak spots", detail: weakSpotsDetail, value: .weakSpots)
                     row("Which counter?", detail: "Pick 本 for 傘", value: .whichCounter)
                     row("Read it", detail: "三本 is さんぼん", value: .readIt)
-                    row("Mixed", detail: "Both", value: .mixed)
+                    row("Ask it", detail: "何人 for \"How many people?\"", value: .askIt)
+                    row("Mixed", detail: "All three", value: .mixed)
                 }
             }
             .navigationTitle("Counter quiz")
@@ -55,7 +58,7 @@ struct CounterQuizSheet: View {
         }
         .presentationDetents([.medium])
         .onAppear {
-            if !isAvailable(choice) { choice = [.whichCounter, .readIt].first(where: isAvailable) ?? .mixed }
+            if !isAvailable(choice) { choice = [.whichCounter, .readIt, .askIt].first(where: isAvailable) ?? .mixed }
         }
     }
 

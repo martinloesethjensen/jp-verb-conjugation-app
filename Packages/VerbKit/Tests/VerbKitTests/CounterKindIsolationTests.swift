@@ -15,6 +15,8 @@ final class CounterKindIsolationTests: XCTestCase {
         XCTAssertTrue(QuizQuestionKind.verbKinds.allSatisfy { !$0.isCounter && $0 != .connect })
         XCTAssertTrue(QuizQuestionKind.counterChoice.isCounter)
         XCTAssertTrue(QuizQuestionKind.counterReading.isCounter)
+        XCTAssertTrue(QuizQuestionKind.counterAsk.isCounter)
+        XCTAssertEqual(try JSONDecoder().decode(QuizQuestionKind.self, from: Data("\"counterAsk\"".utf8)), .counterAsk)
     }
 
     func testCounterMissesAreNotWeakVerbPairs() {

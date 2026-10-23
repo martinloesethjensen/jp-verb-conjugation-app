@@ -70,7 +70,9 @@ struct CountersTab: View {
         switch selection {
         case .whichCounter: return built(.counterChoice)
         case .readIt: return built(.counterReading)
-        case .mixed: return Array((built(.counterChoice) + built(.counterReading)).shuffled().prefix(count))
+        case .askIt: return built(.counterAsk)
+        case .mixed:
+            return Array((built(.counterChoice) + built(.counterReading) + built(.counterAsk)).shuffled().prefix(count))
         case .weakSpots: return buildCounterQuestions(pairs: weakPairs, count: count).shuffled()
         }
     }
@@ -87,6 +89,7 @@ struct CountersTab: View {
                 CounterQuizSheet(
                     whichCounterAvailable: available(.counterChoice),
                     readItAvailable: available(.counterReading),
+                    askItAvailable: available(.counterAsk),
                     weakSpotCount: buildCounterQuestions(pairs: weakPairs, count: 1000).count,
                     onStart: { selection in
                         let built = questions(for: selection)

@@ -1,10 +1,11 @@
 import Foundation
 
 /// One counter quiz question. *Which counter?* shows a thing (傘) and asks for its counter (本);
-/// *Read it* shows a counted form (三本) and asks for its reading (さんぼん).
+/// *Read it* shows a counted form (三本) and asks for its reading (さんぼん); *Ask it* shows an English
+/// question (How many people are there?) and asks for the 何 phrase (何人).
 public struct CounterQuestion: Equatable, Sendable, Identifiable {
     public var id: UUID
-    /// `.counterChoice` or `.counterReading`.
+    /// `.counterChoice`, `.counterReading` or `.counterAsk`.
     public var kind: QuizQuestionKind
     /// What quiz history records as the attempt's subject: the right counter shown.
     public var counterID: String
@@ -56,6 +57,10 @@ public struct CounterQuestion: Equatable, Sendable, Identifiable {
 /// - `.counterReading`: one question per counter and number. The wrong choices are the counter's
 ///   generated `distractors`, then the preferred readings of the nearest other numbers; a question
 ///   with no wrong choice is skipped.
+/// - `.counterAsk`: one question per counter `askings` entry. The right choice is the counter's 何
+///   phrase (何人); the wrong ones are other counters' phrases, those sharing a group with the right
+///   counter first, never the same text twice (two counters written 日 show one 何日). A question with
+///   no wrong choice is skipped, and a counter without askings makes none.
 /// - Any other kind builds nothing.
 public func buildCounterQuestions(
     counters: [Counter], groups: [CounterGroup], kind: QuizQuestionKind, count: Int
@@ -65,6 +70,7 @@ public func buildCounterQuestions(
     switch kind {
     case .counterChoice: questions = whichCounterQuestions(counters: counters, groups: groups)
     case .counterReading: questions = counters.flatMap(readItQuestions)
+    case .counterAsk: questions = askItQuestions(counters: counters, groups: groups)
     default: return []
     }
     return Array(questions.shuffled().prefix(count))
@@ -130,6 +136,32 @@ private func whichCounterQuestions(counters all: [Counter], groups: [CounterGrou
         ))
     }
     return questions
+}
+
+// MARK: Ask it
+
+private func askItQuestions(counters: [Counter], groups: [CounterGroup]) -> [CounterQuestion] {
+    let askers = counters.filter { !$0.askings.isEmpty }
+    return askers.flatMap { counter -> [CounterQuestion] in
+        let correct = counter.written(.what)
+        let sharing = Set(groups.filter { $0.members.contains { $0.counter == counter.id } }
+            .flatMap { $0.members.map(\.counter) })
+        let others = askers.filter { $0.id != counter.id }
+        var wrong: [String] = []
+        for other in others.filter({ sharing.contains($0.id) }) + others.filter({ !sharing.contains($0.id) }) where wrong.count < 3 {
+            let phrase = other.written(.what)
+            if phrase != correct, !wrong.contains(phrase) { wrong.append(phrase) }
+        }
+        guard !wrong.isEmpty else { return [] }
+        let reading = counter.readings(for: .what).first ?? ""
+        return counter.askings.map { asking in
+            CounterQuestion(
+                kind: .counterAsk, counterID: counter.id, formID: asking.jp, prompt: asking.en,
+                detail: "Pick the 何 phrase", correct: correct, accepted: [correct],
+                choices: ([correct] + wrong).shuffled(), explanation: "\(asking.jp)  (\(correct): \(reading))"
+            )
+        }
+    }
 }
 
 // MARK: Read it
