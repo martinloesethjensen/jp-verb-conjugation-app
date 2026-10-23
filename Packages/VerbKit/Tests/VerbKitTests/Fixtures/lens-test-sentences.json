@@ -1,5 +1,5 @@
 {
-  "description": "The 41 hand-labelled test sentences of the voice research: 23 dev, 18 held out. Golden sentences for the Sentence lens (#142). Each verb lists its surface and `match`: exact (a generated form; `forms` are every form the index lists for that verb), rule (needs the tail rules of #145), notInApp (a verb the app lacks), homograph (an index surface whose real verb the app lacks) or notAVerb.",
+  "description": "The 41 hand-labelled test sentences of the voice research: 23 dev, 18 held out. Golden sentences for the Sentence lens (#142). Each verb lists its surface and `match`: exact (a generated form; `forms` are every form the index lists for that verb), rule (needs the tail rules of #145), notInApp (a verb the app lacks), homograph (an index surface whose real verb the app lacks) or notAVerb. A surface is the whole verb chain the matcher should highlight: it takes a polite です (飲みたいです) but not a question か.",
   "sentences": [
     {
       "text": "昨日友達と映画を見に行きました。", "set": "dev",
@@ -66,7 +66,7 @@
     {
       "text": "窓を開けてもいいですか。", "set": "dev",
       "verbs": [
-        {"surface": "開けてもいいですか", "verb": "あける", "match": "rule"}
+        {"surface": "開けてもいいです", "verb": "あける", "match": "rule"}
       ]
     },
     {
@@ -78,7 +78,7 @@
     {
       "text": "もう少しゆっくり話してくれませんか。", "set": "dev",
       "verbs": [
-        {"surface": "話してくれませんか", "verb": "はなす", "match": "rule"}
+        {"surface": "話してくれません", "verb": "はなす", "match": "rule"}
       ]
     },
     {
@@ -97,7 +97,7 @@
     {
       "text": "新しい服を着てみたいです。", "set": "dev",
       "verbs": [
-        {"surface": "着てみたい", "verb": "きる", "match": "rule"}
+        {"surface": "着てみたいです", "verb": "きる", "match": "rule"}
       ]
     },
     {
@@ -250,7 +250,7 @@
     {
       "text": "窓を閉めてもらえますか。", "set": "heldout",
       "verbs": [
-        {"surface": "閉めてもらえますか", "verb": "しめる", "match": "rule"}
+        {"surface": "閉めてもらえます", "verb": "しめる", "match": "rule"}
       ]
     },
     {
