@@ -20,7 +20,8 @@ let package = Package(
             dependencies: ["VerbKit"],
             resources: [
                 .copy("Fixtures/verbs-fixture.json"), .copy("Fixtures/quiz-history-v1.sqlite"),
-                .copy("Fixtures/lens-test-sentences.json"), .copy("Fixtures/lens-lesson-sentences.json")
+                .copy("Fixtures/lens-test-sentences.json"), .copy("Fixtures/lens-lesson-sentences.json"),
+                .copy("Fixtures/lens-sentence-tokens.json")
             ]
         )
     ],
