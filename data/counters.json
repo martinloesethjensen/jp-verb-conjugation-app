@@ -35,5 +35,12 @@
     {"id": "years", "title": "Years & age", "symbol": "calendar.badge.clock", "summary": "How many years, and how old.", "members": [{"counter": "nen", "note": "years"}, {"counter": "sai", "note": "age"}]},
     {"id": "money", "title": "Money", "symbol": "yensign", "summary": "Prices in yen.", "members": [{"counter": "en", "note": "yen"}]},
     {"id": "times-floors", "title": "Times & floors", "symbol": "arrow.clockwise", "summary": "How many times, and which floor.", "members": [{"counter": "kai", "note": "how many times"}, {"counter": "kai-floor", "note": "which floor"}]}
+  ],
+  "sections": [
+    {"id": "drinks", "title": "Drinks", "counters": ["hai", "hon", "tsu"]},
+    {"id": "people-animals", "title": "People & animals", "counters": ["nin", "hiki"]},
+    {"id": "things", "title": "Things", "counters": ["mai", "dai", "satsu", "ko", "hon", "tsu"]},
+    {"id": "time-dates-age", "title": "Time, dates & age", "counters": ["ji", "fun", "nichi-date", "nichi-days", "nen", "sai"]},
+    {"id": "money-events", "title": "Money & counting events", "counters": ["en", "kai", "kai-floor"]}
   ]
 }

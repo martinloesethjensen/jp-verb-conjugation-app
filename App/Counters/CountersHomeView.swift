@@ -1,7 +1,8 @@
 import SwiftUI
 import VerbKit
 
-/// The Counters sidebar: a grid of counting groups, or search results while a query is typed.
+/// The Counters sidebar: a search field and a directory of every counter under what it counts, or
+/// search results while a query is typed.
 struct CountersHomeView: View {
     @Environment(CountersStore.self) private var store
     @Binding var destination: CounterDestination?
@@ -10,6 +11,7 @@ struct CountersHomeView: View {
     var onQuiz: () -> Void
     @State private var search = ""
     @State private var scope: LevelScope = .mine
+    @Environment(\.dynamicTypeSize) private var typeSize
     @FocusState private var searchFocused: Bool
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
@@ -42,6 +44,10 @@ struct CountersHomeView: View {
         return rowCount(results(in: LevelSettings())) - rowCount(results(in: settings))
     }
 
+    private var home: [CounterHomeSection] {
+        homeSections(store.sections, counters: counters(in: settings))
+    }
+
     private func go(_ next: CounterDestination) {
         destination = next
         column = .detail
@@ -51,7 +57,9 @@ struct CountersHomeView: View {
         content
             .navigationTitle("Counters")
             .navigationSubtitle(scope == .mine ? summary : "")
-            .inlineSearch(text: $search, prompt: "Counters, 3本, sanbon, umbrella…", focused: $searchFocused)
+            .inlineSearch(
+                text: $search, prompt: "Counters, 3本, sanbon, umbrella…", focused: $searchFocused, alwaysVisible: true
+            )
             .levelScopeBar(isActive: levelsHidden, scope: $scope)
             .onChange(of: search) { if search.isEmpty { scope = .mine } }
             .toolbar {
@@ -76,7 +84,7 @@ struct CountersHomeView: View {
                 Text("Counters download in the background. Check your connection, then reopen the app.")
             }
         } else if search.isEmpty {
-            grid
+            directory
         } else {
             CounterSearchResultsView(
                 results: results(in: activeLevels), search: search, summary: summary,
@@ -85,37 +93,60 @@ struct CountersHomeView: View {
         }
     }
 
-    private var grid: some View {
-        let visible = counters(in: settings)
-        return ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                ForEach(groups(in: settings)) { group in
-                    let members = group.counters(in: visible).map(\.counter.counter)
-                    GroupTile(
-                        title: group.title, symbol: group.symbol,
-                        counters: members.joined(separator: " · "),
-                        spokenCounters: members.joined(separator: ", ")
-                    ) {
-                        go(.group(group))
+    /// The heading and its Compare link; stacked at accessibility sizes so neither is squeezed.
+    private func sectionHeader(_ section: CounterHomeSection) -> some View {
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading)) : AnyLayout(HStackLayout())
+        return layout {
+            Text(section.section.title)
+            if !typeSize.isAccessibilitySize { Spacer() }
+            if section.canCompare {
+                Button("Compare") { go(.section(section.section)) }
+                    .buttonStyle(.borderless)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .textCase(nil)
+                    .accessibilityLabel("Compare \(section.section.title)")
+            }
+        }
+    }
+
+    private var directory: some View {
+        let sections = home
+        return List {
+            ForEach(sections) { section in
+                Section {
+                    ForEach(section.rows) { row in
+                        Button {
+                            go(.counter(row.counter, focus: nil))
+                        } label: {
+                            DirectoryRow(counter: row.counter)
+                        }
+                        .buttonStyle(.plain)
+                        .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 2, trailing: 16))
                     }
-                }
-                GroupTile(
-                    title: "All counters", symbol: "list.bullet",
-                    counters: "\(visible.count) counters", spokenCounters: "\(visible.count) counters"
-                ) {
-                    go(.all)
-                }
-                if !visible.isEmpty {
-                    GroupTile(
-                        title: "Sound patterns", symbol: "waveform",
-                        counters: "ろっ · いっ", spokenCounters: "which numbers change sound"
-                    ) {
-                        go(.patterns)
-                    }
+                } header: {
+                    sectionHeader(section)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            if !sections.isEmpty {
+                Section {
+                    Button {
+                        go(.patterns)
+                    } label: {
+                        Label("Why counters change sound", systemImage: "waveform")
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .listStyle(.plain)
+        .overlay {
+            if sections.isEmpty {
+                ContentUnavailableView(
+                    "No counters in your levels", systemImage: "line.3.horizontal.decrease.circle"
+                )
+            }
         }
     }
 }

@@ -80,4 +80,12 @@ final class RealCountersDataTests: XCTestCase {
         }
         XCTAssertEqual(grouped, ids)
     }
+
+    func testTheHomeSectionsCoverEveryCounterInTheChosenOrder() throws {
+        let file = try load()
+        let home = homeSections(file.sections, counters: file.counters)
+        XCTAssertEqual(home.map(\.id), ["drinks", "people-animals", "things", "time-dates-age", "money-events"])
+        XCTAssertEqual(home.map(\.rows.count), [3, 2, 6, 6, 3])
+        XCTAssertEqual(Set(home.flatMap(\.rows).map(\.counter.id)), Set(file.counters.map(\.id)))
+    }
 }

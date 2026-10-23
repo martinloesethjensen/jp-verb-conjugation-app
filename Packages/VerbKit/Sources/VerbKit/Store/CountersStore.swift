@@ -7,6 +7,8 @@ import Observation
 public final class CountersStore {
     public private(set) var counters: [Counter] = []
     public private(set) var groups: [CounterGroup] = []
+    /// The home list's headings: the file's `sections`, or one per group when it has none.
+    public private(set) var sections: [CounterSection] = []
 
     private let syncService: CountersSyncService
     private let persisting: CountersPersisting
@@ -46,6 +48,9 @@ public final class CountersStore {
     private func apply(_ file: CountersDataFile) {
         counters = file.counters
         groups = file.groups
+        sections = file.sections.isEmpty
+            ? file.groups.map { CounterSection(id: $0.id, title: $0.title, counters: $0.members.map(\.counter)) }
+            : file.sections
     }
 
     /// Persist first, then confirm, so a failed save is retried next time.

@@ -1,8 +1,8 @@
 import SwiftUI
 import VerbKit
 
-/// One counted form: 三本 small above, the preferred reading, and any other accepted readings
-/// below. A number whose preferred reading is in the counter's `changed` list gets a tint over the
+/// One counted form: 三本 small above (large style only; in a table the row and column say it), the
+/// preferred reading, and any other accepted readings below. A number whose preferred reading is in the counter's `changed` list gets a tint over the
 /// whole reading and a corner dot, so the change never relies on colour alone.
 ///
 /// Readings come straight from counters.json; nothing here asks the furigana dictionary, which
@@ -23,9 +23,11 @@ struct ReadingCell: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            Text(counter.written(number))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if style == .large {
+                Text(counter.written(number))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Text(preferred)
                 .font(style == .large ? .title3.weight(.semibold) : .body.weight(.semibold))
             if readings.count > 1 {

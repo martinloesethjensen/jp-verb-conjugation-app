@@ -6,18 +6,39 @@ import VerbKit
 /// pinned, kept aligned by giving every row the same (Dynamic Type scaled) height. At accessibility
 /// text sizes even three columns scroll, so text wraps instead of truncating.
 struct GroupTableView: View {
-    let group: CounterGroup
+    let title: String
+    let summary: String?
+    private let memberRefs: [CounterGroupMember]
     @Environment(CountersStore.self) private var store
     @Environment(\.dynamicTypeSize) private var typeSize
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
-    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 64
-    @ScaledMetric(relativeTo: .body) private var headerHeight: CGFloat = 92
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var headerHeight: CGFloat = 80
     @ScaledMetric(relativeTo: .body) private var numberWidth: CGFloat = 30
     @ScaledMetric(relativeTo: .body) private var columnWidth: CGFloat = 108
 
-    private var members: [(counter: Counter, note: String?)] {
-        group.counters(in: store.counters.visible(in: LevelSettings(rawValue: hiddenLevelsRaw)))
+    init(group: CounterGroup) {
+        title = group.title
+        summary = group.summary
+        memberRefs = group.members
     }
+
+    /// A home-list section: no summary, and headers say what each counter counts.
+    init(section: CounterSection) {
+        title = section.title
+        summary = nil
+        memberRefs = section.counters.map { CounterGroupMember(counter: $0) }
+    }
+
+    private var members: [(counter: Counter, note: String?)] {
+        let visible = store.counters.visible(in: LevelSettings(rawValue: hiddenLevelsRaw))
+        return CounterGroup(id: "", title: title, symbol: "", summary: summary ?? "", members: memberRefs)
+            .counters(in: visible)
+            .map { ($0.counter, $0.note ?? $0.counter.meaning) }
+    }
+
+    /// Between rows. Every row has the same height, so the pinned number column stays aligned.
+    private static let rowSpacing: CGFloat = 3
 
     private static func label(_ number: CounterNumber) -> String {
         number == .what ? "何" : number.key
@@ -27,9 +48,11 @@ struct GroupTableView: View {
         let members = members
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(group.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                if let summary {
+                    Text(summary)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 HStack(alignment: .top, spacing: 8) {
                     numberColumn
                     if members.count <= 3 && !typeSize.isAccessibilitySize {
@@ -44,7 +67,7 @@ struct GroupTableView: View {
             }
             .padding(16)
         }
-        .navigationTitle(group.title)
+        .navigationTitle(title)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu("Speak readings", systemImage: "speaker.wave.2") {
@@ -59,7 +82,7 @@ struct GroupTableView: View {
     }
 
     private var numberColumn: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Self.rowSpacing) {
             Color.clear.frame(width: numberWidth, height: headerHeight)
             ForEach(CounterNumber.allCases) { number in
                 Text(Self.label(number))
@@ -71,7 +94,7 @@ struct GroupTableView: View {
     }
 
     private func counterGrid(_ members: [(counter: Counter, note: String?)], fill: Bool) -> some View {
-        Grid(horizontalSpacing: 8, verticalSpacing: 8) {
+        Grid(horizontalSpacing: 8, verticalSpacing: Self.rowSpacing) {
             GridRow {
                 ForEach(members, id: \.counter.id) { member in
                     header(member.counter, note: member.note)
@@ -97,8 +120,16 @@ struct GroupTableView: View {
             VStack(spacing: 2) {
                 Text(counter.counter)
                     .font(.title2.weight(.bold))
-                Text(counter.reading)
-                    .font(.caption)
+                HStack(spacing: 4) {
+                    Text(counter.reading)
+                    if counter.sound == "irregular" {
+                        Text("irregular")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 5)
+                            .glassEffect(in: Capsule())
+                    }
+                }
+                .font(.caption)
                 if let note {
                     Text(note)
                         .font(.caption)
@@ -110,7 +141,9 @@ struct GroupTableView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(counter.counter), \(counter.reading)\(note.map { ", \($0)" } ?? "")")
+        .accessibilityLabel(
+            "\(counter.counter), \(counter.reading)\(counter.sound == "irregular" ? ", irregular" : "")\(note.map { ", \($0)" } ?? "")"
+        )
         .accessibilityHint("Opens the counter")
     }
 
