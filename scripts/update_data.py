@@ -992,16 +992,24 @@ def _check_sections(sections, ids):
     if not isinstance(sections, list):
         return ["sections: must be a list"]
     problems = []
-    section_ids = [s.get("id") for s in sections]
+    section_ids = [s.get("id") for s in sections if isinstance(s, dict)]
     for dup in sorted({i for i in section_ids if section_ids.count(i) > 1}):
         problems.append(f"{dup}: duplicate section id")
     listed = set()
     for s in sections:
+        if not isinstance(s, dict):
+            problems.append(f"section {s!r}: must be an object")
+            continue
         sid = s.get("id", "<no id>")
         for key in ("id", "title"):
             if not isinstance(s.get(key), str) or not s[key]:
                 problems.append(f"section {sid}: {key} missing or empty")
-        members = s.get("counters", [])
+        members = s.get("counters")
+        if not isinstance(members, list) or not all(isinstance(m, str) for m in members):
+            problems.append(f"section {sid}: counters must be a list of counter ids")
+            continue
+        if not members:
+            problems.append(f"section {sid}: has no counters")
         for member in members:
             if member not in ids:
                 problems.append(f"section {sid}: '{member}' is not a counter")

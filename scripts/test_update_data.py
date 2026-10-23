@@ -1181,8 +1181,14 @@ class CheckCountersTests(unittest.TestCase):
             "listed twice": [dict(COUNTER_SECTION, counters=["hon", "hon"])],
             "in no section": [],
             "title": [dict(COUNTER_SECTION, title="")],
+            "must be a list of counter ids": [{"id": "x", "title": "X"}],
+            "must be a list of counter ids ": [dict(COUNTER_SECTION, counters="hon")],
+            "must be a list of counter ids  ": [dict(COUNTER_SECTION, counters=[1])],
+            "has no counters": [dict(COUNTER_SECTION, counters=[]), dict(COUNTER_SECTION, id="y", counters=["hon"])],
+            "must be an object": ["hon"],
         }
         for needle, sections in cases.items():
+            needle = needle.strip()
             problems = ud.check_counters(counters_doc(counter(), sections=sections), COUNTER_READINGS)
             self.assertTrue(any(needle in p for p in problems), (needle, problems))
 
