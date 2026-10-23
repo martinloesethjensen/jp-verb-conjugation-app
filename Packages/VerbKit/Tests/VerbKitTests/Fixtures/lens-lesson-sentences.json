@@ -1,5 +1,5 @@
 {
-  "description": "Every distinct example sentence in data/grammar.json, labelled by hand. Golden sentences for the Sentence lens (#142). Each verb lists its surface and `match`: exact (a generated form; `forms` are every form the index lists for that verb), rule (needs the tail rules of #145), notInApp (a verb the app lacks), homograph (an index surface whose real verb the app lacks) or notAVerb.",
+  "description": "Every distinct example sentence in data/grammar.json, labelled by hand. Golden sentences for the Sentence lens (#142). Each verb lists its surface and `match`: exact (a generated form; `forms` are every form the index lists for that verb), rule (needs the tail rules of #145), notInApp (a verb the app lacks), homograph (an index surface whose real verb the app lacks) or notAVerb. A surface is the whole verb chain the matcher should highlight: it takes a polite です (飲みたいです) but not a question か.",
   "sentences": [
     {
       "text": "どうしたんですか。頭が痛いんです。",
@@ -828,7 +828,7 @@
     {
       "text": "このシャツを着てみてもいいですか。",
       "verbs": [
-        {"surface": "着てみてもいいですか", "verb": "きる", "match": "rule"}
+        {"surface": "着てみてもいいです", "verb": "きる", "match": "rule"}
       ]
     },
     {
@@ -1365,13 +1365,13 @@
     {
       "text": "窓を開けてもいいですか。",
       "verbs": [
-        {"surface": "開けてもいいですか", "verb": "あける", "match": "rule"}
+        {"surface": "開けてもいいです", "verb": "あける", "match": "rule"}
       ]
     },
     {
       "text": "ここで写真を撮ってもいいですか。",
       "verbs": [
-        {"surface": "撮ってもいいですか", "match": "notInApp"}
+        {"surface": "撮ってもいいです", "match": "notInApp"}
       ]
     },
     {
@@ -1425,7 +1425,7 @@
     {
       "text": "ここに車を止めてもいいですか。",
       "verbs": [
-        {"surface": "止めてもいいですか", "match": "notInApp"}
+        {"surface": "止めてもいいです", "match": "notInApp"}
       ]
     },
     {
