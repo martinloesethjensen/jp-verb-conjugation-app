@@ -139,6 +139,47 @@ final class GitHubVerbFetcherTests: XCTestCase {
         XCTAssertEqual(counters, Data("counters-at-v3".utf8))
     }
 
+    func testTheFormsEntryIsReadAndItsFileFetchedFromItsPinnedTag() async throws {
+        try serve(
+            manifest: #"{"version": "1.0.0", "sha256": "a", "forms": {"version": "1.2.0", "sha256": "f", "ref": "data-v9"}}"#,
+            files: ["data-v9/data/forms.json": Data("forms-at-v9".utf8)]
+        )
+        let fetcher = makeFetcher()
+        let manifest = try await fetcher.fetchFormsManifest()
+        XCTAssertEqual(manifest, FormsManifest(version: "1.2.0", sha256: "f"))
+        let data = try await fetcher.fetchFormsData()
+        XCTAssertEqual(data, Data("forms-at-v9".utf8))
+    }
+
+    func testFetchFormsManifestIsNilWithoutAFormsBlock() async throws {
+        try serve(manifest: #"{"version": "1.0.0", "sha256": "abc"}"#)
+        let forms = try await makeFetcher().fetchFormsManifest()
+        XCTAssertNil(forms)
+    }
+
+    func testAFormsEntryInAManifestSignedByAnotherKeyIsRefused() async throws {
+        try serve(
+            manifest: #"{"version": "1.0.0", "sha256": "a", "forms": {"version": "9.0.0", "sha256": "f"}}"#,
+            signWith: Curve25519.Signing.PrivateKey()
+        )
+        do {
+            _ = try await makeFetcher().fetchFormsManifest()
+            XCTFail("expected untrusted")
+        } catch VerbSyncError.untrusted {
+            // expected
+        }
+    }
+
+    func testABadRefForTheFormsFileIsRefused() async throws {
+        try serve(manifest: #"{"version": "1.0.0", "sha256": "a", "forms": {"version": "1.0.0", "sha256": "f", "ref": "../evil"}}"#)
+        do {
+            _ = try await makeFetcher().fetchFormsData()
+            XCTFail("expected malformedData")
+        } catch VerbSyncError.malformedData {
+            // expected
+        }
+    }
+
     func testFetchFuriganaManifestIsNilWithoutAFuriganaBlock() async throws {
         try serve(manifest: #"{"version": "1.0.0", "sha256": "abc", "grammar": {"version": "1.0.0", "sha256": "g"}}"#)
         let furigana = try await makeFetcher().fetchFuriganaManifest()

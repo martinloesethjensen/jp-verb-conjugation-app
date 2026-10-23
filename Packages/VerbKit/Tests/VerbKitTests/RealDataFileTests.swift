@@ -49,3 +49,27 @@ final class RealDataFileTests: XCTestCase {
         XCTAssertFalse(decoded.verbs.isEmpty, "data/verbs.json decoded to zero verbs")
     }
 }
+
+/// The real form catalogue (#100): `data/forms.json` is published and signed like the other
+/// files, and the copy the app bundles is the same file.
+final class RealFormsDataFileTests: XCTestCase {
+    private struct Manifest: Decodable { let forms: FormsManifest }
+
+    func testTheManifestHashMatchesDataFormsJSON() throws {
+        let manifest = try JSONDecoder().decode(
+            Manifest.self, from: Data(contentsOf: FormsJSON.repoRoot.appendingPathComponent("data/manifest.json"))
+        )
+        XCTAssertEqual(manifest.forms.sha256, sha256Hex(of: try FormsJSON.published()))
+        XCTAssertEqual(FormCatalogue.bundledManifest, manifest.forms, "the bundled copy is the published version")
+    }
+
+    func testTheBundledCopyIsThePublishedFile() throws {
+        XCTAssertEqual(FormCatalogue.bundled.sha256, sha256Hex(of: try FormsJSON.published()))
+    }
+
+    func testThePublishedCatalogueIsAValidReplacement() throws {
+        let catalogue = try FormCatalogue.replacement(data: try FormsJSON.published(), version: "1.0.0")
+        XCTAssertEqual(catalogue.schema, FormCatalogue.supportedSchema)
+        XCTAssertEqual(catalogue.forms, FormCatalogue.bundled.forms)
+    }
+}
