@@ -133,8 +133,9 @@ public struct QuizSession: Codable, Equatable, Sendable {
 
 extension QuizForm {
     /// Identifies the form set (ids, topics and labels, in order), so a saved quiz made with
-    /// another catalogue is not resumed with mismatched labels.
-    public static let catalogueFingerprint: String = sha256Hex(of: Data(
+    /// another catalogue (an older bundled one, or a synced one since) is not resumed with
+    /// mismatched labels.
+    public static var catalogueFingerprint: String { sha256Hex(of: Data(
         all.map { "\($0.id)|\($0.topic.rawValue)|\($0.label)" }.joined(separator: "\n").utf8
-    ))
+    )) }
 }

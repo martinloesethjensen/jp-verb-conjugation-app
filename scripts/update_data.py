@@ -26,12 +26,16 @@ It does eight things:
       (hand-authored apart from `readings`, `changed` and `distractors`), checks its fields,
       groups and furigana, and that every counted word in an example reads as
       its counter says.
-  5. Recomputes the SHA-256 of all four files into data/manifest.json,
+  5. Recomputes the SHA-256 of every published file into data/manifest.json,
      bumping a file's version (minor) when its content changed.
-  6. Writes forms.json (into the VerbKit package), the catalogue of conjugation forms declared in
+  6. Writes data/forms.json, the catalogue of conjugation forms declared in
      scripts/form_catalogue.py (the one place a form id is defined), and
-     checks every form id verbs.json uses against it. forms.json is bundled
-     with the app, not synced, so it has no manifest entry.
+     checks every form id verbs.json uses against it. forms.json is published
+     data like the others: it has a manifest entry, so manifest.sig covers it
+     and apps sync it. The app also bundles it as an offline fallback; this
+     script writes that copy too (byte for byte the same, plus
+     forms.manifest.json with its version and hash), so scripts/form_catalogue.py
+     stays the one source and --check fails if the copies drift.
   7. With --check, verifies all of the above without writing anything.
   8. Checks verb ids: a verb's id is its `dict` unless it has an explicit `id` (`きる:切る`, only
      where two verbs are spelled the same in kana). Ids must be unique, and no id published on
@@ -1271,9 +1275,26 @@ def with_ref(entry, ref):
     return entry
 
 
+def optional_entry(existing, name, data, forced_version, ref):
+    """The manifest entry for the optional file `name` (`forms`): its version is kept while the
+    hash is unchanged, bumped (minor) when it changed, started at 1.0.0 when the entry is new,
+    or forced by `forced_version`."""
+    digest = sha256_hex(data)
+    old = existing.get(name)
+    if forced_version:
+        version = forced_version
+    elif old is None:
+        version = "1.0.0"
+    elif old.get("sha256") == digest:
+        version = old["version"]
+    else:
+        version = bump_minor(old["version"])
+    return with_ref({"version": version, "sha256": digest}, entry_ref(old, digest, ref))
+
+
 def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, grammar_version=None,
                    furigana_bytes=None, furigana_version=None, ref=None, words_bytes=None, words_version=None,
-                   counters_bytes=None, counters_version=None):
+                   counters_bytes=None, counters_version=None, forms_bytes=None, forms_version=None):
     """New manifest dict. A file's version is kept when its hash is
     unchanged, bumped (minor) when it changed, or forced by an explicit
     version. A grammar or furigana block that did not exist yet starts at
@@ -1348,6 +1369,8 @@ def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, gra
         manifest["counters"] = with_ref(
             {"version": new_counters_version, "sha256": counters_hash}, entry_ref(old_counters, counters_hash, ref)
         )
+    if forms_bytes is not None:
+        manifest["forms"] = optional_entry(existing, "forms", forms_bytes, forms_version, ref)
     return manifest
 
 
@@ -1359,18 +1382,27 @@ def capped(heading, problems):
     return lines
 
 
-# forms.json is bundled with the app (read through Bundle.module), so it lives
-# in the package, not in data/. `run` skips it when no path is given.
-DEFAULT_FORMS_PATH = (
+# The app's bundled copy of data/forms.json (read through Bundle.module): its offline fallback
+# until a synced catalogue arrives. SwiftPM cannot bundle a file from outside the package, so this
+# script writes the copy, and --check fails if it differs from data/forms.json.
+DEFAULT_BUNDLED_FORMS_PATH = (
     Path(__file__).resolve().parent.parent
     / "Packages/VerbKit/Sources/VerbKit/Resources/forms.json"
 )
 
 
+def bundled_forms_manifest_path(bundled_forms_path):
+    """Where the bundled copy's version and hash go: forms.manifest.json, next to it. The app
+    compares it with a synced catalogue's version to use whichever is newer."""
+    return Path(bundled_forms_path).with_name("forms.manifest.json")
+
+
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
-        forms_path=None, ref=None, words_version=None, counters_version=None, published_verbs=None):
-    """Returns (exit_code, messages). `forms_path` is where forms.json is
-    written and checked; None leaves it alone. `ref` pins the manifest entries
+        bundled_forms_path=None, ref=None, words_version=None, counters_version=None, published_verbs=None,
+        forms_version=None):
+    """Returns (exit_code, messages). data/forms.json is always written and checked;
+    `bundled_forms_path` is where the app's bundled copy (and forms.manifest.json beside it) is
+    written and checked, and None leaves them alone. `ref` pins the manifest entries
     to a release tag. `published_verbs` is the published verbs.json (see
     `published_verbs_doc`) that no id may disappear from; None skips that check."""
     data_dir = Path(data_dir)
@@ -1457,26 +1489,37 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     verbs_text = dump_verbs(verbs_doc)
     verbs_bytes = verbs_text.encode("utf-8")
 
+    forms_path = data_dir / "forms.json"
+    forms_bytes = dump_forms().encode("utf-8")
+
     existing = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest = build_manifest(
         existing, verbs_bytes, grammar_bytes, verbs_version, grammar_version,
         furigana_bytes=furigana_bytes, furigana_version=furigana_version, ref=ref,
         words_bytes=words_bytes, words_version=words_version,
         counters_bytes=counters_bytes, counters_version=counters_version,
+        forms_bytes=forms_bytes, forms_version=forms_version,
     )
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+    # The bundled copy's entry: version and hash only (no ref), since the app never fetches it.
+    bundled_entry = {"version": manifest["forms"]["version"], "sha256": manifest["forms"]["sha256"]}
+    bundled_manifest_bytes = (json.dumps(bundled_entry, indent=2) + "\n").encode("utf-8")
 
-    forms_text = dump_forms()
+    def differs(path, data):
+        return not path.exists() or path.read_bytes() != data
 
     stale = []
     if verbs_path.read_bytes() != verbs_bytes:
         stale.append("data/verbs.json")
     if words_bytes is not None and words_path.read_bytes() != words_bytes:
         stale.append("data/words.json")
-    if forms_path is not None:
-        forms_path = Path(forms_path)
-        if not forms_path.exists() or forms_path.read_text(encoding="utf-8") != forms_text:
-            stale.append("forms.json")
+    if differs(forms_path, forms_bytes):
+        stale.append("data/forms.json")
+    if bundled_forms_path is not None:
+        bundled_forms_path = Path(bundled_forms_path)
+        bundled_manifest_path = bundled_forms_manifest_path(bundled_forms_path)
+        if differs(bundled_forms_path, forms_bytes) or differs(bundled_manifest_path, bundled_manifest_bytes):
+            stale.append("the bundled forms.json")
     if counters_bytes is not None and counters_path.read_bytes() != counters_bytes:
         stale.append("data/counters.json")
     if manifest_path.read_text(encoding="utf-8") != manifest_text:
@@ -1496,17 +1539,22 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     if "data/counters.json" in stale:
         counters_path.write_bytes(counters_bytes)
         messages.append("updated data/counters.json")
-    if "forms.json" in stale:
-        forms_path.parent.mkdir(parents=True, exist_ok=True)
-        forms_path.write_text(forms_text, encoding="utf-8")
-        messages.append(f"updated {forms_path.name}")
+    if "data/forms.json" in stale:
+        forms_path.write_bytes(forms_bytes)
+        messages.append("updated data/forms.json")
+    if "the bundled forms.json" in stale:
+        bundled_forms_path.parent.mkdir(parents=True, exist_ok=True)
+        bundled_forms_path.write_bytes(forms_bytes)
+        bundled_manifest_path.write_bytes(bundled_manifest_bytes)
+        messages.append(f"updated the bundled copy ({bundled_forms_path.name}, {bundled_manifest_path.name})")
     if "data/manifest.json" in stale:
         manifest_path.write_text(manifest_text, encoding="utf-8")
         messages.append(
             f"updated data/manifest.json (verbs {manifest['version']}, grammar {manifest['grammar']['version']}, "
             f"furigana {manifest['furigana']['version']}"
             + (f", words {manifest['words']['version']}" if "words" in manifest else "")
-            + (f", counters {manifest['counters']['version']}" if "counters" in manifest else "") + ")"
+            + (f", counters {manifest['counters']['version']}" if "counters" in manifest else "")
+            + f", forms {manifest['forms']['version']})"
         )
         messages.append("the manifest changed: re-sign it with scripts/sign_manifest.py sign")
     if not stale:
@@ -1523,8 +1571,9 @@ def main(argv=None):
     parser.add_argument("--furigana-version", help="force the furigana.json manifest version")
     parser.add_argument("--words-version", help="force the words.json manifest version")
     parser.add_argument("--counters-version", help="force the counters.json manifest version")
-    parser.add_argument("--forms-path", default=str(DEFAULT_FORMS_PATH),
-                        help="where to write the form catalogue (forms.json)")
+    parser.add_argument("--forms-version", help="force the forms.json manifest version")
+    parser.add_argument("--bundled-forms-path", default=str(DEFAULT_BUNDLED_FORMS_PATH),
+                        help="where to write the app's bundled copy of data/forms.json")
     parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
     parser.add_argument("--published-ref", default=PUBLISHED_REF,
                         help="git ref of the published data that no verb id may disappear from "
@@ -1532,9 +1581,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     published = published_verbs_doc(args.published_ref) if args.published_ref else None
     code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
-                         args.furigana_version, forms_path=args.forms_path, ref=args.ref,
+                         args.furigana_version, bundled_forms_path=args.bundled_forms_path, ref=args.ref,
                          words_version=args.words_version, counters_version=args.counters_version,
-                         published_verbs=published)
+                         published_verbs=published, forms_version=args.forms_version)
     for line in messages:
         print(line)
     return code

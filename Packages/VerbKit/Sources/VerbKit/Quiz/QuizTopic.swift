@@ -11,6 +11,23 @@ public enum QuizTopic: String, CaseIterable, Codable, Sendable {
         case .otherForms: return "More forms"
         }
     }
+
+    /// The catalogue family (`forms.json`) this topic quizzes.
+    public var family: String {
+        switch self {
+        case .basic: return "basic"
+        case .potential: return "potential"
+        case .nDesu: return "nd"
+        case .auxiliaries: return "auxiliary"
+        case .otherForms: return "other"
+        }
+    }
+
+    /// The topic for a catalogue family, or nil for a family this build does not know.
+    public init?(family: String) {
+        guard let topic = Self.allCases.first(where: { $0.family == family }) else { return nil }
+        self = topic
+    }
 }
 
 /// One row of the topic sheet: a topic and how many forms the verbs in play have in it.

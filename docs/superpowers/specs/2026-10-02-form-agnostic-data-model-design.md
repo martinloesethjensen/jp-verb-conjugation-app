@@ -21,7 +21,8 @@ stores things):
 - A **word** is one concrete `Word` with a `wordClass` and
   `forms: [formID: surface]`. It never has a field per form.
 - The **catalogue and rules live in `update_data.py`** (still the single source of
-  derived forms). The script also emits `forms.json`, which the app bundles; labels,
+  derived forms). The script also emits `data/forms.json`, which is published and
+  synced like the other data files (and bundled as an offline fallback, #100); labels,
   quiz topics, detail-page sections and search flags all come from it.
 - `verbs.json` stays **byte-compatible**: its `forms` object already *is* an
   id→surface dictionary. Adjectives and nouns arrive as new files with the same
@@ -279,10 +280,13 @@ nouns, not because they are missing.
   exception tables, writes `forms` in catalogue order, and fails when a required form
   has no rule.
 - **The catalogue is generated output.** `scripts/form_catalogue.py` declares the forms;
-  the script writes `forms.json` (catalogue only, no data) into the VerbKit package
-  (`Sources/VerbKit/Resources/forms.json`, bundled, not synced and not in `data/`), so
-  Python is the single source and Swift never re-declares ids. `--check` covers it like
-  `verbs.json` and the manifest.
+  the script writes `data/forms.json` (catalogue only, no data), with a `forms` entry in
+  the signed manifest, so apps sync it with the rest (#100). It also writes the app's
+  bundled copy, byte for byte the same, into the VerbKit package
+  (`Sources/VerbKit/Resources/forms.json`, plus `forms.manifest.json` with its version
+  and hash), the offline fallback for a first launch. Python is the single source and
+  Swift never re-declares ids. `--check` covers all three like `verbs.json` and the
+  manifest.
 - **Files.** Recommended: `adjectives.json` (i + na) and `nouns.json`, one schema, one
   optional manifest block each. They share generator rules (na and noun share the
   copula) but not a file, so the name is honest and each ships independently. Merging
@@ -306,8 +310,12 @@ nouns, not because they are missing.
 - **`Conjugations`**: wraps `[String: String]` with a hand-written `Codable` (see the
   gotcha in §2) and `subscript(FormID) -> String?`. Order always comes from the
   catalogue, never from the file.
-- **`FormCatalogue` / `FormSpec`**: loaded from the bundled `forms.json`. `FormSpec` has
-  id, facets, family, grammar link, applicable classes, `search` flag, label.
+- **`FormCatalogue` / `FormSpec`**: the bundled `forms.json` first, replaced by a synced,
+  verified one when it is newer (#100). `FormSpec` has id, facets, family, grammar link,
+  applicable classes, `search` flag, label. An older app tolerates a newer catalogue:
+  unknown fields, facet values and word classes are ignored, a form it cannot read or
+  whose family is undeclared is skipped, and a newer major `schema` is refused (the app
+  keeps the catalogue it has).
 - **`Word`**: one concrete struct: `wordClass`, `dict`, `kanji`, `meaning`,
   `description`, `notes`, `jlpt`, `forms: Conjugations`, `alt`, `examples`, plus an
   optional verb-only block (`type`, `teGroup`). `Leveled` already works on it.

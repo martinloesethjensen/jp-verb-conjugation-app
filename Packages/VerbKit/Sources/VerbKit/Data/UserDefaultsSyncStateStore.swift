@@ -12,6 +12,8 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
     private let wordsHashKey = "VerbKit.lastSyncedWordsManifest.sha256"
     private let countersVersionKey = "VerbKit.lastSyncedCountersManifest.version"
     private let countersHashKey = "VerbKit.lastSyncedCountersManifest.sha256"
+    private let formsVersionKey = "VerbKit.lastSyncedFormsManifest.version"
+    private let formsHashKey = "VerbKit.lastSyncedFormsManifest.sha256"
 
     private let build: String
 
@@ -101,6 +103,19 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
         defaults.set(manifest.version, forKey: countersVersionKey)
         markCurrent(countersVersionKey)
         defaults.set(manifest.sha256, forKey: countersHashKey)
+    }
+
+    public func lastSyncedFormsManifest() -> FormsManifest? {
+        guard isCurrent(formsVersionKey),
+              let version = defaults.string(forKey: formsVersionKey),
+              let sha256 = defaults.string(forKey: formsHashKey) else { return nil }
+        return FormsManifest(version: version, sha256: sha256)
+    }
+
+    public func saveLastSyncedFormsManifest(_ manifest: FormsManifest) {
+        defaults.set(manifest.version, forKey: formsVersionKey)
+        markCurrent(formsVersionKey)
+        defaults.set(manifest.sha256, forKey: formsHashKey)
     }
 
     public func highestAcceptedVersion(for file: String) -> String? {

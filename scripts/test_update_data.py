@@ -912,6 +912,64 @@ class WordsManifestTests(unittest.TestCase):
         self.assertNotIn("words", ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f"))
 
 
+class FormsManifestTests(unittest.TestCase):
+    def test_forms_entry_starts_at_1_0_0_and_bumps_on_change(self):
+        m = ud.build_manifest({}, b"v", b"g", forms_bytes=b"c1")
+        self.assertEqual(m["forms"], {"version": "1.0.0", "sha256": ud.sha256_hex(b"c1")})
+        m2 = ud.build_manifest(m, b"v", b"g", forms_bytes=b"c2")
+        self.assertEqual(m2["forms"]["version"], "1.1.0")
+        m3 = ud.build_manifest(m2, b"v", b"g", forms_bytes=b"c2")
+        self.assertEqual(m3["forms"]["version"], "1.1.0")
+        forced = ud.build_manifest(m3, b"v", b"g", forms_bytes=b"c2", forms_version="2.0.0")
+        self.assertEqual(forced["forms"]["version"], "2.0.0")
+
+    def test_a_ref_pins_the_forms_entry_until_it_changes(self):
+        m = ud.build_manifest({}, b"v", b"g", forms_bytes=b"c1", ref="data-v1")
+        self.assertEqual(m["forms"]["ref"], "data-v1")
+        self.assertEqual(ud.build_manifest(m, b"v", b"g", forms_bytes=b"c1")["forms"]["ref"], "data-v1")
+        self.assertNotIn("ref", ud.build_manifest(m, b"v", b"g", forms_bytes=b"c2")["forms"])
+
+
+class PublishedFormsTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    def test_run_publishes_forms_json_with_a_manifest_entry_and_the_bundled_copy(self):
+        d = self.make_dir()
+        bundled = d / "bundle" / "forms.json"
+        code, messages = ud.run(d, check=True, bundled_forms_path=bundled)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("data/forms.json" in m and "the bundled forms.json" in m for m in messages), messages)
+
+        code, _ = ud.run(d, bundled_forms_path=bundled)
+        self.assertEqual(code, 0)
+        published = (d / "forms.json").read_bytes()
+        self.assertEqual(published, ud.dump_forms().encode("utf-8"))
+        self.assertEqual(bundled.read_bytes(), published)
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["forms"], {"version": "1.0.0", "sha256": ud.sha256_hex(published)})
+        sidecar = json.loads(ud.bundled_forms_manifest_path(bundled).read_text(encoding="utf-8"))
+        self.assertEqual(sidecar, manifest["forms"])
+        self.assertEqual(ud.run(d, check=True, bundled_forms_path=bundled), (0, ["data is up to date"]))
+
+    def test_check_fails_when_the_bundled_copy_drifts(self):
+        d = self.make_dir()
+        bundled = d / "bundle" / "forms.json"
+        ud.run(d, bundled_forms_path=bundled)
+        bundled.write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True, bundled_forms_path=bundled)
+        self.assertEqual(code, 1)
+        self.assertIn("the bundled forms.json", messages[0])
+        self.assertNotIn("data/forms.json", messages[0])
+
+    def test_check_fails_when_data_forms_json_is_edited_by_hand(self):
+        d = self.make_dir()
+        ud.run(d)
+        (d / "forms.json").write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("data/forms.json", messages[0])
+
+
 class OtherFormsTests(unittest.TestCase):
     def forms(self, dict_form, vtype, short_past):
         return ud.other_forms({"type": vtype, "dict": dict_form, "forms": {"short_past": short_past}})
@@ -1395,7 +1453,7 @@ class VerbIdTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             data_dir = Path(tmp)
             for name in ("verbs.json", "grammar.json", "furigana.json", "manifest.json", "words.json",
-                         "counters.json"):
+                         "counters.json", "forms.json"):
                 (data_dir / name).write_bytes((Path(__file__).resolve().parent.parent / "data" / name).read_bytes())
             published = json.loads((data_dir / "verbs.json").read_text(encoding="utf-8"))
             published["verbs"].append({"dict": "ぬく", "id": "ぬく:抜く"})
