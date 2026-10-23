@@ -1009,7 +1009,9 @@ def _check_questions(c, problems):
             if not isinstance(question.get(key), str) or not question[key].strip():
                 problems.append(f"{where}: question {key} missing or empty")
         asked = "何" + str(c.get("counter", ""))
-        if isinstance(question.get("jp"), str) and question["jp"].strip() and asked not in question["jp"]:
+        longer = "" if asked.endswith("間") else "(?!間)"     # 何時間 is not a question for 時
+        if (isinstance(question.get("jp"), str) and question["jp"].strip()
+                and not re.search(re.escape(asked) + longer, question["jp"])):
             problems.append(f"{where}: jp must contain {asked}")
 
 
@@ -1095,6 +1097,9 @@ def check_counted_runs(doc, readings):
         for pitfall in c.get("pitfalls", []):
             sources += [(f"{pitfall.get('heading', 'pitfall')} example {i}", e)
                         for i, e in enumerate(pitfall.get("examples", []))]
+            for key in ("heading", "explanation"):      # shown with ruby too
+                if isinstance(pitfall.get(key), str):
+                    sources.append((f"{pitfall.get('heading', 'pitfall')} {key}", {"jp": pitfall[key]}))
         for where, example in sources:
             own = example.get("readings") or {}
             for match in pattern.finditer(example.get("jp", "")):

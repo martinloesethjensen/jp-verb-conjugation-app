@@ -143,7 +143,10 @@ final class RealCountersDataTests: XCTestCase {
         let numerals = Set("一二三四五六七八九十百千万")
         var checked = 0
         for counter in file.counters {
-            for example in counter.examples + counter.pitfalls.flatMap(\.examples) {
+            // Examples, and the heading and explanation of every pitfall: all shown with ruby.
+            let pitfallTexts = counter.pitfalls.flatMap { [$0.heading, $0.explanation] }
+                .map { CounterExample(jp: $0, en: "") }
+            for example in counter.examples + counter.pitfalls.flatMap(\.examples) + pitfallTexts {
                 let sentence = Array(example.jp)
                 let reading = dictionary.merging(example.readings).reading(of: example.jp)
                 for number in CounterNumber.allCases {
@@ -165,6 +168,22 @@ final class RealCountersDataTests: XCTestCase {
                 }
             }
         }
-        XCTAssertGreaterThan(checked, 80)
+        XCTAssertGreaterThan(checked, 110)
+    }
+
+    /// 三月 is March (さんがつ), not three months: the か月 pitfall that teaches the difference must not
+    /// show さんげつ over it, and the month names must not fall back to the bare 月 reading.
+    func testMonthNamesReadAsMonthsAndNotAsDurations() throws {
+        let furigana = FuriganaDictionary(file: try JSONDecoder().decode(
+            FuriganaDataFile.self, from: Data(contentsOf: repoRoot.appendingPathComponent("data/furigana.json"))
+        ))
+        XCTAssertEqual(furigana.reading(of: "三月に行きます。"), "さんがつにいきます。")
+        XCTAssertEqual(furigana.reading(of: "七月"), "しちがつ")
+        XCTAssertEqual(furigana.reading(of: "十二月"), "じゅうにがつ")
+        XCTAssertEqual(furigana.reading(of: "毎月"), "まいつき")
+        XCTAssertEqual(furigana.reading(of: "三か月"), "さんかげつ")
+        let file = try load()
+        let pitfall = try XCTUnwrap(counter("kagetsu", in: file).pitfalls.flatMap(\.examples).first { $0.jp == "三月に行きます。" })
+        XCTAssertEqual(furigana.merging(pitfall.readings).reading(of: pitfall.jp), "さんがつにいきます。")
     }
 }

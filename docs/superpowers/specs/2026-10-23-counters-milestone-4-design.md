@@ -127,6 +127,22 @@ building choices.
 Not checked: Ask it with levels hidden, with VoiceOver, at the largest text size, a wrong answer, Mixed,
 Weak spots, the new pages on iPad and macOS, and the ruby on screen with the new furigana published.
 
+**Fixed after the review** (the data was signed and pushed before these; it needs signing again):
+- The validator now reads pitfall headings and explanations for counted runs, not only examples. It found
+  wrong ruby in them: 四時間 as よじあいだ, 八着 as はちつ, 十羽 as じゅうわ, and in three older counters 十分
+  and 一日 read the wrong way beside text saying otherwise. Those three pitfalls were reworded, and
+  `furigana.json` gained the missing runs, 日間, 週間, 年間 and the month names (三月 had shown さんげつ).
+- A question must hold 何 plus its own counter and not 何 plus counter plus 間, so 何時間 can no longer be
+  filed under 時. Two Ask it questions that two phrases answered (何日 and 何日間, 何年 and 何年間) were
+  reworded to ask for a length.
+- 十羽 also reads じゅうわ and 七週間 also しちしゅうかん; 部屋 was replaced by the platform under 番.
+- The Swift ruby test now covers pitfall text, and a test pins the month names.
+
+**For the teacher review** (the reviewer rated these doubtful, not wrong): 九年間 くねんかん and 四時間
+よんじかん as accepted readings; whether 何羽 should show なんわ before なんば; 羽 for rabbits (今は匹 is the usual
+counter); the JLPT levels of 年間 and 日間 (N5 may be generous); これは何円ですか versus いくらですか as a
+question.
+
 **The content is unreviewed.** Readings are generated and validated, but the things, example sentences,
 pitfall wording and question sentences were written without a native speaker; issue 124 stays labelled
 `teacher-review`. Still out of scope: numbers above 10 (and so months of the year), pitch accent, audio, and

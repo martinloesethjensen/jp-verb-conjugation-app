@@ -1263,6 +1263,16 @@ class CheckCountersTests(unittest.TestCase):
             problems = ud.check_counters(counters_doc(counter(questions=questions)), COUNTER_READINGS)
             self.assertTrue(any(needle in p for p in problems), (needle, problems))
 
+    def test_a_duration_question_cannot_be_filed_under_the_point_in_time_counter(self):
+        ji = counter(id="ji", counter="時", reading="じ", sound="plain",
+                     questions=[{"jp": "毎日何時間寝ますか。", "en": "How many hours?"}])
+        problems = ud.check_counters(counters_doc(ji), COUNTER_READINGS)
+        self.assertTrue(any("must contain 何時" in p for p in problems), problems)
+        jikan = counter(id="jikan", counter="時間", reading="じかん", sound="plain",
+                        questions=[{"jp": "毎日何時間寝ますか。", "en": "How many hours?"}])
+        doc = counters_doc(jikan, groups=[dict(COUNTER_GROUP, members=[{"counter": "jikan"}])])
+        self.assertEqual(ud.check_counters(doc, COUNTER_READINGS), [])
+
     def test_a_valid_question_passes(self):
         doc = counters_doc(counter(questions=[{"jp": "何本ありますか。", "en": "How many?"}]))
         self.assertEqual(ud.check_counters(doc, COUNTER_READINGS), [])
@@ -1353,6 +1363,16 @@ class CountedRunTests(unittest.TestCase):
         ud.apply_counter_readings(doc)
         self.assertTrue(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"三時間": "さんじ"})))
         self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"三時間": "さんじかん"})), [])
+
+    def test_pitfall_headings_and_explanations_are_checked_too(self):
+        doc = counters_doc(counter(pitfalls=[
+            {"heading": "三本 first", "explanation": "三本 is さんぼん.", "examples": []}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+        wrong = dict(COUNTER_READINGS, **{"三本": "さんほん"})
+        problems = ud.check_counted_runs(doc, wrong)
+        self.assertTrue(any("heading" in p for p in problems), problems)
+        self.assertTrue(any("explanation" in p for p in problems), problems)
 
     def test_question_runs_are_checked_like_examples(self):
         doc = counters_doc(counter(questions=[{"jp": "何本ありますか。", "en": "How many?"}]))
