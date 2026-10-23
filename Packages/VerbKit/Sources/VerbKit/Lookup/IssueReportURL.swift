@@ -28,6 +28,17 @@ public enum IssueReportURL {
         return URL(string: "https://github.com/\(repository)/issues/new?" + query.joined(separator: "&"))!
     }
 
+    /// The "Add Verb Conjugation" form. A `kanji` guess (降る, from "What form is this?")
+    /// prefills the kanji field and the title; the reporter checks it and fills in the rest.
+    public static func suggestVerb(kanji: String? = nil) -> URL {
+        var query = ["template=add-verb.yml"]
+        if let kanji = kanji?.trimmingCharacters(in: .whitespacesAndNewlines), !kanji.isEmpty {
+            query.append("title=" + encoded("[VERB] \(kanji) — "))
+            query.append("kanji=" + encoded(kanji))
+        }
+        return URL(string: "https://github.com/\(repository)/issues/new?" + query.joined(separator: "&"))!
+    }
+
     /// "app 0.1.0 (1) · verbs 1.3.0 · grammar 1.3.0 · furigana 1.2.0", with "unknown"
     /// for a data file that has not synced yet.
     public static func versions(app: String, verbs: String?, grammar: String?, furigana: String?) -> String {

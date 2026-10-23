@@ -3,13 +3,16 @@ import Translation
 import VerbKit
 
 /// A long-press (right-click) menu that acts on one piece of Japanese text:
-/// Copy and Open in Jisho, and, for sentences, a Translate submenu with Apple
-/// Translate, DeepL and Google Translate. The actions always use `text` exactly
+/// Copy, Open in Jisho, Look up form (when the text has a verb the matcher finds),
+/// and, for sentences, a Translate submenu with Apple Translate, DeepL and Google
+/// Translate. The actions always use `text` exactly
 /// as given, so they work the same with furigana on or off. Nothing leaves the
 /// app until an item is chosen.
 private struct TextActions: ViewModifier {
     let text: String
     @Environment(\.openURL) private var openURL
+    @Environment(FormLookupStore.self) private var formLookup: FormLookupStore?
+    @State private var lookup: FormLookupRequest?
 
     func body(content: Content) -> some View {
         content
@@ -22,7 +25,13 @@ private struct TextActions: ViewModifier {
                         openURL(url)
                     }
                 }
+                if formLookup?.items(in: text).isEmpty == false {
+                    Button("Look up form", systemImage: "text.magnifyingglass") {
+                        lookup = FormLookupRequest(text: text)
+                    }
+                }
             }
+            .formLookupSheet($lookup)
     }
 }
 
@@ -31,6 +40,8 @@ private struct TextActions: ViewModifier {
 private struct TranslatableTextActions: ViewModifier {
     let text: String
     @Environment(\.openURL) private var openURL
+    @Environment(FormLookupStore.self) private var formLookup: FormLookupStore?
+    @State private var lookup: FormLookupRequest?
     @State private var showingAppleTranslation = false
 
     func body(content: Content) -> some View {
@@ -42,6 +53,11 @@ private struct TranslatableTextActions: ViewModifier {
                 if let url = TextLookupURL.jisho(text) {
                     Button("Open in Jisho", systemImage: "book") {
                         openURL(url)
+                    }
+                }
+                if formLookup?.items(in: text).isEmpty == false {
+                    Button("Look up form", systemImage: "text.magnifyingglass") {
+                        lookup = FormLookupRequest(text: text)
                     }
                 }
                 Menu("Translate", systemImage: "translate") {
@@ -57,6 +73,7 @@ private struct TranslatableTextActions: ViewModifier {
                 }
             }
             .translationPresentation(isPresented: $showingAppleTranslation, text: text)
+            .formLookupSheet($lookup)
     }
 }
 
