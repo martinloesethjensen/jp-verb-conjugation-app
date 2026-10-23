@@ -257,22 +257,43 @@ public struct CounterGroup: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
+/// A heading on the Counters home list ("Drinks": 杯, 本, つ), with the counters under it in order.
+/// A counter may be in several sections.
+public struct CounterSection: Codable, Hashable, Identifiable, Sendable {
+    public var id: String
+    public var title: String
+    /// `Counter.id`s.
+    public var counters: [String]
+
+    public init(id: String, title: String, counters: [String]) {
+        self.id = id
+        self.title = title
+        self.counters = counters
+    }
+}
+
 /// The published `counters.json`.
 public struct CountersDataFile: Codable, Equatable, Sendable {
     public var version: String
     public var description: String
     public var counters: [Counter]
     public var groups: [CounterGroup]
+    /// The home list's headings. Optional in the data; empty in an older file.
+    public var sections: [CounterSection]
 
-    public init(version: String, description: String, counters: [Counter], groups: [CounterGroup] = []) {
+    public init(
+        version: String, description: String, counters: [Counter], groups: [CounterGroup] = [],
+        sections: [CounterSection] = []
+    ) {
         self.version = version
         self.description = description
         self.counters = counters
         self.groups = groups
+        self.sections = sections
     }
 
     enum CodingKeys: String, CodingKey {
-        case version, description, counters, groups
+        case version, description, counters, groups, sections
     }
 
     public init(from decoder: Decoder) throws {
@@ -281,5 +302,6 @@ public struct CountersDataFile: Codable, Equatable, Sendable {
         description = try c.decode(String.self, forKey: .description)
         counters = try c.decode([Counter].self, forKey: .counters)
         groups = try c.decodeIfPresent([CounterGroup].self, forKey: .groups) ?? []
+        sections = try c.decodeIfPresent([CounterSection].self, forKey: .sections) ?? []
     }
 }

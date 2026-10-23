@@ -153,4 +153,15 @@ final class CounterDecodingTests: XCTestCase {
         let settings = LevelSettings(hidden: [.n5])
         XCTAssertEqual([hon].visible(in: settings), [])
     }
+
+    func testFileDecodesSectionsAndDefaultsToNone() throws {
+        let withSections = """
+        {"version": "1.0.0", "description": "d", "counters": [],
+         "sections": [{"id": "drinks", "title": "Drinks", "counters": ["hai", "hon"]}]}
+        """
+        let file = try JSONDecoder().decode(CountersDataFile.self, from: Data(withSections.utf8))
+        XCTAssertEqual(file.sections, [CounterSection(id: "drinks", title: "Drinks", counters: ["hai", "hon"])])
+        let without = #"{"version": "1.0.0", "description": "d", "counters": []}"#
+        XCTAssertEqual(try JSONDecoder().decode(CountersDataFile.self, from: Data(without.utf8)).sections, [])
+    }
 }

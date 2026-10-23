@@ -81,4 +81,22 @@ final class CountersStoreTests: XCTestCase {
         wait(for: [expectation], timeout: 5)
         XCTAssertEqual(store.related(to: hon).map(\.id), ["hiki", "hai"])
     }
+
+    func testSectionsFallBackToTheGroupsWhenTheFileHasNone() async throws {
+        let persisting = try persisting()
+        try persisting.replaceCounters(with: SwiftDataCountersPersistingTests.file(ids: ["a", "b"]))
+        let store = makeStore(fetcher: MockVerbDataFetcher(), persisting: persisting)
+        await store.start()
+        XCTAssertEqual(store.sections, [CounterSection(id: "g", title: "G", counters: ["a", "b"])])
+    }
+
+    func testTheFilesSectionsWinOverGroupsAndSurviveTheCache() async throws {
+        var file = SwiftDataCountersPersistingTests.file(ids: ["a", "b"])
+        file.sections = [CounterSection(id: "s", title: "S", counters: ["b"])]
+        let persisting = try persisting()
+        try persisting.replaceCounters(with: file)
+        let store = makeStore(fetcher: MockVerbDataFetcher(), persisting: persisting)
+        await store.start()
+        XCTAssertEqual(store.sections.map(\.id), ["s"])
+    }
 }
