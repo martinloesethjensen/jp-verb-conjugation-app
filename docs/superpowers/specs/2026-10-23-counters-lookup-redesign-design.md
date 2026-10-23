@@ -223,19 +223,24 @@ What changed from the design while building it, and what has not been checked. T
   how the published data looks on a device today.
 - **Compare table rows are 44 pt.** The written form (三本) was dropped from compact table cells instead of
   moved inline: the row and column headers already say it, the accessibility label keeps it, and
-  alternate readings (はちほん) still fit on a second line. 1 to 10 fit one screen; the 何 row sits partly
-  under the tab bar until scrolled.
+  alternate readings (はちほん) still fit on a second line. The header is 80 pt and rows are 3 pt apart, so
+  1 to 10 and 何 fit one iPhone screen above the tab bar for a section table (a group table with a summary
+  line is about 60 pt taller and scrolls a little).
 - **The number strip cells are about 33 pt wide and 44 pt tall** at the default text size (eleven cells in
   one row, as specified). At accessibility sizes it scrolls with 56 pt cells.
 - **The thing picker and the objects row went with Count them.** The Things segment keeps the chips.
 - **The counter page's section links** show only sections with more than one counter.
+- **The data validator checks section shape** (an object, `counters` a non-empty list of ids) because the
+  app's decoding requires `counters`; the Sound patterns chips list every counter that changes at the
+  number, not only the column samples (階 at 3).
 - **Sound patterns sentences come from the data only** ("3 changes in は行"). A richer explanation of the
   voicing at 3 would need an authored field, so it is not built.
 - **`GroupTableView` takes a group or a section.** Group routes and search results still open the group
   table; section Compare links open the same view with no summary line.
 
-Checked on the iPhone simulator (a temporary, uncommitted seed injected the five sections): the home list,
-Compare on a three-column and a six-column section, the largest text size on Compare and Sound patterns,
+Checked on the iPhone simulator (a temporary, uncommitted seed injected the five sections): the home list
+(also at the largest text size, where the row and the section header stack), Compare on a three-column and
+a six-column section, the largest text size on Compare and Sound patterns,
 the 本 page (hint with More and Less, strip, segments) and the 人 grid, the Sound patterns table with
 selecting a number and a column. Checked on the shipped data (no sections): the fallback home, search for
 "umbrella", `verbtable://counter/hon` and `verbtable://counters/drinks`.

@@ -125,6 +125,12 @@ public struct SoundPatternTable: Sendable {
         return (reading, sample.isChanged(number))
     }
 
+    /// Every counter that changes at `number`, in column then data order: the whole members, not just the
+    /// samples (階 changes at 3 although the か行 sample 個 does not).
+    public func affected(for number: CounterNumber) -> [Counter] {
+        columns.flatMap { $0.counters.filter { $0.isChanged(number) } }
+    }
+
     /// One sentence about `number`, built from the data: the columns that change it and, when they share
     /// a stem ending in っ, the stem.
     public func sentence(for number: CounterNumber) -> String {

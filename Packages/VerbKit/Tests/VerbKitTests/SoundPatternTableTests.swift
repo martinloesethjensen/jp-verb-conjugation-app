@@ -60,4 +60,12 @@ final class SoundPatternTableTests: XCTestCase {
         XCTAssertEqual(table.exceptions.map(\.counter.id), ["fun"])
         XCTAssertEqual(table.exceptions.first?.numbers, [.n(4)])
     }
+
+    func testAffectedCountersAreThoseThatChangeNotJustTheSamplesColumn() {
+        let floor = counter("kai-floor", sound: "k", readings: ["3": "さんがい"], changed: ["3"])
+        let table = soundPatternTable(from: [ko, floor, hon, mai])
+        XCTAssertEqual(table.affected(for: .n(3)).map(\.id), ["kai-floor", "hon"])
+        XCTAssertEqual(table.affected(for: .n(6)).map(\.id), ["ko", "hon"])
+        XCTAssertEqual(table.affected(for: .n(8)).map(\.id), [])
+    }
 }

@@ -11,6 +11,7 @@ struct CountersHomeView: View {
     var onQuiz: () -> Void
     @State private var search = ""
     @State private var scope: LevelScope = .mine
+    @Environment(\.dynamicTypeSize) private var typeSize
     @FocusState private var searchFocused: Bool
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
@@ -92,6 +93,22 @@ struct CountersHomeView: View {
         }
     }
 
+    /// The heading and its Compare link; stacked at accessibility sizes so neither is squeezed.
+    private func sectionHeader(_ section: CounterHomeSection) -> some View {
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading)) : AnyLayout(HStackLayout())
+        return layout {
+            Text(section.section.title)
+            if !typeSize.isAccessibilitySize { Spacer() }
+            if section.canCompare {
+                Button("Compare") { go(.section(section.section)) }
+                    .buttonStyle(.borderless)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .textCase(nil)
+                    .accessibilityLabel("Compare \(section.section.title)")
+            }
+        }
+    }
+
     private var directory: some View {
         let sections = home
         return List {
@@ -107,16 +124,7 @@ struct CountersHomeView: View {
                         .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 2, trailing: 16))
                     }
                 } header: {
-                    HStack {
-                        Text(section.section.title)
-                        Spacer()
-                        if section.canCompare {
-                            Button("Compare") { go(.section(section.section)) }
-                                .buttonStyle(.borderless)
-                                .textCase(nil)
-                                .accessibilityLabel("Compare \(section.section.title)")
-                        }
-                    }
+                    sectionHeader(section)
                 }
             }
             if !sections.isEmpty {

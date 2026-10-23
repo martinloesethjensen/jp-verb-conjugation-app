@@ -13,7 +13,7 @@ struct GroupTableView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
-    @ScaledMetric(relativeTo: .body) private var headerHeight: CGFloat = 92
+    @ScaledMetric(relativeTo: .body) private var headerHeight: CGFloat = 80
     @ScaledMetric(relativeTo: .body) private var numberWidth: CGFloat = 30
     @ScaledMetric(relativeTo: .body) private var columnWidth: CGFloat = 108
 
@@ -38,7 +38,7 @@ struct GroupTableView: View {
     }
 
     /// Between rows. Every row has the same height, so the pinned number column stays aligned.
-    private static let rowSpacing: CGFloat = 4
+    private static let rowSpacing: CGFloat = 3
 
     private static func label(_ number: CounterNumber) -> String {
         number == .what ? "何" : number.key

@@ -149,7 +149,7 @@ struct SoundPatternsView: View {
 
     private func explanation(_ table: SoundPatternTable) -> some View {
         let columns = selectedColumn.flatMap { id in table.columns.first { $0.id == id } }
-        let affected = table.columns.filter { $0.sample.isChanged(selected) }.flatMap(\.counters)
+        let affected = table.affected(for: selected)
         let shown = columns?.counters ?? affected
         return VStack(alignment: .leading, spacing: 8) {
             Text(columns.map { "\($0.id.title) counters" } ?? table.sentence(for: selected))
