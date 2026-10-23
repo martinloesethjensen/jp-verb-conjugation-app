@@ -1,16 +1,24 @@
+import os
+
 /// One thing the quiz can ask about: a form of a verb, with the label the quiz
-/// shows for it and the way to read it from a verb's `VerbForms`.
+/// shows for it. Comes from the form catalogue, so a form a synced catalogue adds reaches
+/// the quiz without an app release.
 public struct QuizForm: Hashable, Sendable {
     /// The form's JSON key, e.g. "pot_masu_past".
     public let id: String
     public let topic: QuizTopic
-    /// Built from parts: "Potential · polite · past".
+    /// The catalogue's label: "Potential · polite · past".
     public let label: String
-    private let read: @Sendable (VerbForms) -> String?
+
+    public init(id: String, topic: QuizTopic, label: String) {
+        self.id = id
+        self.topic = topic
+        self.label = label
+    }
 
     /// The form's string for a verb, or nil when the verb has none (nil or empty).
     public func value(in forms: VerbForms) -> String? {
-        guard let value = read(forms), !value.isEmpty else { return nil }
+        guard let value = forms[id: FormID(rawValue: id)], !value.isEmpty else { return nil }
         return value
     }
 
@@ -27,98 +35,29 @@ public struct QuizForm: Hashable, Sendable {
         }
     }
 
-    private static func make(
-        _ id: String, _ topic: QuizTopic, name: String?, register: String?,
-        past: Bool = false, negative: Bool = false,
-        _ read: @escaping @Sendable (VerbForms) -> String?
-    ) -> QuizForm {
-        let label = [name, register, past ? "past" : nil, negative ? "negative" : nil]
-            .compactMap { $0 }
-            .joined(separator: " · ")
-        return QuizForm(id: id, topic: topic, label: label, read: read)
+    /// Every verb form of the catalogue in use (`FormCatalogue.current`).
+    public static var all: [QuizForm] {
+        let catalogue = FormCatalogue.current
+        return cache.withLock { cached in
+            if let cached, cached.sha256 == catalogue.sha256 { return cached.forms }
+            let forms = forms(in: catalogue)
+            cached = (catalogue.sha256, forms)
+            return forms
+        }
     }
 
-    public static let all: [QuizForm] = [
-        // Basic: the name is left out, so the labels read "Polite · past".
-        make("masu_pos", .basic, name: nil, register: "Polite") { $0.masuPos },
-        make("masu_neg", .basic, name: nil, register: "Polite", negative: true) { $0.masuNeg },
-        make("masu_past", .basic, name: nil, register: "Polite", past: true) { $0.masuPast },
-        make("masu_past_neg", .basic, name: nil, register: "Polite", past: true, negative: true) { $0.masuPastNeg },
-        make("te", .basic, name: nil, register: "て-form") { $0.te },
-        make("short_pos", .basic, name: nil, register: "Plain") { $0.shortPos },
-        make("short_neg", .basic, name: nil, register: "Plain", negative: true) { $0.shortNeg },
-        make("short_past", .basic, name: nil, register: "Plain", past: true) { $0.shortPast },
-        make("short_past_neg", .basic, name: nil, register: "Plain", past: true, negative: true) { $0.shortPastNeg },
+    private static let cache = OSAllocatedUnfairLock<(sha256: String, forms: [QuizForm])?>(initialState: nil)
 
-        // Potential
-        make("potential", .potential, name: "Potential", register: "plain") { $0.potential },
-        make("pot_masu_pos", .potential, name: "Potential", register: "polite") { $0.potMasuPos },
-        make("pot_masu_neg", .potential, name: "Potential", register: "polite", negative: true) { $0.potMasuNeg },
-        make("pot_masu_past", .potential, name: "Potential", register: "polite", past: true) { $0.potMasuPast },
-        make("pot_masu_past_neg", .potential, name: "Potential", register: "polite", past: true, negative: true) { $0.potMasuPastNeg },
-        make("pot_te", .potential, name: "Potential", register: "て-form") { $0.potTe },
-        make("pot_short_neg", .potential, name: "Potential", register: "plain", negative: true) { $0.potShortNeg },
-        make("pot_short_past", .potential, name: "Potential", register: "plain", past: true) { $0.potShortPast },
-        make("pot_short_past_neg", .potential, name: "Potential", register: "plain", past: true, negative: true) { $0.potShortPastNeg },
-
-        // んです
-        make("nd_pos", .nDesu, name: "んです", register: "polite") { $0.ndPos },
-        make("nd_neg", .nDesu, name: "んです", register: "polite", negative: true) { $0.ndNeg },
-        make("nd_past", .nDesu, name: "んです", register: "polite", past: true) { $0.ndPast },
-        make("nd_past_neg", .nDesu, name: "んです", register: "polite", past: true, negative: true) { $0.ndPastNeg },
-        make("nd_casual_pos", .nDesu, name: "んです", register: "casual") { $0.ndCasualPos },
-        make("nd_casual_neg", .nDesu, name: "んです", register: "casual", negative: true) { $0.ndCasualNeg },
-        make("nd_casual_past", .nDesu, name: "んです", register: "casual", past: true) { $0.ndCasualPast },
-        make("nd_casual_past_neg", .nDesu, name: "んです", register: "casual", past: true, negative: true) { $0.ndCasualPastNeg },
-
-        // Auxiliaries: ている in full, then a plain and a polite form for most, ながら alone.
-        make("teiru", .auxiliaries, name: "ている", register: "plain") { $0.teiru },
-        make("teiru_neg", .auxiliaries, name: "ている", register: "plain", negative: true) { $0.teiruNeg },
-        make("teiru_past", .auxiliaries, name: "ている", register: "plain", past: true) { $0.teiruPast },
-        make("teiru_past_neg", .auxiliaries, name: "ている", register: "plain", past: true, negative: true) { $0.teiruPastNeg },
-        make("teiru_masu_pos", .auxiliaries, name: "ている", register: "polite") { $0.teiruMasuPos },
-        make("teiru_masu_neg", .auxiliaries, name: "ている", register: "polite", negative: true) { $0.teiruMasuNeg },
-        make("teiru_masu_past", .auxiliaries, name: "ている", register: "polite", past: true) { $0.teiruMasuPast },
-        make("teiru_masu_past_neg", .auxiliaries, name: "ている", register: "polite", past: true, negative: true) { $0.teiruMasuPastNeg },
-        make("teiru_te", .auxiliaries, name: "ている", register: "て-form") { $0.teiruTe },
-        make("teshimau", .auxiliaries, name: "てしまう", register: "plain") { $0.teshimau },
-        make("teshimau_polite", .auxiliaries, name: "てしまう", register: "polite") { $0.teshimauPolite },
-        make("teoku", .auxiliaries, name: "ておく", register: "plain") { $0.teoku },
-        make("teoku_polite", .auxiliaries, name: "ておく", register: "polite") { $0.teokuPolite },
-        make("temiru", .auxiliaries, name: "てみる", register: "plain") { $0.temiru },
-        make("temiru_polite", .auxiliaries, name: "てみる", register: "polite") { $0.temiruPolite },
-        make("sugiru", .auxiliaries, name: "すぎる", register: "plain") { $0.sugiru },
-        make("sugiru_polite", .auxiliaries, name: "すぎる", register: "polite") { $0.sugiruPolite },
-        make("yasui", .auxiliaries, name: "やすい", register: "plain") { $0.yasui },
-        make("yasui_polite", .auxiliaries, name: "やすい", register: "polite") { $0.yasuiPolite },
-        make("nikui", .auxiliaries, name: "にくい", register: "plain") { $0.nikui },
-        make("nikui_polite", .auxiliaries, name: "にくい", register: "polite") { $0.nikuiPolite },
-        make("nagara", .auxiliaries, name: "ながら", register: nil) { $0.nagara },
-
-        // More forms: one string each.
-        make("volitional", .otherForms, name: "Volitional", register: nil) { $0.volitional },
-        make("passive", .otherForms, name: "Passive", register: nil) { $0.passive },
-        make("causative", .otherForms, name: "Causative", register: nil) { $0.causative },
-        make("causative_passive", .otherForms, name: "Causative-passive", register: nil) { $0.causativePassive },
-        make("causative_passive_short", .otherForms, name: "Causative-passive (short)", register: nil) { $0.causativePassiveShort },
-        make("conditional_ba", .otherForms, name: "Conditional (ば)", register: nil) { $0.conditionalBa },
-        make("conditional_tara", .otherForms, name: "Conditional (たら)", register: nil) { $0.conditionalTara },
-        make("imperative", .otherForms, name: "Imperative (blunt)", register: nil) { $0.imperative },
-        make("tai", .otherForms, name: "たい (want to)", register: nil) { $0.tai },
-        make("masu_volitional", .otherForms, name: "Polite volitional (ましょう)", register: nil) { $0.masuVolitional },
-        make("neg_te", .otherForms, name: "Negative て-form (ないで)", register: nil) { $0.negTe },
-        make("nakute", .otherForms, name: "Negative て-form (なくて)", register: nil) { $0.nakute },
-        make("te_mo_ii", .otherForms, name: "Permission (てもいい)", register: nil) { $0.teMoIi },
-        make("te_wa_ikenai", .otherForms, name: "Prohibition (てはいけない)", register: nil) { $0.teWaIkenai },
-        make("te_cha_dame", .otherForms, name: "Casual prohibition (ちゃだめ)", register: nil) { $0.teChaDame },
-        make("nakereba_naranai", .otherForms, name: "Obligation (なければならない)", register: nil) { $0.nakerebaNaranai },
-        make("nakute_wa_ikenai", .otherForms, name: "Obligation (なくてはいけない)", register: nil) { $0.nakuteWaIkenai },
-        make("nakya", .otherForms, name: "Casual obligation (なきゃ)", register: nil) { $0.nakya },
-        make("nakucha", .otherForms, name: "Casual obligation (なくちゃ)", register: nil) { $0.nakucha },
-        make("nakute_mo_ii", .otherForms, name: "Not necessary (なくてもいい)", register: nil) { $0.nakuteMoIi },
-        make("neg_imperative", .otherForms, name: "Negative imperative (〜な, blunt)", register: nil) { $0.negImperative },
-        make("nasai", .otherForms, name: "Soft command (なさい)", register: nil) { $0.nasai },
-        make("conditional_to", .otherForms, name: "Conditional (と)", register: nil) { $0.conditionalTo },
-        make("conditional_nara", .otherForms, name: "Conditional (なら)", register: nil) { $0.conditionalNara },
-    ]
+    /// The verb forms of `catalogue` the quiz can ask about: grouped by family in the
+    /// catalogue's family order, each family in catalogue order. A family without a quiz
+    /// topic (one this build does not know) is left out.
+    public static func forms(in catalogue: FormCatalogue) -> [QuizForm] {
+        let verbForms = catalogue.specs(for: .verb)
+        return catalogue.families.flatMap { family -> [QuizForm] in
+            guard let topic = QuizTopic(family: family.id) else { return [] }
+            return verbForms
+                .filter { $0.family == family.id }
+                .map { QuizForm(id: $0.id.rawValue, topic: topic, label: $0.label) }
+        }
+    }
 }

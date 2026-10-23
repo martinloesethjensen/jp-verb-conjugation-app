@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public enum FormRole: String, Codable, Hashable, Sendable {
     /// A form with a register, usually a polarity and a tense.
@@ -36,6 +37,11 @@ public struct FormFamily: Codable, Hashable, Identifiable, Sendable {
 
 /// What one form id means. Mirrors an entry of `forms.json`, which is generated
 /// from `scripts/form_catalogue.py`.
+///
+/// Decoding tolerates a newer catalogue: unknown keys are ignored, and so are facet values
+/// and word classes this build does not know (the facet reads as `nil`, the class is left
+/// out; `label` already says what the form is). Only a form whose `role` is unknown, or that
+/// lacks a required field, fails, and `FormCatalogue` then skips that one form.
 public struct FormSpec: Codable, Hashable, Identifiable, Sendable {
     public var id: FormID
     /// The id of a `FormFamily`.
@@ -68,55 +74,191 @@ public struct FormSpec: Codable, Hashable, Identifiable, Sendable {
         id = try c.decode(FormID.self, forKey: .id)
         family = try c.decode(String.self, forKey: .family)
         label = try c.decode(String.self, forKey: .label)
-        name = try c.decodeIfPresent(String.self, forKey: .name)
+        name = try? c.decodeIfPresent(String.self, forKey: .name)
         role = try c.decode(FormRole.self, forKey: .role)
-        register = try c.decodeIfPresent(FormRegister.self, forKey: .register)
-        polarity = try c.decodeIfPresent(FormPolarity.self, forKey: .polarity)
-        tense = try c.decodeIfPresent(FormTense.self, forKey: .tense)
-        appliesTo = try c.decode([WordClass].self, forKey: .appliesTo)
-        source = try c.decode(FormSource.self, forKey: .source)
-        grammar = try c.decodeIfPresent(String.self, forKey: .grammar)
-        search = try c.decodeIfPresent(Bool.self, forKey: .search) ?? false
-        concept = try c.decodeIfPresent(String.self, forKey: .concept)
+        register = Self.lenient(FormRegister.self, c, .register)
+        polarity = Self.lenient(FormPolarity.self, c, .polarity)
+        tense = Self.lenient(FormTense.self, c, .tense)
+        let classes = try c.decode([String].self, forKey: .appliesTo)
+        appliesTo = classes.compactMap(WordClass.init(rawValue:))
+        // A new kind of source is still a form; only `authored` promises a hand-written value.
+        source = Self.lenient(FormSource.self, c, .source) ?? .derived
+        grammar = try? c.decodeIfPresent(String.self, forKey: .grammar)
+        search = (try? c.decodeIfPresent(Bool.self, forKey: .search)) ?? false
+        concept = try? c.decodeIfPresent(String.self, forKey: .concept)
+    }
+
+    /// The value, or `nil` when it is missing, not a string, or not one this build knows.
+    private static func lenient<T: RawRepresentable>(
+        _ type: T.Type, _ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys
+    ) -> T? where T.RawValue == String {
+        guard let raw = try? c.decodeIfPresent(String.self, forKey: key) else { return nil }
+        return T(rawValue: raw)
+    }
+}
+
+/// The manifest entry of `forms.json`: its version and hash. The bundled copy carries one too
+/// (`forms.manifest.json`, written by `update_data.py`), so the app can tell whether a synced
+/// catalogue is newer than the one it shipped with.
+public struct FormsManifest: Codable, Equatable, Sendable {
+    public var version: String
+    public var sha256: String
+
+    public init(version: String, sha256: String) {
+        self.version = version
+        self.sha256 = sha256
     }
 }
 
 /// Every conjugation form the app knows, in the order of the data files'
 /// `forms` objects. The UI and quiz iterate this; they never guess which forms
 /// a word class has.
+///
+/// The app ships a copy (`bundled`) and syncs newer ones as signed data (#100); `current` is
+/// the one in use. A newer catalogue must not break an older app, so decoding drops what this
+/// build cannot use instead of failing: unknown keys, unreadable families and forms, and forms
+/// whose family the document does not declare. What it refuses outright is a newer major
+/// `schema` (the shape may have changed under it), and, for a synced catalogue
+/// (`replacement(data:version:)`), one without the forms code relies on (`requiredIDs`); the
+/// caller then keeps the catalogue it has. Other `FormID` constants are looked up optionally
+/// (`spec(for:)` is `nil`, `label(for:)` falls back), so a form a newer catalogue drops never
+/// breaks a screen.
 public struct FormCatalogue: Sendable {
+    /// The major `schema` this build reads. A catalogue with a higher one is refused.
+    public static let supportedSchema = 1
+
+    /// The forms every verb is guaranteed to have, which code reads directly (`VerbForms`'
+    /// required fields, `FormKey`). A catalogue without them is refused.
+    public static let requiredIDs: [FormID] = FormKey.allCases.map { FormID(rawValue: $0.rawValue) }
+
+    public enum LoadError: Error, Equatable, Sendable {
+        /// Not a catalogue: not JSON, no `schema`, or nothing usable left after skipping.
+        case malformed
+        /// The catalogue's major schema is newer than `supportedSchema`.
+        case unsupportedSchema(Int)
+        /// The catalogue lacks forms code relies on.
+        case missingRequiredForms([FormID])
+    }
+
     public let schema: Int
+    /// The manifest version of the file this came from, so caches can key on it
+    /// (`FormIndexCache`). "unversioned" for a catalogue made from bare data, e.g. in tests.
+    public let version: String
+    /// SHA-256 of the document, identifying its exact content.
+    public let sha256: String
     public let families: [FormFamily]
     /// All forms, in catalogue order.
     public let forms: [FormSpec]
     private let byID: [FormID: FormSpec]
 
+    public static let unversioned = "unversioned"
+
     private struct Document: Decodable {
         var schema: Int
         var families: [FormFamily]
         var forms: [FormSpec]
+
+        enum CodingKeys: String, CodingKey { case schema, families, forms }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            // `1`, or a dotted "1.2" whose first part is the major schema.
+            if let number = try? c.decode(Int.self, forKey: .schema) {
+                schema = number
+            } else if let text = try? c.decode(String.self, forKey: .schema),
+                      let major = text.split(separator: ".").first.flatMap({ Int($0) }) {
+                schema = major
+            } else {
+                throw LoadError.malformed
+            }
+            // Read before the rest, so a newer schema is reported as such even if the
+            // rest no longer decodes.
+            guard schema <= FormCatalogue.supportedSchema else { throw LoadError.unsupportedSchema(schema) }
+            families = try c.decode([Lenient<FormFamily>].self, forKey: .families).compactMap(\.value)
+            forms = try c.decode([Lenient<FormSpec>].self, forKey: .forms).compactMap(\.value)
+        }
     }
 
-    /// Decodes a `forms.json` document.
-    public init(data: Data) throws {
-        let document = try JSONDecoder().decode(Document.self, from: data)
+    /// Decodes one element, or `nil` if this build cannot read it, so one bad entry does not
+    /// sink the array.
+    private struct Lenient<T: Decodable>: Decodable {
+        let value: T?
+        init(from decoder: Decoder) throws { value = try? T(from: decoder) }
+    }
+
+    /// A synced (or cached) `forms.json` the app may switch to: decodes like `init(data:version:)`
+    /// and also refuses a catalogue that lacks `requiredIDs`.
+    public static func replacement(data: Data, version: String) throws -> FormCatalogue {
+        let catalogue = try FormCatalogue(data: data, version: version)
+        let missing = requiredIDs.filter { catalogue.spec(for: $0) == nil }
+        guard missing.isEmpty else { throw LoadError.missingRequiredForms(missing) }
+        return catalogue
+    }
+
+    /// Decodes a `forms.json` document. Throws `LoadError`.
+    public init(data: Data, version: String = FormCatalogue.unversioned) throws {
+        let document: Document
+        do {
+            document = try JSONDecoder().decode(Document.self, from: data)
+        } catch let error as LoadError {
+            throw error
+        } catch {
+            throw LoadError.malformed
+        }
+        var familyIDs = Set<String>()
+        let families = document.families.filter { familyIDs.insert($0.id).inserted }
+        var formIDs = Set<FormID>()
+        let forms = document.forms.filter { familyIDs.contains($0.family) && formIDs.insert($0.id).inserted }
+        guard !forms.isEmpty else { throw LoadError.malformed }
+
         self.schema = document.schema
-        self.families = document.families
-        self.forms = document.forms
-        self.byID = Dictionary(document.forms.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        self.version = version
+        self.sha256 = sha256Hex(of: data)
+        self.families = families
+        self.forms = forms
+        self.byID = Dictionary(uniqueKeysWithValues: forms.map { ($0.id, $0) })
     }
 
-    /// The catalogue bundled with the app. A missing or malformed resource is a
-    /// build error, not a runtime condition, so it stops the app.
+    /// The bundled copy's manifest entry (`forms.manifest.json`), or `nil` if it is missing.
+    public static let bundledManifest: FormsManifest? = {
+        guard let url = Bundle.module.url(forResource: "forms.manifest", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(FormsManifest.self, from: data)
+    }()
+
+    /// The catalogue bundled with the app: what a first launch uses, offline or not, and the
+    /// floor a synced catalogue must be newer than. `update_data.py` writes it and its tests
+    /// load it, so a missing or broken copy is a build error; it never stops the app (an
+    /// empty catalogue means an empty quiz, not a crash).
     public static let bundled: FormCatalogue = {
+        let version = bundledManifest?.version ?? "0.0.0"
         guard let url = Bundle.module.url(forResource: "forms", withExtension: "json"),
               let data = try? Data(contentsOf: url),
-              let catalogue = try? FormCatalogue(data: data)
+              let catalogue = try? FormCatalogue(data: data, version: version)
         else {
-            fatalError("VerbKit's bundled forms.json is missing or malformed")
+            assertionFailure("VerbKit's bundled forms.json is missing or malformed")
+            return FormCatalogue(empty: version)
         }
         return catalogue
     }()
+
+    private init(empty version: String) {
+        schema = Self.supportedSchema
+        self.version = version
+        sha256 = ""
+        families = []
+        forms = []
+        byID = [:]
+    }
+
+    private static let currentLock = OSAllocatedUnfairLock<FormCatalogue?>(initialState: nil)
+
+    /// The catalogue in use: `bundled` until `FormCatalogueStore` installs a newer synced one.
+    /// The quiz (`QuizForm.all`) reads it.
+    public static var current: FormCatalogue {
+        get { currentLock.withLock { $0 } ?? bundled }
+        set { currentLock.withLock { $0 = newValue } }
+    }
 
     public func spec(for id: FormID) -> FormSpec? {
         byID[id]
@@ -124,6 +266,13 @@ public struct FormCatalogue: Sendable {
 
     public func family(_ id: String) -> FormFamily? {
         families.first { $0.id == id }
+    }
+
+    /// What to call a form code names directly (a `FormID` constant): this catalogue's label,
+    /// else the bundled one's, else the id itself. Never fails, so a catalogue that dropped or
+    /// renamed a form cannot break a screen that names it.
+    public func label(for id: FormID) -> String {
+        spec(for: id)?.label ?? Self.bundled.spec(for: id)?.label ?? id.rawValue
     }
 
     /// The forms that apply to `wordClass`, in catalogue order, optionally
@@ -141,5 +290,11 @@ public struct FormCatalogue: Sendable {
             guard let value = conjugations[spec.id], !value.isEmpty else { return nil }
             return (spec, value)
         }
+    }
+
+    /// True when `self` should replace `other`: a readable manifest version strictly newer
+    /// than `other`'s.
+    public func isNewer(than other: FormCatalogue) -> Bool {
+        DataVersion.parse(version) != nil && DataVersion.isOlder(other.version, than: version)
     }
 }

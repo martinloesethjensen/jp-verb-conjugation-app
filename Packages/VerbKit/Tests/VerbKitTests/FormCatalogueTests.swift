@@ -44,8 +44,7 @@ final class FormCatalogueTests: XCTestCase {
         XCTAssertEqual(searchable, authored)
     }
 
-    // The quiz still has its own table of forms. Until it reads the catalogue,
-    // the two must agree; delete these when `QuizForm.all` goes.
+    // The quiz reads its forms from the catalogue (#100); these check what it gets.
 
     func testMatchesTheQuizFormsInIdLabelAndTopic() {
         XCTAssertEqual(Set(catalogue.forms.map(\.id.rawValue)), Set(QuizForm.all.map(\.id)))
