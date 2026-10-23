@@ -211,3 +211,34 @@ My calls (the owner can change any of them):
   on a three-column and a six-column section, 本 (changed pattern) and 人 (irregular) pages, Forms
   search landing on a number, a pitfall More expansion, VoiceOver spot-check.
 - Compare screenshots with the 2026-10-23 baseline recorded in this session's critique.
+
+## As built
+
+What changed from the design while building it, and what has not been checked. The plan is
+`docs/superpowers/plans/2026-10-23-counters-lookup-redesign.md`.
+
+- **Sections are in the data, not yet published.** `data/counters.json` has the five sections and
+  `manifest.json` changed, but the manifest is not re-signed: the owner runs `make sign-commit` before the
+  data merges. Until it is published, the app falls back to one section per group (13 headings), which is
+  how the published data looks on a device today.
+- **Compare table rows are 44 pt.** The written form (三本) was dropped from compact table cells instead of
+  moved inline: the row and column headers already say it, the accessibility label keeps it, and
+  alternate readings (はちほん) still fit on a second line. 1 to 10 fit one screen; the 何 row sits partly
+  under the tab bar until scrolled.
+- **The number strip cells are about 33 pt wide and 44 pt tall** at the default text size (eleven cells in
+  one row, as specified). At accessibility sizes it scrolls with 56 pt cells.
+- **The thing picker and the objects row went with Count them.** The Things segment keeps the chips.
+- **The counter page's section links** show only sections with more than one counter.
+- **Sound patterns sentences come from the data only** ("3 changes in は行"). A richer explanation of the
+  voicing at 3 would need an authored field, so it is not built.
+- **`GroupTableView` takes a group or a section.** Group routes and search results still open the group
+  table; section Compare links open the same view with no summary line.
+
+Checked on the iPhone simulator (a temporary, uncommitted seed injected the five sections): the home list,
+Compare on a three-column and a six-column section, the largest text size on Compare and Sound patterns,
+the 本 page (hint with More and Less, strip, segments) and the 人 grid, the Sound patterns table with
+selecting a number and a column. Checked on the shipped data (no sections): the fallback home, search for
+"umbrella", `verbtable://counter/hon` and `verbtable://counters/drinks`.
+
+Not checked: hiding N5 in Settings, VoiceOver, Reduce Motion, a Forms search landing on its number,
+Practise, a counter with no pitfalls, the largest text size on the counter page, iPad and macOS.

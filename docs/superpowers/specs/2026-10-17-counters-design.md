@@ -1,6 +1,8 @@
 # Counters: design
 
-Status: drafted in chat 2026-10-17, pending the owner's review.
+Status: drafted in chat 2026-10-17, pending the owner's review. The home screen, compare tables,
+counter page and Sound patterns screen were redesigned on 2026-10-23: see
+`2026-10-23-counters-lookup-redesign-design.md`.
 
 ## Problem
 
