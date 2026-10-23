@@ -93,7 +93,7 @@ struct QuizQuestionView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
-            case .connect, .counterChoice, .counterReading:
+            case .connect, .counterChoice, .counterReading, .counterAsk:
                 // Never shown here: connection and counter questions have their own screens.
                 EmptyView()
             case .identify:

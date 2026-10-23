@@ -131,4 +131,40 @@ final class RealCountersDataTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(question.choices.count, 3, question.prompt)
         }
     }
+
+    /// The pipeline checks counted runs in Python; this checks the app's own matcher on the same text,
+    /// so a run the dictionary would split (三時 + 間, 三 + か + 月) cannot get the wrong ruby on screen.
+    func testEveryCountedRunInTheExamplesReadsAsItsCounterSaysInTheApp() throws {
+        let file = try load()
+        let furiganaFile = try JSONDecoder().decode(
+            FuriganaDataFile.self, from: Data(contentsOf: repoRoot.appendingPathComponent("data/furigana.json"))
+        )
+        let dictionary = FuriganaDictionary(file: furiganaFile)
+        let numerals = Set("一二三四五六七八九十百千万")
+        var checked = 0
+        for counter in file.counters {
+            for example in counter.examples + counter.pitfalls.flatMap(\.examples) {
+                let sentence = Array(example.jp)
+                let reading = dictionary.merging(example.readings).reading(of: example.jp)
+                for number in CounterNumber.allCases {
+                    let run = Array(counter.written(number))
+                    var start = 0
+                    while start + run.count <= sentence.count {
+                        defer { start += 1 }
+                        guard Array(sentence[start..<(start + run.count)]) == run else { continue }
+                        if start > 0, numerals.contains(sentence[start - 1]) { continue }
+                        let next = start + run.count
+                        if next < sentence.count, sentence[next] == "間", !counter.counter.hasSuffix("間") { continue }
+                        let accepted = counter.readings(for: number)
+                        XCTAssertTrue(
+                            accepted.contains { reading.contains($0) },
+                            "\(counter.id) \(String(run)) in \(example.jp) reads \(reading), expected \(accepted)"
+                        )
+                        checked += 1
+                    }
+                }
+            }
+        }
+        XCTAssertGreaterThan(checked, 80)
+    }
 }

@@ -85,10 +85,18 @@ struct CounterQuizView: View {
         }
     }
 
+    private func header(for kind: QuizQuestionKind) -> String {
+        switch kind {
+        case .counterChoice: "Which counter?"
+        case .counterAsk: "Which 何 phrase?"
+        default: "How do you read it?"
+        }
+    }
+
     /// Plain `Text` throughout: the furigana dictionary would read 三本 as さん + ほん.
     private func prompt(_ question: CounterQuestion) -> some View {
         VStack(spacing: 8) {
-            Text(question.kind == .counterChoice ? "Which counter?" : "How do you read it?")
+            Text(header(for: question.kind))
                 .font(.caption)
             if let symbol = question.symbol {
                 Image(systemName: symbol)
@@ -96,10 +104,17 @@ struct CounterQuizView: View {
                     .foregroundStyle(.tint)
                     .accessibilityHidden(true)
             }
-            Text(question.prompt)
-                .font(.system(size: 44, weight: .bold, design: .rounded))
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
+            if question.kind == .counterAsk {
+                // An English sentence, not a counted form: let it wrap.
+                Text(question.prompt)
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
+            } else {
+                Text(question.prompt)
+                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+            }
             Text(question.detail)
                 .italic()
                 .foregroundStyle(.secondary)
@@ -119,7 +134,8 @@ struct CounterQuizView: View {
                 Spacer()
                 if question.kind == .counterReading { SpeakButton(text: question.correct) }
             }
-            if !right {
+            // Ask it always shows the Japanese sentence, right or wrong: it is the answer's context.
+            if !right || question.kind == .counterAsk {
                 Text(question.explanation)
                     .font(.subheadline)
             }
