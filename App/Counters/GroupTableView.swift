@@ -6,7 +6,9 @@ import VerbKit
 /// pinned, kept aligned by giving every row the same (Dynamic Type scaled) height. At accessibility
 /// text sizes even three columns scroll, so text wraps instead of truncating.
 struct GroupTableView: View {
-    let group: CounterGroup
+    let title: String
+    let summary: String?
+    private let memberRefs: [CounterGroupMember]
     @Environment(CountersStore.self) private var store
     @Environment(\.dynamicTypeSize) private var typeSize
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
@@ -15,8 +17,24 @@ struct GroupTableView: View {
     @ScaledMetric(relativeTo: .body) private var numberWidth: CGFloat = 30
     @ScaledMetric(relativeTo: .body) private var columnWidth: CGFloat = 108
 
+    init(group: CounterGroup) {
+        title = group.title
+        summary = group.summary
+        memberRefs = group.members
+    }
+
+    /// A home-list section: no summary, and headers say what each counter counts.
+    init(section: CounterSection) {
+        title = section.title
+        summary = nil
+        memberRefs = section.counters.map { CounterGroupMember(counter: $0) }
+    }
+
     private var members: [(counter: Counter, note: String?)] {
-        group.counters(in: store.counters.visible(in: LevelSettings(rawValue: hiddenLevelsRaw)))
+        let visible = store.counters.visible(in: LevelSettings(rawValue: hiddenLevelsRaw))
+        return CounterGroup(id: "", title: title, symbol: "", summary: summary ?? "", members: memberRefs)
+            .counters(in: visible)
+            .map { ($0.counter, $0.note ?? $0.counter.meaning) }
     }
 
     private static func label(_ number: CounterNumber) -> String {
@@ -27,9 +45,11 @@ struct GroupTableView: View {
         let members = members
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(group.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                if let summary {
+                    Text(summary)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 HStack(alignment: .top, spacing: 8) {
                     numberColumn
                     if members.count <= 3 && !typeSize.isAccessibilitySize {
@@ -44,7 +64,7 @@ struct GroupTableView: View {
             }
             .padding(16)
         }
-        .navigationTitle(group.title)
+        .navigationTitle(title)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu("Speak readings", systemImage: "speaker.wave.2") {

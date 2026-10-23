@@ -4,8 +4,8 @@ import VerbKit
 /// What the Counters detail column shows. `focus` lands a counter page on one number.
 enum CounterDestination: Hashable {
     case group(CounterGroup)
+    case section(CounterSection)
     case counter(Counter, focus: CounterNumber?)
-    case all
     case patterns
 }
 
@@ -29,8 +29,8 @@ extension EnvironmentValues {
     }
 }
 
-/// The Counters tab: the groups grid and search in the sidebar, a group table, counter page or
-/// the full list in the detail column. Moving from a group table to a counter pushes inside the
+/// The Counters tab: search and the counter directory in the sidebar, a compare table, counter page or
+/// Sound patterns in the detail column. Moving from a group table to a counter pushes inside the
 /// detail stack.
 struct CountersTab: View {
     @Binding var destination: CounterDestination?
@@ -130,7 +130,7 @@ struct CountersTab: View {
                             CounterDestinationView(destination: $0)
                         }
                 } else {
-                    ContentUnavailableView("Choose a Group", systemImage: "square.grid.2x2")
+                    ContentUnavailableView("Choose a Counter", systemImage: "textformat.123")
                 }
             }
             // A new choice in the sidebar starts a fresh stack.
@@ -147,10 +147,10 @@ struct CounterDestinationView: View {
         switch destination {
         case let .group(group):
             GroupTableView(group: group)
+        case let .section(section):
+            GroupTableView(section: section)
         case let .counter(counter, focus):
             CounterDetailView(counter: counter, focus: focus)
-        case .all:
-            CounterListView()
         case .patterns:
             SoundPatternsView()
         }
