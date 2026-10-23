@@ -10,7 +10,7 @@ widgets, grammar lessons and a quiz.
 | `App/` | The SwiftUI app |
 | `Widgets/` | The widget extension |
 | `Packages/VerbKit/` | The shared Swift package: models, data sync, quiz, persistence, search. Its tests run with `swift test` |
-| `data/` | The published data (`verbs.json`, `grammar.json`, `furigana.json`, `words.json`) and the signed `manifest.json` the app syncs from |
+| `data/` | The published data (`verbs.json`, `grammar.json`, `furigana.json`, `words.json`, `counters.json`, `forms.json`) and the signed `manifest.json` the app syncs from |
 | `scripts/` | Python and shell tools for the data, signing, audio and the Xcode project |
 | `docs/` | Specs, plans and the data-signing guide |
 
@@ -23,7 +23,7 @@ Run `make` to list them. Needs Python 3; `make test-swift` and `make project` ne
 | Command | What it does |
 |---|---|
 | `make install-deps` | Install the Python dependencies (`cryptography`, for signing) |
-| `make data` | Regenerate the generated forms, `forms.json` and `data/manifest.json` after editing `data/*.json` |
+| `make data` | Regenerate the generated forms, `data/forms.json` (and the app's bundled copy) and `data/manifest.json` after editing `data/*.json` or `scripts/form_catalogue.py` |
 | `make data-check` | Verify the data is generated, valid and up to date, without writing |
 | `make sign` | Sign `data/manifest.json` with your private key |
 | `make verify` | Check `data/manifest.sig` against the key the app trusts |
