@@ -1409,6 +1409,36 @@ class CountedRunTests(unittest.TestCase):
         self.assertTrue(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"三時間": "さんじ"})))
         self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"三時間": "さんじかん"})), [])
 
+    def test_parse_numeral(self):
+        cases = {"十": 10, "十五": 15, "二十": 20, "九十九": 99, "百": 100, "三百": 300, "千": 1000,
+                 "三千": 3000, "一万": 10000, "五": 5}
+        for text, value in cases.items():
+            self.assertEqual(ud.parse_numeral(text), value, text)
+        for text in ("a", "", "二十二百", "一十", "一百", "一千", "百五十0"):
+            self.assertIsNone(ud.parse_numeral(text), text)
+
+    def test_a_compound_counted_run_is_checked(self):
+        fun = counter(id="fun", counter="分", reading="ふん", sound="h-p", extent=59,
+                      examples=[{"jp": "十五分です。", "en": "…"}])
+        doc = counters_doc(fun, groups=[dict(COUNTER_GROUP, members=[{"counter": "fun"}])])
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"十五分": "じゅうごふん"})), [])
+        wrong = ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"十五分": "じゅうごぷん"}))
+        self.assertTrue(any("十五分" in p for p in wrong), wrong)
+
+    def test_nijuppon_is_no_longer_skipped(self):
+        doc = counters_doc(counter(extent=20, examples=[{"jp": "二十本あります。", "en": "…"}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"二十本": "にじゅっぽん"})), [])
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"二十本": "にじっぽん"})), [])
+        wrong = ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"二十本": "にじゅうほん"}))
+        self.assertTrue(any("二十本" in p for p in wrong), wrong)
+
+    def test_a_number_outside_the_counters_keys_is_not_checked(self):
+        doc = counters_doc(counter(extent=99, extra=[100], examples=[{"jp": "百五十本あります。", "en": "…"}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+
     def test_pitfall_headings_and_explanations_are_checked_too(self):
         doc = counters_doc(counter(pitfalls=[
             {"heading": "三本 first", "explanation": "三本 is さんぼん.", "examples": []}]))

@@ -1230,6 +1230,33 @@ def check_counter_distractors(doc):
     return problems
 
 
+_DIGITS = "一二三四五六七八九"
+_NUMERAL_PARTS = (rf"(?:[{_DIGITS}]万)?(?:[二三四五六七八九]?千)?(?:[二三四五六七八九]?百)?"
+                  rf"(?:[二三四五六七八九]?十)?[{_DIGITS}]?")
+_NUMERAL_FULL = re.compile(
+    rf"(?:(?P<man>[{_DIGITS}])万)?(?:(?P<sen>[二三四五六七八九])?(?P<sen_mark>千))?"
+    rf"(?:(?P<hyaku>[二三四五六七八九])?(?P<hyaku_mark>百))?(?:(?P<ju>[二三四五六七八九])?(?P<ju_mark>十))?"
+    rf"(?P<one>[{_DIGITS}])?")
+
+
+def parse_numeral(text):
+    """The value of a kanji numeral (十五, 二十, 三百, 一万), or None if it is not a well-formed one:
+    no 一 before 十, 百 or 千 (those say 十, 百, 千), parts in descending order, and not empty."""
+    match = _NUMERAL_FULL.fullmatch(text)
+    if not text or not match:
+        return None
+    digit = lambda ch: _DIGITS.index(ch) + 1
+    total = 0
+    if match["man"]:
+        total += digit(match["man"]) * 10000
+    for mark, place, value in (("sen_mark", "sen", 1000), ("hyaku_mark", "hyaku", 100), ("ju_mark", "ju", 10)):
+        if match[mark]:
+            total += (digit(match[place]) if match[place] else 1) * value
+    if match["one"]:
+        total += digit(match["one"])
+    return total or None
+
+
 def check_counted_runs(doc, readings):
     """Every counted run (三本, 何日) in an example must read as one of its counter's readings
     for that number. The example's own `readings` come first, then furigana.json."""
@@ -1238,7 +1265,8 @@ def check_counted_runs(doc, readings):
         # 三時間 is a run of 時間, not of 時: leave a run followed by 間 to the longer counter.
         longer = "" if c["counter"].endswith("間") else "(?!間)"
         pattern = re.compile(
-            f"(?<![{NUMERAL_CHARS}])([{''.join(NUMBER_KANJI)}]){re.escape(c['counter'])}{longer}")
+            f"(?<![{NUMERAL_CHARS}])(何|(?=[{_DIGITS}十百千万]){_NUMERAL_PARTS}){re.escape(c['counter'])}{longer}")
+        keys = counter_keys(c)
         sources = [(f"examples[{i}]", e) for i, e in enumerate(c.get("examples", []))]
         sources += [(f"questions[{i}]", q) for i, q in enumerate(c.get("questions", [])) if isinstance(q, dict)]
         for pitfall in c.get("pitfalls", []):
@@ -1251,7 +1279,11 @@ def check_counted_runs(doc, readings):
             own = example.get("readings") or {}
             for match in pattern.finditer(example.get("jp", "")):
                 run = match.group(0)
-                accepted = c["readings"][NUMBER_KANJI[match.group(1)]]
+                number = match.group(1)
+                key = "what" if number == "何" else str(parse_numeral(number))
+                if key not in keys or key not in c["readings"]:
+                    continue        # a number the counter has no readings for (百五十本) is not checked
+                accepted = c["readings"][key]
                 got = own.get(run) or kana_reading(run, readings)
                 if got not in accepted:
                     problems.append(
