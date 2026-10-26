@@ -26,7 +26,7 @@ final class RealFormTransformTests: XCTestCase {
     }
 
     func testEveryStepGivesTheStoredSurface() throws {
-        XCTAssertEqual(Self.verbs.count, 65)
+        XCTAssertEqual(Self.verbs.count, 84)
         var rewrites = 0
         for verb in Self.verbs {
             let forms = Word(verb).forms
@@ -59,10 +59,11 @@ final class RealFormTransformTests: XCTestCase {
             }
         }
         // 108 steps for a verb with all four grids and the six register pairs (4 × 8 × 3 + 6 × 2);
-        // 84 without the potential grid (分かる, 知る, 疲れる). 61 verbs are written in kana and
-        // kanji; する, つける and もらう in kana only, and ある too, with the basic and んです
-        // grids and three of the pairs: 54 steps.
-        XCTAssertEqual(rewrites, 2 * (58 * 108 + 3 * 84) + 3 * 108 + 54)
+        // 84 without the potential grid (分かる, 知る, 疲れる, 出来る, 見える, 聞こえる, 開く, 降る).
+        // 76 verbs are written in kana and kanji; する, つける, もらう, なる and あげる in kana only,
+        // and くれる too, without the potential grid. ある has the basic and んです grids and three
+        // of the pairs: 54 steps; いる has no ている grid: 3 × 24 + 3 × 2 = 78 steps.
+        XCTAssertEqual(rewrites, 2 * (68 * 108 + 8 * 84) + 5 * 108 + 84 + 54 + 78)
     }
 
     // MARK: The golden sentences
@@ -125,11 +126,11 @@ final class RealFormTransformTests: XCTestCase {
     }
 
     func testTheFortyOneTestSentences() throws {
-        // 52 spans: 23 with chips; 24 derived forms or rule-built chains and 5 greyed without.
+        // 53 spans: 25 with chips; 25 derived forms or rule-built chains and 3 greyed without.
         let tally = try tally("lens-test-sentences")
         XCTAssertEqual(tally, Tally(
-            spans: 52, withChips: 23, unavailable: [.noOneStepTransform: 24, .notInApp: 5],
-            rewrites: 61, disabled: [.midSentence: 7, .explanatory: 1]
+            spans: 53, withChips: 25, unavailable: [.noOneStepTransform: 25, .notInApp: 3],
+            rewrites: 67, disabled: [.midSentence: 7, .explanatory: 1]
         ))
     }
 
@@ -137,10 +138,10 @@ final class RealFormTransformTests: XCTestCase {
         // The lessons teach many derived forms and chains, so fewer spans have chips.
         let tally = try tally("lens-lesson-sentences")
         XCTAssertEqual(tally, Tally(
-            spans: 256, withChips: 106, unavailable: [.noOneStepTransform: 110, .notInApp: 40],
-            rewrites: 238, disabled: [
-                .midSentence: 29, .explanatory: 1, .fixedBy(marker: "前に"): 3,
-                .fixedBy(marker: "べき"): 18, .fixedBy(marker: "ほうがいい"): 15,
+            spans: 267, withChips: 139, unavailable: [.noOneStepTransform: 120, .notInApp: 8],
+            rewrites: 315, disabled: [
+                .midSentence: 46, .explanatory: 3, .fixedBy(marker: "前に"): 3,
+                .fixedBy(marker: "べき"): 18, .fixedBy(marker: "ほうがいい"): 18,
             ]
         ))
     }

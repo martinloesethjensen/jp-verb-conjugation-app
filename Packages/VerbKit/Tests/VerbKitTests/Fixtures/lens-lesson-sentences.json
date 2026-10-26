@@ -11,8 +11,8 @@
       "text": "どうして遅れたんですか。電車が止まったんです。",
       "verbs": [
         {"surface": "して", "match": "notAVerb"},
-        {"surface": "遅れた", "match": "notInApp"},
-        {"surface": "止まった", "match": "notInApp"}
+        {"surface": "遅れたんです", "verb": "おくれる", "match": "exact", "forms": ["nd_past"]},
+        {"surface": "止まったんです", "verb": "とまる", "match": "exact", "forms": ["nd_past"]}
       ]
     },
     {
@@ -25,7 +25,7 @@
     {
       "text": "ちょっと手伝ってほしいんですけど。",
       "verbs": [
-        {"surface": "手伝って", "match": "notInApp"}
+        {"surface": "手伝って", "verb": "てつだう", "match": "exact", "forms": ["te"]}
       ]
     },
     {
@@ -48,7 +48,7 @@
     {
       "text": "外は雨が降っているんですね。",
       "verbs": [
-        {"surface": "降っている", "match": "notInApp"}
+        {"surface": "降っている", "verb": "ふる", "match": "exact", "forms": ["teiru"]}
       ]
     },
     {
@@ -195,13 +195,13 @@
     {
       "text": "富士山が見えます。",
       "verbs": [
-        {"surface": "見えます", "match": "notInApp"}
+        {"surface": "見えます", "verb": "みえる", "match": "exact", "forms": ["masu_pos"]}
       ]
     },
     {
       "text": "鳥の声が聞こえます。",
       "verbs": [
-        {"surface": "聞こえます", "match": "notInApp"}
+        {"surface": "聞こえます", "verb": "きこえる", "match": "exact", "forms": ["masu_pos"]}
       ]
     },
     {
@@ -237,13 +237,13 @@
     {
       "text": "ここでは写真が撮れます。",
       "verbs": [
-        {"surface": "撮れます", "match": "notInApp"}
+        {"surface": "撮れます", "verb": "とる:撮る", "match": "exact", "forms": ["pot_masu_pos"]}
       ]
     },
     {
       "text": "ここで写真を撮ってもいいです。",
       "verbs": [
-        {"surface": "撮ってもいいです", "match": "notInApp"}
+        {"surface": "撮ってもいいです", "verb": "とる:撮る", "match": "rule"}
       ]
     },
     {
@@ -255,7 +255,7 @@
     {
       "text": "田中さんはもう家に着いたはずです。",
       "verbs": [
-        {"surface": "着いた", "match": "notInApp"}
+        {"surface": "着いた", "verb": "つく", "match": "exact", "forms": ["short_past"]}
       ]
     },
     {
@@ -281,7 +281,7 @@
     {
       "text": "明日は雨が降るかもしれない。",
       "verbs": [
-        {"surface": "降る", "match": "notInApp"},
+        {"surface": "降る", "verb": "ふる", "match": "exact", "forms": ["short_pos"]},
         {"surface": "ない", "match": "notAVerb"}
       ]
     },
@@ -328,14 +328,14 @@
     {
       "text": "雨が降るかもしれない。",
       "verbs": [
-        {"surface": "降る", "match": "notInApp"},
+        {"surface": "降る", "verb": "ふる", "match": "exact", "forms": ["short_pos"]},
         {"surface": "ない", "match": "notAVerb"}
       ]
     },
     {
       "text": "雨が降るはずだ。天気予報でそう言っていた。",
       "verbs": [
-        {"surface": "降る", "match": "notInApp"},
+        {"surface": "降る", "verb": "ふる", "match": "exact", "forms": ["short_pos"]},
         {"surface": "言っていた", "verb": "いう", "match": "exact", "forms": ["teiru_past"]}
       ]
     },
@@ -346,15 +346,15 @@
     {
       "text": "遅れたのは、電車が止まったからなんです。",
       "verbs": [
-        {"surface": "遅れた", "match": "notInApp"},
-        {"surface": "止まった", "match": "notInApp"}
+        {"surface": "遅れた", "verb": "おくれる", "match": "exact", "forms": ["short_past"]},
+        {"surface": "止まった", "verb": "とまる", "match": "exact", "forms": ["short_past"]}
       ]
     },
     {
       "text": "電車が止まったから、遅れたわけだ。",
       "verbs": [
-        {"surface": "止まった", "match": "notInApp"},
-        {"surface": "遅れた", "match": "notInApp"}
+        {"surface": "止まった", "verb": "とまる", "match": "exact", "forms": ["short_past"]},
+        {"surface": "遅れた", "verb": "おくれる", "match": "exact", "forms": ["short_past"]}
       ]
     },
     {
@@ -480,7 +480,7 @@
     {
       "text": "誰かいるようです。",
       "verbs": [
-        {"surface": "いる", "match": "notInApp"}
+        {"surface": "いる", "verb": "いる", "match": "exact", "forms": ["short_pos"]}
       ]
     },
     {
@@ -508,13 +508,13 @@
     {
       "text": "今にも雨が降りそうだ。",
       "verbs": [
-        {"surface": "降り", "match": "notInApp"}
+        {"surface": "降り", "verb": "ふる", "match": "rule"}
       ]
     },
     {
       "text": "明日は雨が降るそうです。",
       "verbs": [
-        {"surface": "降る", "match": "notInApp"}
+        {"surface": "降る", "verb": "ふる", "match": "exact", "forms": ["short_pos"]}
       ]
     },
     {
@@ -532,7 +532,7 @@
     {
       "text": "駅の前に新しい店ができるらしいです。",
       "verbs": [
-        {"surface": "できる", "match": "homograph"}
+        {"surface": "できる", "verb": "できる", "match": "exact", "forms": ["short_pos"]}
       ]
     },
     {
@@ -564,13 +564,13 @@
     {
       "text": "窓が開いているようだ。",
       "verbs": [
-        {"surface": "開いている", "match": "notInApp"}
+        {"surface": "開いている", "verb": "あく", "match": "exact", "forms": ["teiru"]}
       ]
     },
     {
       "text": "窓が開いているらしい。",
       "verbs": [
-        {"surface": "開いている", "match": "notInApp"}
+        {"surface": "開いている", "verb": "あく", "match": "exact", "forms": ["teiru"]}
       ]
     },
     {
@@ -598,7 +598,7 @@
     {
       "text": "この時計は安っぽく見える。",
       "verbs": [
-        {"surface": "見える", "match": "notInApp"}
+        {"surface": "見える", "verb": "みえる", "match": "exact", "forms": ["short_pos"]}
       ]
     },
     {
@@ -634,7 +634,7 @@
     {
       "text": "雨が降っています。",
       "verbs": [
-        {"surface": "降っています", "match": "notInApp"}
+        {"surface": "降っています", "verb": "ふる", "match": "exact", "forms": ["teiru_masu_pos"]}
       ]
     },
     {
@@ -683,7 +683,7 @@
     {
       "text": "机の上にメモが置いてある。",
       "verbs": [
-        {"surface": "置いて", "match": "notInApp"},
+        {"surface": "置いて", "verb": "おく", "match": "exact", "forms": ["te"]},
         {"surface": "ある", "verb": "ある", "match": "exact", "forms": ["short_pos"]}
       ]
     },
@@ -697,7 +697,7 @@
     {
       "text": "ドアが開いている。",
       "verbs": [
-        {"surface": "開いている", "match": "notInApp"}
+        {"surface": "開いている", "verb": "あく", "match": "exact", "forms": ["teiru"]}
       ]
     },
     {
@@ -901,7 +901,7 @@
       "text": "飲みすぎると、頭が痛くなります。",
       "verbs": [
         {"surface": "飲みすぎる", "verb": "のむ", "match": "exact", "forms": ["sugiru"]},
-        {"surface": "なります", "match": "notInApp"}
+        {"surface": "なります", "verb": "なる", "match": "exact", "forms": ["masu_pos"]}
       ]
     },
     {
@@ -943,7 +943,7 @@
       "verbs": [
         {"surface": "変えたら", "match": "notInApp"},
         {"surface": "書きやすく", "verb": "かく", "match": "rule"},
-        {"surface": "なった", "match": "notInApp"}
+        {"surface": "なった", "verb": "なる", "match": "exact", "forms": ["short_past"]}
       ]
     },
     {
@@ -985,14 +985,14 @@
     {
       "text": "日本人の友達がいるので、日本語を勉強しています。",
       "verbs": [
-        {"surface": "いる", "match": "notInApp"},
+        {"surface": "いる", "verb": "いる", "match": "exact", "forms": ["short_pos"]},
         {"surface": "しています", "verb": "する", "match": "exact", "forms": ["teiru_masu_pos"]}
       ]
     },
     {
       "text": "雨なので、出かけません。",
       "verbs": [
-        {"surface": "出かけませ", "match": "notInApp"}
+        {"surface": "出かけません", "verb": "でかける", "match": "exact", "forms": ["masu_neg"]}
       ]
     },
     {
@@ -1018,8 +1018,8 @@
       "text": "どうして遅れたんですか。電車が止まったからです。",
       "verbs": [
         {"surface": "して", "match": "notAVerb"},
-        {"surface": "遅れた", "match": "notInApp"},
-        {"surface": "止まった", "match": "notInApp"}
+        {"surface": "遅れたんです", "verb": "おくれる", "match": "exact", "forms": ["nd_past"]},
+        {"surface": "止まった", "verb": "とまる", "match": "exact", "forms": ["short_past"]}
       ]
     },
     {
@@ -1032,14 +1032,14 @@
     {
       "text": "電車が遅れたので、遅刻しました。",
       "verbs": [
-        {"surface": "遅れた", "match": "notInApp"},
+        {"surface": "遅れた", "verb": "おくれる", "match": "exact", "forms": ["short_past"]},
         {"surface": "しました", "verb": "する", "match": "exact", "forms": ["masu_past"]}
       ]
     },
     {
       "text": "電車が遅れたから、遅刻した。",
       "verbs": [
-        {"surface": "遅れた", "match": "notInApp"},
+        {"surface": "遅れた", "verb": "おくれる", "match": "exact", "forms": ["short_past"]},
         {"surface": "した", "verb": "する", "match": "exact", "forms": ["short_past"]}
       ]
     },
@@ -1052,7 +1052,7 @@
     {
       "text": "今日は出かけないほうがいいです。",
       "verbs": [
-        {"surface": "出かけない", "match": "notInApp"}
+        {"surface": "出かけない", "verb": "でかける", "match": "exact", "forms": ["short_neg"]}
       ]
     },
     {
@@ -1118,7 +1118,7 @@
     {
       "text": "小さいとき、先生になりたかったです。",
       "verbs": [
-        {"surface": "なりたかったです", "match": "notInApp"}
+        {"surface": "なりたかったです", "verb": "なる", "match": "rule"}
       ]
     },
     {
@@ -1237,14 +1237,14 @@
       "text": "来月、日本へ行こうと思っています。",
       "verbs": [
         {"surface": "行こう", "verb": "いく", "match": "exact", "forms": ["volitional"]},
-        {"surface": "思っています", "match": "notInApp"}
+        {"surface": "思っています", "verb": "おもう", "match": "exact", "forms": ["teiru_masu_pos"]}
       ]
     },
     {
       "text": "今日は早く寝ようと思います。",
       "verbs": [
         {"surface": "寝よう", "verb": "ねる", "match": "exact", "forms": ["volitional"]},
-        {"surface": "思います", "match": "notInApp"}
+        {"surface": "思います", "verb": "おもう", "match": "exact", "forms": ["masu_pos"]}
       ]
     },
     {
@@ -1262,7 +1262,7 @@
     {
       "text": "ここで写真を撮らないでください。",
       "verbs": [
-        {"surface": "撮らないでください", "match": "notInApp"}
+        {"surface": "撮らないでください", "verb": "とる:撮る", "match": "rule"}
       ]
     },
     {
@@ -1274,7 +1274,7 @@
     {
       "text": "遅れないでください。",
       "verbs": [
-        {"surface": "遅れないでください", "match": "notInApp"}
+        {"surface": "遅れないでください", "verb": "おくれる", "match": "rule"}
       ]
     },
     {
@@ -1288,7 +1288,7 @@
       "text": "かさを持たないで出かけました。",
       "verbs": [
         {"surface": "持たないで", "verb": "もつ", "match": "exact", "forms": ["neg_te"]},
-        {"surface": "出かけました", "match": "notInApp"}
+        {"surface": "出かけました", "verb": "でかける", "match": "exact", "forms": ["masu_past"]}
       ]
     },
     {
@@ -1371,7 +1371,7 @@
     {
       "text": "ここで写真を撮ってもいいですか。",
       "verbs": [
-        {"surface": "撮ってもいいです", "match": "notInApp"}
+        {"surface": "撮ってもいいです", "verb": "とる:撮る", "match": "rule"}
       ]
     },
     {
@@ -1395,7 +1395,7 @@
     {
       "text": "授業に遅れてはいけません。",
       "verbs": [
-        {"surface": "遅れてはいけませ", "match": "notInApp"}
+        {"surface": "遅れてはいけません", "verb": "おくれる", "match": "rule"}
       ]
     },
     {
@@ -1447,7 +1447,7 @@
     {
       "text": "この部屋で写真を撮ってはいけません。",
       "verbs": [
-        {"surface": "撮ってはいけませ", "match": "notInApp"}
+        {"surface": "撮ってはいけません", "verb": "とる:撮る", "match": "rule"}
       ]
     },
     {
@@ -1573,7 +1573,7 @@
     {
       "text": "止まれ",
       "verbs": [
-        {"surface": "止まれ", "match": "notInApp"}
+        {"surface": "止まれ", "verb": "とまる", "match": "exact", "forms": ["imperative"]}
       ]
     },
     {
