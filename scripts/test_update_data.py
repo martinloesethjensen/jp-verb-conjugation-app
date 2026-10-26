@@ -1250,6 +1250,51 @@ class CheckCountersTests(unittest.TestCase):
             problems = ud.check_counters(counters_doc(counter(), sections=sections), COUNTER_READINGS)
             self.assertTrue(any(needle in p for p in problems), (needle, problems))
 
+    NIN_CORE = {"1": ["ひとり"], "2": ["ふたり"], "3": ["さんにん"], "4": ["よにん"], "5": ["ごにん"],
+                "6": ["ろくにん"], "7": ["ななにん", "しちにん"], "8": ["はちにん"], "9": ["きゅうにん"],
+                "10": ["じゅうにん"], "what": ["なんにん"]}
+
+    def nin(self, **fields):
+        return counter(id="nin", counter="人", reading="にん", sound="irregular", overrides=dict(self.NIN_CORE), **fields)
+
+    def nin_doc(self, **fields):
+        return counters_doc(self.nin(**fields), groups=[dict(COUNTER_GROUP, members=[{"counter": "nin"}])])
+
+    def test_big_number_problems(self):
+        cases = {
+            "extent must be": [counter(extent=9), counter(extent=100), counter(extent="99"), counter(extent=True)],
+            "extra must be": [counter(extent=99, extra="100"), counter(extent=99, extra=[50]),
+                              counter(extent=99, extra=[200, 100]), counter(extent=99, extra=[100, 100])],
+            "must override": [counter(extent=99, extra=[100, 200])],
+            "compound must be": [counter(compound=["にん"]), counter(compound={"11": ["x"]}),
+                                 counter(compound={"0": []}), counter(compound={"0": ["ニン"]})],
+        }
+        for needle, variants in cases.items():
+            for variant in variants:
+                problems = ud.check_counters(counters_doc(variant), COUNTER_READINGS)
+                self.assertTrue(any(needle in p for p in problems), (needle, variant, problems))
+
+    def test_an_irregular_counter_with_extent_needs_compound_or_overrides(self):
+        problems = ud.check_counters(self.nin_doc(extent=24), COUNTER_READINGS)
+        self.assertTrue(any("irregular" in p and "extent" in p for p in problems), problems)
+        partial = self.nin_doc(extent=24, compound={"1": ["いちにん"]})   # no "0": round tens cannot compose
+        self.assertTrue(any("irregular" in p and "extent" in p for p in ud.check_counters(partial, COUNTER_READINGS)))
+
+    def test_an_override_key_must_be_one_the_counter_has(self):
+        problems = ud.check_counters(counters_doc(counter(overrides={"14": ["じゅうよんほん"]})), COUNTER_READINGS)
+        self.assertTrue(any("overrides key" in p for p in problems), problems)
+        ok = counters_doc(counter(extent=99, overrides={"14": ["じゅうよんほん"]}))
+        self.assertEqual(ud.check_counters(ok, COUNTER_READINGS), [])
+
+    def test_a_valid_big_counter_passes(self):
+        self.assertEqual(ud.check_counters(counters_doc(counter(extent=99, extra=[100])), COUNTER_READINGS), [])
+        compound = {"1": ["いちにん"], "2": ["ににん"], "0": ["にん"]}
+        self.assertEqual(ud.check_counters(self.nin_doc(extent=99, extra=[100], compound=compound), COUNTER_READINGS), [])
+
+    def test_a_tsu_style_counter_with_extent_10_passes(self):
+        self.assertEqual(ud.check_counters(self.nin_doc(extent=10), COUNTER_READINGS), [])
+        self.assertEqual(ud.check_counters(self.nin_doc(), COUNTER_READINGS), [])
+
     def test_question_problems(self):
         good = {"jp": "何本ありますか。", "en": "How many?"}
         cases = {

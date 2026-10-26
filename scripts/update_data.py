@@ -1030,19 +1030,34 @@ def check_counters(doc, readings):
             problems.append(f"{cid}: countsObjects must be true or false")
         if "questions" in c:
             _check_questions(c, problems)
+        big_fields_ok = _check_big_number_fields(c, problems)
+        keys = counter_keys(c) if big_fields_ok else COUNTER_KEYS
         overrides = c.get("overrides", {})
         if not isinstance(overrides, dict):
             problems.append(f"{cid}: overrides must be an object")
             overrides = {}
         for key, value in overrides.items():
-            if key not in COUNTER_KEYS:
-                problems.append(f"{cid}: overrides key '{key}' must be one of {COUNTER_KEYS}")
+            if key not in keys:
+                problems.append(f"{cid}: overrides key '{key}' must be one of its keys (1 to 10, 何, 11 up to "
+                                f"extent {c.get('extent', 10)}, and extra {c.get('extra', [])})")
             if not isinstance(value, list) or not value or not all(_is_hiragana(v) for v in value):
                 problems.append(f"{cid}: overrides['{key}'] must be a non-empty list of hiragana")
         if sound == "irregular":
             missing = [key for key in COUNTER_KEYS if key not in overrides]
             if missing:
                 problems.append(f"{cid}: an irregular counter must override every key; missing {missing}")
+        core_complete = sound != "irregular" or all(key in overrides for key in COUNTER_KEYS)
+        if big_fields_ok and core_complete and sound in SOUND_CLASSES and isinstance(overrides, dict):
+            try:
+                composed = counter_readings(c)
+            except (KeyError, IndexError, TypeError, ValueError):
+                composed = None         # a malformed reading or sound: the checks above report it
+            absent = [key for key in keys if key not in composed] if composed is not None else []
+            if absent and sound == "irregular":
+                problems.append(f"{cid}: an irregular counter with extent {c.get('extent', 10)} needs a compound "
+                                f"(with '0') or overrides for every bigger number; missing {absent[:6]}")
+            elif absent:
+                problems.append(f"{cid}: numbers {absent[:6]} are authored and must override")
         for related in c.get("related", []):
             if related not in ids:
                 problems.append(f"{cid}: related id '{related}' does not exist")
@@ -1096,6 +1111,33 @@ def check_counters(doc, readings):
     if "sections" in doc:
         problems.extend(_check_sections(doc["sections"], ids))
     return problems
+
+
+def _check_big_number_fields(c, problems):
+    """The optional `extent`, `extra` and `compound` of one counter. Returns False when any is malformed,
+    so later checks do not build on it."""
+    cid, ok = c.get("id", "<no id>"), True
+    extent = c.get("extent", 10)
+    if "extent" in c and (isinstance(extent, bool) or not isinstance(extent, int) or not 10 <= extent <= 99):
+        problems.append(f"{cid}: extent must be a whole number from 10 to 99")
+        ok = False
+    extra = c.get("extra", [])
+    if not isinstance(extra, list) or not all(isinstance(n, int) and not isinstance(n, bool) and n in EXTRA_NUMBERS
+                                                for n in extra) or extra != sorted(set(extra)):
+        problems.append(f"{cid}: extra must be an ascending list of numbers from {EXTRA_NUMBERS}")
+        ok = False
+    compound = c.get("compound", {})
+    if not isinstance(compound, dict):
+        problems.append(f"{cid}: compound must be an object with keys '0' to '9'")
+        return False
+    for key, value in compound.items():
+        if key not in [str(d) for d in range(10)]:
+            problems.append(f"{cid}: compound must be an object with keys '0' to '9', not '{key}'")
+            ok = False
+        elif not isinstance(value, list) or not value or not all(_is_hiragana(v) for v in value):
+            problems.append(f"{cid}: compound must be an object of non-empty hiragana lists; '{key}' is not")
+            ok = False
+    return ok
 
 
 def _check_questions(c, problems):
