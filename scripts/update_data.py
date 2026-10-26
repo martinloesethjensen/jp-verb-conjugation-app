@@ -775,6 +775,37 @@ SOUND_CLASSES = ("plain", "k", "s", "h-b", "h-p", "irregular")
 COUNTER_FITS = ("primary", "acceptable", "casual")
 BASE_NUMBERS = {"1": "いち", "2": "に", "3": "さん", "4": "よん", "5": "ご", "6": "ろく",
                 "7": "なな", "8": "はち", "9": "きゅう", "10": "じゅう", "what": "なん"}
+HUNDREDS = {1: "ひゃく", 2: "にひゃく", 3: "さんびゃく", 4: "よんひゃく", 5: "ごひゃく", 6: "ろっぴゃく",
+            7: "ななひゃく", 8: "はっぴゃく", 9: "きゅうひゃく"}
+THOUSANDS = {1: "せん", 2: "にせん", 3: "さんぜん", 4: "よんせん", 5: "ごせん", 6: "ろくせん", 7: "ななせん",
+             8: "はっせん", 9: "きゅうせん"}
+# The numbers above `extent` a counter may list in `extra`: 100 is composed, the rest are authored.
+EXTRA_NUMBERS = ([100 * n for n in range(1, 10)] + [1000 * n for n in range(1, 10)] + [10000])
+
+
+def plain_number(n):
+    """The number said on its own, in hiragana, with the preferred reading of each part (にじゅう,
+    さんびゃく). Supports 1 to 99 and the round numbers in `EXTRA_NUMBERS`."""
+    if 1 <= n <= 9:
+        return BASE_NUMBERS[str(n)]
+    if 10 <= n <= 99:
+        tens, ones = divmod(n, 10)
+        return ("" if tens == 1 else BASE_NUMBERS[str(tens)]) + "じゅう" + (BASE_NUMBERS[str(ones)] if ones else "")
+    if n in EXTRA_NUMBERS:
+        if n == 10000:
+            return "いちまん"
+        return HUNDREDS[n // 100] if n < 1000 else THOUSANDS[n // 1000]
+    raise ValueError(f"no reading for {n}")
+
+
+def counter_keys(counter):
+    """Every key a counter has readings for, in order: 1 to 10 and 何, then 11 up to `extent` (default
+    99), then `extra`."""
+    extent = counter.get("extent", 99)
+    keys = list(COUNTER_KEYS) + [str(n) for n in range(11, extent + 1)]
+    return keys + [str(n) for n in counter.get("extra", [])]
+
+
 # The small-っ form of the numbers that can geminate (いち -> いっ).
 GEMINATED = {"1": "いっ", "6": "ろっ", "8": "はっ", "10": "じゅっ"}
 GEMINATING_KEYS = {"k": ("1", "6", "8", "10"), "s": ("1", "8", "10"),

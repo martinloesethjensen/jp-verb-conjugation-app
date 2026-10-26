@@ -1638,5 +1638,26 @@ class CounterDistractorTests(unittest.TestCase):
         self.assertTrue(any("accepted" in p for p in ud.check_counter_distractors(doc)))
 
 
+class CounterKeyTests(unittest.TestCase):
+    def test_plain_number(self):
+        cases = {5: "ご", 11: "じゅういち", 14: "じゅうよん", 20: "にじゅう", 70: "ななじゅう",
+                 99: "きゅうじゅうきゅう", 100: "ひゃく", 300: "さんびゃく", 600: "ろっぴゃく",
+                 800: "はっぴゃく", 1000: "せん", 3000: "さんぜん", 8000: "はっせん", 10000: "いちまん"}
+        for number, expected in cases.items():
+            self.assertEqual(ud.plain_number(number), expected, number)
+
+    def test_counter_keys_default_to_99(self):
+        keys = ud.counter_keys({})
+        self.assertEqual(keys[:11], ud.COUNTER_KEYS)
+        self.assertEqual(keys[11:], [str(n) for n in range(11, 100)])
+        self.assertEqual(len(keys), 100)
+
+    def test_extent_and_extra(self):
+        self.assertEqual(ud.counter_keys({"extent": 24})[-1], "24")
+        self.assertEqual(ud.counter_keys({"extent": 10}), ud.COUNTER_KEYS)
+        keys = ud.counter_keys({"extent": 59, "extra": [100]})
+        self.assertEqual(keys[-2:], ["59", "100"])
+
+
 if __name__ == "__main__":
     unittest.main()
