@@ -848,6 +848,51 @@ def counter_readings(counter):
     return result
 
 
+def _unique(items):
+    """`items` without repeats, in order."""
+    return list(dict.fromkeys(items))
+
+
+def compose_readings(counter, n, core):
+    """The readings for a number above ten, preferred first, built from the counter's readings for 1 to 10
+    (`core`) by the rules in the design: a tens prefix, then the last digit's readings; a round ten keeps
+    the counter's reading of 10 behind the prefix; 100 is ひゃっ before か and は row counters and ひゃく
+    otherwise. A counter's `compound` replaces a last digit (人: いちにん) and gives the reading after a
+    round ten. Returns None when the counter cannot compose `n` (an irregular counter with no `compound`,
+    or a round number above 100, which is authored)."""
+    compound = counter.get("compound", {})
+    if n <= 10:
+        return core.get(str(n))
+    if counter["sound"] == "irregular" and not compound:
+        return None     # an irregular counter's compounds are authored (compound or overrides), never guessed
+    if n == 100:
+        zero = compound.get("0")
+        if zero:
+            return _unique("ひゃく" + z for z in zero)
+        if counter["sound"] in ("k", "h-b", "h-p"):
+            first = core["10"][0]
+            return [("ひゃっ" + first[len("じゅっ"):])] if first.startswith("じゅっ") else None
+        return None if counter["sound"] == "irregular" else ["ひゃく" + counter["reading"]]
+    if not 11 <= n <= 99:
+        return None
+    tens, ones = divmod(n, 10)
+    prefix = "" if tens == 1 else BASE_NUMBERS[str(tens)]
+    if ones:
+        units = compound.get(str(ones)) or core[str(ones)]
+        return _unique(prefix + "じゅう" + reading for reading in units)
+    if "0" in compound:
+        return _unique(prefix + "じゅう" + reading for reading in compound["0"])
+    if counter["sound"] == "irregular":
+        return None
+    composed = []
+    for reading in core["10"]:
+        head = next((h for h in ("じゅう", "じゅっ", "じっ") if reading.startswith(h)), None)
+        if head is None:
+            return None
+        composed.append(prefix + head + reading[len(head):])
+    return _unique(composed)
+
+
 def changed_keys(counter, readings):
     """The keys whose preferred reading is not the base number plus the counter's reading.
     Irregular counters have none: every cell differs, so marking them says nothing."""

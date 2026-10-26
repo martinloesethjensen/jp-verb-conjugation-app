@@ -1659,5 +1659,63 @@ class CounterKeyTests(unittest.TestCase):
         self.assertEqual(keys[-2:], ["59", "100"])
 
 
+class ComposeTests(unittest.TestCase):
+    """Expected readings are written by hand, one counter per sound class."""
+
+    def check(self, c, table):
+        core = ud.counter_readings(c)
+        for n, expected in table.items():
+            self.assertEqual(ud.compose_readings(c, n, core), expected, (c["id"], n))
+
+    def test_h_b_class_hon(self):
+        self.check(counter(), {
+            11: ["じゅういっぽん"], 13: ["じゅうさんぼん"], 14: ["じゅうよんほん"],
+            18: ["じゅうはっぽん", "じゅうはちほん"], 20: ["にじゅっぽん", "にじっぽん"],
+            30: ["さんじゅっぽん", "さんじっぽん"], 40: ["よんじゅっぽん", "よんじっぽん"], 100: ["ひゃっぽん"]})
+
+    def test_h_p_class_fun(self):
+        self.check(counter(id="fun", counter="分", reading="ふん", sound="h-p"), {
+            11: ["じゅういっぷん"], 14: ["じゅうよんぷん"], 18: ["じゅうはっぷん", "じゅうはちふん"],
+            20: ["にじゅっぷん", "にじっぷん"], 100: ["ひゃっぷん"]})
+
+    def test_k_class_ko(self):
+        self.check(counter(id="ko", counter="個", reading="こ", sound="k"), {
+            11: ["じゅういっこ"], 14: ["じゅうよんこ"], 18: ["じゅうはっこ", "じゅうはちこ"],
+            20: ["にじゅっこ", "にじっこ"], 100: ["ひゃっこ"]})
+
+    def test_s_class_satsu(self):
+        self.check(counter(id="satsu", counter="冊", reading="さつ", sound="s"), {
+            11: ["じゅういっさつ"], 14: ["じゅうよんさつ"], 18: ["じゅうはっさつ"],
+            20: ["にじゅっさつ", "にじっさつ"], 100: ["ひゃくさつ"]})
+
+    def test_plain_class_mai(self):
+        self.check(counter(id="mai", counter="枚", reading="まい", sound="plain"), {
+            11: ["じゅういちまい"], 14: ["じゅうよんまい"], 18: ["じゅうはちまい"], 20: ["にじゅうまい"],
+            70: ["ななじゅうまい"], 100: ["ひゃくまい"]})
+
+    def irregular_nin(self, **fields):
+        core = {"1": ["ひとり"], "2": ["ふたり"], "3": ["さんにん"], "4": ["よにん"], "5": ["ごにん"],
+                "6": ["ろくにん"], "7": ["ななにん", "しちにん"], "8": ["はちにん"], "9": ["きゅうにん"],
+                "10": ["じゅうにん"], "what": ["なんにん"]}
+        return counter(id="nin", counter="人", reading="にん", sound="irregular", overrides=core, **fields)
+
+    def test_irregular_counter_composes_through_compound(self):
+        c = self.irregular_nin(compound={"1": ["いちにん"], "2": ["ににん"], "0": ["にん"]})
+        self.check(c, {11: ["じゅういちにん"], 12: ["じゅうににん"], 13: ["じゅうさんにん"],
+                       14: ["じゅうよにん"], 17: ["じゅうななにん", "じゅうしちにん"],
+                       20: ["にじゅうにん"], 100: ["ひゃくにん"]})
+
+    def test_irregular_counter_without_compound_cannot_compose(self):
+        c = self.irregular_nin()
+        self.assertIsNone(ud.compose_readings(c, 11, ud.counter_readings(c)))
+        self.assertIsNone(ud.compose_readings(c, 20, ud.counter_readings(c)))
+
+    def test_numbers_it_cannot_compose_are_none_and_core_numbers_pass_through(self):
+        c = counter()
+        core = ud.counter_readings(c)
+        self.assertIsNone(ud.compose_readings(c, 300, core))
+        self.assertEqual(ud.compose_readings(c, 3, core), ["さんぼん"])
+
+
 if __name__ == "__main__":
     unittest.main()
