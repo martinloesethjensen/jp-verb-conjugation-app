@@ -10,7 +10,22 @@ import VerbKit
 /// overrides it to dismiss first.
 struct VerbSpanCard: View {
     let item: FormLookup.Item
-    @State private var chosenID: String?
+    /// The chosen reading's id, when the presenter needs it (the lens transforms that
+    /// reading); without one the card keeps the choice itself.
+    private let selection: Binding<String?>?
+    @State private var localChosenID: String?
+
+    init(item: FormLookup.Item, selection: Binding<String?>? = nil) {
+        self.item = item
+        self.selection = selection
+    }
+
+    private var chosenID: String? {
+        get { selection?.wrappedValue ?? localChosenID }
+        nonmutating set {
+            if let selection { selection.wrappedValue = newValue } else { localChosenID = newValue }
+        }
+    }
 
     private var chosen: FormLookup.Reading? {
         item.readings.first { $0.id == chosenID } ?? item.readings.first
