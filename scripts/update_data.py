@@ -690,6 +690,21 @@ def check_verb_forms(verbs_doc):
     return problems
 
 
+def check_example_forms(verbs_doc):
+    """Problems with an example tagged with a form its verb does not have: one the
+    generators leave out for that verb (EXTRA_EXCLUDED, PARTIAL_OTHER_FORMS) or that
+    has no value. Run after the forms are generated; `check_verb_forms` has already
+    checked that the tag is a verb form in the catalogue."""
+    problems = []
+    for verb in verbs_doc["verbs"]:
+        forms = verb.get("forms", {})
+        for example in verb.get("examples", []):
+            form = example.get("form")
+            if not forms.get(form):
+                problems.append(f"{verb.get('dict', '?')}: example uses form '{form}', which the verb does not have")
+    return problems
+
+
 # --- Adjectives and nouns (words.json) ---------------------------------------
 
 WORD_FILE_CLASSES = ("i-adjective", "na-adjective", "noun")
@@ -1520,6 +1535,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         apply_other_forms(verbs_doc)
     except ValueError as error:
         return 1, [f"cannot generate the other conjugations: {error}"]
+    problems = check_example_forms(verbs_doc)
+    if problems:
+        return 1, capped("verbs.json has examples with forms their verb lacks:", problems)
     words_path = data_dir / "words.json"
     words_doc = json.loads(words_path.read_text(encoding="utf-8")) if words_path.exists() else None
     words_bytes = None
