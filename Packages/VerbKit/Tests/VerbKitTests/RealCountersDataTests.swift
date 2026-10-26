@@ -242,4 +242,30 @@ final class RealCountersDataTests: XCTestCase {
         XCTAssertEqual(try numbers("hon").last, 100)
         XCTAssertEqual(Array(try numbers("en").suffix(3)), [8000, 9000, 10000])
     }
+
+    /// The file is fetched whole on every change, so bigger numbers have a budget. If this fails, trim
+    /// `extent` or `extra` before raising the number.
+    func testTheFileStaysUnderTheSizeBudget() throws {
+        let bytes = try Data(contentsOf: repoRoot.appendingPathComponent("data/counters.json")).count
+        XCTAssertLessThan(bytes, 200_000, "counters.json is \(bytes) bytes")
+    }
+
+    /// Bigger numbers add keys; they must not change what the 1 to 10 screens, tables and quiz read.
+    func testTheCoreNumbersAreUnchanged() throws {
+        let file = try load()
+        let sample: [(String, CounterNumber, String)] = [
+            ("hon", .n(1), "いっぽん"), ("fun", .n(4), "よんぷん"), ("ji", .n(4), "よじ"), ("nin", .n(1), "ひとり"),
+            ("nichi-date", .n(1), "ついたち"), ("en", .n(4), "よえん"), ("sai", .n(8), "はっさい"),
+            ("kai-floor", .n(3), "さんがい"), ("wa", .n(3), "さんば"), ("soku", .n(3), "さんぞく"),
+            ("hon", .what, "なんぼん"), ("tsu", .n(10), "とお"),
+        ]
+        for (id, number, reading) in sample {
+            XCTAssertEqual(try counter(id, in: file).readings(for: number).first, reading, "\(id) \(number.key)")
+        }
+        for counter in file.counters {
+            for number in CounterNumber.allCases {
+                XCTAssertFalse(counter.readings(for: number).isEmpty, "\(counter.id) \(number.key)")
+            }
+        }
+    }
 }
