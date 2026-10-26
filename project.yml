@@ -40,6 +40,9 @@ targets:
                 - wordbank
               public.mime-type:
                 - application/x-wordbank+json
+        # The Sentence lens live mic (#147): recognised on device, never stored or sent.
+        NSMicrophoneUsageDescription: "The Sentence lens listens while its mic is on, to find the verbs you say. Audio stays on this device and is never stored."
+        NSSpeechRecognitionUsageDescription: "The Sentence lens turns what you say into text on this device, to highlight its verbs. Nothing is sent or stored."
         LSSupportsOpeningDocumentsInPlace: false
         CFBundleDocumentTypes:
           - CFBundleTypeName: Word Bank
