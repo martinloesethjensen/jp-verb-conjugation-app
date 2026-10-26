@@ -48,7 +48,7 @@ change.
 
 Two optional per-counter fields say which numbers a counter has:
 
-- `extent` (a whole number, default 99): the largest number composed for it. 時 is 24, 日 (date) 31, 分 59,
+- `extent` (a whole number from 10 to 99, default 10, so a counter opts in): the largest number composed for it. 時 is 24, 日 (date) 31, 分 59,
   月 12. A counter that cannot be counted past ten (つ) has `extent` 10.
 - `extra`: a list of round numbers beyond `extent` that are generated or authored too: `100` for most counters,
   and for 円 `100` to `900`, `1000` to `9000` and `10000`.
@@ -64,8 +64,9 @@ in the appendix:
   じゅっぽん makes さんじゅっぽん (and にじっぽん is kept as an accepted alternative);
 - 100 takes ひゃっ before か and は row counters (ひゃっぽん, ひゃっこ) and ひゃく otherwise.
 
-Counters whose digits change in a compound (人: 十一人 is じゅういちにん, not じゅうひとり) or that name numbers
-irregularly (日: 十一日 じゅういちにち, 十四日 じゅうよっか, 二十日 はつか, 十七日 じゅうしちにち; 歳: 二十歳
+Irregular counters compose through a small `compound` field: the digits that read differently inside a
+compound (人: 1 is いちにん and 2 ににん, so 十一人 is じゅういちにん, not じゅうひとり) and the reading after a
+round ten (人: にん, 日: にち). Counters that name numbers irregularly (日: 十一日 じゅういちにち, 十四日 じゅうよっか, 二十日 はつか, 十七日 じゅうしちにち; 歳: 二十歳
 はたち) author the keys that differ in `overrides`, as they author 1 to 10 today. For the two 日 counters and
 日間 that means authoring 11 to 31. Everything an override does not cover is composed.
 
@@ -81,8 +82,9 @@ which today it skips.
 
 ### Size
 
-counters.json is 64 KB. About 2,400 extra reading lists at roughly 25 bytes, and distractors only for the
-numbers the quiz asks about, bring it to roughly 150 KB: one sync, parsed once. Search over about 3,000
+counters.json was 64 KB. About 2,700 extra reading lists, `changed` entries and distractors (only for an
+extended number that changed or is authored; every other key has an empty list) bring it to about 199 KB,
+within a 200,000-byte budget a test pins. My first estimate, 150 KB, was low. One sync, parsed once. Search over about 3,000
 counted forms is a linear scan of a few thousand short strings.
 
 ### App
@@ -156,3 +158,32 @@ Questions for the teacher: whether 100 geminates before the s row (this table sa
 accepted alternates for 80 and 800 (はちじゅう / はっぴゃく), 70 (ななじゅう / しちじゅう) and 7 or 9 in
 compounds; 三十分 さんじゅっぷん and さんじっぷん; 十四日 じゅうよっか and 二十四日 にじゅうよっか; and whether a
 counter list should ever include 一千 (いっせん).
+
+## As built (stage 1)
+
+What changed from the design while building the pipeline and data, and what has not been checked. The plan is
+`docs/superpowers/plans/2026-10-26-counters-big-numbers-stage-1.md`.
+
+- **Bigger numbers are opt-in.** `extent` defaults to 10, not 99: with 99 every existing counter, including
+  the irregular ones, failed validation until its data was written, and nothing should change before a
+  counter asks. The data sets `extent` on all 29 counters (つ 10, 時 24, 分 59, the two 日 and 日間 31, 月 12,
+  the rest 99) and `extra: [100]` on most; 円 also lists 200 to 900, 1000 to 9000 and 10000.
+- **`compound`.** An irregular counter composes only through it; without it nothing is guessed (十一人 would
+  have read じゅうひとり). 人, 時, both 日, 日間 and 月 carry one. An override beats composition (はたち,
+  はつか, 羽's 百羽 ひゃっぱ).
+- **Validation** covers `extent`, `extra` and `compound`, every override key, and a clear error for an
+  irregular counter or an authored round number with nothing written. The counted-run check now reads compound
+  numerals (十五分, 二十本, 三百円); a number the counter has no key for (百五十本) is skipped.
+- **The numbers the data holds:** 11 to 99 for regular counters, 100, and 円's round numbers; 月 is the new
+  counter (12 months, しがつ, しちがつ, くがつ). The generated tables were read against the appendix, and the
+  app is unchanged: the 分 page shows the same 1 to 10 strip.
+- **Preferred tens prefixes only** compose (にじゅう, ななじゅう); しちじゅう is not offered.
+
+Checked: the unit tests (hand-written tables for one counter per sound class), the real-data tests for 27
+readings from the appendix, the size budget (199,366 bytes), the unchanged core numbers, and one counter page
+in the simulator with the new data.
+
+**Not checked: the composition rules themselves.** They are mine and unreviewed. A teacher must rule on the
+appendix questions before this data merges (100 before the s row, alternates for 70, 80 and 800, 三十分,
+二十四日). The owner signs the data on the feature branch. Stages 2 and 3 (the stepper, Compare ranges,
+search and the quiz) are not built, and the new numbers are not shown anywhere yet.
