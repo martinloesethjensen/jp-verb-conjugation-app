@@ -31,16 +31,16 @@ final class RealCountersDataTests: XCTestCase {
         let file = try load()
         let ids = file.counters.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)
-        XCTAssertEqual(ids.count, 28)
+        XCTAssertEqual(ids.count, 29)
         for counter in file.counters {
             for related in counter.related { XCTAssertTrue(ids.contains(related), "\(counter.id) → \(related)") }
         }
     }
 
     func testChangedKeysAreValid() throws {
-        let keys = Set(CounterNumber.allCases.map(\.key))
         for counter in try load().counters {
-            XCTAssertTrue(Set(counter.changed).isSubset(of: keys), counter.id)
+            // changed may name any number the counter has readings for, not only 1 to 10 and 何
+            XCTAssertTrue(Set(counter.changed).isSubset(of: Set(counter.readings.keys)), counter.id)
         }
     }
 
@@ -70,7 +70,7 @@ final class RealCountersDataTests: XCTestCase {
         let ids = Set(file.counters.map(\.id))
         let groupIDs = file.groups.map(\.id)
         XCTAssertEqual(Set(groupIDs).count, groupIDs.count)
-        XCTAssertEqual(groupIDs.count, 17)
+        XCTAssertEqual(groupIDs.count, 18)
         var grouped = Set<String>()
         for group in file.groups {
             for member in group.members {
@@ -88,7 +88,7 @@ final class RealCountersDataTests: XCTestCase {
             "drinks", "people-animals", "things", "clothes-shoes", "how-long", "time-dates-age",
             "when-or-how-long", "money-events",
         ])
-        XCTAssertEqual(home.map(\.rows.count), [3, 4, 6, 2, 5, 6, 6, 4])
+        XCTAssertEqual(home.map(\.rows.count), [3, 4, 6, 2, 5, 7, 8, 4])
         XCTAssertEqual(Set(home.flatMap(\.rows).map(\.counter.id)), Set(file.counters.map(\.id)))
     }
 
@@ -201,5 +201,45 @@ final class RealCountersDataTests: XCTestCase {
         XCTAssertTrue(try counter("wa", in: file).pitfalls.contains {
             $0.explanation.contains("匹") && $0.explanation.contains("traditionally")
         })
+    }
+
+    /// Readings above ten, from the composition rules in the design's appendix (a teacher checks them
+    /// before the data ships): the sound change of 10 carries into 20, 30 and 100, the last digit of a
+    /// compound keeps the counter's own reading, and the authored exceptions beat composition.
+    func testBigNumbersReadAsTheAppendixSays() throws {
+        let file = try load()
+        func preferred(_ id: String, _ n: Int) throws -> String? {
+            try counter(id, in: file).readings(for: .n(n)).first
+        }
+        let expected: [(String, Int, String)] = [
+            ("hon", 20, "にじゅっぽん"), ("hon", 100, "ひゃっぽん"), ("fun", 15, "じゅうごふん"),
+            ("fun", 30, "さんじゅっぷん"), ("fun", 45, "よんじゅうごふん"), ("sai", 20, "はたち"),
+            ("sai", 21, "にじゅういっさい"), ("sai", 100, "ひゃくさい"), ("en", 100, "ひゃくえん"),
+            ("en", 300, "さんびゃくえん"), ("en", 800, "はっぴゃくえん"), ("en", 1000, "せんえん"),
+            ("en", 3000, "さんぜんえん"), ("en", 10000, "いちまんえん"), ("ji", 11, "じゅういちじ"),
+            ("ji", 14, "じゅうよじ"), ("ji", 24, "にじゅうよじ"), ("nin", 11, "じゅういちにん"),
+            ("nin", 14, "じゅうよにん"), ("nin", 20, "にじゅうにん"), ("nichi-date", 14, "じゅうよっか"),
+            ("nichi-date", 20, "はつか"), ("nichi-date", 24, "にじゅうよっか"),
+            ("nichi-date", 31, "さんじゅういちにち"), ("nichikan", 20, "はつかかん"),
+            ("gatsu", 4, "しがつ"), ("gatsu", 12, "じゅうにがつ"), ("wa", 100, "ひゃっぱ"),
+        ]
+        for (id, n, reading) in expected {
+            XCTAssertEqual(try preferred(id, n), reading, "\(id) \(n)")
+        }
+    }
+
+    func testExtentsAreWhatEachCounterNeeds() throws {
+        let file = try load()
+        func numbers(_ id: String) throws -> [Int] {
+            try counter(id, in: file).readings.keys.compactMap { Int($0) }.sorted()
+        }
+        XCTAssertEqual(try numbers("tsu"), Array(1...10))
+        XCTAssertEqual(try numbers("ji").last, 24)
+        XCTAssertEqual(try numbers("fun").last, 59)
+        XCTAssertEqual(try numbers("nichi-date").last, 31)
+        XCTAssertEqual(try numbers("nichikan").last, 31)
+        XCTAssertEqual(try numbers("gatsu").last, 12)
+        XCTAssertEqual(try numbers("hon").last, 100)
+        XCTAssertEqual(Array(try numbers("en").suffix(3)), [8000, 9000, 10000])
     }
 }
