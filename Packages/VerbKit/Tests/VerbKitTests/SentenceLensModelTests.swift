@@ -58,7 +58,7 @@ final class SentenceLensModelTests: XCTestCase {
         XCTAssertEqual(try verbItem(lens("忘れ て しまい まし た"), "忘れてしまいました").highlight, .chain)
         XCTAssertEqual(try verbItem(lens("泳げ ます"), "泳げます").highlight, .voice)
         XCTAssertEqual(try verbItem(lens("食べ させ られ なかっ た"), "食べさせられなかった").highlight, .voice)
-        XCTAssertEqual(try verbItem(lens("雨 が 降っ たら"), "降ったら").highlight, .notInApp)
+        XCTAssertEqual(try verbItem(lens("約束 を 守っ たら"), "守ったら").highlight, .notInApp)
     }
 
     // MARK: VoiceOver
@@ -71,7 +71,7 @@ final class SentenceLensModelTests: XCTestCase {
     }
 
     func testAGreyedHighlightSaysItIsNotInTheApp() throws {
-        XCTAssertEqual(try verbItem(lens("雨 が 降っ たら"), "降ったら").accessibilityDescription, "降ったら, verb not in the app yet")
+        XCTAssertEqual(try verbItem(lens("約束 を 守っ たら"), "守ったら").accessibilityDescription, "守ったら, verb not in the app yet")
     }
 
     func testAnAmbiguousHighlightReadsEveryReading() throws {
@@ -140,8 +140,8 @@ final class SentenceLensModelTests: XCTestCase {
     }
 
     func testAGreyedVerbHasNoTransforms() throws {
-        let lens = lens("雨 が 降っ たら")
-        lens.selected = try verbItem(lens, "降ったら")
+        let lens = lens("約束 を 守っ たら")
+        lens.selected = try verbItem(lens, "守ったら")
         XCTAssertEqual(lens.transforms, .unavailable(.notInApp))
     }
 
