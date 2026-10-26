@@ -799,9 +799,9 @@ def plain_number(n):
 
 
 def counter_keys(counter):
-    """Every key a counter has readings for, in order: 1 to 10 and 何, then 11 up to `extent` (default
-    99), then `extra`."""
-    extent = counter.get("extent", 99)
+    """Every key a counter has readings for, in order: 1 to 10 and 何, then 11 up to `extent`, then
+    `extra`. A counter opts in to bigger numbers: without `extent` it has only 1 to 10 and 何."""
+    extent = counter.get("extent", 10)
     keys = list(COUNTER_KEYS) + [str(n) for n in range(11, extent + 1)]
     return keys + [str(n) for n in counter.get("extra", [])]
 
@@ -822,30 +822,42 @@ def _voiced(reading, kind):
 
 
 def counter_readings(counter):
-    """Every key's readings, preferred first: the class's rule, then the author's overrides.
-    An irregular counter's readings are its overrides."""
+    """Every key's readings, preferred first: the class's rule, then the author's overrides, then for
+    each number above ten the composed reading unless an override covers it. An irregular counter's
+    readings for 1 to 10 are its overrides. A key the counter cannot compose and has no override for is
+    left out; `check_counters` reports it."""
     sound, reading = counter["sound"], counter["reading"]
     overrides = counter.get("overrides", {})
     if sound == "irregular":
-        return {key: list(overrides[key]) for key in COUNTER_KEYS}
-    result = {}
-    for key in COUNTER_KEYS:
-        plain = BASE_NUMBERS[key] + reading
-        if key in GEMINATING_KEYS.get(sound, ()):
-            rest = _voiced(reading, "p") if sound.startswith("h-") else reading
-            readings = [GEMINATED[key] + rest]
-            if key == "8" and sound != "s":
-                readings.append(plain)        # はちほん, はちこ are heard too
-            if key == "10":
-                readings.append("じっ" + rest)
-        elif key in VOICED_KEYS.get(sound, {}):
-            readings = [BASE_NUMBERS[key] + _voiced(reading, VOICED_KEYS[sound][key])]
+        core = {key: list(overrides[key]) for key in COUNTER_KEYS}
+    else:
+        core = {}
+        for key in COUNTER_KEYS:
+            plain = BASE_NUMBERS[key] + reading
+            if key in GEMINATING_KEYS.get(sound, ()):
+                rest = _voiced(reading, "p") if sound.startswith("h-") else reading
+                readings = [GEMINATED[key] + rest]
+                if key == "8" and sound != "s":
+                    readings.append(plain)        # はちほん, はちこ are heard too
+                if key == "10":
+                    readings.append("じっ" + rest)
+            elif key in VOICED_KEYS.get(sound, {}):
+                readings = [BASE_NUMBERS[key] + _voiced(reading, VOICED_KEYS[sound][key])]
+            else:
+                readings = [plain]
+            core[key] = readings
+        for key in COUNTER_KEYS:
+            if key in overrides:
+                core[key] = list(overrides[key])
+    result = dict(core)
+    for key in counter_keys(counter)[len(COUNTER_KEYS):]:
+        if key in overrides:
+            result[key] = list(overrides[key])
         else:
-            readings = [plain]
-        result[key] = readings
-    for key, value in overrides.items():
-        result[key] = list(value)
-    return result
+            composed = compose_readings(counter, int(key), core)
+            if composed:
+                result[key] = composed
+    return {key: result[key] for key in counter_keys(counter) if key in result}
 
 
 def _unique(items):
@@ -893,12 +905,18 @@ def compose_readings(counter, n, core):
     return _unique(composed)
 
 
+def _plain_reading(counter, key):
+    """The number said on its own followed by the counter's reading: the form a learner would guess."""
+    number = BASE_NUMBERS[key] if key in BASE_NUMBERS else plain_number(int(key))
+    return number + counter["reading"]
+
+
 def changed_keys(counter, readings):
-    """The keys whose preferred reading is not the base number plus the counter's reading.
+    """The keys whose preferred reading is not the plain number plus the counter's reading.
     Irregular counters have none: every cell differs, so marking them says nothing."""
     if counter["sound"] == "irregular":
         return []
-    return [key for key in COUNTER_KEYS if readings[key][0] != BASE_NUMBERS[key] + counter["reading"]]
+    return [key for key in readings if readings[key][0] != _plain_reading(counter, key)]
 
 
 def _swap_voicing(preferred, reading, sound):
@@ -928,17 +946,28 @@ def counter_distractors(counter, readings):
     Tried in order: the unchanged reading (さんほん); for h-b and h-p the preferred reading with its
     ば/ぱ sound flipped (さんぽん); the base number's last kana turned into a small っ before the
     counter's reading, its は-row sound as ぱ row for h-b and h-p (さっぽん). Irregular counters get
-    only the unchanged reading. A base number of one kana (に, ご) has no small-っ form."""
+    only the unchanged reading. A base number of one kana (に, ご) has no small-っ form.
+
+    A number above ten gets distractors only when it changed or is authored (an override); every
+    other extended key has an empty list, which keeps the file small. For those, the small-っ form is
+    only tried when the number ends in a syllable that geminates (にじゅう -> にじゅっ)."""
     sound, reading = counter["sound"], counter["reading"]
+    overrides = counter.get("overrides", {})
+    changed = set(changed_keys(counter, readings))
     result = {}
-    for key in COUNTER_KEYS:
+    for key in readings:
+        extended = key not in COUNTER_KEYS
+        if extended and key not in changed and key not in overrides:
+            result[key] = []
+            continue
         accepted = set(readings[key])
-        base = BASE_NUMBERS[key]
+        base = BASE_NUMBERS[key] if not extended else plain_number(int(key))
         candidates = [base + reading]
         if sound != "irregular":
             if sound in ("h-b", "h-p"):
                 candidates.append(_swap_voicing(readings[key][0], reading, sound))
-            if len(base) > 1:
+            geminates = base.endswith(("いち", "ろく", "はち", "じゅう", "ひゃく")) if extended else len(base) > 1
+            if geminates:
                 rest = _voiced(reading, "p") if sound in ("h-b", "h-p") else reading
                 candidates.append(base[:-1] + "っ" + rest)
         wrong = []
@@ -1130,12 +1159,12 @@ def apply_counter_readings(doc):
     """Set every counter's `readings` and `changed` (the script owns them). Returns True if anything changed."""
     changed = False
     for c in doc["counters"]:
-        readings = counter_readings(c)
-        wanted = {key: readings[key] for key in COUNTER_KEYS}
+        wanted = counter_readings(c)
         keys = changed_keys(c, wanted)
         wrong = counter_distractors(c, wanted)
-        if (c.get("readings") != wanted or list(c.get("readings", {})) != COUNTER_KEYS or c.get("changed") != keys
-                or c.get("distractors") != wrong or list(c.get("distractors", {})) != COUNTER_KEYS):
+        order = list(wanted)
+        if (c.get("readings") != wanted or list(c.get("readings", {})) != order or c.get("changed") != keys
+                or c.get("distractors") != wrong or list(c.get("distractors", {})) != order):
             c["readings"], c["changed"], c["distractors"] = wanted, keys, wrong
             changed = True
     return changed
@@ -1146,7 +1175,7 @@ def check_counter_distractors(doc):
     at most three per key, and never an accepted reading of its key."""
     problems = []
     for c in doc["counters"]:
-        for key in COUNTER_KEYS:
+        for key in counter_keys(c):
             wrong = (c.get("distractors") or {}).get(key)
             if not isinstance(wrong, list) or len(wrong) > 3:
                 problems.append(f"{c['id']}: distractors['{key}'] must be a list of at most three readings")

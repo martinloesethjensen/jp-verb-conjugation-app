@@ -1646,8 +1646,9 @@ class CounterKeyTests(unittest.TestCase):
         for number, expected in cases.items():
             self.assertEqual(ud.plain_number(number), expected, number)
 
-    def test_counter_keys_default_to_99(self):
-        keys = ud.counter_keys({})
+    def test_a_counter_opts_in_to_bigger_numbers(self):
+        self.assertEqual(ud.counter_keys({}), ud.COUNTER_KEYS)
+        keys = ud.counter_keys({"extent": 99})
         self.assertEqual(keys[:11], ud.COUNTER_KEYS)
         self.assertEqual(keys[11:], [str(n) for n in range(11, 100)])
         self.assertEqual(len(keys), 100)
@@ -1715,6 +1716,62 @@ class ComposeTests(unittest.TestCase):
         core = ud.counter_readings(c)
         self.assertIsNone(ud.compose_readings(c, 300, core))
         self.assertEqual(ud.compose_readings(c, 3, core), ["さんぼん"])
+
+
+class ExtendedReadingsTests(unittest.TestCase):
+    def doc(self, *counters):
+        return {"counters": list(counters)}
+
+    def test_extended_readings_are_generated_in_key_order(self):
+        readings = ud.counter_readings(counter(extent=99))
+        self.assertEqual(list(readings), ud.counter_keys(counter(extent=99)))
+        self.assertEqual(readings["20"], ["にじゅっぽん", "にじっぽん"])
+        self.assertEqual(readings["15"], ["じゅうごほん"])
+        self.assertEqual(readings["99"], ["きゅうじゅうきゅうほん"])
+
+    def test_an_override_beats_composition(self):
+        readings = ud.counter_readings(counter(extent=99, overrides={"14": ["じゅうよっぽん"]}))
+        self.assertEqual(readings["14"], ["じゅうよっぽん"])
+        self.assertEqual(readings["13"], ["じゅうさんぼん"])
+
+    def test_the_old_keys_are_unchanged(self):
+        hon = ud.counter_readings(counter())
+        self.assertEqual(hon["1"], ["いっぽん"])
+        self.assertEqual(hon["3"], ["さんぼん"])
+        self.assertEqual(hon["8"], ["はっぽん", "はちほん"])
+        self.assertEqual(hon["10"], ["じゅっぽん", "じっぽん"])
+        self.assertEqual(hon["what"], ["なんぼん"])
+        fun = ud.counter_readings(counter(id="fun", counter="分", reading="ふん", sound="h-p"))
+        self.assertEqual(fun["4"], ["よんぷん"])
+        mai = ud.counter_readings(counter(id="mai", counter="枚", reading="まい", sound="plain"))
+        self.assertEqual(mai["4"], ["よんまい"])
+
+    def test_changed_includes_extended_numbers(self):
+        doc = self.doc(counter(extent=99), counter(id="mai", counter="枚", reading="まい", sound="plain", extent=99))
+        ud.apply_counter_readings(doc)
+        hon, mai = doc["counters"]
+        self.assertIn("11", hon["changed"])
+        self.assertIn("20", hon["changed"])
+        self.assertNotIn("15", hon["changed"])
+        self.assertEqual([k for k in mai["changed"] if int(k) > 10 if k != "what"], [])
+
+    def test_distractors_cover_changed_extended_keys_only(self):
+        doc = self.doc(counter(extent=99))
+        ud.apply_counter_readings(doc)
+        hon = doc["counters"][0]
+        self.assertEqual(list(hon["distractors"]), ud.counter_keys(hon))
+        self.assertIn("にじゅうほん", hon["distractors"]["20"])
+        for key, wrong in hon["distractors"].items():
+            self.assertTrue(set(wrong).isdisjoint(hon["readings"][key]), key)
+        self.assertEqual(hon["distractors"]["15"], [])
+
+    def test_stale_detection_sees_the_new_keys(self):
+        doc = self.doc(counter(extent=99))
+        ud.apply_counter_readings(doc)
+        self.assertFalse(ud.apply_counter_readings(doc))
+        core_only = counter(extent=99, readings={k: v for k, v in doc["counters"][0]["readings"].items() if k in ud.COUNTER_KEYS})
+        stale = self.doc(core_only)
+        self.assertTrue(ud.apply_counter_readings(stale))
 
 
 if __name__ == "__main__":
