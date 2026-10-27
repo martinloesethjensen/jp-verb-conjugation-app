@@ -11,3 +11,6 @@ DerivedData/
 # Signing keys must never be committed
 *.key
 __pycache__/
+
+# Brainstorming mockups
+.superpowers/
