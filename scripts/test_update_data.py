@@ -752,6 +752,28 @@ class RunTests(unittest.TestCase):
         self.assertEqual(manifest["grammar"]["sha256"], ud.sha256_hex((d / "grammar.json").read_bytes()))
         self.assertEqual(manifest["furigana"]["sha256"], ud.sha256_hex((d / "furigana.json").read_bytes()))
 
+    def with_example(self, form):
+        d = self.make_dir()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["examples"] = [{"form": form, "jp": "します。", "en": "I do."}]
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        return d
+
+    def test_an_example_may_use_a_generated_form(self):
+        code, messages = ud.run(self.with_example("tai"))
+        self.assertEqual(code, 0, messages)
+
+    def test_an_example_with_a_form_the_verb_lacks_fails_and_writes_nothing(self):
+        # Only godan verbs have the short causative-passive, so する has none.
+        d = self.with_example("causative_passive_short")
+        before = (d / "verbs.json").read_bytes()
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("causative_passive_short", "\n".join(messages))
+        code, _ = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertEqual((d / "verbs.json").read_bytes(), before)
+
     def test_a_missing_reading_fails_cleanly_and_writes_nothing(self):
         d = self.make_dir()
         bad = valid_grammar()
