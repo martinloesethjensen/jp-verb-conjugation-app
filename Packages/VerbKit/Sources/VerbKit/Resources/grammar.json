@@ -404,6 +404,7 @@
         {
           "heading": "かもしれない takes no だ",
           "explanation": "Before かもしれない, a noun or na-adjective stays bare. 学生だかもしれない and 静かだかもしれない are wrong; say 学生かもしれない and 静かかもしれない.",
+          "wrong": "学生だかもしれない",
           "examples": [
             { "jp": "あの人は先生かもしれません。", "en": "That person might be a teacher." }
           ]
@@ -878,6 +879,7 @@
         {
           "heading": "Knowing, and the negative",
           "explanation": "知っている means \"to know\", but its negative is 知らない (or 知りません), and not 知っていない.",
+          "wrong": "知っていない",
           "examples": [
             { "jp": "あの人のことは知りません。", "en": "I don't know that person." }
           ]
@@ -1257,6 +1259,7 @@
         {
           "heading": "な, not だ, before ので",
           "explanation": "In the present affirmative, な-adjectives and nouns take な before ので, never だ.",
+          "wrong": "静かだので",
           "examples": [
             { "jp": "この部屋は静かなので、よく眠れます。", "en": "This room is quiet, so I sleep well." }
           ]
@@ -1353,7 +1356,8 @@
       "pitfalls": [
         {
           "heading": "Never なかったほうがいい",
-          "explanation": "The negative stays in the present: 行かないほうがいい, not 行かなかったほうがいい."
+          "explanation": "The negative stays in the present: 行かないほうがいい, not 行かなかったほうがいい.",
+          "wrong": "行かなかったほうがいい"
         },
         {
           "heading": "Careful with teachers and bosses",
@@ -1635,6 +1639,7 @@
         {
           "heading": "Before ください only ないで",
           "explanation": "A request can only use 〜ないで. 〜なくてください is wrong, because なくて gives a reason, not a way of doing something.",
+          "wrong": "行かなくてください",
           "examples": [
             { "jp": "行かないでください。", "en": "Please don't go." },
             { "jp": "行けなくて、すみません。", "en": "I'm sorry I couldn't go." }
@@ -1765,6 +1770,7 @@
         {
           "heading": "Adjectives and nouns take でもいい",
           "explanation": "The て-form of a な-adjective or a noun ends in で, so permission is でもいい: 静かでもいい, 明日でもいい. 静かだもいい and 明日だもいい are wrong.",
+          "wrong": "静かだもいい",
           "examples": [
             { "jp": "明日でもいいですか。", "en": "Is tomorrow all right?" },
             { "jp": "下手でもいいから、歌ってください。", "en": "It doesn't matter if you're not good at it, please sing." }
@@ -1887,7 +1893,8 @@
         },
         {
           "heading": "Start from the ない-form",
-          "explanation": "The pattern grows out of the ない-form, so 食べるなければ is wrong. Make the ない-form first: 食べる → 食べない → 食べなければ, 行く → 行かない → 行かなければ."
+          "explanation": "The pattern grows out of the ない-form, so 食べるなければ is wrong. Make the ない-form first: 食べる → 食べない → 食べなければ, 行く → 行かない → 行かなければ.",
+          "wrong": "食べるなければ"
         }
       ],
       "contrasts": [

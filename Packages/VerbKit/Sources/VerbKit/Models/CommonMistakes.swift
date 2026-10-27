@@ -36,19 +36,22 @@ public struct CommonMistake: Hashable, Identifiable, Sendable, Leveled {
     public var heading: String
     public var explanation: String
     public var examples: [GrammarExample]
+    /// The wrong form learners produce, when the pitfall has one.
+    public var wrong: String?
     public var source: Route
     public var sourceTitle: String
     public var jlpt: JLPTLevel?
 
     public init(
         id: String, theme: MistakeTheme, heading: String, explanation: String, examples: [GrammarExample],
-        source: Route, sourceTitle: String, jlpt: JLPTLevel? = nil
+        wrong: String? = nil, source: Route, sourceTitle: String, jlpt: JLPTLevel? = nil
     ) {
         self.id = id
         self.theme = theme
         self.heading = heading
         self.explanation = explanation
         self.examples = examples
+        self.wrong = wrong
         self.source = source
         self.sourceTitle = sourceTitle
         self.jlpt = jlpt
@@ -100,7 +103,7 @@ public enum CommonMistakes {
                 result.append(CommonMistake(
                     id: key, theme: grammarThemes[key] ?? .meaningAndRegister, heading: pitfall.heading,
                     explanation: pitfall.explanation, examples: pitfall.examples,
-                    source: .grammar(point.id), sourceTitle: point.title, jlpt: point.jlpt))
+                    wrong: pitfall.wrong, source: .grammar(point.id), sourceTitle: point.title, jlpt: point.jlpt))
             }
         }
         for counter in counters {
@@ -110,7 +113,7 @@ public enum CommonMistakes {
                     id: "counter:\(key)", theme: counterExceptions[key] ?? .counterReadings,
                     heading: pitfall.heading, explanation: pitfall.explanation,
                     examples: pitfall.examples.map { GrammarExample(jp: $0.jp, en: $0.en) },
-                    source: .counter(counter.id), sourceTitle: "\(counter.counter) (\(counter.meaning))",
+                    wrong: pitfall.wrong, source: .counter(counter.id), sourceTitle: "\(counter.counter) (\(counter.meaning))",
                     jlpt: counter.jlpt))
             }
         }
@@ -133,6 +136,7 @@ public func matchesMistakeSearch(_ mistake: CommonMistake, query: String, furiga
     guard !trimmed.isEmpty else { return true }
     if mistake.heading.localizedCaseInsensitiveContains(trimmed)
         || mistake.explanation.localizedCaseInsensitiveContains(trimmed)
+        || (mistake.wrong?.contains(trimmed) ?? false)
         || mistake.sourceTitle.contains(trimmed) { return true }
     let kana = Romaji.toHiragana(trimmed).map { $0.filter { !$0.isWhitespace } }
     for example in mistake.examples {

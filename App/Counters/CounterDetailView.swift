@@ -117,6 +117,7 @@ struct CounterDetailView: View {
             ForEach(Array(counter.pitfalls.enumerated()), id: \.offset) { _, pitfall in
                 card {
                     JapaneseText(pitfall.heading).font(.headline)
+                    if let wrong = pitfall.wrong { WrongForm(text: wrong) }
                     JapaneseText(pitfall.explanation).font(.subheadline)
                     ForEach(Array(pitfall.examples.enumerated()), id: \.offset) { _, example in
                         Divider()
