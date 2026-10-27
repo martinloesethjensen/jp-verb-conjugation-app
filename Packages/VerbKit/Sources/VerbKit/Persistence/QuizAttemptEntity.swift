@@ -12,8 +12,11 @@ public final class QuizAttemptEntity {
     public var kindRaw: String
     public var outcomeRaw: String
     public var date: Date
+    /// `QuizErrorTag.rawValue`. Optional, so a store from before tags opens unchanged.
+    public var errorRaw: String?
 
-    public init(id: UUID, subject: String, formID: String, kindRaw: String, outcomeRaw: String, date: Date) {
+    public init(id: UUID, subject: String, formID: String, kindRaw: String, outcomeRaw: String, date: Date, errorRaw: String? = nil) {
+        self.errorRaw = errorRaw
         self.id = id
         self.subject = subject
         self.formID = formID
@@ -25,7 +28,8 @@ public final class QuizAttemptEntity {
     public convenience init(_ attempt: QuizAttempt) {
         self.init(
             id: attempt.id, subject: attempt.subject, formID: attempt.formID,
-            kindRaw: attempt.kind.rawValue, outcomeRaw: attempt.outcome.rawValue, date: attempt.date
+            kindRaw: attempt.kind.rawValue, outcomeRaw: attempt.outcome.rawValue, date: attempt.date,
+            errorRaw: attempt.errorTag?.rawValue
         )
     }
 
@@ -33,6 +37,7 @@ public final class QuizAttemptEntity {
     public func toAttempt() -> QuizAttempt? {
         guard let kind = QuizQuestionKind(rawValue: kindRaw),
               let outcome = QuizOutcome(rawValue: outcomeRaw) else { return nil }
-        return QuizAttempt(id: id, subject: subject, formID: formID, kind: kind, outcome: outcome, date: date)
+        return QuizAttempt(id: id, subject: subject, formID: formID, kind: kind, outcome: outcome, date: date,
+                           errorTag: errorRaw.map(QuizErrorTag.init(rawValue:)))
     }
 }

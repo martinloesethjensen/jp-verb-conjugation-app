@@ -50,10 +50,10 @@ public final class QuizViewModel {
         )
     }
 
-    private func record(_ question: QuizQuestion, _ outcome: QuizOutcome) {
+    private func record(_ question: QuizQuestion, _ outcome: QuizOutcome, error: QuizErrorTag? = nil) {
         recorder?(QuizAttempt(
             subject: question.verb.id, formID: question.form.id, kind: question.kind,
-            outcome: outcome, date: now()
+            outcome: outcome, date: now(), errorTag: error
         ))
     }
 
@@ -62,11 +62,13 @@ public final class QuizViewModel {
         selected = choice
         let ok = choice == question.correct
         if ok { score += 1 }
+        let error = ok ? nil : (question.errors[choice] ?? .generic)
         results.append(QuizResult(
             verb: question.verb.dict, formLabel: question.form.label, formID: question.form.id, formString: question.formString,
-            kind: question.kind, correct: question.correct, chosen: choice, ok: ok
+            kind: question.kind, correct: question.correct, chosen: choice, ok: ok,
+            error: error, errorExplanation: error?.explanation(verb: question.verb, form: question.form)
         ))
-        record(question, ok ? .correct : .wrong)
+        record(question, ok ? .correct : .wrong, error: error)
     }
 
     /// A timeout counts as a miss and is recorded, so the results screen lists it
