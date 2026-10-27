@@ -11,3 +11,6 @@ DerivedData/
 # Signing keys must never be committed
 *.key
 __pycache__/
+
+# Speech check (#143): personal voice recordings stay local
+scripts/speech-check/recordings/

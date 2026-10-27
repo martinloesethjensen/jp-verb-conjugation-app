@@ -7,7 +7,7 @@ PUSH   ?=
 
 .DEFAULT_GOAL := help
 .PHONY: help install-deps data data-check sign verify sign-commit keygen \
-        test test-py test-swift project check-project check audio-dry clean
+        test test-py test-swift project check-project check audio-dry speech-baseline clean
 
 help: ## List the commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[1m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -57,6 +57,10 @@ project: ## Generate the Xcode project (needs xcodegen)
 
 audio-dry: ## List the audio clips that would be generated (no API calls)
 	$(PYTHON) scripts/generate_audio.py --dry-run
+
+speech-baseline: ## Speech check (#143): Kyoko TTS of the 41 sentences through Apple's ja-JP transcribers
+	$(PYTHON) scripts/speech-check/speech_check.py tts --voice Kyoko
+	$(PYTHON) scripts/speech-check/speech_check.py run scripts/speech-check/.build/audio/tts-kyoko --kind tts
 
 clean: ## Remove Python caches
 	find scripts -name __pycache__ -type d -prune -exec rm -rf {} +
