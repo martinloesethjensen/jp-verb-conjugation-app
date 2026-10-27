@@ -577,6 +577,7 @@
           "id": "nwwk6r",
           "heading": "べき needs the dictionary form",
           "explanation": "The ます form and the past form do not come before べき. To say \"should have\", move the tense onto だ: 行くべきだった, not 行ったべき.",
+          "wrong": "行ったべき",
           "examples": [
             { "id": "qcbsrv", "jp": "もっと勉強するべきだった。", "en": "I should have studied more." }
           ]
@@ -948,6 +949,7 @@
           "id": "5wc9eq",
           "heading": "てある needs a verb that takes an object",
           "explanation": "てある cannot follow a verb such as 開く or 始まる, because nobody does that to something. 窓が開けてある is right, and 窓が開いてある is not. To describe the state without a person behind it, use ている.",
+          "wrong": "窓が開いてある",
           "examples": [
             { "id": "bymh47", "jp": "窓が開けてあります。", "en": "The window has been opened. (by someone)" }
           ]
@@ -1163,6 +1165,7 @@
           "id": "mvihbb",
           "heading": "Written in hiragana",
           "explanation": "In this use, write みる in hiragana: 食べてみる, and not 食べて見る. 見る on its own means \"to see\", and the hiragana みる marks the helper.",
+          "wrong": "食べて見る",
           "examples": [
             { "id": "v6gi86", "jp": "もう一度、やってみます。", "en": "I'll try it once more." }
           ]
@@ -1264,6 +1267,7 @@
           "id": "st7e9u",
           "heading": "いい and ない before すぎる",
           "explanation": "With すぎる, いい becomes よすぎる and ない becomes なさすぎる, and neither is attached as it is.",
+          "wrong": "味がないすぎる",
           "examples": [
             { "id": "5mhcut", "jp": "このスープは味がなさすぎる。", "en": "This soup has far too little flavour." },
             { "id": "4e3yum", "jp": "この条件はよすぎる。", "en": "These terms are too good. (too good to be true)" }
@@ -1282,6 +1286,7 @@
           "id": "yit6pe",
           "heading": "やすい is not 安い",
           "explanation": "The word for \"cheap\", 安い, sounds the same as やすい. After a verb stem it is the helper, which you write in hiragana: 書きやすい (easy to write), and not 書き安い.",
+          "wrong": "書き安い",
           "examples": [
             { "id": "3pnmfa", "jp": "この辞書は使いやすくて、安い。", "en": "This dictionary is easy to use, and cheap." }
           ]
@@ -1365,6 +1370,7 @@
           "id": "dh2n29",
           "heading": "No ので at the end: use からです",
           "explanation": "To give the reason as a sentence of its own, after the result or in answer to どうして, use から + です: 〜からです. ので cannot do this, so 〜のでです is wrong. A sentence may trail off with ので, leaving the result unsaid, but it cannot end in のでです.",
+          "wrong": "電車が止まったのでです",
           "examples": [
             { "id": "7mu2j2", "jp": "どうして遅れたんですか。電車が止まったからです。", "en": "Why were you late? Because the train stopped." },
             { "id": "vdiynw", "jp": "すみません、ちょっと用事があるので。", "en": "Sorry, I have something to do, so… (declining)" }
@@ -1769,6 +1775,7 @@
           "id": "27eqqw",
           "heading": "Adjectives and nouns need なくて",
           "explanation": "ないで is only for verbs. With adjectives and nouns, use なくて: 高くなくて, 静かじゃなくて, 学生じゃなくて.",
+          "wrong": "高くないで",
           "examples": [
             { "id": "9u39vi", "jp": "この部屋は静かじゃなくて、よく眠れません。", "en": "This room isn't quiet, so I can't sleep well." }
           ]

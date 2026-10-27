@@ -2,8 +2,8 @@
   "version": "1.17.0",
   "sha256": "5234d281d006042de03934a12b04c8a2005f8e39199eaffacbf369ca85eb55d4",
   "grammar": {
-    "version": "1.13.0",
-    "sha256": "0676887f17c64133a46cba9b8c65e4bb0f4b1693220f1fc8608c20b367d7232a"
+    "version": "1.14.0",
+    "sha256": "d21ab21433892af6eb1dad8df74fa1f93ed0aa2c2285a6ea58bcaa5c25f2eae5"
   },
   "furigana": {
     "version": "1.20.0",
@@ -14,8 +14,8 @@
     "sha256": "a75e7b8b6d0812f08cf31b2c3fbffd170968254bfc1e0e3ea30f7d0eedf758f1"
   },
   "counters": {
-    "version": "1.13.0",
-    "sha256": "37ea49041b7298d92638c4d76a56de825dfb2ca4bd7fc16eaadbafe26534c663"
+    "version": "1.14.0",
+    "sha256": "5ddfcf6023eaf68d35604d57658bf6be1d91351e8ce5723dc7499c70797e66e0"
   },
   "forms": {
     "version": "1.0.0",
