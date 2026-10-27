@@ -49,6 +49,7 @@ entries to that release tag; see docs/security/data-signing.md for the release s
 Standard library only.
 """
 import argparse
+import datetime
 import hashlib
 import json
 import re
@@ -1545,6 +1546,55 @@ def validate_grammar(doc):
     return errors
 
 
+# Review stamps: an entry (a counter, a grammar point) may carry {"by", "on", "sha256"}. The hash covers the
+# entry's own content without the stamp and without generated fields, so regenerating keeps a stamp valid and
+# any edit to the text makes it stale.
+REVIEWERS = ("owner", "teacher")
+COUNTER_GENERATED = ("readings", "changed", "distractors")
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def review_hash(entry, generated=()):
+    """SHA-256 of an entry's canonical JSON without `review` and the `generated` fields."""
+    content = {key: value for key, value in entry.items() if key != "review" and key not in generated}
+    text = json.dumps(content, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def valid_iso_date(text):
+    if not isinstance(text, str) or not ISO_DATE.match(text):
+        return False
+    try:
+        datetime.date.fromisoformat(text)
+    except ValueError:
+        return False
+    return True
+
+
+def check_reviews(entries, generated=()):
+    """Problems with the `review` stamps in `entries`: a bad shape, or a stamp whose hash no longer matches."""
+    problems = []
+    for entry in entries:
+        if "review" not in entry:
+            continue
+        name, stamp = entry.get("id", "<no id>"), entry["review"]
+        if not isinstance(stamp, dict):
+            problems.append(f"{name}: review must be an object with by, on and sha256")
+            continue
+        if stamp.get("by") not in REVIEWERS:
+            problems.append(f"{name}: review.by must be one of {list(REVIEWERS)}")
+        if not valid_iso_date(stamp.get("on")):
+            problems.append(f"{name}: review.on must be a date like 2026-10-24")
+        if not isinstance(stamp.get("sha256"), str):
+            problems.append(f"{name}: review.sha256 is missing")
+        elif stamp["sha256"] != review_hash(entry, generated) and stamp.get("by") in REVIEWERS \
+                and valid_iso_date(stamp.get("on")):
+            problems.append(
+                f"{name} was edited after review on {stamp['on']}: re-review it, "
+                f"or run scripts/mark_reviewed.py again")
+    return problems
+
+
 def sha256_hex(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -1745,7 +1795,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
 
     grammar_bytes = grammar_path.read_bytes()
     grammar_doc = json.loads(grammar_bytes)
-    problems = validate_grammar(grammar_doc)
+    problems = validate_grammar(grammar_doc) + check_reviews(grammar_doc["grammar"])
     if problems:
         return 1, ["grammar.json is invalid:"] + [f"  - {p}" for p in problems]
 
@@ -1798,7 +1848,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     counters_doc = json.loads(counters_path.read_text(encoding="utf-8")) if counters_path.exists() else None
     counters_bytes = None
     if counters_doc is not None:
-        problems = check_counters(counters_doc, readings)
+        problems = check_counters(counters_doc, readings) + check_reviews(counters_doc["counters"], COUNTER_GENERATED)
         if problems:
             return 1, capped("counters.json is invalid:", problems)
         apply_counter_readings(counters_doc)

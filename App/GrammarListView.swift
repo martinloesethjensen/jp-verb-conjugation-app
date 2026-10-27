@@ -158,6 +158,9 @@ struct GrammarListView: View {
             if !filtered.isEmpty && hiddenMatchCount > 0 {
                 HiddenMatchesRow(count: hiddenMatchCount)
             }
+            if search.isEmpty && verbStore.hasGrammar {
+                ReviewSummaryLine(noun: "lessons", summary: ReviewSummary(verbStore.grammarPoints.visible(in: currentLevels)))
+            }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             if verbStore.hasGrammar {

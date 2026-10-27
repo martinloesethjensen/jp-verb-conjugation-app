@@ -89,6 +89,10 @@ struct CounterDetailView: View {
                     .font(.headline)
                     .foregroundStyle(.secondary)
             }
+            ReviewStatusPill(
+                item: "Counter: \(counter.counter) (\(counter.id))", review: counter.review,
+                checked: ["The readings and which numbers change sound", "That every counted word in an example reads as this counter says"],
+                unchecked: ["The example sentences", "The things it counts", "The pitfalls", "The 何 questions"])
             if !sections.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {

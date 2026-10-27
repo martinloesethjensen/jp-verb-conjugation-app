@@ -191,13 +191,15 @@ public struct Counter: Codable, Hashable, Identifiable, Sendable {
     public var extent: Int
     /// Round numbers beyond `extent` with readings: 100, and 円's 200 to 10000.
     public var extra: [Int]
+    /// Set when someone has reviewed this counter; nil means not yet reviewed.
+    public var review: ReviewStamp?
 
     public init(
         id: String, counter: String, reading: String, meaning: String, jlpt: JLPTLevel? = nil,
         sound: String, symbol: String, readings: [String: [String]], changed: [String] = [],
         distractors: [String: [String]] = [:], countsObjects: Bool = true, things: [CountedThing] = [],
         examples: [CounterExample] = [], pitfalls: [CounterPitfall] = [], related: [String] = [],
-        askings: [CounterAsking] = [], extent: Int = 10, extra: [Int] = []
+        askings: [CounterAsking] = [], extent: Int = 10, extra: [Int] = [], review: ReviewStamp? = nil
     ) {
         self.id = id
         self.counter = counter
@@ -217,12 +219,13 @@ public struct Counter: Codable, Hashable, Identifiable, Sendable {
         self.askings = askings
         self.extent = extent
         self.extra = extra
+        self.review = review
     }
 
     // `overrides` is authoring input and is not decoded.
     enum CodingKeys: String, CodingKey {
         case id, counter, reading, meaning, jlpt, sound, symbol, readings, changed, distractors, countsObjects
-        case things, examples, pitfalls, related, extent, extra
+        case things, examples, pitfalls, related, extent, extra, review
         case askings = "questions"
     }
 
@@ -246,6 +249,7 @@ public struct Counter: Codable, Hashable, Identifiable, Sendable {
         askings = try c.decodeIfPresent([CounterAsking].self, forKey: .askings) ?? []
         extent = try c.decodeIfPresent(Int.self, forKey: .extent) ?? 10
         extra = try c.decodeIfPresent([Int].self, forKey: .extra) ?? []
+        review = try c.decodeIfPresent(ReviewStamp.self, forKey: .review)
     }
 
     /// Preferred first. Empty only for malformed data.
