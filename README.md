@@ -23,7 +23,7 @@ Run `make` to list them. Needs Python 3; `make test-swift` and `make project` ne
 | Command | What it does |
 |---|---|
 | `make install-deps` | Install the Python dependencies (`cryptography`, for signing) |
-| `make data` | Regenerate the generated forms, `data/forms.json` (and the app's bundled copy) and `data/manifest.json` after editing `data/*.json` or `scripts/form_catalogue.py` |
+| `make data` | Regenerate the generated forms, `data/forms.json`, the generated counter readings, the app's bundled copies of `forms.json` and `counters.json` (its offline fallback) and `data/manifest.json` after editing `data/*.json` or `scripts/form_catalogue.py` |
 | `make data-check` | Verify the data is generated, valid and up to date, without writing |
 | `make sign` | Sign `data/manifest.json` with your private key |
 | `make verify` | Check `data/manifest.sig` against the key the app trusts |

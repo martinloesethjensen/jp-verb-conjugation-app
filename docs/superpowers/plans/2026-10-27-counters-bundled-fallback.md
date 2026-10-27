@@ -84,3 +84,23 @@
 - [ ] **Step 3: Verify in the simulator:** delete the app, reinstall, open Counters straight away: the list is there before any sync could have finished.
 - [ ] **Step 4: README:** a line in the data section saying counters ship with a bundled copy that `make data` keeps current.
 - [ ] **Step 5: Commit** `"Counters: use the bundled copy in the app"`.
+
+---
+
+## As built
+
+Built as planned: the pipeline writes `counters.json` and `counters.manifest.json` into the VerbKit resources
+(`make data` keeps them current, `make data-check` fails on drift), `BundledCounters.load()` reads them and
+rejects a copy that does not match its manifest, `CountersStore` starts on the bundle and uses a cached copy
+only when its recorded version is not older, and `CountersSyncService` downloads nothing for a remote equal to
+the bundle and ignores one older than it. 1035 Swift tests and the Python suite pass.
+
+**What it does not do.** A first launch with no network still stops at "Can't Reach the Server": the app
+waits for the verb data, which has no bundled copy, before it shows any tab. I checked this with a throwaway
+build pointed at an unreachable host. So the Counters fallback helps the cases after the verbs are
+downloaded: counters not yet fetched (installed before counters were published, or the counters sync failed),
+a cache older than a newer app build, and any future screen that opens before the sync finishes. A real
+offline first launch would also need verbs, grammar, furigana and words bundled (about 400 KB more).
+
+Not checked on screen: the bundled counters showing while the counters sync fails with the verbs cached; that
+state is covered by the store tests only.

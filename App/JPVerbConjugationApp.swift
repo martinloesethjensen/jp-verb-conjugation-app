@@ -48,10 +48,14 @@ struct JPVerbConjugationApp: App {
             persisting: SwiftDataWordsPersisting(modelContext: context),
             syncStatus: status
         )
+        // The counters shipped in the app: shown on a first launch with no network, and never replaced
+        // by a synced copy that is older.
+        let bundledCounters = BundledCounters.load()
         let counters = CountersStore(
-            syncService: CountersSyncService(fetcher: fetcher, syncState: syncState),
+            syncService: CountersSyncService(fetcher: fetcher, syncState: syncState, bundled: bundledCounters?.manifest),
             persisting: SwiftDataCountersPersisting(modelContext: context),
-            syncStatus: status
+            syncStatus: status,
+            bundled: bundledCounters
         )
         // The form catalogue the quiz reads: bundled, or the cached synced one when newer.
         // Loaded here, before any screen can read it; synced at launch with the enhancements.
