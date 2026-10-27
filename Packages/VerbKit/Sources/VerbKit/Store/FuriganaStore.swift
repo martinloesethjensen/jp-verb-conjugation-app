@@ -13,18 +13,37 @@ public final class FuriganaStore {
     private let syncService: FuriganaSyncService
     private let persisting: FuriganaPersisting
     private let syncStatus: DataSyncStatus?
+    private let bundled: BundledData<FuriganaDataFile>?
 
-    public init(syncService: FuriganaSyncService, persisting: FuriganaPersisting, syncStatus: DataSyncStatus? = nil) {
+    public init(
+        syncService: FuriganaSyncService, persisting: FuriganaPersisting, syncStatus: DataSyncStatus? = nil,
+        bundled: BundledData<FuriganaDataFile>? = nil
+    ) {
         self.syncService = syncService
         self.persisting = persisting
         self.syncStatus = syncStatus
+        self.bundled = bundled
     }
 
     public func start() async {
+        installBundled()
         if let cached = try? persisting.loadFuriganaDictionary() {
             dictionary = cached
         }
         await sync()
+    }
+
+    /// Installs the bundled copy as if it had been synced, when it is newer than anything this device has
+    /// accepted. Persist first and record only after the save succeeded; a failure leaves the cache as it was.
+    private func installBundled() {
+        guard let bundled, DataVersion.isNewer(bundled.version, than: syncService.acceptedVersion()) else { return }
+        do {
+            try persisting.replaceFuriganaDictionary(with: FuriganaDictionary(file: bundled.value))
+        } catch {
+            return
+        }
+        syncService.confirmSynced(FuriganaManifest(version: bundled.version, sha256: bundled.sha256))
+        syncStatus?.recordUpToDate(.furigana)
     }
 
     /// Settings' Refresh data.

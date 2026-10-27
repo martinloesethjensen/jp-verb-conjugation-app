@@ -49,6 +49,11 @@ public struct WordsSyncService: Sendable {
         syncState.saveHighestAcceptedVersion(manifest.version, for: "words")
     }
 
+    /// The highest version this device has accepted, which a bundled copy must beat to be installed.
+    public func acceptedVersion() -> String? {
+        syncState.highestAcceptedVersion(for: "words")
+    }
+
     /// Refuse a replayed manifest older than the highest version this device accepted.
     private func rejectRollback(of version: String) throws {
         if let highest = syncState.highestAcceptedVersion(for: "words"),

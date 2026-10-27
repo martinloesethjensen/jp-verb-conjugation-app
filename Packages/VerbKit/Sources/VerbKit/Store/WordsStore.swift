@@ -11,18 +11,37 @@ public final class WordsStore {
     private let syncService: WordsSyncService
     private let persisting: WordsPersisting
     private let syncStatus: DataSyncStatus?
+    private let bundled: BundledData<WordsDataFile>?
 
-    public init(syncService: WordsSyncService, persisting: WordsPersisting, syncStatus: DataSyncStatus? = nil) {
+    public init(
+        syncService: WordsSyncService, persisting: WordsPersisting, syncStatus: DataSyncStatus? = nil,
+        bundled: BundledData<WordsDataFile>? = nil
+    ) {
         self.syncService = syncService
         self.persisting = persisting
         self.syncStatus = syncStatus
+        self.bundled = bundled
     }
 
     public func start() async {
+        installBundled()
         if let cached = try? persisting.loadWords() {
             words = cached
         }
         await sync()
+    }
+
+    /// Installs the bundled copy as if it had been synced, when it is newer than anything this device has
+    /// accepted. Persist first and record only after the save succeeded; a failure leaves the cache as it was.
+    private func installBundled() {
+        guard let bundled, DataVersion.isNewer(bundled.version, than: syncService.acceptedVersion()) else { return }
+        do {
+            try persisting.replaceWords(with: bundled.value.words)
+        } catch {
+            return
+        }
+        syncService.confirmSynced(WordsManifest(version: bundled.version, sha256: bundled.sha256))
+        syncStatus?.recordUpToDate(.words)
     }
 
     /// Settings' Refresh data.
