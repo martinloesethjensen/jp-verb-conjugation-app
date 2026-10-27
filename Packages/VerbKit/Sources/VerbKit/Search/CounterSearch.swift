@@ -35,6 +35,8 @@ private let maxFormRows = 20
 private let noisyFormPrefixes = [
     "いち", "に", "さん", "よん", "し", "ご", "ろく", "なな", "しち", "はち", "きゅう", "く", "じゅう", "なん",
     "いっ", "ろっ", "はっ", "じゅっ", "じっ",
+    "にじゅう", "さんじゅう", "よんじゅう", "ごじゅう", "ろくじゅう", "ななじゅう", "はちじゅう", "きゅうじゅう",
+    "ひゃく", "ひゃっ",
 ]
 
 /// Searches everything in the Counters tab: groups, counters, counted forms and things.
@@ -80,7 +82,7 @@ private func formMatches(in counters: [Counter], written: String, kana: String?)
     }
     var matches: [CounterFormMatch] = []
     for counter in counters {
-        for number in CounterNumber.allCases {
+        for number in CounterNumber.allCases + counter.extendedNumbers {
             let readings = counter.readings(for: number)
             if counter.written(number) == written {
                 matches.append(CounterFormMatch(counter: counter, number: number, reading: readings.first ?? ""))
@@ -137,13 +139,13 @@ private func hiragana(_ text: String) -> String {
     text.applyingTransform(.hiraganaToKatakana, reverse: true) ?? text
 }
 
-/// "3本" -> "三本", "10本" -> "十本", "何本" unchanged. Full-width digits too. Only 1-10.
+/// "3本" -> "三本", "15分" -> "十五分", "3000円" -> "三千円", "何本" unchanged. Full-width digits too. 1 to 10000.
 func kanjiNumerals(in query: String) -> String {
     let ascii = query.applyingTransform(.fullwidthToHalfwidth, reverse: false) ?? query
     var result = ""
     var digits = ""
     func flush() {
-        if let value = Int(digits), (1...10).contains(value), digits.first != "0" {
+        if let value = Int(digits), (1...10_000).contains(value), digits.first != "0" {
             result += CounterNumber.n(value).kanji
         } else {
             result += digits

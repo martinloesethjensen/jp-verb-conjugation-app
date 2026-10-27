@@ -14,7 +14,8 @@ public enum CounterFit: String, Codable, Hashable, Sendable {
     }
 }
 
-/// 1…10 or 何. `key` is the key used in counters.json.
+/// 1…10 or 何. Numbers above 10 exist too (`isExtended`), but only as many as a counter's data holds;
+/// `allCases` stays the core eleven.
 public enum CounterNumber: Hashable, Sendable, CaseIterable, Identifiable {
     case n(Int)
     case what
@@ -32,18 +33,43 @@ public enum CounterNumber: Hashable, Sendable, CaseIterable, Identifiable {
 
     public var id: String { key }
 
-    /// The number as written before a counter: 三, 何. Kanji numerals, as in the examples.
+    /// The number as written before a counter: 三, 十五, 百, 一万, 何. Kanji numerals, as in the examples.
     public var kanji: String {
         switch self {
-        case .n(let value): Self.numerals[value - 1]
+        case .n(let value): Self.kanji(for: value)
         case .what: "何"
         }
     }
 
-    /// The number for a counters.json key ("3", "what"), or nil for anything else.
+    /// True above 10: the numbers stage 2 added, which are shown as unreviewed.
+    public var isExtended: Bool {
+        if case .n(let value) = self { value > 10 } else { false }
+    }
+
+    /// 1 to 10000 in kanji; digits for anything else. A leading 一 is dropped before 十, 百 and 千
+    /// (十五, 百, 千) but kept before 万 (一万).
+    private static func kanji(for value: Int) -> String {
+        guard (1...10_000).contains(value) else { return String(value) }
+        if value == 10_000 { return "一万" }
+        var result = ""
+        var rest = value
+        for (unit, symbol) in [(1000, "千"), (100, "百"), (10, "十")] where rest >= unit {
+            let count = rest / unit
+            rest %= unit
+            result += (count == 1 ? "" : numerals[count - 1]) + symbol
+        }
+        return rest > 0 ? result + numerals[rest - 1] : result
+    }
+
+    /// The number for a counters.json key ("3", "15", "10000", "what"), or nil for anything else.
     public init?(key: String) {
-        guard let number = Self.allCases.first(where: { $0.key == key }) else { return nil }
-        self = number
+        if key == "what" {
+            self = .what
+        } else if let value = Int(key), (1...10_000).contains(value), String(value) == key {
+            self = .n(value)
+        } else {
+            return nil
+        }
     }
 }
 
@@ -161,13 +187,17 @@ public struct Counter: Codable, Hashable, Identifiable, Sendable {
     public var related: [String]
     /// 何 questions for the counter quiz (`questions` in counters.json); empty for a counter without any.
     public var askings: [CounterAsking]
+    /// The largest number with readings from 11 up (10 when the counter has none).
+    public var extent: Int
+    /// Round numbers beyond `extent` with readings: 100, and 円's 200 to 10000.
+    public var extra: [Int]
 
     public init(
         id: String, counter: String, reading: String, meaning: String, jlpt: JLPTLevel? = nil,
         sound: String, symbol: String, readings: [String: [String]], changed: [String] = [],
         distractors: [String: [String]] = [:], countsObjects: Bool = true, things: [CountedThing] = [],
         examples: [CounterExample] = [], pitfalls: [CounterPitfall] = [], related: [String] = [],
-        askings: [CounterAsking] = []
+        askings: [CounterAsking] = [], extent: Int = 10, extra: [Int] = []
     ) {
         self.id = id
         self.counter = counter
@@ -185,12 +215,14 @@ public struct Counter: Codable, Hashable, Identifiable, Sendable {
         self.pitfalls = pitfalls
         self.related = related
         self.askings = askings
+        self.extent = extent
+        self.extra = extra
     }
 
     // `overrides` is authoring input and is not decoded.
     enum CodingKeys: String, CodingKey {
         case id, counter, reading, meaning, jlpt, sound, symbol, readings, changed, distractors, countsObjects
-        case things, examples, pitfalls, related
+        case things, examples, pitfalls, related, extent, extra
         case askings = "questions"
     }
 
@@ -212,6 +244,8 @@ public struct Counter: Codable, Hashable, Identifiable, Sendable {
         pitfalls = try c.decodeIfPresent([CounterPitfall].self, forKey: .pitfalls) ?? []
         related = try c.decodeIfPresent([String].self, forKey: .related) ?? []
         askings = try c.decodeIfPresent([CounterAsking].self, forKey: .askings) ?? []
+        extent = try c.decodeIfPresent(Int.self, forKey: .extent) ?? 10
+        extra = try c.decodeIfPresent([Int].self, forKey: .extra) ?? []
     }
 
     /// Preferred first. Empty only for malformed data.
@@ -226,6 +260,33 @@ public struct Counter: Codable, Hashable, Identifiable, Sendable {
     /// Wrong readings for quiz choices; empty when there are none for `number`.
     public func distractors(for number: CounterNumber) -> [String] {
         distractors[number.key] ?? []
+    }
+
+    /// The numbers above 10 this counter has readings for, ascending: 11 to `extent`, then `extra`.
+    public var extendedNumbers: [CounterNumber] {
+        (Array(11...max(11, extent)) + extra)
+            .filter { value in !readings(for: .n(value)).isEmpty }
+            .map(CounterNumber.n)
+    }
+
+    /// The extended number `delta` away from `number`, for the counter page's stepper: the first
+    /// available number at or above the target going up, the last at or below it going down, clamped to
+    /// the ends. A core number counts as 10. Nil when there is nowhere to go.
+    public func step(_ number: CounterNumber, by delta: Int) -> CounterNumber? {
+        let current: Int
+        if case .n(let value) = number { current = max(value, 10) } else { current = 10 }
+        let values = extendedNumbers.compactMap { number -> Int? in
+            if case .n(let value) = number { value } else { nil }
+        }
+        let target = current + delta
+        let found: Int?
+        if delta > 0 {
+            found = values.first { $0 >= target } ?? values.last.flatMap { $0 > current ? $0 : nil }
+        } else {
+            found = values.last { $0 <= target } ?? values.first.flatMap { $0 < current ? $0 : nil }
+        }
+        guard let found, found != current else { return nil }
+        return .n(found)
     }
 
     /// 三本, 何本.

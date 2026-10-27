@@ -2,7 +2,7 @@ import SwiftUI
 import VerbKit
 
 /// A counter's page: the counter and what it is, the pitfall in one line, the reading for the selected
-/// number with a 1 to 10 strip to change it, then Examples, Things and Related behind a control, and
+/// number with a 1 to 10 strip and a stepper for numbers above 10 to change it, then Examples, Things and Related behind a control, and
 /// Practise. `focus` selects a number (a Forms search result lands on it).
 struct CounterDetailView: View {
     let counter: Counter
@@ -50,6 +50,7 @@ struct CounterDetailView: View {
                 if !counter.pitfalls.isEmpty { pitfalls }
                 ReadingBlock(counter: counter, number: number)
                 NumberStrip(counter: counter, selection: $number)
+                NumberStepper(counter: counter, selection: $number)
                 if let shown = shownSegment { segmented(shown) }
                 if !buildCounterQuestions(for: counter, count: 1).isEmpty { practise }
             }

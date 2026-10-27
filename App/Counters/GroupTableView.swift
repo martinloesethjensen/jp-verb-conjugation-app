@@ -1,7 +1,8 @@
 import SwiftUI
 import VerbKit
 
-/// A group's lookup table: numbers 1 to 10 and 何 down the rows, the group's counters across the
+/// A group's lookup table: numbers 1 to 10 and 何 down the rows (a picker above switches to 11 to 20, the
+/// round tens and 100 and up when some counter has them), the group's counters across the
 /// columns. Up to three counters fill the width; more scroll sideways with the number column
 /// pinned, kept aligned by giving every row the same (Dynamic Type scaled) height. At accessibility
 /// text sizes even three columns scroll, so text wraps instead of truncating.
@@ -14,7 +15,9 @@ struct GroupTableView: View {
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 44
     @ScaledMetric(relativeTo: .body) private var headerHeight: CGFloat = 80
-    @ScaledMetric(relativeTo: .body) private var numberWidth: CGFloat = 30
+    @ScaledMetric(relativeTo: .body) private var narrowNumberWidth: CGFloat = 30
+    @ScaledMetric(relativeTo: .body) private var wideNumberWidth: CGFloat = 54
+    @State private var range: CounterRange = .core
     @ScaledMetric(relativeTo: .body) private var columnWidth: CGFloat = 108
 
     init(group: CounterGroup) {
@@ -44,8 +47,19 @@ struct GroupTableView: View {
         number == .what ? "何" : number.key
     }
 
+    /// The range being shown: the picked one, or the core one when the picked one has no rows here.
+    private func shown(_ ranges: [CounterRange]) -> CounterRange {
+        ranges.contains(range) ? range : .core
+    }
+
     var body: some View {
         let members = members
+        let counters = members.map(\.counter)
+        let ranges = CounterRange.available(for: counters)
+        let shown = shown(ranges)
+        let numbers = shown.numbers(for: counters)
+        // Readings above 10 are longer, so they wrap to two lines in a three-column table.
+        let height = shown.isExtended ? rowHeight * 1.7 : rowHeight
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if let summary {
@@ -53,13 +67,14 @@ struct GroupTableView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                if ranges.count > 1 { rangePicker(ranges, shown: shown) }
                 HStack(alignment: .top, spacing: 8) {
-                    numberColumn
+                    numberColumn(numbers, rowHeight: height)
                     if members.count <= 3 && !typeSize.isAccessibilitySize {
-                        counterGrid(members, fill: true)
+                        counterGrid(members, numbers: numbers, rowHeight: height, fill: true)
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
-                            counterGrid(members, fill: false)
+                            counterGrid(members, numbers: numbers, rowHeight: height, fill: false)
                         }
                     }
                 }
@@ -72,8 +87,8 @@ struct GroupTableView: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu("Speak readings", systemImage: "speaker.wave.2") {
                     ForEach(members, id: \.counter.id) { member in
-                        Button("\(member.counter.counter): 1 to 10") {
-                            speakColumn(member.counter)
+                        Button("\(member.counter.counter): \(shown.title)") {
+                            speakColumn(member.counter, numbers: numbers)
                         }
                     }
                 }
@@ -81,19 +96,31 @@ struct GroupTableView: View {
         }
     }
 
-    private var numberColumn: some View {
-        VStack(spacing: Self.rowSpacing) {
-            Color.clear.frame(width: numberWidth, height: headerHeight)
-            ForEach(CounterNumber.allCases) { number in
+    /// 1–10, 11–20, 30–90, 100+, with the "unreviewed" mark on every range above 10.
+    private func rangePicker(_ ranges: [CounterRange], shown: CounterRange) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Picker("Numbers", selection: Binding(get: { shown }, set: { range = $0 })) {
+                ForEach(ranges, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            if shown.isExtended { UnreviewedLabel() }
+        }
+    }
+
+    private func numberColumn(_ numbers: [CounterNumber], rowHeight: CGFloat) -> some View {
+        let width = numbers.contains { $0.key.count > 3 } ? wideNumberWidth : narrowNumberWidth
+        return VStack(spacing: Self.rowSpacing) {
+            Color.clear.frame(width: width, height: headerHeight)
+            ForEach(numbers) { number in
                 Text(Self.label(number))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .frame(width: numberWidth, height: rowHeight)
+                    .frame(width: width, height: rowHeight)
             }
         }
     }
 
-    private func counterGrid(_ members: [(counter: Counter, note: String?)], fill: Bool) -> some View {
+    private func counterGrid(_ members: [(counter: Counter, note: String?)], numbers: [CounterNumber], rowHeight: CGFloat, fill: Bool) -> some View {
         Grid(horizontalSpacing: 8, verticalSpacing: Self.rowSpacing) {
             GridRow {
                 ForEach(members, id: \.counter.id) { member in
@@ -102,15 +129,27 @@ struct GroupTableView: View {
                         .frame(maxWidth: fill ? .infinity : nil)
                 }
             }
-            ForEach(CounterNumber.allCases) { number in
+            ForEach(numbers) { number in
                 GridRow {
                     ForEach(members, id: \.counter.id) { member in
-                        ReadingCell(counter: member.counter, number: number)
+                        cell(member.counter, number)
                             .frame(width: fill ? nil : columnWidth, height: rowHeight)
                             .frame(maxWidth: fill ? .infinity : nil)
                     }
                 }
             }
+        }
+    }
+
+    /// A reading, or a dash for a counter that has no reading at this number (分 stops at 59).
+    @ViewBuilder private func cell(_ counter: Counter, _ number: CounterNumber) -> some View {
+        if counter.readings(for: number).isEmpty {
+            Text("—")
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityLabel("\(counter.counter) has no reading for \(number.key)")
+        } else {
+            ReadingCell(counter: counter, number: number)
         }
     }
 
@@ -164,8 +203,8 @@ struct GroupTableView: View {
         return changed.isEmpty ? "no sound changes" : changed.joined(separator: ", ")
     }
 
-    private func speakColumn(_ counter: Counter) {
-        let text = CounterNumber.allCases.compactMap { counter.readings(for: $0).first }.joined(separator: "、")
+    private func speakColumn(_ counter: Counter, numbers: [CounterNumber]) {
+        let text = numbers.compactMap { counter.readings(for: $0).first }.joined(separator: "、")
         Speaker.shared.speak(text, restart: true)
     }
 }
