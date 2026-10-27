@@ -21,27 +21,25 @@ struct WrongForm: View {
 struct CopulaSection: View {
     var body: some View {
         Section {
-            DisclosureGroup("だ / です (plain and polite)", isExpanded: .constant(true)) {
-                ForEach(Copula.rows, id: \.label) { row in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(row.label).font(.caption).foregroundStyle(.secondary)
-                        HStack(alignment: .top) {
-                            cell(row.plain, alt: row.plainAlt, speak: false)
-                            Spacer()
-                            cell(row.polite, alt: row.politeAlt, speak: true)
-                        }
-                        if let note = row.note {
-                            Text(note).font(.caption).foregroundStyle(.secondary)
-                        }
+            ForEach(Copula.rows, id: \.label) { row in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(row.label).font(.caption).foregroundStyle(.secondary)
+                    HStack(alignment: .top) {
+                        cell(row.plain, alt: row.plainAlt, speak: false)
+                        Spacer()
+                        cell(row.polite, alt: row.politeAlt, speak: true)
                     }
-                    .accessibilityElement(children: .contain)
+                    if let note = row.note {
+                        Text(note).font(.caption).foregroundStyle(.secondary)
+                    }
                 }
-                ForEach(Copula.notes, id: \.self) { note in
-                    JapaneseText(note).font(.callout).foregroundStyle(.secondary)
-                }
+                .accessibilityElement(children: .contain)
+            }
+            ForEach(Copula.notes, id: \.self) { note in
+                JapaneseText(note).font(.callout).foregroundStyle(.secondary)
             }
         } header: {
-            Text("Plain · Polite")
+            Text("だ / です (plain · polite)")
         }
     }
 
@@ -96,7 +94,9 @@ struct PoliteAdjectiveSection: View {
     }
 
     private func block(_ title: Text, rows: [PolitePair]) -> some View {
-        DisclosureGroup(isExpanded: .constant(true)) {
+        Group {
+            title.font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
             ForEach(rows, id: \.label) { row in
                 LabeledContent {
                     VStack(alignment: .trailing, spacing: 2) {
@@ -115,8 +115,6 @@ struct PoliteAdjectiveSection: View {
                     }
                 }
             }
-        } label: {
-            title
         }
     }
 }
