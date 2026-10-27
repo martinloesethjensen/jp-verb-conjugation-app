@@ -170,4 +170,51 @@ final class DataSyncStatusTests: XCTestCase {
         await status.refresh()
         XCTAssertFalse(status.isRefreshing)
     }
+
+    // MARK: bundled data
+
+    func testBundledDataShowsItsVersionWithoutADate() {
+        let status = makeStatus()
+        status.recordBundled(.verbs, version: "1.2.0")
+        let verbs = status.status(for: .verbs)
+        XCTAssertEqual(verbs.version, "1.2.0")
+        XCTAssertNil(verbs.lastUpdated)
+        XCTAssertTrue(verbs.isBundled)
+        XCTAssertEqual(status.status(for: .grammar), DataFileStatus(file: .grammar))
+    }
+
+    func testASyncClearsTheBundledMark() {
+        let status = makeStatus()
+        status.recordBundled(.words, version: "1.0.0")
+        clock += 60
+        status.recordUpdated(.words, version: "1.1.0")
+        let words = status.status(for: .words)
+        XCTAssertFalse(words.isBundled)
+        XCTAssertEqual(words.lastUpdated, clock)
+    }
+
+    func testTheServerConfirmingTheSameVersionClearsTheMarkWithoutADate() {
+        let status = makeStatus()
+        status.recordBundled(.counters, version: "1.0.0")
+        status.recordUpToDate(.counters)
+        let counters = status.status(for: .counters)
+        XCTAssertFalse(counters.isBundled)
+        XCTAssertNil(counters.lastUpdated)
+        XCTAssertEqual(counters.version, "1.0.0")
+    }
+
+    func testAFailureKeepsTheBundledMark() {
+        let status = makeStatus()
+        status.recordBundled(.verbs, version: "1.0.0")
+        status.recordFailure(.verbs, VerbSyncError.offline)
+        XCTAssertTrue(status.status(for: .verbs).isBundled)
+        XCTAssertEqual(status.status(for: .verbs).problem, .offline)
+    }
+
+    func testTheBundledMarkSurvivesARelaunch() {
+        makeStatus().recordBundled(.furigana, version: "1.0.0")
+        let relaunched = makeStatus().status(for: .furigana)
+        XCTAssertTrue(relaunched.isBundled)
+        XCTAssertEqual(relaunched.version, "1.0.0")
+    }
 }
