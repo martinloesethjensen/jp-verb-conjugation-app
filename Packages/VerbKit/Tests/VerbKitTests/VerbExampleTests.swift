@@ -49,4 +49,42 @@ final class RealVerbExamplesTests: XCTestCase {
             XCTAssertFalse(value.isEmpty, "\(verb.dict): \(example.form.rawValue)")
         }
     }
+
+    /// The sentence contains the form it is tagged with, in kana or written with the verb's
+    /// kanji, so the tag matches the sentence and the fill-in quiz can blank it.
+    func testEveryShippedExampleContainsItsForm() throws {
+        for verb in try RealVerbs.load() {
+            for example in verb.examples {
+                let value = try XCTUnwrap(verb.forms[id: example.form], "\(verb.dict): \(example.form.rawValue)")
+                let spellings = [value] + [verb.kanjiSpelling(of: value)].compactMap { $0 }
+                XCTAssertTrue(spellings.contains { example.jp.contains($0) },
+                              "\(verb.dict): \(example.jp) does not contain \(spellings) (\(example.form.rawValue))")
+            }
+        }
+    }
+}
+
+final class VerbKanjiSpellingTests: XCTestCase {
+    private func verb(_ dict: String, _ kanji: String?) throws -> Verb {
+        try XCTUnwrap(try RealVerbs.load().first { $0.dict == dict && $0.kanji == kanji })
+    }
+
+    func testWritesTheStemInKanji() throws {
+        XCTAssertEqual(try verb("たべる", "食べる").kanjiSpelling(of: "たべます"), "食べます")
+        XCTAssertEqual(try verb("いく", "行く").kanjiSpelling(of: "いって"), "行って")
+        XCTAssertEqual(try verb("わかる", "分かる").kanjiSpelling(of: "わからない"), "分からない")
+        XCTAssertEqual(try verb("できる", "出来る").kanjiSpelling(of: "できます"), "出来ます")
+    }
+
+    func testAnIrregularStemChangesItsKana() throws {
+        let kuru = try verb("くる", "来る")
+        XCTAssertEqual(kuru.kanjiSpelling(of: "きます"), "来ます")
+        XCTAssertEqual(kuru.kanjiSpelling(of: "こない"), "来ない")
+        XCTAssertEqual(kuru.kanjiSpelling(of: "くれば"), "来れば")
+    }
+
+    func testNilWithoutKanjiOrWithoutTheStem() throws {
+        XCTAssertNil(try verb("する", nil).kanjiSpelling(of: "します"))
+        XCTAssertNil(try verb("たべる", "食べる").kanjiSpelling(of: "のみます"))
+    }
 }

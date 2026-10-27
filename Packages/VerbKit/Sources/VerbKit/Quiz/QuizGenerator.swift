@@ -8,7 +8,8 @@
 /// - Fill in: an example sentence of the verb for that form, with the form blanked.
 ///   The choices are conjugated strings; distractors are the same verb's other
 ///   forms in the topics. Only used for entries with an example whose sentence
-///   contains the form string exactly, so other kinds are used otherwise.
+///   contains the form string exactly, in kana or written with the verb's kanji
+///   (`Verb.kanjiSpelling(of:)`), so other kinds are used otherwise.
 /// - Identify: the choices are form labels. Distractors are labels of the same
 ///   verb's other forms in the topics.
 ///
@@ -93,11 +94,15 @@ private func makeQuestion(
 
     let sameVerb = QuizForm.available(in: entry.verb.forms, topics: topics)
         .filter { $0.form != entry.form }
-    // A fill-in question needs an example sentence that contains the form string, and a
-    // form sharing its string with another of the verb's forms would have two right labels.
-    let example = entry.verb.examples.first {
-        $0.form.rawValue == entry.form.id && $0.jp.contains(entry.value)
-    }
+    // A fill-in question needs an example sentence that contains the form, in kana or written
+    // with the verb's kanji (食べます), and a form sharing its string with another of the
+    // verb's forms would have two right labels.
+    let spellings = [entry.value] + [entry.verb.kanjiSpelling(of: entry.value)].compactMap { $0 }
+    let fillIn: (example: VerbExample, written: String)? = entry.verb.examples.lazy
+        .filter { $0.form.rawValue == entry.form.id }
+        .compactMap { example in spellings.first { example.jp.contains($0) }.map { (example, $0) } }
+        .first
+    let example = fillIn?.example
     let usable = kinds.filter { kind in
         switch kind {
         case .fillIn: return example != nil
@@ -162,7 +167,7 @@ private func makeQuestion(
         verb: entry.verb, form: entry.form, kind: kind, formString: entry.value,
         correct: correct, choices: ([correct] + tagged.map(\.choice)).shuffled(),
         errors: errors,
-        sentence: kind == .fillIn ? example.map { blanked($0.jp, replacing: entry.value) } : nil,
+        sentence: kind == .fillIn ? fillIn.map { blanked($0.example.jp, replacing: $0.written) } : nil,
         translation: kind == .fillIn ? example?.en : nil
     )
 }
