@@ -9,7 +9,7 @@
 ///   The choices are conjugated strings; distractors are the same verb's other
 ///   forms in the topics. Only used for entries with an example whose sentence
 ///   contains the form string exactly, in kana or written with the verb's kanji
-///   (`Verb.kanjiSpelling(of:)`), so other kinds are used otherwise.
+///   (`KanjiSpelling`), so other kinds are used otherwise.
 /// - Identify: the choices are form labels. Distractors are labels of the same
 ///   verb's other forms in the topics.
 ///
@@ -97,7 +97,7 @@ private func makeQuestion(
     // A fill-in question needs an example sentence that contains the form, in kana or written
     // with the verb's kanji (食べます), and a form sharing its string with another of the
     // verb's forms would have two right labels.
-    let spellings = [entry.value] + [entry.verb.kanjiSpelling(of: entry.value)].compactMap { $0 }
+    let spellings = [entry.value] + [KanjiSpelling(entry.verb)?.spell(entry.value)].compactMap { $0 }
     let fillIn: (example: VerbExample, written: String)? = entry.verb.examples.lazy
         .filter { $0.form.rawValue == entry.form.id }
         .compactMap { example in spellings.first { example.jp.contains($0) }.map { (example, $0) } }

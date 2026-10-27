@@ -245,6 +245,16 @@ final class QuizGeneratorTests: XCTestCase {
         XCTAssertEqual(questions.first?.correct, "たべます")
     }
 
+    /// 来る's stem changes reading (きます), and the kanji spelling still matches.
+    func testFillInBlanksAKanjiFormOfKuru() throws {
+        var kuru = try XCTUnwrap(try verbs().first { $0.dict == "くる" })
+        kuru.examples = [VerbExample(form: .masuPos, jp: "バスがもうすぐ来ます。", en: "The bus is coming soon.")]
+        let questions = buildQuestions(verbs: [kuru], topics: all, count: 100, kinds: [.fillIn])
+        XCTAssertEqual(questions.count, 1)
+        XCTAssertEqual(questions.first?.sentence, "バスがもうすぐ\(QuizQuestion.blank)。")
+        XCTAssertEqual(questions.first?.correct, "きます")
+    }
+
     func testFillInIsSkippedWithoutAMatchingExample() throws {
         var taberu = try XCTUnwrap(try verbs().first { $0.dict == "たべる" })
         taberu.examples = []
