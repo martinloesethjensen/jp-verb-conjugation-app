@@ -35,6 +35,8 @@ public struct QuizQuestion: Equatable, Sendable {
     /// The right choice: the string for `.conjugate`, the label for `.identify`.
     public var correct: String
     public var choices: [String]
+    /// The mistake each wrong choice represents. Every wrong choice a generator makes is here.
+    public var errors: [String: QuizErrorTag]
     /// For `.fillIn`: the example sentence with the form replaced by `blank`.
     public var sentence: String?
     /// For `.fillIn`: the English translation of the sentence.
@@ -46,8 +48,10 @@ public struct QuizQuestion: Equatable, Sendable {
     public init(
         verb: Verb, form: QuizForm, kind: QuizQuestionKind,
         formString: String, correct: String, choices: [String],
+        errors: [String: QuizErrorTag] = [:],
         sentence: String? = nil, translation: String? = nil
     ) {
+        self.errors = errors
         self.sentence = sentence
         self.translation = translation
         self.verb = verb
