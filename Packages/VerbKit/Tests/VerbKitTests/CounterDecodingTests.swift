@@ -45,6 +45,16 @@ final class CounterDecodingTests: XCTestCase {
         XCTAssertEqual(examples.map(\.readings), [["一日": "ついたち"], [:]])
     }
 
+    func testCounterPitfallWrongFormIsOptional() throws {
+        let json = """
+        {"id": "x", "counter": "本", "reading": "ほん", "meaning": "m", "sound": "h-b", "symbol": "pencil",
+         "readings": {"3": ["さんぼん"]},
+         "pitfalls": [{"heading": "a", "explanation": "e", "wrong": "さんほん"},
+                      {"heading": "b", "explanation": "e"}]}
+        """
+        XCTAssertEqual(try decode(json).pitfalls.map(\.wrong), ["さんほん", nil])
+    }
+
     func testDistractorsDecodeWhenPresentAndDefaultToNone() throws {
         let with = """
         {"id": "hon", "counter": "本", "reading": "ほん", "meaning": "m", "sound": "h-b", "symbol": "pencil",
