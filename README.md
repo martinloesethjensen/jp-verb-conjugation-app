@@ -23,7 +23,7 @@ Run `make` to list them. Needs Python 3; `make test-swift` and `make project` ne
 | Command | What it does |
 |---|---|
 | `make install-deps` | Install the Python dependencies (`cryptography`, for signing) |
-| `make data` | Regenerate the generated forms, `data/forms.json`, the generated counter readings, the app's bundled copies of `forms.json` and `counters.json` (its offline fallback) and `data/manifest.json` after editing `data/*.json` or `scripts/form_catalogue.py` |
+| `make data` | Regenerate the generated forms, `data/forms.json`, the generated counter readings, the app's bundled copies of all six data files (so a first launch works offline) and `data/manifest.json` after editing `data/*.json` or `scripts/form_catalogue.py` |
 | `make data-check` | Verify the data is generated, valid and up to date, without writing |
 | `make sign` | Sign `data/manifest.json` with your private key |
 | `make verify` | Check `data/manifest.sig` against the key the app trusts |
@@ -48,6 +48,11 @@ with a signature. The CI `data` check fails until that is done.
 1. Edit `data/verbs.json`, `data/grammar.json`, `data/furigana.json` or `data/words.json`.
 2. `make data` regenerates the derived forms and the manifest. Commit the result.
 3. On a machine that has the private key, run `make sign-commit` (or `scripts/sign_and_commit.sh`).
+
+Each data file also ships inside the app (`Packages/VerbKit/Sources/VerbKit/Resources/`, written by `make data`,
+checked by `make data-check`). On launch a store installs its bundled copy into the persisted data when it is
+newer than anything the device has accepted, so a first launch with no network still has every file; a sync
+replaces it as usual, and Settings > Data shows "Bundled" until then.
 
 `scripts/sign_and_commit.sh` does the signing step safely:
 

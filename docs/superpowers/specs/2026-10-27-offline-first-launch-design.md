@@ -154,3 +154,35 @@ onto the same install rule. The owner approved all of the recommendations below.
    symlinks to `data/`. Copies are robust in SwiftPM and Xcode but add about 400 KB of duplicated JSON to the
    repo and to each data diff.
 3. **Rework the counters change** onto the install rule (my recommendation), so all six files behave alike.
+
+## As built
+
+Built as designed, in seven tasks on `offline-first-launch`. `update_data.py` writes all six bundled copies and
+sidecars (`make data-check` fails on drift); `BundledData<Value>.load(named:)` reads one and rejects a copy
+that does not match its sidecar hash; `VerbStore` (verbs and grammar), `FuriganaStore`, `WordsStore` and
+`CountersStore` take the bundle as an optional parameter and install it in `start()` before their cached load
+when `DataVersion.isNewer(bundled, than: floor)`: persist, then `confirmSynced`, then `recordBundled`. The old
+in-memory counters logic (`BundledCounters`, `cacheIsUsable`, the sync service's bundled rules) is gone.
+`DataSyncStatus` gained `recordBundled` and `isBundled` (persisted), and Settings > Data shows
+"Bundled · v1.13.0" until a sync confirms the version. The app wiring for all six was done in Task 5, since
+removing `BundledCounters` broke the build. The Python suite and 1104 Swift tests pass.
+
+**Checked on screen** (iPhone 17 Pro simulator, build pointed at an unreachable host, app uninstalled first):
+the app opens to the tabs; the verb table shows with furigana, Grammar lists its points (and Building blocks,
+Common mistakes), Counters lists its counters, and Settings > Data shows "Bundled" for verbs, grammar,
+furigana and words. Then a normal build, reinstalled: verbs, grammar and words changed to "Version x" once the
+server confirmed the same version.
+
+**Install time.** About 20 ms for the verbs and 5 ms for the grammar into an in-memory store on a Mac (65
+verbs, 18 grammar points; the plan's "about 1,100 verbs" was wrong). Not measured on a device, but nowhere near
+one second.
+
+**Not checked.** The form lookup (the forms catalogue is untouched and was already bundled), the Counters
+widget and the other widgets (the simulator cannot easily show them before the app has launched; they read the
+same persisted store the install fills), and a first launch on a physical device.
+
+**One consequence worth knowing.** A build whose bundle is newer than what `main` publishes (this branch
+carries unmerged counters stage-1 data and a newer furigana) sets the rollback floor above the published
+manifest, so the sync of that file is refused as "couldn't be verified" and Settings keeps showing "Bundled".
+That is the rollback rule doing its job, and it goes away once the data reaches `main` and is signed. A
+released build always ships data that is already published.
