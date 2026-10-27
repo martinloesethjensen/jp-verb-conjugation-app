@@ -779,6 +779,8 @@ HUNDREDS = {1: "ひゃく", 2: "にひゃく", 3: "さんびゃく", 4: "よん�
             7: "ななひゃく", 8: "はっぴゃく", 9: "きゅうひゃく"}
 THOUSANDS = {1: "せん", 2: "にせん", 3: "さんぜん", 4: "よんせん", 5: "ごせん", 6: "ろくせん", 7: "ななせん",
              8: "はっせん", 9: "きゅうせん"}
+# The kana a small っ can come before (か, さ, た, は rows and their voiced forms).
+GEMINATING_ROWS = set("かきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどはひふへほばびぶべぼぱぴぷぺぽ")
 # The numbers above `extent` a counter may list in `extra`: 100 is composed, the rest are authored.
 EXTRA_NUMBERS = ([100 * n for n in range(1, 10)] + [1000 * n for n in range(1, 10)] + [10000])
 
@@ -949,8 +951,9 @@ def counter_distractors(counter, readings):
     only the unchanged reading. A base number of one kana (に, ご) has no small-っ form.
 
     A number above ten gets distractors only when it changed or is authored (an override); every
-    other extended key has an empty list, which keeps the file small. For those, the small-っ form is
-    only tried when the number ends in a syllable that geminates (にじゅう -> にじゅっ)."""
+    other extended key is left out, which keeps the file small. For those, the small-っ form is only
+    tried when the number ends in a syllable that geminates (にじゅう -> にじゅっ) and the counter starts
+    on a sound that can follow a small っ (か, さ, た, は rows): にひゃっえん is not Japanese."""
     sound, reading = counter["sound"], counter["reading"]
     overrides = counter.get("overrides", {})
     changed = set(changed_keys(counter, readings))
@@ -958,15 +961,15 @@ def counter_distractors(counter, readings):
     for key in readings:
         extended = key not in COUNTER_KEYS
         if extended and key not in changed and key not in overrides:
-            result[key] = []
-            continue
+            continue            # no key at all: the app reads a missing key as no distractors
         accepted = set(readings[key])
         base = BASE_NUMBERS[key] if not extended else plain_number(int(key))
         candidates = [base + reading]
         if sound != "irregular":
             if sound in ("h-b", "h-p"):
                 candidates.append(_swap_voicing(readings[key][0], reading, sound))
-            geminates = base.endswith(("いち", "ろく", "はち", "じゅう", "ひゃく")) if extended else len(base) > 1
+            geminates = (base.endswith(("いち", "ろく", "はち", "じゅう", "ひゃく")) and reading[0] in GEMINATING_ROWS
+                         if extended else len(base) > 1)
             if geminates:
                 rest = _voiced(reading, "p") if sound in ("h-b", "h-p") else reading
                 candidates.append(base[:-1] + "っ" + rest)
@@ -1206,7 +1209,7 @@ def apply_counter_readings(doc):
         wrong = counter_distractors(c, wanted)
         order = list(wanted)
         if (c.get("readings") != wanted or list(c.get("readings", {})) != order or c.get("changed") != keys
-                or c.get("distractors") != wrong or list(c.get("distractors", {})) != order):
+                or c.get("distractors") != wrong or list(c.get("distractors", {})) != list(wrong)):
             c["readings"], c["changed"], c["distractors"] = wanted, keys, wrong
             changed = True
     return changed
@@ -1218,6 +1221,8 @@ def check_counter_distractors(doc):
     problems = []
     for c in doc["counters"]:
         for key in counter_keys(c):
+            if key not in COUNTER_KEYS and key not in (c.get("distractors") or {}):
+                continue        # an extended number with no distractors has no key
             wrong = (c.get("distractors") or {}).get(key)
             if not isinstance(wrong, list) or len(wrong) > 3:
                 problems.append(f"{c['id']}: distractors['{key}'] must be a list of at most three readings")

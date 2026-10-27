@@ -1834,11 +1834,25 @@ class ExtendedReadingsTests(unittest.TestCase):
         doc = self.doc(counter(extent=99))
         ud.apply_counter_readings(doc)
         hon = doc["counters"][0]
-        self.assertEqual(list(hon["distractors"]), ud.counter_keys(hon))
+        changed = set(hon["changed"])
+        self.assertEqual(list(hon["distractors"]),
+                         [k for k in ud.counter_keys(hon) if k in ud.COUNTER_KEYS or k in changed])
         self.assertIn("にじゅうほん", hon["distractors"]["20"])
         for key, wrong in hon["distractors"].items():
             self.assertTrue(set(wrong).isdisjoint(hon["readings"][key]), key)
-        self.assertEqual(hon["distractors"]["15"], [])
+        self.assertNotIn("15", hon["distractors"])      # unchanged: no key at all, which keeps the file small
+
+    def test_no_impossible_small_tsu_distractor_for_a_vowel_or_voiced_counter(self):
+        en = counter(id="en", counter="円", reading="えん", sound="plain", extent=99, extra=[100, 200],
+                     overrides={"4": ["よえん"], "200": ["にひゃくえん"]})
+        hon = counter(extent=99)
+        doc = self.doc(en, hon)
+        ud.apply_counter_readings(doc)
+        for key, wrong in doc["counters"][0]["distractors"].items():
+            if key not in ud.COUNTER_KEYS:
+                self.assertFalse([w for w in wrong if "っえ" in w], (key, wrong))
+        self.assertIn("200", doc["counters"][0]["distractors"])     # authored, so it has distractors
+        self.assertIn("じゅういちほん", doc["counters"][1]["distractors"]["11"])
 
     def test_stale_detection_sees_the_new_keys(self):
         doc = self.doc(counter(extent=99))

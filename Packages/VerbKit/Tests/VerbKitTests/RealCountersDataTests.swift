@@ -268,4 +268,17 @@ final class RealCountersDataTests: XCTestCase {
             }
         }
     }
+
+    /// Learner-facing fixes from the stage 1 review: 二十歳 has formal readings besides はたち (so they are
+    /// not offered as wrong answers), and the 月 pitfall must not carry a typo.
+    func testTwentyYearsOldAcceptsTheFormalReadingsAndTheMonthPitfallHasNoTypo() throws {
+        let file = try load()
+        let sai = try counter("sai", in: file)
+        XCTAssertEqual(sai.readings(for: .n(20)).first, "はたち")
+        XCTAssertTrue(sai.readings(for: .n(20)).contains("にじゅっさい"))
+        XCTAssertTrue(Set(sai.distractors(for: .n(20))).isDisjoint(with: sai.readings(for: .n(20))))
+        let gatsu = try counter("gatsu", in: file)
+        XCTAssertFalse(gatsu.pitfalls.contains { $0.explanation.contains("ななに") })
+        XCTAssertTrue(gatsu.pitfalls.contains { $0.explanation.contains("なながつ") })
+    }
 }
