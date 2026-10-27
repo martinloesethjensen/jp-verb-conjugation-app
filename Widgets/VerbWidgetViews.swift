@@ -17,24 +17,12 @@ struct VerbWidgetView: View {
         }
     }
 
-    private static let navy = Color(red: 0.043, green: 0.063, blue: 0.149)
-
     @ViewBuilder private var background: some View {
-        if isHome {
-            LinearGradient(colors: [Self.navy, .black], startPoint: .top, endPoint: .bottom)
-        } else {
-            Color.clear
-        }
+        WidgetTheme.background(isHome: isHome)
     }
 
     @ViewBuilder private var empty: some View {
-        let text = Text("Open Verb Table to load verbs")
-        if isInline {
-            text
-        } else {
-            text.font(.caption).multilineTextAlignment(.center)
-                .foregroundStyle(isHome ? .white : .primary)
-        }
+        WidgetEmptyState(message: "Open Verb Table to load verbs", isHome: isHome, isInline: isInline)
     }
 
     private var isHome: Bool { family == .systemSmall || family == .systemMedium }

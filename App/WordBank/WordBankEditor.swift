@@ -173,7 +173,7 @@ struct WordBankEditor: View {
                 suggestionNote("Nothing new to suggest: the entry already has it.")
             } else {
                 Section {
-                    PillFlow(spacing: 8) { suggestionChips(rest) }
+                    WrappingFlowLayout(spacing: 8) { suggestionChips(rest) }
                         .padding(.vertical, 4)
                     Button("Use all", systemImage: "wand.and.stars") { useAll(rest) }
                 } header: {
@@ -308,7 +308,7 @@ struct WordBankEditor: View {
                     Text("Folder")
                     Spacer()
                     Text(folderName).foregroundStyle(.secondary)
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                    RowChevron()
                 }
                 .contentShape(Rectangle())
             }
@@ -321,7 +321,7 @@ struct WordBankEditor: View {
             let dialect = store.dialectTags.filter { draft.dialectTagIDs.contains($0.id) }
             let custom = store.customTags.filter { draft.customTagIDs.contains($0.id) }
             if !dialect.isEmpty || !custom.isEmpty {
-                PillFlow {
+                WrappingFlowLayout(spacing: 6) {
                     ForEach(dialect) { TagPill($0) }
                     ForEach(custom) { TagPill($0) }
                 }

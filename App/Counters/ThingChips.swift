@@ -1,43 +1,6 @@
 import SwiftUI
 import VerbKit
 
-/// A minimal wrapping row layout for chips and the playground's objects.
-struct ChipFlowLayout: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        arrange(width: proposal.width ?? .infinity, subviews: subviews).size
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = arrange(width: bounds.width, subviews: subviews)
-        for (index, origin) in result.origins.enumerated() {
-            subviews[index].place(
-                at: CGPoint(x: bounds.minX + origin.x, y: bounds.minY + origin.y),
-                proposal: .unspecified
-            )
-        }
-    }
-
-    private func arrange(width: CGFloat, subviews: Subviews) -> (origins: [CGPoint], size: CGSize) {
-        var origins: [CGPoint] = []
-        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, widest: CGFloat = 0
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > width {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            origins.append(CGPoint(x: x, y: y))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-            widest = max(widest, x - spacing)
-        }
-        return (origins, CGSize(width: widest, height: y + rowHeight))
-    }
-}
-
 /// What a counter counts: one chip per thing, primary first. Outlined chips are acceptable but
 /// not the standard counter, dimmed chips are casual fallbacks. Tapping a chip lists every
 /// counter that lists the word.
@@ -51,7 +14,7 @@ struct ThingChips: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ChipFlowLayout {
+            WrappingFlowLayout {
                 ForEach(things, id: \.word) { thing in
                     Button {
                         shown = thing

@@ -155,7 +155,7 @@ struct SoundPatternsView: View {
             Text(columns.map { "\($0.id.title) counters" } ?? table.sentence(for: selected))
                 .font(.headline)
             if !shown.isEmpty {
-                ChipFlowLayout {
+                WrappingFlowLayout {
                     ForEach(shown.uniqued(by: \.id)) { counter in
                         NavigationLink(value: CounterDestination.counter(counter, focus: columns == nil ? selected : nil)) {
                             Text(counter.counter).font(.title3.weight(.semibold))

@@ -70,9 +70,7 @@ struct CounterDetailView: View {
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8, content: content)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+            .glassCard()
     }
 
     private var header: some View {
@@ -85,12 +83,7 @@ struct CounterDetailView: View {
                 SpeakButton(text: counter.reading)
             }
             HStack(spacing: 8) {
-                if let level = counter.jlpt {
-                    Text(level.displayName)
-                        .font(.caption.weight(.bold))
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .glassEffect(in: Capsule())
-                }
+                LevelBadge(level: counter.jlpt, emphasis: .header)
                 Text(counter.meaning)
                     .font(.headline)
                     .foregroundStyle(.secondary)

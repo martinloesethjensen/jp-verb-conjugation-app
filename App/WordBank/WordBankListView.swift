@@ -433,10 +433,7 @@ struct WordBankListView: View {
                 Label(title, systemImage: systemImage)
                 Spacer()
                 Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
+                RowChevron()
             }
             .contentShape(Rectangle())
         }

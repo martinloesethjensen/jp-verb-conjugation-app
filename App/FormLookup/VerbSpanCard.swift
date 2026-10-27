@@ -164,7 +164,7 @@ private struct ChainView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .accessibilityAddTraits(.isHeader)
-            PillFlow(spacing: 6) {
+            WrappingFlowLayout(spacing: 6) {
                 ForEach(parts.indices, id: \.self) { index in
                     if index > 0 {
                         Text("+")
@@ -228,7 +228,7 @@ private struct NotInAppSection: View {
                     Text("Dictionary form, probably:")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                    PillFlow(spacing: 6) {
+                    WrappingFlowLayout(spacing: 6) {
                         ForEach(item.guesses, id: \.self) { guess in
                             if let url = TextLookupURL.jisho(guess) {
                                 Link(destination: url) {
