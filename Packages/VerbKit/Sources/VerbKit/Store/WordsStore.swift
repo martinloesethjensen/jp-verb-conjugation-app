@@ -41,7 +41,7 @@ public final class WordsStore {
             return
         }
         syncService.confirmSynced(WordsManifest(version: bundled.version, sha256: bundled.sha256))
-        syncStatus?.recordUpToDate(.words)
+        syncStatus?.recordBundled(.words, version: bundled.version)
     }
 
     /// Settings' Refresh data.

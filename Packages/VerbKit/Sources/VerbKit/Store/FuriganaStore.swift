@@ -43,7 +43,7 @@ public final class FuriganaStore {
             return
         }
         syncService.confirmSynced(FuriganaManifest(version: bundled.version, sha256: bundled.sha256))
-        syncStatus?.recordUpToDate(.furigana)
+        syncStatus?.recordBundled(.furigana, version: bundled.version)
     }
 
     /// Settings' Refresh data.

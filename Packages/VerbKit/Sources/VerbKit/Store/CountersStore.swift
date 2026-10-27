@@ -45,7 +45,7 @@ public final class CountersStore {
             return
         }
         syncService.confirmSynced(CountersManifest(version: bundled.version, sha256: bundled.sha256))
-        syncStatus?.recordUpToDate(.counters)
+        syncStatus?.recordBundled(.counters, version: bundled.version)
     }
 
     /// Settings' Refresh data.

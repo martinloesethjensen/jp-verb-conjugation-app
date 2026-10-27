@@ -183,4 +183,20 @@ final class BundledInstallTests: XCTestCase {
         await store.start()
         XCTAssertTrue(store.words.isEmpty)
     }
+
+    func testAnInstalledBundleIsReportedAsBundledUntilASyncConfirmsIt() async throws {
+        let suite = "BundledInstallStatus"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let status = DataSyncStatus(defaults: defaults)
+        let bundled = try bundledWords()
+        let store = WordsStore(
+            syncService: WordsSyncService(fetcher: offline(), syncState: InMemorySyncStateStore()),
+            persisting: try wordsPersisting(), syncStatus: status, bundled: bundled
+        )
+        await store.start()
+        XCTAssertTrue(status.status(for: .words).isBundled, "the failed sync leaves the mark")
+        XCTAssertEqual(status.status(for: .words).version, bundled.version)
+        XCTAssertNil(status.status(for: .words).lastUpdated)
+    }
 }

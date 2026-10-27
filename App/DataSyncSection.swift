@@ -47,12 +47,17 @@ struct DataSyncSection: View {
 private struct DataFileRow: View {
     let status: DataFileStatus
 
+    private var versionText: String {
+        guard let version = status.version else { return "Not downloaded yet" }
+        return status.isBundled ? "Bundled · v\(version)" : "Version \(version)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
                 Text(status.file.displayName)
                 Spacer()
-                Text(status.version.map { "Version \($0)" } ?? "Not downloaded yet")
+                Text(versionText)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }

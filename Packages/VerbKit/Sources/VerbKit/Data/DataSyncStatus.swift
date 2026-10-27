@@ -72,6 +72,8 @@ public struct DataFileStatus: Equatable, Sendable {
     public var lastChecked: Date?
     /// Set when the latest check failed; cleared by the next one that succeeds.
     public var problem: DataSyncProblem?
+    /// The data on this device is the copy that shipped with the app, not yet confirmed by a sync.
+    public var isBundled = false
 
     public var hasData: Bool { version != nil }
 
@@ -109,7 +111,8 @@ public final class DataSyncStatus {
                 file: file,
                 version: defaults.string(forKey: key(file, "version")),
                 lastUpdated: defaults.object(forKey: key(file, "lastUpdated")) as? Date,
-                lastChecked: defaults.object(forKey: key(file, "lastChecked")) as? Date
+                lastChecked: defaults.object(forKey: key(file, "lastChecked")) as? Date,
+                isBundled: defaults.bool(forKey: key(file, "bundled"))
             )
         }
     }
@@ -128,6 +131,17 @@ public final class DataSyncStatus {
         var status = status(for: file)
         status.lastChecked = now()
         status.problem = nil
+        status.isBundled = false
+        save(status)
+    }
+
+    /// The copy that shipped with the app was installed as the data in use, `version`, without a
+    /// download. Leaves no "updated" time, since nothing was synced; the next sync clears the mark.
+    public func recordBundled(_ file: DataFile, version: String) {
+        var status = status(for: file)
+        status.version = version
+        status.lastUpdated = nil
+        status.isBundled = true
         save(status)
     }
 
@@ -141,6 +155,7 @@ public final class DataSyncStatus {
         status.version = version
         status.lastChecked = date
         status.problem = nil
+        status.isBundled = false
         save(status)
     }
 
@@ -176,6 +191,7 @@ public final class DataSyncStatus {
         defaults.set(status.version, forKey: key(status.file, "version"))
         defaults.set(status.lastUpdated, forKey: key(status.file, "lastUpdated"))
         defaults.set(status.lastChecked, forKey: key(status.file, "lastChecked"))
+        defaults.set(status.isBundled, forKey: key(status.file, "bundled"))
     }
 
     private func key(_ file: DataFile, _ field: String) -> String {

@@ -166,7 +166,7 @@ public final class VerbStore {
             return
         }
         syncService.confirmSynced(VerbManifest(version: bundled.version, sha256: bundled.sha256))
-        syncStatus?.recordUpToDate(.verbs)
+        syncStatus?.recordBundled(.verbs, version: bundled.version)
     }
 
     /// The grammar counterpart; it never affects the verbs.
@@ -179,7 +179,7 @@ public final class VerbStore {
             return
         }
         grammarSyncService.confirmSynced(GrammarManifest(version: bundled.version, sha256: bundled.sha256))
-        syncStatus?.recordUpToDate(.grammar)
+        syncStatus?.recordBundled(.grammar, version: bundled.version)
     }
 
     private func loadCachedGrammar() {
