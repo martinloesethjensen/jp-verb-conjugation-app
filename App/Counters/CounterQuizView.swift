@@ -118,6 +118,9 @@ struct CounterQuizView: View {
             Text(question.detail)
                 .italic()
                 .foregroundStyle(.secondary)
+            if question.kind == .counterReading, CounterNumber(key: question.formID)?.isExtended == true {
+                UnreviewedLabel()
+            }
         }
         .frame(maxWidth: .infinity)
         .padding()
