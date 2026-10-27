@@ -612,6 +612,15 @@ class ValidateGrammarTests(unittest.TestCase):
         doc["grammar"][0]["pitfalls"][0]["explanation"] = ""
         self.assertTrue(any("pitfall" in e for e in ud.validate_grammar(doc)))
 
+    def test_pitfall_wrong_form_is_optional_but_not_blank(self):
+        doc = valid_grammar()
+        self.assertEqual(ud.validate_grammar(doc), [])
+        doc["grammar"][0]["pitfalls"][0]["wrong"] = "静かだので"
+        self.assertEqual(ud.validate_grammar(doc), [])
+        for bad in ("", "  ", 3):
+            doc["grammar"][0]["pitfalls"][0]["wrong"] = bad
+            self.assertTrue(any("wrong" in e for e in ud.validate_grammar(doc)), bad)
+
     def test_usage_without_examples(self):
         doc = valid_grammar()
         doc["grammar"][0]["usages"][0]["examples"] = []
@@ -1323,6 +1332,15 @@ class CheckCountersTests(unittest.TestCase):
         problems = ud.check_counters(counters_doc(bad), COUNTER_READINGS)
         self.assertTrue(any("example" in p for p in problems), problems)
         self.assertTrue(any("pitfall" in p for p in problems), problems)
+
+    def test_counter_pitfall_wrong_form_is_optional_but_not_blank(self):
+        pitfall = {"heading": "h", "explanation": "e"}
+        self.assertEqual(ud.check_counters(counters_doc(counter(pitfalls=[pitfall])), COUNTER_READINGS), [])
+        ok = dict(pitfall, wrong="さんほん")
+        self.assertEqual(ud.check_counters(counters_doc(counter(pitfalls=[ok])), COUNTER_READINGS), [])
+        bad = dict(pitfall, wrong="")
+        problems = ud.check_counters(counters_doc(counter(pitfalls=[bad])), COUNTER_READINGS)
+        self.assertTrue(any("wrong" in p for p in problems), problems)
 
 
 class CountedRunTests(unittest.TestCase):

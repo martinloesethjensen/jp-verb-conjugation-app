@@ -1,13 +1,14 @@
 import SwiftUI
 import VerbKit
 
-/// One pitfall: heading, explanation, first example and the lesson it comes from.
+/// One pitfall: heading, the wrong form (when it has one), explanation, first example and the lesson it comes from.
 struct MistakeRow: View {
     let mistake: CommonMistake
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             JapaneseText(mistake.heading).font(.headline)
+            if let wrong = mistake.wrong { WrongForm(text: wrong).font(.subheadline) }
             JapaneseText(mistake.explanation)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)

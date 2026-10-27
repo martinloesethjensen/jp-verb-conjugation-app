@@ -962,6 +962,8 @@ def check_counters(doc, readings):
             for key in ("heading", "explanation"):
                 if not isinstance(pitfall.get(key), str) or not pitfall[key]:
                     problems.append(f"{cid}/{heading}: pitfall {key} missing or empty")
+            if "wrong" in pitfall and (not isinstance(pitfall["wrong"], str) or not pitfall["wrong"].strip()):
+                problems.append(f"{cid}/{heading}: pitfall wrong must be a non-empty string when present")
             for index, example in enumerate(pitfall.get("examples", [])):
                 _check_example(f"{cid}/{heading}: pitfall example {index}", example, problems)
 
@@ -1264,6 +1266,8 @@ def validate_grammar(doc):
             for key in ("heading", "explanation"):
                 if not isinstance(f.get(key), str) or not f[key]:
                     errors.append(f"{pid}/{heading}: pitfall {key} missing or empty")
+            if "wrong" in f and (not isinstance(f["wrong"], str) or not f["wrong"].strip()):
+                errors.append(f"{pid}/{heading}: pitfall wrong must be a non-empty string when present")
             for e in f.get("examples", []):
                 if not e.get("jp") or not e.get("en"):
                     errors.append(f"{pid}/{heading}: pitfall example needs jp and en")

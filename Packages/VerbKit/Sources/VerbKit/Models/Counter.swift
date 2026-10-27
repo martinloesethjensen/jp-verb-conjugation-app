@@ -101,15 +101,18 @@ public struct CounterPitfall: Codable, Hashable, Sendable {
     public var heading: String
     public var explanation: String
     public var examples: [CounterExample]
+    /// The form learners actually produce, without a mark ("さんほん"); the views add the ✗.
+    public var wrong: String?
 
-    public init(heading: String, explanation: String, examples: [CounterExample] = []) {
+    public init(heading: String, explanation: String, examples: [CounterExample] = [], wrong: String? = nil) {
         self.heading = heading
         self.explanation = explanation
         self.examples = examples
+        self.wrong = wrong
     }
 
     enum CodingKeys: String, CodingKey {
-        case heading, explanation, examples
+        case heading, explanation, examples, wrong
     }
 
     public init(from decoder: Decoder) throws {
@@ -117,6 +120,7 @@ public struct CounterPitfall: Codable, Hashable, Sendable {
         heading = try c.decode(String.self, forKey: .heading)
         explanation = try c.decode(String.self, forKey: .explanation)
         examples = try c.decodeIfPresent([CounterExample].self, forKey: .examples) ?? []
+        wrong = try c.decodeIfPresent(String.self, forKey: .wrong)
     }
 }
 

@@ -68,6 +68,24 @@ final class CommonMistakesTests: XCTestCase {
         XCTAssertTrue(all.filter { matchesMistakeSearch($0, query: "zzqx") }.isEmpty)
     }
 
+    func testWrongFormsCarryThroughToTheMistakes() throws {
+        let (grammar, counters) = try load()
+        let all = CommonMistakes.build(grammar: grammar, counters: counters)
+        XCTAssertEqual(all.first { $0.id == "node#0" }?.wrong, "静かだので")
+        XCTAssertEqual(all.first { $0.id == "hou-ga-ii#0" }?.wrong, "行かなかったほうがいい")
+        XCTAssertNil(all.first { $0.id == "n-desu#1" }?.wrong)
+    }
+
+    func testWrongFormsAreNeverBlankOrAnExample() throws {
+        let (grammar, _) = try load()
+        let withWrong = grammar.flatMap(\.pitfalls).compactMap { p in p.wrong.map { ($0, p) } }
+        XCTAssertGreaterThanOrEqual(withWrong.count, 5)
+        for (wrong, pitfall) in withWrong {
+            XCTAssertFalse(wrong.trimmingCharacters(in: .whitespaces).isEmpty, pitfall.heading)
+            XCTAssertFalse(pitfall.examples.contains { $0.jp.contains(wrong) }, "\(pitfall.heading): shown as correct")
+        }
+    }
+
     func testLevelFilteringUsesTheSourceLevel() {
         let m = CommonMistake(
             id: "x#0", theme: .joining, heading: "h", explanation: "e", examples: [],
