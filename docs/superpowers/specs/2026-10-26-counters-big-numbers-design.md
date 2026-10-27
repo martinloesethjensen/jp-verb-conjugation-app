@@ -213,3 +213,30 @@ in-between numbers are on the counter page only. The quiz, examples and pitfalls
 **Checked on screen** (iPhone 17 Pro simulator): the stepper and the unreviewed label on 羽, and the Drinks
 table's 11–20 range. **Not checked:** the 30–90 and 100+ ranges and 円's steps on screen (covered by unit
 tests), largest Dynamic Type, dark mode, iPad, macOS, and the widgets.
+
+## As built (stage 3)
+
+The plan is `docs/superpowers/plans/2026-10-27-counters-stage-3.md`.
+
+- **Bigger numbers quiz.** A new row in the counter quiz sheet. It reuses the `.counterReading` question kind, so
+  quiz history, weak spots and "Practise missed" key by counter and number as before and nothing new is stored.
+  `buildBiggerNumberQuestions` draws (counter, number) pairs from `Counter.extendedNumbers` without replacement,
+  four times as likely for a number whose sound changed or for an irregular counter. Wrong choices are
+  the generated `distractors`, then readings of nearby other numbers above 10. After a wrong answer the
+  explanation names the pattern ("三十分 is さんじゅっぷん: the sound changes here, as it does at 1, 3, 4, …").
+- **Mixed** gets a sample, a fifth of the round and at least one question, from Bigger numbers. *Read it* still
+  asks only 1 to 10 and 何.
+- **Weak spots needed a fix the design did not foresee.** It silently dropped any pair whose number key was above
+  10, so a missed 三十分 would never have come back. It now keeps every valid key, ordered 1 to 10, 何, then by value.
+- **Unreviewed.** A question about a number above 10 shows the same small "unreviewed" label as the counter page.
+- **Content.** Examples and pitfalls for 三十分 and 四十分 (分), 二十日 and 十四日 (日, date: はつか, じゅうよっか),
+  and 三百円, 六百円, 八百円 and the thousands (円). 二十歳 and 十二月 already had theirs. Furigana for the new counted
+  runs is in `furigana.json`.
+
+**Changed from the design.** 日 (days) and 日間 got no new content: their pitfalls already cover 日 against 日間.
+
+**Checked on screen** (iPhone 17 simulator): the sheet row and a Bigger numbers round (六十五着 with the label
+and four real readings as choices). **Not checked:** the explanation after a wrong answer on screen, Mixed and
+Weak spots with a bigger number on screen (covered by unit tests), largest Dynamic Type, dark mode.
+
+**Needs the owner:** `data/` changed (counters 1.12.0, furigana 1.17.0), so `data/manifest.sig` must be re-signed.

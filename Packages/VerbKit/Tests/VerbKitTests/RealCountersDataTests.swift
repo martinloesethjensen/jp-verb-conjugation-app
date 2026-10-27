@@ -302,4 +302,33 @@ final class RealCountersDataTests: XCTestCase {
         XCTAssertTrue(zen.related.contains("hon"))
         XCTAssertTrue(file.sections.contains { $0.id == "things" && $0.counters.contains("zen") })
     }
+
+    /// Every example and pitfall example text of a counter.
+    private func texts(_ counter: Counter) -> [String] {
+        counter.examples.map(\.jp) + counter.pitfalls.flatMap { $0.examples.map(\.jp) }
+    }
+
+    func testBiggerNumbersHaveExamplesAndPitfalls() throws {
+        let file = try load()
+        let minutes = try counter("fun", in: file)
+        XCTAssertTrue(texts(minutes).contains { $0.contains("三十分") })
+        XCTAssertTrue(texts(minutes).contains { $0.contains("四十分") })
+        XCTAssertTrue(minutes.pitfalls.contains { $0.heading.contains("tens") })
+        let date = try counter("nichi-date", in: file)
+        XCTAssertTrue(texts(date).contains { $0.contains("二十日") })
+        XCTAssertTrue(texts(date).contains { $0.contains("十四日") })
+        XCTAssertTrue(date.pitfalls.contains { $0.heading.contains("はつか") })
+        let yen = try counter("en", in: file)
+        XCTAssertTrue(texts(yen).contains { $0.contains("三百円") })
+        XCTAssertTrue(yen.pitfalls.contains { $0.heading.contains("300") })
+    }
+
+    func testBiggerNumberExamplesReadAsTheirCounterSays() throws {
+        let file = try load()
+        let hatsuka = try XCTUnwrap(try counter("nichi-date", in: file).examples
+            .first { $0.jp.contains("二十日") })
+        XCTAssertEqual(hatsuka.readings["二十日"], "はつか")
+        XCTAssertEqual(try counter("nichi-date", in: file).readings(for: .n(20)).first, "はつか")
+        XCTAssertEqual(try counter("nichi-date", in: file).readings(for: .n(14)).first, "じゅうよっか")
+    }
 }
