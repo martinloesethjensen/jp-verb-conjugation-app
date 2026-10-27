@@ -39,4 +39,9 @@ public struct WordsSyncService: Sendable {
         syncState.saveLastSyncedWordsManifest(manifest)
         syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.words.rawValue)
     }
+
+    /// The highest version this device has accepted, which a bundled copy must beat to be installed.
+    public func acceptedVersion() -> String? {
+        syncState.highestAcceptedVersion(for: DataFile.words.rawValue)
+    }
 }

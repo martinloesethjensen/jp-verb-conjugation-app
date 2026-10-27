@@ -71,8 +71,11 @@ struct CountersTab: View {
         case .whichCounter: return built(.counterChoice)
         case .readIt: return built(.counterReading)
         case .askIt: return built(.counterAsk)
+        case .biggerNumbers: return buildBiggerNumberQuestions(counters: counters, count: count)
         case .mixed:
-            return Array((built(.counterChoice) + built(.counterReading) + built(.counterAsk)).shuffled().prefix(count))
+            // A fifth of the round, at least one, is from the numbers above 10.
+            let bigger = buildBiggerNumberQuestions(counters: counters, count: max(1, count / 5))
+            return Array((built(.counterChoice) + built(.counterReading) + built(.counterAsk) + bigger).shuffled().prefix(count))
         case .weakSpots: return buildCounterQuestions(pairs: weakPairs, count: count).shuffled()
         }
     }
@@ -90,6 +93,7 @@ struct CountersTab: View {
                     whichCounterAvailable: available(.counterChoice),
                     readItAvailable: available(.counterReading),
                     askItAvailable: available(.counterAsk),
+                    biggerNumbersAvailable: !buildBiggerNumberQuestions(counters: visibleCounters, count: 1).isEmpty,
                     weakSpotCount: buildCounterQuestions(pairs: weakPairs, count: 1000).count,
                     onStart: { selection in
                         let built = questions(for: selection)

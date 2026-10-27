@@ -95,15 +95,15 @@ final class RealLensSentenceTests: XCTestCase {
         XCTAssertEqual(fixture.sentences.count, 41)
         XCTAssertEqual(fixture.sentences.filter { $0.set == "dev" }.count, 23)
         XCTAssertEqual(fixture.sentences.filter { $0.set == "heldout" }.count, 18)
-        // 46 verbs in the app (32 exact forms, 14 chains for #145) and 8 the app lacks.
-        XCTAssertEqual(check(fixture), [.exact: 32, .rule: 14, .notInApp: 8])
+        // 49 verbs in the app (35 exact forms, 14 chains for #145) and 5 the app lacks.
+        XCTAssertEqual(check(fixture), [.exact: 35, .rule: 14, .notInApp: 5])
     }
 
     func testTheLessonSentences() throws {
         let fixture = try load("lens-lesson-sentences")
         XCTAssertEqual(fixture.sentences.count, 276)
         XCTAssertEqual(Set(fixture.sentences.map(\.text)).count, 276)
-        XCTAssertEqual(check(fixture), [.exact: 157, .rule: 56, .notInApp: 67, .homograph: 3, .notAVerb: 21])
+        XCTAssertEqual(check(fixture), [.exact: 194, .rule: 64, .notInApp: 23, .homograph: 2, .notAVerb: 21])
     }
 
     func testExactSurfacesKeepTheirAmbiguity() throws {
@@ -214,45 +214,50 @@ final class RealLensSentenceTests: XCTestCase {
     func testTheMatcherOnTheTestSentences() throws {
         let score = score(try load("lens-test-sentences"))
         // The research's hybrid: 46/46 right verbs, 44/46 whole chains, 1 false positive,
-        // 7/8 missing verbs greyed or left alone. The もらう chains now get whole spans too.
-        XCTAssertEqual(score.inApp, 46)
-        XCTAssertEqual(score.rightVerb, 46, "\(score.wrongVerb)")
-        XCTAssertEqual(score.wholeChain, 46, "\(score.partialChain)")
+        // 7/8 missing verbs greyed or left alone. The もらう chains now get whole spans too, and
+        // #4's first core batch adds 降ったら, 思っています and なります.
+        XCTAssertEqual(score.inApp, 49)
+        XCTAssertEqual(score.rightVerb, 49, "\(score.wrongVerb)")
+        XCTAssertEqual(score.wholeChain, 49, "\(score.partialChain)")
         XCTAssertEqual(score.falsePositives, [])
         // The one false positive: かける isn't in the app, and かけない is 書く's potential.
         XCTAssertEqual(score.notInAppHighlighted, ["かけないでください in 電車の中で電話をかけないでください。"])
-        XCTAssertEqual(score.notInApp, 8)
-        // 降ったら, 吸ってはいけません, 思っています, 泣いている and 間に合います are greyed;
-        // the kana かかります and なります are left alone.
-        XCTAssertEqual(score.greyed, 5)
+        XCTAssertEqual(score.notInApp, 5)
+        // 吸ってはいけません, 泣いている and 間に合います are greyed; the kana かかります is
+        // left alone. (降ったら, 思っています and なります are in the app since #4.)
+        XCTAssertEqual(score.greyed, 3)
         XCTAssertEqual(score.wrongGreys, [])
-        XCTAssertEqual(score.highlights, 47)
+        XCTAssertEqual(score.highlights, 50)
     }
 
     func testTheMatcherOnTheLessonSentences() throws {
         let score = score(try load("lens-lesson-sentences"))
-        XCTAssertEqual(score.inApp, 213)
-        XCTAssertEqual(score.rightVerb, 213, "\(score.wrongVerb)")
-        XCTAssertEqual(score.wholeChain, 213, "\(score.partialChain)")
+        XCTAssertEqual(score.inApp, 258)
+        // The one miss: a masu stem only counts before に, so 降り + そう (#4 added 降る) isn't
+        // found yet.
+        XCTAssertEqual(score.wrongVerb, ["降り in 今にも雨が降りそうだ。"])
+        XCTAssertEqual(score.rightVerb, 257)
+        XCTAssertEqual(score.partialChain, ["降り in 今にも雨が降りそうだ。 → []"])
+        XCTAssertEqual(score.wholeChain, 257)
         // No false positives from the stoplist and context rules (すみません, どうして,
         // じゃない, かもしれない, 〜みたい, ではありません…), and none elsewhere.
         XCTAssertEqual(score.notAVerbHighlighted, [])
         XCTAssertEqual(score.falsePositives, [])
         XCTAssertEqual(score.notInAppHighlighted, [])
-        // Expected failures: homographs of verbs the app lacks. More verbs (#4) fix them.
+        // Expected failures: homographs of verbs the app lacks. More verbs (#4) fix them;
+        // できる (店ができる) was fixed by adding できる.
         XCTAssertEqual(score.homographsHighlighted, [
             "たつ in 時間がたつのは早いものですね。",
             "かける in 夜遅くに電話をかけるものではない。",
-            "できる in 駅の前に新しい店ができるらしいです。",
         ])
-        // 213 of 216 highlights are right: 98.6%, the research's estimate with the stoplist.
-        XCTAssertEqual(score.highlights, 216)
-        XCTAssertEqual(score.correctHighlights, 213)
-        XCTAssertGreaterThan(score.precision, 0.98)
-        // 40 of the 67 missing verbs are greyed; the rest, kana-only (いる, なる, やる…) or
-        // not conjugated, are left alone.
-        XCTAssertEqual(score.notInApp, 67)
-        XCTAssertEqual(score.greyed, 40)
+        // 257 of 259 highlights are right: 99.2% (213 of 216 before #4's first core batch).
+        XCTAssertEqual(score.highlights, 259)
+        XCTAssertEqual(score.correctHighlights, 257)
+        XCTAssertGreaterThan(score.precision, 0.99)
+        // 8 of the 23 missing verbs are greyed; the rest, kana-only (やる, がんばる…) or
+        // not conjugated, are left alone. Before #4's first core batch: 40 of 67.
+        XCTAssertEqual(score.notInApp, 23)
+        XCTAssertEqual(score.greyed, 8)
         XCTAssertEqual(score.wrongGreys, [])
     }
 }

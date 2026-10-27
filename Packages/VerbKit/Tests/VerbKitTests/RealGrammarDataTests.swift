@@ -163,9 +163,10 @@ final class RealGrammarDataTests: XCTestCase {
         let rule = try XCTUnwrap(volitional.attachment.first { $0.then == "ましょう" })
         XCTAssertEqual(rule.practisedForms(.stem, among: verbs).map(\.id), ["masu_volitional"])
         let skipped = Set(verbs.map(\.dict)).subtracting(rule.eligibleVerbs(.stem, among: verbs).map(\.dict))
-        XCTAssertEqual(skipped, ["わかる", "しる", "つかれる"])
+        XCTAssertEqual(skipped, ["わかる", "しる", "つかれる", "くれる", "できる", "みえる", "きこえる", "あく", "おくれる", "ふる"])
 
-        let never: Set<String> = ["わかりましょう", "しりましょう", "つかれましょう"]
+        let never: Set<String> = ["わかりましょう", "しりましょう", "つかれましょう", "くれましょう", "できましょう",
+                                  "みえましょう", "きこえましょう", "あきましょう", "おくれましょう", "ふりましょう"]
         for _ in 0..<5 {
             let questions = buildConnectionQuestions(points: [volitional], verbs: verbs, words: [], count: verbs.count)
             XCTAssertGreaterThan(questions.count, 20)

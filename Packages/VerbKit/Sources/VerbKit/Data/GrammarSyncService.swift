@@ -49,4 +49,9 @@ public struct GrammarSyncService: Sendable {
         syncState.saveLastSyncedGrammarManifest(manifest)
         syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.grammar.rawValue)
     }
+
+    /// The highest version this device has accepted, which a bundled copy must beat to be installed.
+    public func acceptedVersion() -> String? {
+        syncState.highestAcceptedVersion(for: DataFile.grammar.rawValue)
+    }
 }

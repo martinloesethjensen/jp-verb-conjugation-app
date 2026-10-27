@@ -25,6 +25,18 @@ final class CounterWeaknessTests: XCTestCase {
         XCTAssertEqual(p.weakCounterPairs.first?.weakness, p.weakPairs.first?.weakness)
     }
 
+    func testWeakCounterPairsIncludeNumbersAboveTen() {
+        let p = progress([
+            attempt("hon", "3", .counterReading, .wrong, at: 0),
+            attempt("fun", "30", .counterReading, .wrong, at: 1),
+            attempt("fun", "30", .counterReading, .wrong, at: 2),
+            attempt("fun", "30", .counterReading, .wrong, at: 3),
+            attempt("hon", "banana", .counterReading, .wrong, at: 4),
+        ])
+        XCTAssertEqual(p.weakCounterPairs.map(\.number), [.n(30), .n(3)])
+        XCTAssertEqual(p.weakCounterPairs.map(\.counterID), ["fun", "hon"])
+    }
+
     func testChoiceMissesAreNotWeakCounterPairs() {
         let attempts = (0..<6).map { attempt("hon", "傘", .counterChoice, .wrong, at: $0) }
         let p = progress(attempts)
@@ -45,7 +57,7 @@ final class CounterWeaknessTests: XCTestCase {
 
     func testAPairWhoseFormIsNotANumberKeyIsDropped() {
         let p = progress([
-            attempt("hon", "11", .counterReading, .wrong, at: 0),
+            attempt("hon", "0", .counterReading, .wrong, at: 0),
             attempt("hon", "what", .counterReading, .wrong, at: 1),
         ])
         XCTAssertEqual(p.weakCounterPairs.map(\.number), [.what])

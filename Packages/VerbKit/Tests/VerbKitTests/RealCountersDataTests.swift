@@ -31,16 +31,16 @@ final class RealCountersDataTests: XCTestCase {
         let file = try load()
         let ids = file.counters.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)
-        XCTAssertEqual(ids.count, 28)
+        XCTAssertEqual(ids.count, 30)
         for counter in file.counters {
             for related in counter.related { XCTAssertTrue(ids.contains(related), "\(counter.id) → \(related)") }
         }
     }
 
     func testChangedKeysAreValid() throws {
-        let keys = Set(CounterNumber.allCases.map(\.key))
         for counter in try load().counters {
-            XCTAssertTrue(Set(counter.changed).isSubset(of: keys), counter.id)
+            // changed may name any number the counter has readings for, not only 1 to 10 and 何
+            XCTAssertTrue(Set(counter.changed).isSubset(of: Set(counter.readings.keys)), counter.id)
         }
     }
 
@@ -70,7 +70,7 @@ final class RealCountersDataTests: XCTestCase {
         let ids = Set(file.counters.map(\.id))
         let groupIDs = file.groups.map(\.id)
         XCTAssertEqual(Set(groupIDs).count, groupIDs.count)
-        XCTAssertEqual(groupIDs.count, 17)
+        XCTAssertEqual(groupIDs.count, 19)
         var grouped = Set<String>()
         for group in file.groups {
             for member in group.members {
@@ -88,7 +88,7 @@ final class RealCountersDataTests: XCTestCase {
             "drinks", "people-animals", "things", "clothes-shoes", "how-long", "time-dates-age",
             "when-or-how-long", "money-events",
         ])
-        XCTAssertEqual(home.map(\.rows.count), [3, 4, 6, 2, 5, 6, 6, 4])
+        XCTAssertEqual(home.map(\.rows.count), [3, 4, 7, 2, 5, 7, 8, 4])
         XCTAssertEqual(Set(home.flatMap(\.rows).map(\.counter.id)), Set(file.counters.map(\.id)))
     }
 
@@ -201,5 +201,134 @@ final class RealCountersDataTests: XCTestCase {
         XCTAssertTrue(try counter("wa", in: file).pitfalls.contains {
             $0.explanation.contains("匹") && $0.explanation.contains("traditionally")
         })
+    }
+
+    /// Readings above ten, from the composition rules in the design's appendix (a teacher checks them
+    /// before the data ships): the sound change of 10 carries into 20, 30 and 100, the last digit of a
+    /// compound keeps the counter's own reading, and the authored exceptions beat composition.
+    func testBigNumbersReadAsTheAppendixSays() throws {
+        let file = try load()
+        func preferred(_ id: String, _ n: Int) throws -> String? {
+            try counter(id, in: file).readings(for: .n(n)).first
+        }
+        let expected: [(String, Int, String)] = [
+            ("hon", 20, "にじゅっぽん"), ("hon", 100, "ひゃっぽん"), ("fun", 15, "じゅうごふん"),
+            ("fun", 30, "さんじゅっぷん"), ("fun", 45, "よんじゅうごふん"), ("sai", 20, "はたち"),
+            ("sai", 21, "にじゅういっさい"), ("sai", 100, "ひゃくさい"), ("en", 100, "ひゃくえん"),
+            ("en", 300, "さんびゃくえん"), ("en", 800, "はっぴゃくえん"), ("en", 1000, "せんえん"),
+            ("en", 3000, "さんぜんえん"), ("en", 10000, "いちまんえん"), ("ji", 11, "じゅういちじ"),
+            ("ji", 14, "じゅうよじ"), ("ji", 24, "にじゅうよじ"), ("nin", 11, "じゅういちにん"),
+            ("nin", 14, "じゅうよにん"), ("nin", 20, "にじゅうにん"), ("nichi-date", 14, "じゅうよっか"),
+            ("nichi-date", 20, "はつか"), ("nichi-date", 24, "にじゅうよっか"),
+            ("nichi-date", 31, "さんじゅういちにち"), ("nichikan", 20, "はつかかん"),
+            ("gatsu", 4, "しがつ"), ("gatsu", 12, "じゅうにがつ"), ("wa", 100, "ひゃっぱ"),
+        ]
+        for (id, n, reading) in expected {
+            XCTAssertEqual(try preferred(id, n), reading, "\(id) \(n)")
+        }
+    }
+
+    func testExtentsAreWhatEachCounterNeeds() throws {
+        let file = try load()
+        func numbers(_ id: String) throws -> [Int] {
+            try counter(id, in: file).readings.keys.compactMap { Int($0) }.sorted()
+        }
+        XCTAssertEqual(try numbers("tsu"), Array(1...10))
+        XCTAssertEqual(try numbers("ji").last, 24)
+        XCTAssertEqual(try numbers("fun").last, 59)
+        XCTAssertEqual(try numbers("nichi-date").last, 31)
+        XCTAssertEqual(try numbers("nichikan").last, 31)
+        XCTAssertEqual(try numbers("gatsu").last, 12)
+        XCTAssertEqual(try numbers("hon").last, 100)
+        XCTAssertEqual(Array(try numbers("en").suffix(3)), [8000, 9000, 10000])
+    }
+
+    /// The file is fetched whole on every change, so bigger numbers have a budget. If this fails, trim
+    /// `extent` or `extra` before raising the number.
+    func testTheFileStaysUnderTheSizeBudget() throws {
+        let bytes = try Data(contentsOf: repoRoot.appendingPathComponent("data/counters.json")).count
+        XCTAssertLessThan(bytes, 200_000, "counters.json is \(bytes) bytes")
+    }
+
+    /// Bigger numbers add keys; they must not change what the 1 to 10 screens, tables and quiz read.
+    func testTheCoreNumbersAreUnchanged() throws {
+        let file = try load()
+        let sample: [(String, CounterNumber, String)] = [
+            ("hon", .n(1), "いっぽん"), ("fun", .n(4), "よんぷん"), ("ji", .n(4), "よじ"), ("nin", .n(1), "ひとり"),
+            ("nichi-date", .n(1), "ついたち"), ("en", .n(4), "よえん"), ("sai", .n(8), "はっさい"),
+            ("kai-floor", .n(3), "さんがい"), ("wa", .n(3), "さんば"), ("soku", .n(3), "さんぞく"),
+            ("hon", .what, "なんぼん"), ("tsu", .n(10), "とお"),
+        ]
+        for (id, number, reading) in sample {
+            XCTAssertEqual(try counter(id, in: file).readings(for: number).first, reading, "\(id) \(number.key)")
+        }
+        for counter in file.counters {
+            for number in CounterNumber.allCases {
+                XCTAssertFalse(counter.readings(for: number).isEmpty, "\(counter.id) \(number.key)")
+            }
+        }
+    }
+
+    /// Learner-facing fixes from the stage 1 review: 二十歳 has formal readings besides はたち (so they are
+    /// not offered as wrong answers), and the 月 pitfall must not carry a typo.
+    func testTwentyYearsOldAcceptsTheFormalReadingsAndTheMonthPitfallHasNoTypo() throws {
+        let file = try load()
+        let sai = try counter("sai", in: file)
+        XCTAssertEqual(sai.readings(for: .n(20)).first, "はたち")
+        XCTAssertTrue(sai.readings(for: .n(20)).contains("にじゅっさい"))
+        XCTAssertTrue(Set(sai.distractors(for: .n(20))).isDisjoint(with: sai.readings(for: .n(20))))
+        let gatsu = try counter("gatsu", in: file)
+        XCTAssertFalse(gatsu.pitfalls.contains { $0.explanation.contains("ななに") })
+        XCTAssertTrue(gatsu.pitfalls.contains { $0.explanation.contains("なながつ") })
+    }
+
+    /// 膳 counts pairs of chopsticks (一本 is a single stick). It has no sound changes.
+    func testTheChopsticksCounterCountsPairs() throws {
+        let file = try load()
+        let zen = try counter("zen", in: file)
+        XCTAssertEqual(zen.counter, "膳")
+        let expected: [(CounterNumber, String)] = [
+            (.n(1), "いちぜん"), (.n(2), "にぜん"), (.n(3), "さんぜん"), (.n(4), "よんぜん"),
+            (.n(8), "はちぜん"), (.n(10), "じゅうぜん"), (.what, "なんぜん"),
+        ]
+        for (number, reading) in expected {
+            XCTAssertEqual(zen.readings(for: number).first, reading, number.key)
+        }
+        XCTAssertTrue(zen.changed.isEmpty)
+        XCTAssertEqual(zen.readings(for: .n(20)).first, "にじゅうぜん")
+        XCTAssertTrue(zen.things.contains { $0.word == "箸" && $0.fit == .primary })
+        XCTAssertTrue(zen.pitfalls.contains { $0.explanation.contains("一本") }, "a single stick is 本")
+        XCTAssertFalse(zen.askings.isEmpty)
+        XCTAssertTrue(zen.related.contains("hon"))
+        XCTAssertTrue(file.sections.contains { $0.id == "things" && $0.counters.contains("zen") })
+    }
+
+    /// Every example and pitfall example text of a counter.
+    private func texts(_ counter: Counter) -> [String] {
+        counter.examples.map(\.jp) + counter.pitfalls.flatMap { $0.examples.map(\.jp) }
+    }
+
+    func testBiggerNumbersHaveExamplesAndPitfalls() throws {
+        let file = try load()
+        let minutes = try counter("fun", in: file)
+        XCTAssertTrue(texts(minutes).contains { $0.contains("三十分") })
+        XCTAssertTrue(texts(minutes).contains { $0.contains("四十分") })
+        XCTAssertTrue(minutes.pitfalls.contains { $0.heading.contains("tens") })
+        let date = try counter("nichi-date", in: file)
+        XCTAssertTrue(texts(date).contains { $0.contains("二十日") })
+        XCTAssertTrue(texts(date).contains { $0.contains("十四日") })
+        XCTAssertTrue(date.pitfalls.contains { $0.heading.contains("はつか") })
+        let yen = try counter("en", in: file)
+        XCTAssertTrue(texts(yen).contains { $0.contains("三百円") })
+        XCTAssertTrue(yen.pitfalls.contains { $0.heading.contains("300") })
+    }
+
+    func testBiggerNumberExamplesReadAsTheirCounterSays() throws {
+        let file = try load()
+        let hatsuka = try XCTUnwrap(try counter("nichi-date", in: file).examples
+            .first { $0.jp.contains("二十日") })
+        XCTAssertEqual(hatsuka.readings["二十日"], "はつか")
+        XCTAssertEqual(try counter("nichi-date", in: file).readings(for: .n(20)).first, "はつか")
+        XCTAssertEqual(try counter("nichi-date", in: file).readings(for: .n(14)).first, "じゅうよっか")
     }
 }

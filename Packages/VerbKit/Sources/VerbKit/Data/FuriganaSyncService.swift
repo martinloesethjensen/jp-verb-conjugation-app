@@ -49,4 +49,9 @@ public struct FuriganaSyncService: Sendable {
         syncState.saveLastSyncedFuriganaManifest(manifest)
         syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.furigana.rawValue)
     }
+
+    /// The highest version this device has accepted, which a bundled copy must beat to be installed.
+    public func acceptedVersion() -> String? {
+        syncState.highestAcceptedVersion(for: DataFile.furigana.rawValue)
+    }
 }

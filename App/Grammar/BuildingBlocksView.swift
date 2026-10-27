@@ -90,6 +90,8 @@ struct BuildingBlocksView: View {
                     }
                 }
             }
+            CopulaSection()
+            PoliteAdjectiveSection(iAdjective: source(.iAdjective), naAdjective: source(.naAdjective))
             ForEach(GrammarSlot.allCases, id: \.self) { slot in
                 Section {
                     ForEach(Self.classes, id: \.self) { wordClass in

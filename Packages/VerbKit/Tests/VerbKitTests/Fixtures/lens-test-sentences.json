@@ -35,7 +35,7 @@
     {
       "text": "雨が降ったら、家で本を読みましょう。", "set": "dev",
       "verbs": [
-        {"surface": "降ったら", "match": "notInApp"},
+        {"surface": "降ったら", "verb": "ふる", "match": "exact", "forms": ["conditional_tara"]},
         {"surface": "読みましょう", "verb": "よむ", "match": "exact", "forms": ["masu_volitional"]}
       ]
     },
@@ -167,7 +167,7 @@
       "text": "夏休みに京都へ行こうと思っています。", "set": "heldout",
       "verbs": [
         {"surface": "行こう", "verb": "いく", "match": "exact", "forms": ["volitional"]},
-        {"surface": "思っています", "match": "notInApp"}
+        {"surface": "思っています", "verb": "おもう", "match": "exact", "forms": ["teiru_masu_pos"]}
       ]
     },
     {
@@ -257,7 +257,7 @@
       "text": "日本に来てから三年になります。", "set": "heldout",
       "verbs": [
         {"surface": "来て", "verb": "くる", "match": "exact", "forms": ["te"]},
-        {"surface": "なります", "match": "notInApp"}
+        {"surface": "なります", "verb": "なる", "match": "exact", "forms": ["masu_pos"]}
       ]
     }
   ]

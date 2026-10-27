@@ -48,4 +48,9 @@ public struct VerbSyncService: Sendable {
         syncState.saveLastSyncedManifest(manifest)
         syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.verbs.rawValue)
     }
+
+    /// The highest version this device has accepted, which a bundled copy must beat to be installed.
+    public func acceptedVersion() -> String? {
+        syncState.highestAcceptedVersion(for: DataFile.verbs.rawValue)
+    }
 }

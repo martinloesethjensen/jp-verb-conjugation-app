@@ -20,6 +20,8 @@ public final class VerbStore {
     private let grammarSyncService: GrammarSyncService?
     private let grammarPersisting: GrammarPersisting?
     private let syncStatus: DataSyncStatus?
+    private let bundledVerbs: BundledData<VerbDataFile>?
+    private let bundledGrammar: BundledData<GrammarDataFile>?
 
     public init(
         syncService: VerbSyncService,
@@ -27,7 +29,9 @@ public final class VerbStore {
         networkMonitor: NetworkMonitor,
         grammarSyncService: GrammarSyncService? = nil,
         grammarPersisting: GrammarPersisting? = nil,
-        syncStatus: DataSyncStatus? = nil
+        syncStatus: DataSyncStatus? = nil,
+        bundledVerbs: BundledData<VerbDataFile>? = nil,
+        bundledGrammar: BundledData<GrammarDataFile>? = nil
     ) {
         self.syncService = syncService
         self.persisting = persisting
@@ -35,6 +39,8 @@ public final class VerbStore {
         self.grammarSyncService = grammarSyncService
         self.grammarPersisting = grammarPersisting
         self.syncStatus = syncStatus
+        self.bundledVerbs = bundledVerbs
+        self.bundledGrammar = bundledGrammar
     }
 
     public func start() async {
@@ -46,6 +52,7 @@ public final class VerbStore {
             }
         }
 
+        installBundled()
         loadCachedGrammar()
 
         if let cached = try? persisting.loadAllVerbs(), !cached.isEmpty {
@@ -144,6 +151,42 @@ public final class VerbStore {
         syncService.confirmSynced(manifest)
         syncStatus?.recordUpdated(.verbs, version: manifest.version)
         verbs = fetchedVerbs
+    }
+
+    /// Installs the bundled grammar and verbs when they are newer than anything this device has accepted.
+    /// Synchronous and idempotent: the app calls it before any network await, so a slow connection cannot
+    /// hold the bundled data back; `start()` calls it again and finds nothing to do.
+    public func installBundled() {
+        installBundledGrammar()
+        installBundledVerbs()
+    }
+
+    /// Installs the bundled verbs as if they had been synced, when they are newer than anything this device
+    /// has accepted. Same contract as a sync: persist first, record only after the save succeeded, and a
+    /// failure leaves the old cache and records nothing.
+    private func installBundledVerbs() {
+        guard let bundled = bundledVerbs,
+              DataVersion.isNewer(bundled.version, than: syncService.acceptedVersion()) else { return }
+        do {
+            try persisting.replaceAllVerbs(with: bundled.value.verbs)
+        } catch {
+            return
+        }
+        syncService.confirmSynced(VerbManifest(version: bundled.version, sha256: bundled.sha256))
+        syncStatus?.recordBundled(.verbs, version: bundled.version)
+    }
+
+    /// The grammar counterpart; it never affects the verbs.
+    private func installBundledGrammar() {
+        guard let bundled = bundledGrammar, let grammarSyncService, let grammarPersisting,
+              DataVersion.isNewer(bundled.version, than: grammarSyncService.acceptedVersion()) else { return }
+        do {
+            try grammarPersisting.replaceAllGrammar(points: bundled.value.grammar, textbooks: bundled.value.books)
+        } catch {
+            return
+        }
+        grammarSyncService.confirmSynced(GrammarManifest(version: bundled.version, sha256: bundled.sha256))
+        syncStatus?.recordBundled(.grammar, version: bundled.version)
     }
 
     private func loadCachedGrammar() {

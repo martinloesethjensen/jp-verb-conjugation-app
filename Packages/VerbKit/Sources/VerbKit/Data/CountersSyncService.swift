@@ -17,6 +17,11 @@ public struct CountersSyncService: Sendable {
         self.syncState = syncState
     }
 
+    /// The highest version this device has accepted, which a bundled copy must beat to be installed.
+    public func acceptedVersion() -> String? {
+        syncState.highestAcceptedVersion(for: "counters")
+    }
+
     /// Fetches the manifest's `counters` entry. No entry, or an entry unchanged since the last
     /// confirmed sync, returns `.upToDate`. Otherwise fetches counters.json, verifies its hash,
     /// decodes it and returns the file. Does NOT record the manifest as synced.

@@ -91,6 +91,9 @@ struct CounterQuizView: View {
                     .italic()
                     .foregroundStyle(.secondary)
             }
+                if question.kind == .counterReading, CounterNumber(key: question.formID)?.isExtended == true {
+                    UnreviewedLabel()
+                }
         }
         .accessibilityElement(children: .combine)
     }

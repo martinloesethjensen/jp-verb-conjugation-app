@@ -66,4 +66,12 @@ final class CountersSyncTests: XCTestCase {
             XCTAssertEqual(error as? VerbSyncError, .untrusted)
         }
     }
+
+    func testTheAcceptedVersionIsTheRollbackFloor() {
+        let state = InMemorySyncStateStore()
+        let service = CountersSyncService(fetcher: fetcher(), syncState: state)
+        XCTAssertNil(service.acceptedVersion())
+        service.confirmSynced(CountersManifest(version: "1.4.0", sha256: "x"))
+        XCTAssertEqual(service.acceptedVersion(), "1.4.0")
+    }
 }

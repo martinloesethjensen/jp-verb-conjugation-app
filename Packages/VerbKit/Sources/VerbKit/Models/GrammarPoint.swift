@@ -124,23 +124,27 @@ public struct GrammarPitfall: Codable, Hashable, Sendable {
     public var heading: String
     public var explanation: String
     public var examples: [GrammarExample]
+    /// The form learners actually produce, without a mark ("静かだので"); the views add the ✗.
+    public var wrong: String?
 
-    public init(heading: String, explanation: String, examples: [GrammarExample] = []) {
+    public init(heading: String, explanation: String, examples: [GrammarExample] = [], wrong: String? = nil) {
         self.heading = heading
         self.explanation = explanation
         self.examples = examples
+        self.wrong = wrong
     }
 
     enum CodingKeys: String, CodingKey {
-        case heading, explanation, examples
+        case heading, explanation, examples, wrong
     }
 
-    /// `examples` may be omitted from the JSON.
+    /// `examples` and `wrong` may be omitted from the JSON.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         heading = try container.decode(String.self, forKey: .heading)
         explanation = try container.decode(String.self, forKey: .explanation)
         examples = try container.decodeIfPresent([GrammarExample].self, forKey: .examples) ?? []
+        wrong = try container.decodeIfPresent(String.self, forKey: .wrong)
     }
 }
 

@@ -63,8 +63,10 @@ def counter_texts(counters_doc, furigana_readings):
     scan the furigana check uses; the others are spoken as written."""
     raw = []
     for counter in counters_doc.get("counters", []):
-        for readings in (counter.get("readings") or {}).values():
-            raw.extend(readings)
+        # 1 to 10 and 何 only: the bigger numbers have no screen that speaks them yet
+        for key, readings in (counter.get("readings") or {}).items():
+            if key in update_data.COUNTER_KEYS:
+                raw.extend(readings)
         for thing in counter.get("things") or []:
             raw.append(thing.get("kana"))
         examples = list(counter.get("examples") or [])

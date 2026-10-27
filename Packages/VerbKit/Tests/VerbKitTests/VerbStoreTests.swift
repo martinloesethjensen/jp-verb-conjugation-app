@@ -183,6 +183,146 @@ final class VerbStoreTests: XCTestCase {
         XCTAssertEqual(store.verbs.map(\.dict), ["のむ"])
         XCTAssertEqual(store.firstLaunchState, .checking) // first-launch flow never entered
     }
+
+    // MARK: the bundled copy
+
+    /// A verb persisting wrapper that counts replaces and can be told to fail them.
+    private final class RecordingVerbPersisting: VerbPersisting, @unchecked Sendable {
+        let base: VerbPersisting
+        var replaces = 0
+        var failReplace = false
+        init(_ base: VerbPersisting) { self.base = base }
+        func loadAllVerbs() throws -> [Verb] { try base.loadAllVerbs() }
+        func replaceAllVerbs(with verbs: [Verb]) throws {
+            replaces += 1
+            if failReplace { throw VerbSyncError.malformedData }
+            try base.replaceAllVerbs(with: verbs)
+        }
+    }
+
+    private struct FailingGrammarPersisting: GrammarPersisting {
+        func loadAllGrammarPoints() throws -> [GrammarPoint] { [] }
+        func loadAllTextbooks() throws -> [Textbook] { [] }
+        func replaceAllGrammar(points: [GrammarPoint], textbooks: [Textbook]) throws { throw VerbSyncError.malformedData }
+    }
+
+    private func bundledVerbs(version: String = "1.0.0") throws -> BundledData<VerbDataFile> {
+        let data = try fixtureData()
+        return BundledData(
+            value: try JSONDecoder().decode(VerbDataFile.self, from: data), version: version,
+            sha256: sha256Hex(of: data), data: data
+        )
+    }
+
+    private func offlineFetcher() -> MockVerbDataFetcher {
+        let fetcher = MockVerbDataFetcher()
+        fetcher.manifestResult = .failure(VerbSyncError.offline)
+        return fetcher
+    }
+
+    private func store(
+        persisting: VerbPersisting, state: InMemorySyncStateStore = InMemorySyncStateStore(),
+        verbs: BundledData<VerbDataFile>? = nil, grammar: BundledData<GrammarDataFile>? = nil,
+        grammarPersisting: GrammarPersisting? = nil
+    ) -> VerbStore {
+        VerbStore(
+            syncService: VerbSyncService(fetcher: offlineFetcher(), syncState: state),
+            persisting: persisting, networkMonitor: NetworkMonitor(),
+            grammarSyncService: grammar == nil && grammarPersisting == nil
+                ? nil : GrammarSyncService(fetcher: offlineFetcher(), syncState: state),
+            grammarPersisting: grammarPersisting, bundledVerbs: verbs, bundledGrammar: grammar
+        )
+    }
+
+    func testAnOfflineFirstLaunchWithABundleShowsAndPersistsItsVerbs() async throws {
+        let persisting = try makePersisting()
+        let state = InMemorySyncStateStore()
+        let store = store(persisting: persisting, state: state, verbs: try bundledVerbs())
+        await store.start()
+        XCTAssertTrue(store.hasLocalData)
+        XCTAssertEqual(store.verbs.count, 2)
+        XCTAssertEqual(try persisting.loadAllVerbs().count, 2, "widgets and intents read the persisted store")
+        XCTAssertEqual(state.highestAcceptedVersion(for: "verbs"), "1.0.0")
+        XCTAssertEqual(state.lastSyncedManifest()?.version, "1.0.0")
+    }
+
+    func testANewerBundleReplacesTheCacheOnce() async throws {
+        let all = try JSONDecoder().decode(VerbDataFile.self, from: try fixtureData()).verbs
+        let persisting = RecordingVerbPersisting(try makePersisting())
+        try persisting.base.replaceAllVerbs(with: [all[0]])
+        let state = InMemorySyncStateStore()
+        state.saveHighestAcceptedVersion("0.9.0", for: "verbs")
+        let store = store(persisting: persisting, state: state, verbs: try bundledVerbs())
+        await store.start()
+        XCTAssertEqual(store.verbs.count, 2)
+        XCTAssertEqual(persisting.replaces, 1)
+    }
+
+    func testAnOlderBundleChangesNothing() async throws {
+        let all = try JSONDecoder().decode(VerbDataFile.self, from: try fixtureData()).verbs
+        let persisting = RecordingVerbPersisting(try makePersisting())
+        try persisting.base.replaceAllVerbs(with: [all[0]])
+        let state = InMemorySyncStateStore()
+        state.saveHighestAcceptedVersion("2.0.0", for: "verbs")
+        let store = store(persisting: persisting, state: state, verbs: try bundledVerbs(version: "1.0.0"))
+        await store.start()
+        XCTAssertEqual(store.verbs.count, 1)
+        XCTAssertEqual(persisting.replaces, 0)
+        XCTAssertEqual(state.highestAcceptedVersion(for: "verbs"), "2.0.0")
+    }
+
+    func testAnEqualVersionDoesNotReinstall() async throws {
+        let persisting = RecordingVerbPersisting(try makePersisting())
+        try persisting.base.replaceAllVerbs(with: JSONDecoder().decode(VerbDataFile.self, from: try fixtureData()).verbs)
+        let state = InMemorySyncStateStore()
+        state.saveHighestAcceptedVersion("1.0.0", for: "verbs")
+        let store = store(persisting: persisting, state: state, verbs: try bundledVerbs())
+        await store.start()
+        XCTAssertEqual(persisting.replaces, 0)
+        XCTAssertEqual(store.verbs.count, 2)
+    }
+
+    func testAFailedInstallKeepsTheCacheAndRecordsNothing() async throws {
+        let all = try JSONDecoder().decode(VerbDataFile.self, from: try fixtureData()).verbs
+        let persisting = RecordingVerbPersisting(try makePersisting())
+        try persisting.base.replaceAllVerbs(with: [all[0]])
+        persisting.failReplace = true
+        let state = InMemorySyncStateStore()
+        let store = store(persisting: persisting, state: state, verbs: try bundledVerbs())
+        await store.start()
+        XCTAssertEqual(store.verbs.count, 1, "the old cache stays")
+        XCTAssertNil(state.lastSyncedManifest())
+        XCTAssertNil(state.highestAcceptedVersion(for: "verbs"))
+    }
+
+    func testTheGrammarBundleIsInstalledAndTheFloorRecorded() async throws {
+        let grammar = try XCTUnwrap(BundledData<GrammarDataFile>.load(named: "grammar"))
+        let state = InMemorySyncStateStore()
+        let container = try VerbModelContainer.makeInMemory()
+        let grammarPersisting = SwiftDataGrammarPersisting(modelContext: ModelContext(container))
+        let store = store(
+            persisting: try makePersisting(), state: state, verbs: try bundledVerbs(), grammar: grammar,
+            grammarPersisting: grammarPersisting
+        )
+        await store.start()
+        XCTAssertFalse(grammar.value.grammar.isEmpty)
+        XCTAssertEqual(store.grammarPoints.count, grammar.value.grammar.count)
+        XCTAssertEqual(try grammarPersisting.loadAllGrammarPoints().count, grammar.value.grammar.count)
+        XCTAssertEqual(state.highestAcceptedVersion(for: "grammar"), grammar.version)
+    }
+
+    func testAGrammarInstallFailureDoesNotHideTheVerbs() async throws {
+        let grammar = try XCTUnwrap(BundledData<GrammarDataFile>.load(named: "grammar"))
+        let state = InMemorySyncStateStore()
+        let store = store(
+            persisting: try makePersisting(), state: state, verbs: try bundledVerbs(), grammar: grammar,
+            grammarPersisting: FailingGrammarPersisting()
+        )
+        await store.start()
+        XCTAssertEqual(store.verbs.count, 2)
+        XCTAssertTrue(store.grammarPoints.isEmpty)
+        XCTAssertNil(state.highestAcceptedVersion(for: "grammar"))
+    }
 }
 
 /// A `VerbPersisting` mock whose `replaceAllVerbs(with:)` can be made to

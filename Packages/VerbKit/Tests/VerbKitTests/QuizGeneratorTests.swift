@@ -172,7 +172,10 @@ final class QuizGeneratorTests: XCTestCase {
                     XCTAssertEqual(q.correct, q.form.value(in: taberu.forms))
                     // same verb's other forms come first: with 47 of them there are always 3.
                     XCTAssertEqual(q.choices.count, 4)
-                    XCTAssertTrue(Set(q.choices).isSubset(of: sameVerbStrings))
+                    // ...plus at most one synthetic rule mistake (たべらない), which is tagged as such.
+                    let invented = Set(q.choices).subtracting(sameVerbStrings)
+                    XCTAssertLessThanOrEqual(invented.count, 1)
+                    XCTAssertTrue(invented.allSatisfy { q.errors[$0] == .ruUConfusion })
                 }
             }
         }

@@ -18,6 +18,7 @@ struct ReadingBlock: View {
             Text(counter.written(number))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            if number.isExtended { UnreviewedLabel() }
             Text(preferred)
                 .font(.system(size: 44, weight: .bold, design: .rounded))
                 .minimumScaleFactor(0.5)
@@ -46,7 +47,7 @@ struct ReadingBlock: View {
         .textActions(preferred)
         .animation(reduceMotion ? nil : .snappy, value: number)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(counter.written(number)), \(preferred)\(changed ? ", sound changes" : "")")
+        .accessibilityLabel("\(counter.written(number)), \(preferred)\(changed ? ", sound changes" : "")\(number.isExtended ? ", unreviewed" : "")")
         .accessibilityHint("Speaks the reading")
         .accessibilityAddTraits(.isButton)
     }
