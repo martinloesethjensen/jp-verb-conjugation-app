@@ -1100,6 +1100,31 @@ class OtherFormsTests(unittest.TestCase):
         for dict_form, kind in [("わかる", "u"), ("しる", "u"), ("つかれる", "ru")]:
             self.assertIsNone(ud.potential_base(potential_verb(dict_form, kind)))
 
+    def test_kureru_has_an_irregular_imperative_and_little_else(self):
+        self.assertEqual(self.forms("くれる", "ru", "くれた"), {
+            "conditional_ba": "くれれば", "conditional_tara": "くれたら", "imperative": "くれ",
+        })
+        self.assertIsNone(ud.potential_base(potential_verb("くれる", "ru")))
+        self.assertEqual(ud.IRREGULAR_IMPERATIVE, {"くれる": "くれ"})
+
+    def test_the_core_batch_exclusions(self):
+        self.assertEqual(self.forms("できる", "ru", "できた"),
+                         {"conditional_ba": "できれば", "conditional_tara": "できたら"})
+        self.assertNotIn("passive", self.forms("なる", "u", "なった"))
+        self.assertEqual(self.forms("なる", "u", "なった")["imperative"], "なれ")
+        self.assertEqual(set(self.forms("ふる", "u", "ふった")),
+                         {"passive", "causative", "conditional_ba", "conditional_tara"})
+        for dict_form, kind in [("できる", "ru"), ("みえる", "ru"), ("きこえる", "ru"), ("あく", "u"), ("ふる", "u")]:
+            self.assertIsNone(ud.potential_base(potential_verb(dict_form, kind)))
+
+    def test_partial_forms_name_real_verbs_and_forms(self):
+        data = json.loads((Path(__file__).resolve().parent.parent / "data" / "verbs.json")
+                          .read_text(encoding="utf-8"))
+        self.assertTrue(set(ud.PARTIAL_OTHER_FORMS) <= {v["dict"] for v in data["verbs"]})
+        self.assertTrue(set(ud.NO_POTENTIAL) <= {v["dict"] for v in data["verbs"]})
+        for names in ud.PARTIAL_OTHER_FORMS.values():
+            self.assertTrue(names <= set(ud.BASE_OTHER_FIELDS), names)
+
     def test_unknown_class_or_missing_past_fails(self):
         with self.assertRaises(ValueError):
             self.forms("たべる", "weird", "たべた")

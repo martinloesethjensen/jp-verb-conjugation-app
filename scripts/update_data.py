@@ -90,8 +90,11 @@ IRREGULAR_POTENTIAL = {"する": "できる", "くる": "こられる"}
 # and any stale ones are removed. This is the only hand-maintained part of the
 # potential step; extend it as verbs are added. わかる is already potential in
 # meaning (わかれる reads as 分かれる), つかれる is not something you choose to do,
-# and しれる is mostly heard in しれない / かもしれない.
-NO_POTENTIAL = {"ある", "わかる", "しる", "つかれる"}
+# and しれる is mostly heard in しれない / かもしれない. できる already means "can"
+# (×できられる). みえる, きこえる, あく (開く) and ふる (降る) happen by themselves, so
+# "can be seen" and the like make no sense (あける would also read as 開ける). くれる has
+# no potential (×くれられる); people say もらえる instead.
+NO_POTENTIAL = {"ある", "わかる", "しる", "つかれる", "できる", "みえる", "きこえる", "あく", "ふる", "くれる"}
 
 # A potential verb is itself an ichidan verb, so its other forms are the
 # standard ichidan endings on its stem (the base form minus る), in JSON order.
@@ -141,6 +144,17 @@ IRREGULAR_OTHER_FORMS = {
 # - しる: no volitional or imperative. The passive stays (しられている); the long
 #   causative-passive しらせられる is not used (people say しらされる).
 # - おわる: the passive おわられる only reads as the honorific, so it is left out.
+# - なる: no passive (なられる only reads as the honorific) and no causative (people say
+#   医者にさせる, not ならせる), so no causative-passive either.
+# - くれる: only the ば and たら conditionals and the imperative, which is irregular (くれ, see
+#   IRREGULAR_IMPERATIVE). You cannot plan, want or be made to give to yourself.
+# - できる, みえる, きこえる, あく (開く): not volitional, so only the ば and たら conditionals
+#   (できれば, 見えたら). あく's passive あかれる and causative あかせる are not used.
+# - おくれる: like つかれる, not volitional: no volitional or imperative (おくれろ), and no passive.
+#   おくれさせる (to delay something) stays.
+# - ふる (降る): no volitional, imperative or たい. The passive stays (雨に降られた, "caught in
+#   the rain") and so does the causative (雨を降らせる); the causative-passive does not.
+# - つく (着く): no passive or causative (つかせる reads as 付かせる / 落ち着かせる).
 PARTIAL_OTHER_FORMS = {
     "ある": {"volitional", "conditional_ba", "conditional_tara", "tai"},
     "わかる": {"causative", "causative_passive", "conditional_ba", "conditional_tara", "tai"},
@@ -148,7 +162,20 @@ PARTIAL_OTHER_FORMS = {
     "つかれる": {"causative", "conditional_ba", "conditional_tara"},
     "おわる": {"volitional", "causative", "causative_passive", "conditional_ba", "conditional_tara",
              "imperative", "tai"},
+    "なる": {"volitional", "conditional_ba", "conditional_tara", "imperative", "tai"},
+    "くれる": {"conditional_ba", "conditional_tara", "imperative"},
+    "できる": {"conditional_ba", "conditional_tara"},
+    "みえる": {"conditional_ba", "conditional_tara"},
+    "きこえる": {"conditional_ba", "conditional_tara"},
+    "あく": {"conditional_ba", "conditional_tara"},
+    "おくれる": {"causative", "conditional_ba", "conditional_tara"},
+    "ふる": {"passive", "causative", "conditional_ba", "conditional_tara"},
+    "つく": {"volitional", "conditional_ba", "conditional_tara", "imperative", "tai"},
 }
+
+# Verbs whose imperative breaks the rule for their class. くれる is a ru-verb, but its imperative
+# is くれ, not ×くれろ.
+IRREGULAR_IMPERATIVE = {"くれる": "くれ"}
 
 
 def other_forms(verb):
@@ -186,6 +213,8 @@ def other_forms(verb):
             values["volitional"] = "あろう"
     else:
         raise ValueError(f"{dict_form}: unknown verb type '{kind}'")
+    if dict_form in IRREGULAR_IMPERATIVE:
+        values["imperative"] = IRREGULAR_IMPERATIVE[dict_form]
     keep = PARTIAL_OTHER_FORMS.get(dict_form)
     return {name: value for name, value in values.items() if keep is None or name in keep}
 
@@ -208,9 +237,14 @@ EXTRA_NEEDS = {
 #   しぬな ("don't die") is natural and stays. The imperative しね is a harsh insult; the verb's
 #   note says so, and the form stays for reference.
 # - おわる: おわりなさい and おわるな are not said (the event ends by itself). おわりましょう is.
+# - くれる: ×くれなさい is not said, and くれるな ("don't give me") is literary at best. The
+#   imperative くれ stays.
+# - ふる (降る): the short causative-passive ふらされる is not said.
 EXTRA_EXCLUDED = {
     "しぬ": {"nasai", "causative_passive_short"},
     "おわる": {"nasai", "neg_imperative"},
+    "くれる": {"nasai", "neg_imperative"},
+    "ふる": {"causative_passive_short"},
 }
 
 
@@ -302,8 +336,9 @@ def in_catalogue_order(forms):
 # Verbs that take none of the て-form auxiliaries (ている, てしまう, ておく,
 # てみる): they get no such fields, and any stale ones are removed. They keep
 # the stem-based forms. This is the only hand-maintained part of the step;
-# extend it as verbs are added (for example いる).
-NO_TE_AUXILIARIES = {"ある"}
+# extend it as verbs are added. いる takes none of them (×いている, ×いてしまう); its
+# stem-based forms (いすぎる, いながら) stay.
+NO_TE_AUXILIARIES = {"ある", "いる"}
 
 # ている is the one auxiliary conjugated in full: the verb's て-form plus いる
 # conjugated as an ichidan verb, in JSON order.

@@ -32,36 +32,37 @@ final class RealFormIndexTests: XCTestCase {
                 XCTAssertTrue(index.hits(for: kanji).contains(FormHit(verbID: verb.id, formID: spec.id, script: .kanji)), "\(verb.id) \(spec.id) \(kanji)")
             }
         }
-        XCTAssertEqual(forms, 4_570)
-        XCTAssertEqual(index.statistics.forms, 4_570)
+        XCTAssertEqual(forms, 5_790)
+        XCTAssertEqual(index.statistics.forms, 5_790)
         XCTAssertEqual(index.statistics.spellingFailures, 0)
-        // Kana only: 付ける, 貰う and 出来る won't match until the data has their kanji.
-        XCTAssertEqual(withoutKanji, ["する", "ある", "つける", "もらう"])
+        // Kana only: 付ける and 貰う won't match until the data has their kanji. いる, なる, あげる
+        // and くれる are written in kana (居る, 成る, 上げる and 呉れる are rare or mean something else).
+        XCTAssertEqual(withoutKanji, ["する", "ある", "つける", "もらう", "いる", "なる", "あげる", "くれる"])
     }
 
     // MARK: Pinned counts
 
     func testSurfaceCountsArePinned() {
         let stats = index.statistics
-        XCTAssertEqual(Self.verbs.count, 65)
-        XCTAssertEqual(stats.surfaces, 8_735)
-        XCTAssertEqual(stats.kanaSurfaces, 4_450)
-        XCTAssertEqual(stats.kanjiSurfaces, 4_285)
-        XCTAssertEqual(stats.stems, 880)
+        XCTAssertEqual(Self.verbs.count, 84)
+        XCTAssertEqual(stats.surfaces, 10_805)
+        XCTAssertEqual(stats.kanaSurfaces, 5_562)
+        XCTAssertEqual(stats.kanjiSurfaces, 5_243)
+        XCTAssertEqual(stats.stems, 1_034)
         let surfaces = index.surfaces
         XCTAssertEqual(surfaces.map(\.count).min(), 2)
         XCTAssertEqual(surfaces.map(\.count).max(), 12)
         // 食べ… is a proper prefix of 食べた, 食べたい…: longest match has to choose.
         let prefixes = Set(surfaces.flatMap { surface in (1..<surface.count).map { String(surface.prefix($0)) } })
-        XCTAssertEqual(surfaces.filter(prefixes.contains).count, 1_558)
+        XCTAssertEqual(surfaces.filter(prefixes.contains).count, 1_936)
     }
 
     func testAmbiguityCountsArePinned() {
-        XCTAssertEqual(index.statistics.ambiguous, 149)
-        XCTAssertEqual(index.statistics.sameVerbAmbiguous, 38)
-        XCTAssertEqual(index.statistics.crossVerbAmbiguous, 111)
-        XCTAssertEqual(index.ambiguousSurfaces(.sameVerb).count, 38)
-        XCTAssertEqual(index.ambiguousSurfaces(.crossVerb).count, 111)
+        XCTAssertEqual(index.statistics.ambiguous, 270)
+        XCTAssertEqual(index.statistics.sameVerbAmbiguous, 44)
+        XCTAssertEqual(index.statistics.crossVerbAmbiguous, 226)
+        XCTAssertEqual(index.ambiguousSurfaces(.sameVerb).count, 44)
+        XCTAssertEqual(index.ambiguousSurfaces(.crossVerb).count, 226)
     }
 
     func testEverySameVerbAmbiguityIsPassiveEqualsPotential() {
@@ -86,6 +87,14 @@ final class RealFormIndexTests: XCTestCase {
             ["かう", "かえる"]: 1,
             ["いれる", "はいる"]: 9,
             ["だす", "でる"]: 2,
+            // From the first core batch of #4. 取る and 撮る share every kana form; 着く's
+            // potential つける is the verb つける; 置く and 起きる share おきます…; 出来る is
+            // する's potential grid; 降る and 降りる share 降ります, 降りません…
+            ["とる", "とる:撮る"]: 72,
+            ["つく", "つける"]: 9,
+            ["おく", "おきる"]: 14,
+            ["する", "できる"]: 9,
+            ["ふる", "おりる"]: 11,
         ])
     }
 

@@ -39,6 +39,8 @@ final class RealFormSplitTests: XCTestCase {
     func testOnlyTheDictionaryFormItselfHasNoEnding() throws {
         for verb in try loadVerbs() {
             for form in try allForms(of: verb) where !FormSplit.split(form, from: verb.dict).hasEnding {
+                // くれる's imperative くれ is its bare stem (#4).
+                if verb.dict == "くれる", form == "くれ" { continue }
                 XCTAssertEqual(form, verb.dict, "\(verb.dict) has a form with no ending: \(form)")
             }
         }

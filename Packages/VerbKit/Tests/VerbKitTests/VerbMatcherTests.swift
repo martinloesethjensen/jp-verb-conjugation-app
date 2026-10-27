@@ -148,7 +148,8 @@ final class VerbMatcherTests: XCTestCase {
 
     func testStoplistedWordsAreNeverHighlighted() {
         XCTAssertEqual(spans("すみ ませ ん 道 を 聞き たい ん です が 。").map(\.surface), ["聞きたい"])
-        XCTAssertEqual(spans("どう して 遅れ た ん です か 。").filter { $0.status != .notInApp }.map(\.surface), [])
+        // どうして isn't する; 遅れたんです is 遅れる (#4).
+        XCTAssertEqual(spans("どう して 遅れ た ん です か 。").filter { $0.status != .notInApp }.map(\.surface), ["遅れたんです"])
     }
 
     func testNaiIsNotAruAfterAnAdjectiveANounOrAPattern() {
@@ -179,10 +180,10 @@ final class VerbMatcherTests: XCTestCase {
     // MARK: Verbs the app lacks
 
     func testAConjugatedVerbTheAppLacksIsGreyed() throws {
-        let spans = spans("雨 が 降っ たら 家 で 本 を 読み ましょう 。")
-        XCTAssertEqual(spans.map(\.surface), ["降ったら", "読みましょう"])
+        let spans = spans("約束 を 守っ たら 一緒 に 遊び ましょう 。")
+        XCTAssertEqual(spans.map(\.surface), ["守ったら", "遊びましょう"])
         XCTAssertEqual(spans.map(\.status), [.notInApp, .known])
-        XCTAssertEqual(spans[0].guesses, ["降る", "降う", "降つ"])
+        XCTAssertEqual(spans[0].guesses, ["守る", "守う", "守つ"])
         XCTAssertEqual(spans[0].candidates, [])
     }
 
