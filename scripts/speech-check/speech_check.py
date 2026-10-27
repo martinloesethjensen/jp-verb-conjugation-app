@@ -11,7 +11,7 @@ and scores every transcript against the typed sentence. See README.md.
     python3 scripts/speech-check/speech_check.py tts --voice Kyoko   # synthetic baseline audio
     python3 scripts/speech-check/speech_check.py run DIR --kind learner --label me
     python3 scripts/speech-check/speech_check.py decide             # the Whisper decision bar
-    python3 scripts/speech-check/speech_check.py typed              # matcher on the typed text
+    python3 scripts/speech-check/speech_check.py typed              # the VerbMatcher on the typed text
 
 macOS 26+ with Xcode command line tools. Standard library only. Nothing leaves the
 Mac: Apple's transcribers run on device from the files, and whisper.cpp is local.
@@ -153,13 +153,36 @@ def gold_readings(sentence):
     return out
 
 
-def score_one(sentence, transcript):
-    """Per-verb results for one transcript of one sentence."""
-    import matcher
-    text = re.sub(r"\s+", "", transcript)   # keep punctuation: the matcher uses it as a boundary
+REPO = HERE.parent.parent
+NOT_IN_APP = "not in the app yet"
+
+
+def compact(transcript):
+    """The transcript as the matcher sees it: whitespace removed, punctuation kept."""
+    return re.sub(r"\s+", "", transcript or "")
+
+
+def real_hits(texts):
+    """The production VerbMatcher's spans for each text, as (start, surface, [(verb id,)], label).
+    One `swift test` run for all of them: SpeechCheckReplayTests reads and writes JSON files."""
+    BUILD.mkdir(exist_ok=True)
+    src, dst = BUILD / "replay-in.json", BUILD / "replay-out.json"
+    src.write_text(json.dumps(texts, ensure_ascii=False), encoding="utf-8")
+    dst.unlink(missing_ok=True)
+    env = {**os.environ, "SPEECH_CHECK_IN": str(src), "SPEECH_CHECK_OUT": str(dst)}
+    proc = subprocess.run(["swift", "test", "--package-path", str(REPO / "Packages/VerbKit"),
+                           "--filter", "SpeechCheckReplayTests"], env=env, capture_output=True, text=True)
+    if not dst.exists():
+        sys.exit("the VerbMatcher replay failed (swift test):\n" + (proc.stdout + proc.stderr)[-1500:])
+    return [[(h["start"], h["surface"], [(v,) for v in h["verbs"]], NOT_IN_APP if h["notInApp"] else "")
+             for h in hits] for hits in json.loads(dst.read_text(encoding="utf-8"))]
+
+
+def score_one(sentence, transcript, hits):
+    """Per-verb results for one transcript of one sentence; `hits` are its VerbMatcher spans."""
+    text = compact(transcript)
     toks = tokenize([text])[0] if text else []
     parts = [t["kana"] or t["w"] for t in toks]
-    hits = matcher.match(text, toks) if text else []
     used = set()
     verbs = []
     for g, gread in zip(sentence["verbs"], gold_readings(sentence)):
@@ -186,17 +209,18 @@ def score_one(sentence, transcript):
         return any(span in gs or (r and r in gr) for gs, gr in golds)
 
     fp = sum(1 for k, (i, span, _, chain) in enumerate(hits)
-             if k not in used and chain != "not in the app yet" and not inside_a_chain(i, span))
+             if k not in used and chain != NOT_IN_APP and not inside_a_chain(i, span))
     return verbs, fp
 
 
 def score(rows, kind):
     """Aggregate the transcripts of one engine on one source."""
     per = []
-    for row in rows:
+    all_hits = real_hits([compact(row["text"]) for row in rows])
+    for row, hits in zip(rows, all_hits):
         n = int(re.match(r"^[sS]?0*(\d+)", Path(row["file"]).stem).group(1))
         s = BY_N[n]
-        verbs, fp = score_one(s, row["text"] or "")
+        verbs, fp = score_one(s, row["text"] or "", hits)
         alts_hit = any(norm(a) == norm(s["text"]) for a in row.get("alternatives") or [])
         per.append({"n": n, "typed": s["text"], "text": row["text"], "verbs": verbs, "fp": fp,
                     "exact": norm(row["text"] or "") == norm(s["text"]),
@@ -289,6 +313,16 @@ def cmd_script(_):
           "to `run --not-understood`.")
 
 
+MIN_SPEECH_SECONDS = 1.0   # the shortest of the 41 sentences takes about 1.5 s at the default rate
+
+
+def audio_seconds(path):
+    """Length of an audio file in seconds (afinfo), 0 when it cannot be read."""
+    out = subprocess.run(["afinfo", str(path)], capture_output=True, text=True).stdout
+    m = re.search(r"estimated duration: ([\d.]+)", out)
+    return float(m.group(1)) if m else 0.0
+
+
 def cmd_tts(a):
     out = Path(a.out or BUILD / "audio" / f"tts-{a.voice.lower()}")
     out.mkdir(parents=True, exist_ok=True)
@@ -298,6 +332,12 @@ def cmd_tts(a):
             # a recorder always catches some silence around the speech; say doesn't
             text = f"[[slnc {a.pad}]]{s['text']}[[slnc {a.pad}]]" if a.pad else s["text"]
             subprocess.run(["say", "-v", a.voice, "-o", str(f), text], check=True)
+    silent = [f.name for f in sorted(out.glob("*.aiff")) if audio_seconds(f) < MIN_SPEECH_SECONDS]
+    if silent:
+        shutil.rmtree(out)
+        sys.exit(f"{a.voice} made almost no audio for {len(silent)} of {len(SENTENCES)} sentences: its voice "
+                 "data is probably not downloaded (System Settings > Accessibility > Spoken Content > "
+                 "System Voice > Manage Voices). Scoring silence would print 0% as if it were a result.")
     print(out)
 
 

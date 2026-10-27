@@ -8,14 +8,20 @@ the Whisper decision bar.
 
 It's a maintainer tool for the Mac. It isn't part of the app, and nothing here ships.
 
+## How the matcher is scored
+
+`speech_check.py` scores transcripts with the production `VerbMatcher`, not a copy: it writes the transcripts to a
+JSON file and runs `swift test --filter SpeechCheckReplayTests` in `Packages/VerbKit`, which reads them through the
+matcher and writes the spans back. That test is skipped in a normal test run. The first run of a session builds
+VerbKit, so allow a minute.
+
 ## Files
 
 | File | What it is |
 |---|---|
 | `speech_check.py` | The harness: status, model install, TTS, transcribe + score, decision. Standard library only. |
 | `speechcheck.swift` | Small Swift helper: `AssetInventory` install, file transcription, `CFStringTokenizer`. Built on first use into `.build/`. |
-| `matcher.py` | The prototype "hybrid" verb matcher from the #142 research. #144/#145 replace it. |
-| `sentences.json` | The 41 sentences with hand-labelled verbs (54 verbs; 46 are in `data/verbs.json`). |
+| `sentences.json` | The 41 sentences with hand-labelled verbs (54 verbs; 49 are in `data/verbs.json`). The labels follow `Packages/VerbKit/Tests/VerbKitTests/Fixtures/lens-test-sentences.json`, the golden file the Swift tests use. |
 | `SCRIPT.md` | The recording script: print it and read from it. |
 
 Generated audio, transcripts and scores go to `.build/` (git-ignored). Put your recordings in
@@ -106,7 +112,7 @@ Every metric compares a transcript with the typed sentence in `sentences.json`.
 | Verb chain kept (reading) | The whole labelled verb chain (e.g. 食べさせられなかった) is still there, in any script: same kana reading, on token boundaries. All 54 verbs, in the app or not. |
 | Kept verbatim | Same chain, same spelling as typed. |
 | Respelled | Kept by reading but spelled differently (分かりません → わかりません, きた → 来た). |
-| Matcher right verb / full span | The prototype matcher run on the transcript: right verb found; whole chain matched. 46 in-app verbs. Typed-text ceiling: 46/46 and 44/46. |
+| Matcher right verb / full span | The production `VerbMatcher` (the Sentence lens's matcher) run on the transcript: right verb found; whole chain matched. 49 in-app verbs. Typed-text ceiling: 49/49 and 49/49. |
 | False pos. | Matcher highlights that aren't a labelled in-app verb (grey "not in the app" marks excluded). Typed ceiling: 1. |
 | Sentences losing a verb | Sentences where at least one labelled verb chain didn't survive. **This is what the decision bar uses.** |
 | Ends 。/？, 、 (typed) | Punctuation: sentences ending in 。/？; commas produced (commas in the typed text). |
