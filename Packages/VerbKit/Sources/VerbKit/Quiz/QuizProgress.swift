@@ -75,7 +75,7 @@ public struct QuizProgress: Sendable {
         // Weakness. Connection and counter answers count toward streaks and totals below, but weak
         // spots are verb and form pairs, which a connection (a word and a pattern) or a counter
         // question is not. Counter readings get their own pairs.
-        let verbPairs = Self.pairWeakness(attempts) { $0.kind != .connect && !$0.kind.isCounter }
+        let verbPairs = Self.pairWeakness(attempts) { $0.kind.isVerbQuestion }
             .sorted { Self.ranksBefore($0, $1) }
         weakPairs = verbPairs.map { WeakPair(verb: $0.subject, formID: $0.formID, weakness: $0.weakness) }
 

@@ -7,6 +7,8 @@ enum QuizSelection {
     case weakSpots
     /// Grammar connections, built from the sheet's verbs and every word.
     case connections
+    /// Common mistakes with a wrong form: pick the wrong one.
+    case spotMistake
 }
 
 extension QuizSessionTopic {
@@ -15,7 +17,7 @@ extension QuizSessionTopic {
     init(_ selection: QuizSelection) {
         switch selection {
         case .topics(let topics): self.init(topics: topics)
-        case .weakSpots, .connections: self = .weakSpots
+        case .weakSpots, .connections, .spotMistake: self = .weakSpots
         }
     }
 }
@@ -25,6 +27,8 @@ extension QuizSessionTopic {
 struct QuizTopicSheet: View {
     let verbs: [Verb]
     let connectionPatterns: Int
+    /// How many Spot the mistake questions the level settings allow; the row is off at zero.
+    let spotMistakeQuestions: Int
     /// Weak pairs among the given verbs, so the count follows "Favourites only".
     let weakSpotCount: ([Verb]) -> Int
     /// A saved quiz that can be picked up again, offered above the topics (issue #38).
@@ -36,6 +40,7 @@ struct QuizTopicSheet: View {
     private enum Choice: Hashable {
         case weakSpots
         case connections
+        case spotMistake
         case everything
         case topic(QuizTopic)
     }
@@ -63,6 +68,7 @@ struct QuizTopicSheet: View {
         switch value {
         case .weakSpots: return weakSpots > 0
         case .connections: return connectionPatterns > 0
+        case .spotMistake: return spotMistakeQuestions > 0
         case .everything: return true
         case .topic(let topic): return choices.contains { $0.topic == topic }
         }
@@ -72,6 +78,7 @@ struct QuizTopicSheet: View {
         switch choice {
         case .weakSpots: return .weakSpots
         case .connections: return .connections
+        case .spotMistake: return .spotMistake
         case .everything: return .topics(Set(choices.map(\.topic)))
         case .topic(let topic): return .topics([topic])
         }
@@ -120,8 +127,14 @@ struct QuizTopicSheet: View {
                         choice: .connections,
                         enabled: connectionPatterns > 0
                     )
+                    row(
+                        title: "Spot the mistake",
+                        detail: spotMistakeQuestions == 0 ? "None for your levels" : "\(spotMistakeQuestions) \(spotMistakeQuestions == 1 ? "mistake" : "mistakes")",
+                        choice: .spotMistake,
+                        enabled: spotMistakeQuestions > 0
+                    )
                 } footer: {
-                    Text("Join verbs, adjectives and nouns to grammar patterns: しずか + ので.")
+                    Text("Connections: join verbs, adjectives and nouns to grammar patterns, しずか + ので. Spot the mistake: find the wrong form among correct ones.")
                 }
                 // Only worth offering when there is a choice to make: some, but not all, verbs starred.
                 if !favouriteVerbs.isEmpty && favouriteVerbs.count < verbs.count {
@@ -169,5 +182,6 @@ struct QuizTopicSheet: View {
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
+        .accessibilityValue(choice == value ? "Selected" : "")
     }
 }
