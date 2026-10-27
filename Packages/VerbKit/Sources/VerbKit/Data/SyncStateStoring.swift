@@ -14,7 +14,10 @@ public protocol SyncStateStoring: Sendable {
     func lastSyncedCountersManifest() -> CountersManifest?
     func saveLastSyncedCountersManifest(_ manifest: CountersManifest)
 
-    /// The highest data version ever accepted for `file` ("verbs", "grammar", "furigana", "words", "counters").
+    func lastSyncedFormsManifest() -> FormsManifest?
+    func saveLastSyncedFormsManifest(_ manifest: FormsManifest)
+
+    /// The highest data version ever accepted for `file` ("verbs", "grammar", "furigana", "words", "counters", "forms").
     /// Unlike the last-synced manifests this survives app updates, so an old but validly
     /// signed manifest can never roll the data back.
     func highestAcceptedVersion(for file: String) -> String?

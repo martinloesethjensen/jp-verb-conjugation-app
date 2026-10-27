@@ -4,8 +4,8 @@ import VerbKit
 /// What the Counters detail column shows. `focus` lands a counter page on one number.
 enum CounterDestination: Hashable {
     case group(CounterGroup)
+    case section(CounterSection)
     case counter(Counter, focus: CounterNumber?)
-    case all
     case patterns
 }
 
@@ -29,8 +29,8 @@ extension EnvironmentValues {
     }
 }
 
-/// The Counters tab: the groups grid and search in the sidebar, a group table, counter page or
-/// the full list in the detail column. Moving from a group table to a counter pushes inside the
+/// The Counters tab: search and the counter directory in the sidebar, a compare table, counter page or
+/// Sound patterns in the detail column. Moving from a group table to a counter pushes inside the
 /// detail stack.
 struct CountersTab: View {
     @Binding var destination: CounterDestination?
@@ -70,7 +70,12 @@ struct CountersTab: View {
         switch selection {
         case .whichCounter: return built(.counterChoice)
         case .readIt: return built(.counterReading)
-        case .mixed: return Array((built(.counterChoice) + built(.counterReading)).shuffled().prefix(count))
+        case .askIt: return built(.counterAsk)
+        case .biggerNumbers: return buildBiggerNumberQuestions(counters: counters, count: count)
+        case .mixed:
+            // A fifth of the round, at least one, is from the numbers above 10.
+            let bigger = buildBiggerNumberQuestions(counters: counters, count: max(1, count / 5))
+            return Array((built(.counterChoice) + built(.counterReading) + built(.counterAsk) + bigger).shuffled().prefix(count))
         case .weakSpots: return buildCounterQuestions(pairs: weakPairs, count: count).shuffled()
         }
     }
@@ -87,6 +92,8 @@ struct CountersTab: View {
                 CounterQuizSheet(
                     whichCounterAvailable: available(.counterChoice),
                     readItAvailable: available(.counterReading),
+                    askItAvailable: available(.counterAsk),
+                    biggerNumbersAvailable: !buildBiggerNumberQuestions(counters: visibleCounters, count: 1).isEmpty,
                     weakSpotCount: buildCounterQuestions(pairs: weakPairs, count: 1000).count,
                     onStart: { selection in
                         let built = questions(for: selection)
@@ -130,7 +137,7 @@ struct CountersTab: View {
                             CounterDestinationView(destination: $0)
                         }
                 } else {
-                    ContentUnavailableView("Choose a Group", systemImage: "square.grid.2x2")
+                    ContentUnavailableView("Choose a Counter", systemImage: "textformat.123")
                 }
             }
             // A new choice in the sidebar starts a fresh stack.
@@ -147,10 +154,10 @@ struct CounterDestinationView: View {
         switch destination {
         case let .group(group):
             GroupTableView(group: group)
+        case let .section(section):
+            GroupTableView(section: section)
         case let .counter(counter, focus):
             CounterDetailView(counter: counter, focus: focus)
-        case .all:
-            CounterListView()
         case .patterns:
             SoundPatternsView()
         }

@@ -256,79 +256,131 @@ public struct VerbForms: Codable, Hashable, Sendable {
         self.nagara = nagara
     }
 
-    enum CodingKeys: String, CodingKey {
-        case masuPos = "masu_pos"
-        case masuNeg = "masu_neg"
-        case masuPast = "masu_past"
-        case masuPastNeg = "masu_past_neg"
-        case te
-        case shortPos = "short_pos"
-        case shortNeg = "short_neg"
-        case shortPast = "short_past"
-        case shortPastNeg = "short_past_neg"
-        case potential
-        case volitional
-        case passive
-        case causative
-        case causativePassive = "causative_passive"
-        case conditionalBa = "conditional_ba"
-        case conditionalTara = "conditional_tara"
-        case imperative
-        case tai
-        case causativePassiveShort = "causative_passive_short"
-        case masuVolitional = "masu_volitional"
-        case negTe = "neg_te"
-        case nakute
-        case teMoIi = "te_mo_ii"
-        case teWaIkenai = "te_wa_ikenai"
-        case teChaDame = "te_cha_dame"
-        case nakerebaNaranai = "nakereba_naranai"
-        case nakuteWaIkenai = "nakute_wa_ikenai"
-        case nakya
-        case nakucha
-        case nakuteMoIi = "nakute_mo_ii"
-        case negImperative = "neg_imperative"
-        case nasai
-        case conditionalTo = "conditional_to"
-        case conditionalNara = "conditional_nara"
-        case ndPos = "nd_pos"
-        case ndNeg = "nd_neg"
-        case ndPast = "nd_past"
-        case ndPastNeg = "nd_past_neg"
-        case ndCasualPos = "nd_casual_pos"
-        case ndCasualNeg = "nd_casual_neg"
-        case ndCasualPast = "nd_casual_past"
-        case ndCasualPastNeg = "nd_casual_past_neg"
-        case potMasuPos = "pot_masu_pos"
-        case potMasuNeg = "pot_masu_neg"
-        case potMasuPast = "pot_masu_past"
-        case potMasuPastNeg = "pot_masu_past_neg"
-        case potTe = "pot_te"
-        case potShortNeg = "pot_short_neg"
-        case potShortPast = "pot_short_past"
-        case potShortPastNeg = "pot_short_past_neg"
-        case teiru
-        case teiruNeg = "teiru_neg"
-        case teiruPast = "teiru_past"
-        case teiruPastNeg = "teiru_past_neg"
-        case teiruMasuPos = "teiru_masu_pos"
-        case teiruMasuNeg = "teiru_masu_neg"
-        case teiruMasuPast = "teiru_masu_past"
-        case teiruMasuPastNeg = "teiru_masu_past_neg"
-        case teiruTe = "teiru_te"
-        case teshimau
-        case teshimauPolite = "teshimau_polite"
-        case teoku
-        case teokuPolite = "teoku_polite"
-        case temiru
-        case temiruPolite = "temiru_polite"
-        case sugiru
-        case sugiruPolite = "sugiru_polite"
-        case yasui
-        case yasuiPolite = "yasui_polite"
-        case nikui
-        case nikuiPolite = "nikui_polite"
-        case nagara
+
+    /// Forms this build has no field for, by id: a newer `verbs.json` and catalogue can add a
+    /// form without an app release, and it still reaches the quiz and the form index through
+    /// `subscript(id:)`. Kept when the forms are saved and encoded back.
+    public var extra: [String: String] = [:]
+
+    /// The optional fields, by form id.
+    private static let optionalFields: [String: WritableKeyPath<VerbForms, String?>] = [
+        "potential": \.potential,
+        "volitional": \.volitional,
+        "passive": \.passive,
+        "causative": \.causative,
+        "causative_passive": \.causativePassive,
+        "conditional_ba": \.conditionalBa,
+        "conditional_tara": \.conditionalTara,
+        "imperative": \.imperative,
+        "tai": \.tai,
+        "causative_passive_short": \.causativePassiveShort,
+        "masu_volitional": \.masuVolitional,
+        "neg_te": \.negTe,
+        "nakute": \.nakute,
+        "te_mo_ii": \.teMoIi,
+        "te_wa_ikenai": \.teWaIkenai,
+        "te_cha_dame": \.teChaDame,
+        "nakereba_naranai": \.nakerebaNaranai,
+        "nakute_wa_ikenai": \.nakuteWaIkenai,
+        "nakya": \.nakya,
+        "nakucha": \.nakucha,
+        "nakute_mo_ii": \.nakuteMoIi,
+        "neg_imperative": \.negImperative,
+        "nasai": \.nasai,
+        "conditional_to": \.conditionalTo,
+        "conditional_nara": \.conditionalNara,
+        "nd_pos": \.ndPos,
+        "nd_neg": \.ndNeg,
+        "nd_past": \.ndPast,
+        "nd_past_neg": \.ndPastNeg,
+        "nd_casual_pos": \.ndCasualPos,
+        "nd_casual_neg": \.ndCasualNeg,
+        "nd_casual_past": \.ndCasualPast,
+        "nd_casual_past_neg": \.ndCasualPastNeg,
+        "pot_masu_pos": \.potMasuPos,
+        "pot_masu_neg": \.potMasuNeg,
+        "pot_masu_past": \.potMasuPast,
+        "pot_masu_past_neg": \.potMasuPastNeg,
+        "pot_te": \.potTe,
+        "pot_short_neg": \.potShortNeg,
+        "pot_short_past": \.potShortPast,
+        "pot_short_past_neg": \.potShortPastNeg,
+        "teiru": \.teiru,
+        "teiru_neg": \.teiruNeg,
+        "teiru_past": \.teiruPast,
+        "teiru_past_neg": \.teiruPastNeg,
+        "teiru_masu_pos": \.teiruMasuPos,
+        "teiru_masu_neg": \.teiruMasuNeg,
+        "teiru_masu_past": \.teiruMasuPast,
+        "teiru_masu_past_neg": \.teiruMasuPastNeg,
+        "teiru_te": \.teiruTe,
+        "teshimau": \.teshimau,
+        "teshimau_polite": \.teshimauPolite,
+        "teoku": \.teoku,
+        "teoku_polite": \.teokuPolite,
+        "temiru": \.temiru,
+        "temiru_polite": \.temiruPolite,
+        "sugiru": \.sugiru,
+        "sugiru_polite": \.sugiruPolite,
+        "yasui": \.yasui,
+        "yasui_polite": \.yasuiPolite,
+        "nikui": \.nikui,
+        "nikui_polite": \.nikuiPolite,
+        "nagara": \.nagara,
+    ]
+
+    /// The form with this id, from its field or from `extra`; `nil` when the verb has none.
+    public subscript(id id: FormID) -> String? {
+        if let key = FormKey(rawValue: id.rawValue) { return self[key] }
+        if let path = Self.optionalFields[id.rawValue] { return self[keyPath: path] }
+        return extra[id.rawValue]
+    }
+
+    private struct AnyKey: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init(_ string: String) { stringValue = string }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    // Written by hand so a form id this build does not know is kept in `extra` instead of
+    // dropped. The nine `FormKey` forms stay required. An unknown key whose value is not a
+    // string is skipped, not an error.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: AnyKey.self)
+        func required(_ key: FormKey) throws -> String {
+            try c.decode(String.self, forKey: AnyKey(key.rawValue))
+        }
+        masuPos = try required(.masuPos)
+        masuNeg = try required(.masuNeg)
+        masuPast = try required(.masuPast)
+        masuPastNeg = try required(.masuPastNeg)
+        te = try required(.te)
+        shortPos = try required(.shortPos)
+        shortNeg = try required(.shortNeg)
+        shortPast = try required(.shortPast)
+        shortPastNeg = try required(.shortPastNeg)
+        for key in c.allKeys where FormKey(rawValue: key.stringValue) == nil {
+            if let path = Self.optionalFields[key.stringValue] {
+                self[keyPath: path] = try c.decodeIfPresent(String.self, forKey: key)
+            } else if let value = try? c.decode(String.self, forKey: key) {
+                extra[key.stringValue] = value
+            }
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: AnyKey.self)
+        for key in FormKey.allCases {
+            try c.encode(self[key], forKey: AnyKey(key.rawValue))
+        }
+        for (id, path) in Self.optionalFields {
+            try c.encodeIfPresent(self[keyPath: path], forKey: AnyKey(id))
+        }
+        for (id, value) in extra where Self.optionalFields[id] == nil && FormKey(rawValue: id) == nil {
+            try c.encode(value, forKey: AnyKey(id))
+        }
     }
 
     /// The ます-stem a grammar pattern attaches to (たべ, のみ, し, き): `masuPos` without ます.

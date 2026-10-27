@@ -12,6 +12,7 @@ struct JPVerbConjugationApp: App {
     @State private var furiganaStore: FuriganaStore
     @State private var wordsStore: WordsStore
     @State private var countersStore: CountersStore
+    @State private var formCatalogueStore: FormCatalogueStore
     @State private var dataSyncStatus: DataSyncStatus
     @State private var quizHistory: QuizHistoryStore
     @State private var quizSessions = QuizSessionStore()
@@ -29,32 +30,54 @@ struct JPVerbConjugationApp: App {
         let monitor = NetworkMonitor()
         let status = DataSyncStatus()
         _networkMonitor = State(initialValue: monitor)
+        // Each data file also ships in the app; a store installs its copy when it is newer than anything
+        // this device has, so a first launch with no network still has everything.
         let verbs = VerbStore(
             syncService: VerbSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataVerbPersisting(modelContext: context),
             networkMonitor: monitor,
             grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
             grammarPersisting: SwiftDataGrammarPersisting(modelContext: context),
-            syncStatus: status
+            syncStatus: status,
+            bundledVerbs: BundledData<VerbDataFile>.load(named: "verbs"),
+            bundledGrammar: BundledData<GrammarDataFile>.load(named: "grammar")
         )
         let furigana = FuriganaStore(
             syncService: FuriganaSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataFuriganaPersisting(modelContext: context),
-            syncStatus: status
+            syncStatus: status,
+            bundled: BundledData<FuriganaDataFile>.load(named: "furigana")
         )
         let words = WordsStore(
             syncService: WordsSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataWordsPersisting(modelContext: context),
-            syncStatus: status
+            syncStatus: status,
+            bundled: BundledData<WordsDataFile>.load(named: "words")
         )
         let counters = CountersStore(
             syncService: CountersSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataCountersPersisting(modelContext: context),
+            syncStatus: status,
+            bundled: BundledData<CountersDataFile>.load(named: "counters")
+        )
+        // The form catalogue the quiz reads: bundled, or the cached synced one when newer.
+        // Loaded here, before any screen can read it; synced at launch with the enhancements.
+        let forms = FormCatalogueStore(
+            syncService: FormsSyncService(fetcher: fetcher, syncState: syncState),
+            persisting: SwiftDataFormCataloguePersisting(modelContext: context),
             syncStatus: status
         )
+        forms.loadCached()
+        // Install every bundled copy now, before any network await, so a slow or captive connection cannot
+        // hold the shipped data back behind a sync that may take a minute to time out.
+        verbs.installBundled()
+        furigana.installBundled()
+        words.installBundled()
+        counters.installBundled()
         // Settings' Refresh data: same order as launch, verbs (and grammar) first.
         status.refreshHandler = {
             await verbs.refresh()
+            await forms.refresh()
             await furigana.refresh()
             await words.refresh()
             await counters.refresh()
@@ -63,6 +86,7 @@ struct JPVerbConjugationApp: App {
         _furiganaStore = State(initialValue: furigana)
         _wordsStore = State(initialValue: words)
         _countersStore = State(initialValue: counters)
+        _formCatalogueStore = State(initialValue: forms)
         _dataSyncStatus = State(initialValue: status)
         _quizHistory = State(initialValue: QuizHistoryStore(
             persisting: SwiftDataQuizHistoryPersisting(modelContext: context)
@@ -79,6 +103,7 @@ struct JPVerbConjugationApp: App {
                 .environment(furiganaStore)
                 .environment(wordsStore)
                 .environment(countersStore)
+                .environment(formCatalogueStore)
                 .environment(dataSyncStatus)
                 .environment(quizHistory)
                 .environment(quizSessions)
@@ -104,6 +129,8 @@ struct JPVerbConjugationApp: App {
                     WidgetCenter.shared.reloadAllTimelines()
                 }
                 .task {
+                    // The form catalogue that describes the verbs; the bundled copy until then.
+                    await formCatalogueStore.start()
                     // Independent of the verb sync: furigana is an enhancement.
                     await furiganaStore.start()
                     // Also an enhancement: the grammar building blocks' adjectives and nouns.

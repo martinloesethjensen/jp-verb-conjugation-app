@@ -1,5 +1,4 @@
 import json
-import re
 import unittest
 from pathlib import Path
 
@@ -8,8 +7,7 @@ import update_data as ud
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
-FORMS_JSON = ud.DEFAULT_FORMS_PATH
-QUIZ_FORM_SWIFT = ROOT / "Packages/VerbKit/Sources/VerbKit/Quiz/QuizForm.swift"
+BUNDLED_FORMS_JSON = ud.DEFAULT_BUNDLED_FORMS_PATH
 
 
 class CatalogueInvariantTests(unittest.TestCase):
@@ -118,14 +116,53 @@ class CheckVerbFormsTests(unittest.TestCase):
         self.assertEqual(ud.check_verb_forms(self.doc(example_form="pot_masu_neg")), [])
 
 
+class CheckExampleFormsTests(unittest.TestCase):
+    def doc(self, example_form, forms=None):
+        return {"verbs": [{
+            "dict": "しぬ",
+            "forms": forms or {"te": "しんで", "tai": "しにたい"},
+            "examples": [{"form": example_form, "jp": "x", "en": "y"}],
+        }]}
+
+    def test_an_example_may_use_a_non_basic_form_the_verb_has(self):
+        self.assertEqual(ud.check_example_forms(self.doc("tai")), [])
+
+    def test_an_example_with_a_form_the_verb_lacks_is_reported(self):
+        problems = ud.check_example_forms(self.doc("volitional"))
+        self.assertEqual(problems, ["しぬ: example uses form 'volitional', which the verb does not have"])
+
+    def test_an_example_with_an_empty_form_is_reported(self):
+        self.assertEqual(len(ud.check_example_forms(self.doc("tai", forms={"tai": ""}))), 1)
+
+    def test_an_example_with_an_excluded_form_is_reported(self):
+        verb = {"type": "u", "dict": "しぬ", "forms": {
+            "masu_pos": "しにます", "te": "しんで", "short_pos": "しぬ", "short_neg": "しなない",
+            "short_past": "しんだ"}, "examples": [{"form": "nasai", "jp": "x", "en": "y"}]}
+        doc = {"verbs": [verb]}
+        ud.apply_other_forms(doc)
+        self.assertNotIn("nasai", verb["forms"])
+        self.assertIn("'nasai'", ud.check_example_forms(doc)[0])
+
+    def test_every_shipped_example_uses_a_form_its_verb_has(self):
+        doc = json.loads((DATA / "verbs.json").read_text(encoding="utf-8"))
+        self.assertEqual(ud.check_verb_forms(doc), [])
+        self.assertEqual(ud.check_example_forms(doc), [])
+
+
 class RealDataTests(unittest.TestCase):
     def test_data_is_up_to_date(self):
         """The golden check: regenerating the repo's data changes nothing."""
-        code, messages = ud.run(DATA, check=True, forms_path=FORMS_JSON)
+        code, messages = ud.run(DATA, check=True, bundled_forms_path=BUNDLED_FORMS_JSON)
         self.assertEqual((code, messages), (0, ["data is up to date"]))
 
     def test_forms_json_is_the_generated_catalogue(self):
-        self.assertEqual(FORMS_JSON.read_text(encoding="utf-8"), ud.dump_forms())
+        self.assertEqual((DATA / "forms.json").read_text(encoding="utf-8"), ud.dump_forms())
+
+    def test_the_bundled_copy_is_the_published_file_with_its_manifest_entry(self):
+        self.assertEqual(BUNDLED_FORMS_JSON.read_bytes(), (DATA / "forms.json").read_bytes())
+        manifest = json.loads((DATA / "manifest.json").read_text(encoding="utf-8"))
+        sidecar = json.loads(ud.bundled_forms_manifest_path(BUNDLED_FORMS_JSON).read_text(encoding="utf-8"))
+        self.assertEqual(sidecar, {"version": manifest["forms"]["version"], "sha256": manifest["forms"]["sha256"]})
 
     def test_every_verb_key_is_known_and_in_catalogue_order(self):
         verbs = json.loads((DATA / "verbs.json").read_text(encoding="utf-8"))["verbs"]
@@ -146,39 +183,6 @@ class RealDataTests(unittest.TestCase):
         for s in fc.FORMS:
             if s.grammar is not None:
                 self.assertIn(s.grammar, lessons, s.id)
-
-
-@unittest.skipUnless(QUIZ_FORM_SWIFT.exists(), "QuizForm.swift not present")
-class MatchesTheQuizTests(unittest.TestCase):
-    """Until the quiz reads the catalogue, the two must agree on id, order
-    within a family and label. Delete with `QuizForm.all`."""
-
-    PATTERN = re.compile(
-        r'make\("(\w+)", \.(\w+), name: (nil|"[^"]*"), register: (nil|"[^"]*")(.*?)\) \{'
-    )
-
-    def swift_forms(self):
-        text = QUIZ_FORM_SWIFT.read_text(encoding="utf-8")
-        forms = []
-        for m in self.PATTERN.finditer(text):
-            form_id, _topic, name, register, rest = m.groups()
-            name = None if name == "nil" else name.strip('"')
-            register = None if register == "nil" else register.strip('"')
-            label = " · ".join(part for part in [
-                name, register,
-                "past" if "past: true" in rest else None,
-                "negative" if "negative: true" in rest else None,
-            ] if part)
-            forms.append((form_id, label))
-        return forms
-
-    def test_same_forms_and_labels(self):
-        swift = self.swift_forms()
-        self.assertEqual(len(swift), len(fc.FORMS))
-        for form_id, label in swift:
-            spec = fc.spec(form_id)
-            self.assertIsNotNone(spec, form_id)
-            self.assertEqual(spec.label, label, form_id)
 
 
 if __name__ == "__main__":

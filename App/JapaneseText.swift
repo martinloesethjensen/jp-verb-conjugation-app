@@ -11,6 +11,8 @@ import VerbKit
 /// and `.lineLimit` all come through the environment.
 struct JapaneseText: View {
     private let text: String
+    /// Readings given by the caller instead of looked up (a verb's own dictionary form).
+    private let fixedUnits: [TextUnit]?
     @Environment(\.furiganaEnabled) private var enabled
     @Environment(\.furiganaDictionary) private var dictionary
     @Environment(\.multilineTextAlignment) private var alignment
@@ -18,10 +20,17 @@ struct JapaneseText: View {
 
     init(_ text: String) {
         self.text = text
+        self.fixedUnits = nil
+    }
+
+    /// `units` already carry their readings; they still follow the furigana setting.
+    init(units: [TextUnit]) {
+        self.text = units.map(\.text).joined()
+        self.fixedUnits = units
     }
 
     var body: some View {
-        let units = enabled ? (dictionary?.units(for: text) ?? []) : []
+        let units = enabled ? (fixedUnits ?? dictionary?.units(for: text) ?? []) : []
         if units.contains(where: { $0.reading != nil }) {
             let flow = RubyFlowLayout(glue: units.map(\.glueToPrevious), alignment: alignment, maxLines: lineLimit) {
                 ForEach(units.indices, id: \.self) { index in

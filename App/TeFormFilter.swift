@@ -27,24 +27,8 @@ struct TeFormFilter: View {
 
     private func chip(_ title: String, accent: Color?, isOn: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
-                .font(.callout.weight(isOn ? .bold : .semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .chipBackground(accent)
-                .overlay { if isOn { Capsule().strokeBorder(Color.primary, lineWidth: 2) } }
+            FilterChip(title, accent: accent, isOn: isOn)
         }
         .buttonStyle(.plain)
-    }
-}
-
-extension View {
-    /// Plain filled capsules: a row of glass capsules draws a shaded band behind them.
-    @ViewBuilder func chipBackground(_ accent: Color?) -> some View {
-        if let accent {
-            foregroundStyle(Color.black.opacity(0.85)).background(accent.opacity(0.85), in: Capsule())
-        } else {
-            foregroundStyle(.primary).background(Color.primary.opacity(0.1), in: Capsule())
-        }
     }
 }

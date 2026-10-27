@@ -16,6 +16,7 @@ struct WordBankEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.furiganaDictionary) private var dictionary
     @Environment(WordBankStore.self) private var store
+    @Environment(FormLookupStore.self) private var formLookup: FormLookupStore?
     let request: WordBankEditorRequest
     /// Opens another entry instead (from the "you already have this" banner).
     var onOpenExisting: (UUID) -> Void = { _ in }
@@ -41,6 +42,13 @@ struct WordBankEditor: View {
     private var isNew: Bool { request.entry == nil }
 
     private var trimmedText: String { draft.text.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// The dictionary form to offer when the text is one conjugated verb the app has
+    /// (食べさせられなかった → 食べる), so captured words are saved the way dictionaries list them.
+    private var dictionaryForms: [Verb] {
+        guard let formLookup else { return [] }
+        return FormLookup.dictionaryForms(of: draft.text, in: formLookup.items(in: draft.text))
+    }
 
     private var duplicate: WordBankEntryValue? {
         store.entryWithSameText(as: draft.text, excluding: draft.id)
@@ -107,6 +115,17 @@ struct WordBankEditor: View {
                     .buttonStyle(.borderless)
                 }
             }
+            ForEach(dictionaryForms) { verb in
+                HStack {
+                    Label("A form of \(verb.jishoQuery)", systemImage: "text.magnifyingglass")
+                        .font(.footnote)
+                    Spacer()
+                    Button("Use \(verb.jishoQuery)") { useDictionaryForm(verb) }
+                        .font(.footnote.weight(.semibold))
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel("Save as the dictionary form, \(verb.jishoQuery)")
+                }
+            }
             TextField("Reading (かな)", text: optional($draft.reading))
                 .autocorrectionDisabled()
         } header: {
@@ -154,7 +173,7 @@ struct WordBankEditor: View {
                 suggestionNote("Nothing new to suggest: the entry already has it.")
             } else {
                 Section {
-                    PillFlow(spacing: 8) { suggestionChips(rest) }
+                    WrappingFlowLayout(spacing: 8) { suggestionChips(rest) }
                         .padding(.vertical, 4)
                     Button("Use all", systemImage: "wand.and.stars") { useAll(rest) }
                 } header: {
@@ -289,7 +308,7 @@ struct WordBankEditor: View {
                     Text("Folder")
                     Spacer()
                     Text(folderName).foregroundStyle(.secondary)
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                    RowChevron()
                 }
                 .contentShape(Rectangle())
             }
@@ -302,7 +321,7 @@ struct WordBankEditor: View {
             let dialect = store.dialectTags.filter { draft.dialectTagIDs.contains($0.id) }
             let custom = store.customTags.filter { draft.customTagIDs.contains($0.id) }
             if !dialect.isEmpty || !custom.isEmpty {
-                PillFlow {
+                WrappingFlowLayout(spacing: 6) {
                     ForEach(dialect) { TagPill($0) }
                     ForEach(custom) { TagPill($0) }
                 }
@@ -348,6 +367,13 @@ struct WordBankEditor: View {
         guard let dictionary, dictionary.containsKanji(text), !dictionary.hasUnreadKanji(in: text) else { return nil }
         let reading = dictionary.reading(of: text)
         return reading == text ? nil : reading
+    }
+
+    /// Replaces the text with the verb's dictionary form and its reading. The reading
+    /// counts as typed by hand, so a later furigana lookup doesn't clear it.
+    private func useDictionaryForm(_ verb: Verb) {
+        draft.text = verb.jishoQuery
+        if verb.kanji != nil { draft.reading = verb.dict }
     }
 
     private func save() {

@@ -101,7 +101,7 @@ struct TagManagerView: View {
                 pill
                 Spacer()
                 Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
-                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                RowChevron()
             }
             .contentShape(Rectangle())
         }

@@ -32,7 +32,11 @@ final class RealJLPTDataTests: XCTestCase {
     }
 
     func testVerbLevelsAreTheCuratedOnes() throws {
-        let n4: Set<String> = ["いそぐ", "かえす", "はじめる", "かんがえる", "すてる"]
+        let n4: Set<String> = [
+            "いそぐ", "かえす", "はじめる", "かんがえる", "すてる",
+            // #4, first core batch (Tanos N4).
+            "おもう", "くれる", "おくれる", "みえる", "きこえる", "てつだう",
+        ]
         for verb in try RealVerbs.load() {
             XCTAssertNotNil(verb.jlpt, verb.dict)
             XCTAssertEqual(verb.jlpt, n4.contains(verb.dict) ? .n4 : .n5, verb.dict)

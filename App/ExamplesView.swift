@@ -4,6 +4,7 @@ import VerbKit
 struct ExamplesView: View {
     let verb: Verb
     @Environment(\.dismiss) private var dismiss
+    @Environment(FormCatalogueStore.self) private var formCatalogueStore
 
     var body: some View {
         NavigationStack {
@@ -36,7 +37,11 @@ struct ExamplesView: View {
         }
     }
 
-    private func formLabel(_ key: FormKey) -> String {
+    /// The nine basic forms keep their short labels; any other form uses the catalogue's.
+    private func formLabel(_ id: FormID) -> String {
+        guard let key = FormKey(rawValue: id.rawValue) else {
+            return formCatalogueStore.catalogue.label(for: id)
+        }
         switch key {
         case .masuPos: return "ます (polite +)"
         case .masuNeg: return "ません (polite −)"

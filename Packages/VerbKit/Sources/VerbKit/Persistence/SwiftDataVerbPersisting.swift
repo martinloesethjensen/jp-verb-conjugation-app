@@ -15,10 +15,17 @@ public final class SwiftDataVerbPersisting: VerbPersisting {
     }
 
     public func replaceAllVerbs(with verbs: [Verb]) throws {
-        try modelContext.delete(model: VerbEntity.self)
-        for (index, verb) in verbs.enumerated() {
-            modelContext.insert(VerbEntity(verb, sortOrder: index))
+        // A failed save must not leave its pending delete and inserts in the shared context, where the
+        // next save of any store would commit them.
+        do {
+            try modelContext.delete(model: VerbEntity.self)
+            for (index, verb) in verbs.enumerated() {
+                modelContext.insert(VerbEntity(verb, sortOrder: index))
+            }
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            throw error
         }
-        try modelContext.save()
     }
 }

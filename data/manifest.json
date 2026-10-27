@@ -1,20 +1,24 @@
 {
-  "version": "1.13.0",
-  "sha256": "5d9b41aaca821fb106c80c03722c6e42536455feb3509de2face203722c5da1d",
+  "version": "1.15.0",
+  "sha256": "5c5c9ae5317132b16371474b4478fd2c2457f15f2a7694c4364919a14b7b8d54",
   "grammar": {
-    "version": "1.10.0",
-    "sha256": "9822f41e380346397973a182f836f443e76a78b5d2eb391a7babcc59c5b55f24"
+    "version": "1.11.0",
+    "sha256": "fef46597c3807bd0bdcaaec693ca0baef2d14b5f7e50f14580bf3999cff6520b"
   },
   "furigana": {
-    "version": "1.10.0",
-    "sha256": "a462cfc8a9d6bf0f9cef15fbf7450ab973921588c2a795b3f560746d85004f21"
+    "version": "1.19.0",
+    "sha256": "00970d55930582aa9125fc962f9c26f0e1409e1a4c16b3c545628142005b141e"
   },
   "words": {
     "version": "1.0.0",
     "sha256": "a75e7b8b6d0812f08cf31b2c3fbffd170968254bfc1e0e3ea30f7d0eedf758f1"
   },
   "counters": {
-    "version": "1.3.0",
-    "sha256": "b62e8d950e586caa7a4df1a37f763a22360ad8a505641b6fb7c9ef4f235374a3"
+    "version": "1.12.0",
+    "sha256": "4848faf39c39c9f4b8d4751c7bcc6131089277cc48587c60bfaca9c5ba0f6721"
+  },
+  "forms": {
+    "version": "1.0.0",
+    "sha256": "83c2f324b779b24c96ac68b064807f8cca8685ac56e4f03b6f1acc4efe40134e"
   }
 }

@@ -60,9 +60,7 @@ struct MoreRowsCard: View {
                             Text(row.page.title)
                             Spacer()
                             Text(row.preview).foregroundStyle(.secondary)
-                            Image(systemName: "chevron.right")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.tertiary)
+                            RowChevron()
                         }
                         .padding(.vertical, 10)
                         .contentShape(Rectangle())

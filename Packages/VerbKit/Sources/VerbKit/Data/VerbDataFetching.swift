@@ -19,4 +19,8 @@ public protocol VerbDataFetching: Sendable {
     /// The manifest's `counters` entry, or `nil` if none is published.
     func fetchCountersManifest() async throws -> CountersManifest?
     func fetchCountersData() async throws -> Data
+
+    /// The manifest's `forms` entry (the form catalogue), or `nil` if none is published.
+    func fetchFormsManifest() async throws -> FormsManifest?
+    func fetchFormsData() async throws -> Data
 }

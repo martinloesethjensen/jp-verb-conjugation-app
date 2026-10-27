@@ -6,7 +6,6 @@ struct CounterWidgetView: View {
     let entry: CounterEntry
     @Environment(\.widgetFamily) private var family
 
-    private static let navy = Color(red: 0.043, green: 0.063, blue: 0.149)
     private static let accent = Color(red: 0.992, green: 0.62, blue: 0.243)
 
     var body: some View {
@@ -14,12 +13,11 @@ struct CounterWidgetView: View {
             if let counter = entry.counter {
                 content(counter).widgetURL(Route.counter(counter.id).url)
             } else {
-                Text("Open Verb Table to load counters")
-                    .font(.caption).multilineTextAlignment(.center).foregroundStyle(.white)
+                WidgetEmptyState(message: "Open Verb Table to load counters", isHome: true)
             }
         }
         .containerBackground(for: .widget) {
-            LinearGradient(colors: [Self.navy, .black], startPoint: .top, endPoint: .bottom)
+            WidgetTheme.background(isHome: true)
         }
     }
 

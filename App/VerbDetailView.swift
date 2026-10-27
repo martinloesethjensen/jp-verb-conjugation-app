@@ -118,8 +118,7 @@ struct VerbDetailView: View {
             Image(systemName: "lightbulb")
             JapaneseText(notes).font(.footnote)
         }
-        .padding(12)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+        .glassCard(fillsWidth: false)
     }
 
     private var formGroups: some View {

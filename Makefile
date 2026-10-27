@@ -17,7 +17,7 @@ install-deps: ## Install the Python dependencies (for signing)
 
 # --- Data (data/*.json) ------------------------------------------------------
 
-data: ## Regenerate the generated forms, forms.json and the manifest
+data: ## Regenerate the generated forms, data/forms.json (+ bundled copy) and the manifest
 	$(PYTHON) scripts/update_data.py
 
 data-check: ## Verify the data is generated, valid and up to date (no writes)

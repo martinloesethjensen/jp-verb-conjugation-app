@@ -13,18 +13,37 @@ public final class FuriganaStore {
     private let syncService: FuriganaSyncService
     private let persisting: FuriganaPersisting
     private let syncStatus: DataSyncStatus?
+    private let bundled: BundledData<FuriganaDataFile>?
 
-    public init(syncService: FuriganaSyncService, persisting: FuriganaPersisting, syncStatus: DataSyncStatus? = nil) {
+    public init(
+        syncService: FuriganaSyncService, persisting: FuriganaPersisting, syncStatus: DataSyncStatus? = nil,
+        bundled: BundledData<FuriganaDataFile>? = nil
+    ) {
         self.syncService = syncService
         self.persisting = persisting
         self.syncStatus = syncStatus
+        self.bundled = bundled
     }
 
     public func start() async {
+        installBundled()
         if let cached = try? persisting.loadFuriganaDictionary() {
             dictionary = cached
         }
         await sync()
+    }
+
+    /// Installs the bundled copy as if it had been synced, when it is newer than anything this device has
+    /// accepted. Persist first and record only after the save succeeded; a failure leaves the cache as it was.
+    public func installBundled() {
+        guard let bundled, DataVersion.isNewer(bundled.version, than: syncService.acceptedVersion()) else { return }
+        do {
+            try persisting.replaceFuriganaDictionary(with: FuriganaDictionary(file: bundled.value))
+        } catch {
+            return
+        }
+        syncService.confirmSynced(FuriganaManifest(version: bundled.version, sha256: bundled.sha256))
+        syncStatus?.recordBundled(.furigana, version: bundled.version)
     }
 
     /// Settings' Refresh data.
@@ -36,25 +55,21 @@ public final class FuriganaStore {
     /// then confirm the manifest, so a persistence failure leaves it
     /// unrecorded and the next attempt genuinely retries.
     private func sync() async {
-        let result: FuriganaSyncResult
-        do {
-            result = try await syncService.sync()
-        } catch {
-            syncStatus?.recordFailure(.furigana, error)
-            return
-        }
-        guard case let .updated(manifest, fresh) = result else {
-            syncStatus?.recordUpToDate(.furigana)
-            return
-        }
-        do {
-            try persisting.replaceFuriganaDictionary(with: fresh)
-        } catch {
-            syncStatus?.recordFailure(.furigana, error, whileSaving: true)
-            return
-        }
-        syncService.confirmSynced(manifest)
-        syncStatus?.recordUpdated(.furigana, version: manifest.version)
+        guard let fresh = await DataFileSync.run(
+            for: .furigana,
+            status: syncStatus,
+            fetch: {
+                switch try await syncService.sync() {
+                case .upToDate:
+                    return nil
+                case let .updated(manifest, dictionary):
+                    return PendingDataFile(version: manifest.version, payload: dictionary) {
+                        self.syncService.confirmSynced(manifest)
+                    }
+                }
+            },
+            persist: { try persisting.replaceFuriganaDictionary(with: $0) }
+        ) else { return }
         dictionary = fresh
     }
 }

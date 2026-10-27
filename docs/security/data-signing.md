@@ -21,6 +21,13 @@ How the app decides to trust the files in `data/`. Decided in the security revie
 Anyone who can push to `main` but does not hold the signing key can still change `data/`, but
 the app will reject it. They cannot sign a manifest.
 
+These rules cover every file with a manifest entry: `verbs.json` (the top-level entry), `grammar`,
+`furigana`, `words`, `counters` and `forms` (the form catalogue, #100). `forms.json` is generated
+from `scripts/form_catalogue.py`; the app also bundles a byte-identical copy (with its version and
+hash in `forms.manifest.json`) as the offline fallback, and only replaces it with a synced copy
+that passed all four checks and is newer. A synced catalogue with a newer major `schema` than the
+app reads is refused and the current one kept.
+
 ## First-time setup (the app syncs nothing until this is done)
 
 The public key in the app starts empty, so every sync fails closed. Once:
@@ -83,3 +90,10 @@ pushed unsigned. To block merges on it, make the `data` check required in branch
 ## Related, not done here
 
 - Branch and tag protection on GitHub (option A) is still to do; it protects the tags in step 2.
+
+## Review stamps
+
+Counters and grammar points may carry a `review` stamp (`by`, `on`, `sha256`). It is part of the data, so a
+stamp is signed like any other change: `scripts/mark_reviewed.py` writes it, `make data` regenerates the
+manifest, `make sign-commit` signs. The hash covers the entry's own content, so editing a reviewed entry makes
+`update_data.py` fail until the entry is reviewed again.

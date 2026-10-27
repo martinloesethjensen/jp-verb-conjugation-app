@@ -7,6 +7,7 @@ struct QuizQuestionView: View {
     var onDone: () -> Void
 
     @State private var confirmingQuit = false
+    @State private var showGuide = false
 
     var body: some View {
         // A ScrollView here (matching QuizResultsView) is what makes the
@@ -16,17 +17,17 @@ struct QuizQuestionView: View {
         // overflow instead of resizing, taking the button with it.
         ScrollView {
             VStack(spacing: 20) {
-                header
+                QuizHeader(index: viewModel.index, count: viewModel.questions.count, score: viewModel.score) {
+                    confirmingQuit = true
+                }
                 promptCard
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(Array(question.choices.enumerated()), id: \.offset) { index, choice in
-                        QuizChoiceButton(
-                            choice: choice, index: index, isCorrect: choice == question.correct,
-                            isSelected: choice == viewModel.selected, isAnswered: viewModel.isAnswered
-                        ) {
-                            viewModel.choose(choice)
-                        }
-                    }
+                QuizChoiceGrid(
+                    choices: question.choices,
+                    isCorrect: { $0 == question.correct },
+                    selected: viewModel.selected,
+                    isAnswered: viewModel.isAnswered
+                ) { choice in
+                    viewModel.choose(choice)
                 }
                 if viewModel.isAnswered {
                     feedback
@@ -34,88 +35,59 @@ struct QuizQuestionView: View {
             }
             .padding()
         }
-        // Pinned so the button doesn't move below the fold as feedback appears.
-        .safeAreaInset(edge: .bottom) {
-            if viewModel.isAnswered {
-                Button(viewModel.index + 1 >= viewModel.questions.count ? "See Results" : "Next",
-                       systemImage: "arrow.right") {
-                    viewModel.advance()
-                }
-                .labelStyle(.titleAndIcon)
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-            }
+        .quizAdvanceBar(
+            isVisible: viewModel.isAnswered,
+            title: viewModel.index + 1 >= viewModel.questions.count ? "See Results" : "Next"
+        ) {
+            viewModel.advance()
         }
-        .confirmationDialog("Quit this quiz?", isPresented: $confirmingQuit, titleVisibility: .visible) {
-            Button("Quit quiz", role: .destructive, action: onDone)
-            Button("Keep going", role: .cancel) {}
-        }
-    }
-
-    private var header: some View {
-        HStack {
-            Button {
-                confirmingQuit = true
-            } label: {
-                Image(systemName: "xmark")
-            }
-            .buttonStyle(.glass)
-            .accessibilityLabel("Quit quiz")
-
-            Text("\(viewModel.index + 1) / \(viewModel.questions.count)")
-                .font(.headline)
-            Spacer()
-            Label("\(viewModel.score)", systemImage: "star.fill")
-                .accessibilityLabel("Score \(viewModel.score)")
-        }
+        .quizQuitDialog(isPresented: $confirmingQuit, onQuit: onDone)
     }
 
     private var promptCard: some View {
-        VStack(spacing: 8) {
-            switch question.kind {
-            case .conjugate:
-                Text(.init("What is the **\(question.form.label)** form of…"))
-                    .font(.caption)
-                    .multilineTextAlignment(.center)
-                verbBlock
-            case .fillIn:
-                Text(.init("Fill in the blank with the **\(question.form.label)** form of \(question.verb.dict)"))
-                    .font(.caption)
-                    .multilineTextAlignment(.center)
-                JapaneseText(question.sentence ?? "")
-                    .font(.title2.weight(.bold))
-                    .multilineTextAlignment(.center)
-                if let translation = question.translation {
-                    Text(translation)
+        QuizPromptCard {
+            VStack(spacing: 8) {
+                switch question.kind {
+                case .conjugate:
+                    Text(.init("What is the **\(question.form.label)** form of…"))
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                    verbBlock
+                case .fillIn:
+                    Text(.init("Fill in the blank with the **\(question.form.label)** form of \(question.verb.dict)"))
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                    JapaneseText(question.sentence ?? "")
+                        .font(.title2.weight(.bold))
+                        .multilineTextAlignment(.center)
+                    if let translation = question.translation {
+                        Text(translation)
+                            .italic()
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                case .connect, .counterChoice, .counterReading, .counterAsk:
+                    // Never shown here: connection and counter questions have their own screens.
+                    EmptyView()
+                case .identify:
+                    Text("Which form is this?")
+                        .font(.caption)
+                    Text(question.formString)
+                        .font(.largeTitle.weight(.heavy))
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                    // The dictionary form would give the answer away when it is the question.
+                    Text(question.verb.dict == question.formString
+                         ? question.verb.meaning
+                         : "\(question.verb.dict) · \(question.verb.meaning)")
                         .italic()
                         .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
                 }
-            case .connect, .counterChoice, .counterReading:
-                // Never shown here: connection and counter questions have their own screens.
-                EmptyView()
-            case .identify:
-                Text("Which form is this?")
-                    .font(.caption)
-                Text(question.formString)
-                    .font(.largeTitle.weight(.heavy))
-                    .minimumScaleFactor(0.5)
-                    .lineLimit(1)
-                // The dictionary form would give the answer away when it is the question.
-                Text(question.verb.dict == question.formString
-                     ? question.verb.meaning
-                     : "\(question.verb.dict) · \(question.verb.meaning)")
-                    .italic()
-                    .foregroundStyle(.secondary)
+                Label("\(viewModel.timeLeft)s", systemImage: viewModel.timeLeft > 5 ? "timer" : "exclamationmark.timer")
+                    .font(.headline)
+                    .foregroundStyle(timerColor)
             }
-            Label("\(viewModel.timeLeft)s", systemImage: viewModel.timeLeft > 5 ? "timer" : "exclamationmark.timer")
-                .font(.headline)
-                .foregroundStyle(timerColor)
         }
-        .padding()
-        .glassEffect(in: RoundedRectangle(cornerRadius: 20))
     }
 
     private var verbBlock: some View {
@@ -136,22 +108,38 @@ struct QuizQuestionView: View {
     }
 
     private var feedback: some View {
-        Group {
-            if viewModel.timedOut {
-                Label("Time's up!", systemImage: "alarm")
-            } else if viewModel.selected == question.correct {
-                Label("Correct!", systemImage: "checkmark.circle.fill")
-            } else {
-                Label("The answer was: \(question.correct)", systemImage: "xmark.circle.fill")
+        VStack(spacing: 10) {
+            feedbackBanner
+            if let result = viewModel.results.last, !result.ok, !viewModel.timedOut,
+               let why = result.errorExplanation {
+                Text(why)
+                    .font(.callout)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if result.error?.opensVerbGuide == true {
+                    Button("See the verb guide", systemImage: "book") { showGuide = true }
+                        .buttonStyle(.bordered)
+                }
             }
         }
-        .font(.headline)
-        .padding()
-        .frame(maxWidth: .infinity)
-        .foregroundStyle(.white)
-        .glassEffect(
-            .regular.tint(viewModel.timedOut ? .orange : (viewModel.selected == question.correct ? QuizChoiceButton.correctColor : QuizChoiceButton.wrongColor)),
-            in: RoundedRectangle(cornerRadius: 12)
-        )
+        .sheet(isPresented: $showGuide) { VerbGuideSheet() }
+    }
+
+    private var feedbackBanner: some View {
+        QuizFeedbackCard(tone: feedbackTone, alignment: .center) {
+            Group {
+                if viewModel.timedOut {
+                    Label("Time's up!", systemImage: "alarm")
+                } else if viewModel.selected == question.correct {
+                    Label("Correct!", systemImage: "checkmark.circle.fill")
+                } else {
+                    Label("The answer was: \(question.correct)", systemImage: "xmark.circle.fill")
+                }
+            }
+            .font(.headline)
+        }
+    }
+
+    private var feedbackTone: QuizFeedbackTone {
+        viewModel.timedOut ? .timeout : (viewModel.selected == question.correct ? .correct : .wrong)
     }
 }

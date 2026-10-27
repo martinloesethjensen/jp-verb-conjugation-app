@@ -3,7 +3,7 @@ import Observation
 
 /// Runs a counter quiz one question at a time. It has no timer, like the connection quiz. A choice
 /// is right when it is any accepted answer (八本 reads はっぽん or はちほん). Each answer goes into
-/// quiz history as a `.counterChoice` or `.counterReading` attempt: the counter in `subject`, and
+/// quiz history as a `.counterChoice`, `.counterReading` or `.counterAsk` attempt: the counter in `subject`, and
 /// the thing's word or the number key in `formID`.
 @Observable
 public final class CounterQuizModel {

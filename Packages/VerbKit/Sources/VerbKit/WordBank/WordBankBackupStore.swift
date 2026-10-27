@@ -23,10 +23,7 @@ public final class WordBankBackupStore: @unchecked Sendable {
     public func backUp(_ snapshot: WordBankSnapshot) throws -> WordBankBackup {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let data = try WordBankArchive(snapshot: snapshot, scope: .everything, exportedAt: now()).encoded()
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
-        let base = "Backup \(formatter.string(from: now()))"
+        let base = "Backup \(WordBankDates.timestamp(now()))"
         var name = "\(base).wordbank"
         var number = 2
         while FileManager.default.fileExists(atPath: directory.appendingPathComponent(name).path) {

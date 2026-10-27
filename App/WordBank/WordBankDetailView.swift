@@ -114,7 +114,7 @@ struct WordBankDetailView: View {
     /// 方言 → 標準語, one row per standard equivalent.
     private var comparisonCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            sectionHeader("方言 → 標準語", systemImage: "arrow.left.arrow.right")
+            SectionHeader("方言 → 標準語", systemImage: "arrow.left.arrow.right")
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(entry.equivalents.indices, id: \.self) { index in
                     let equivalent = entry.equivalents[index]
@@ -132,15 +132,13 @@ struct WordBankDetailView: View {
                     if index < entry.equivalents.count - 1 { Divider() }
                 }
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+            .glassCard(cornerRadius: 16)
         }
     }
 
     private var meaningsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Meanings", systemImage: "text.quote")
+            SectionHeader("Meanings", systemImage: "text.quote")
             ForEach(entry.senses.indices, id: \.self) { index in
                 let sense = entry.senses[index]
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -159,8 +157,8 @@ struct WordBankDetailView: View {
 
     private var kanjiSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Kanji", systemImage: "character.book.closed.ja")
-            PillFlow(spacing: 8) {
+            SectionHeader("Kanji", systemImage: "character.book.closed.ja")
+            WrappingFlowLayout(spacing: 8) {
                 ForEach(kanji, id: \.self) { character in
                     Button {
                         if let url = TextLookupURL.jishoKanji(character) { openURL(url) }
@@ -180,8 +178,8 @@ struct WordBankDetailView: View {
 
     private var tagsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Tags", systemImage: "tag")
-            PillFlow(spacing: 6) {
+            SectionHeader("Tags", systemImage: "tag")
+            WrappingFlowLayout(spacing: 6) {
                 ForEach(dialectTags) { TagPill($0) }
                 ForEach(customTags) { TagPill($0) }
             }
@@ -194,7 +192,7 @@ struct WordBankDetailView: View {
                 Label(folderPath, systemImage: "folder").font(.subheadline).foregroundStyle(.secondary)
             }
             if let notes = entry.notes {
-                sectionHeader("Notes", systemImage: "note.text")
+                SectionHeader("Notes", systemImage: "note.text")
                 Text(notes).font(.body).textSelection(.enabled)
             }
         }
@@ -206,9 +204,5 @@ struct WordBankDetailView: View {
         return Text(added == edited ? "Added \(added)" : "Added \(added) · Edited \(edited)")
             .font(.caption)
             .foregroundStyle(.secondary)
-    }
-
-    private func sectionHeader(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage).font(.title3.weight(.semibold))
     }
 }

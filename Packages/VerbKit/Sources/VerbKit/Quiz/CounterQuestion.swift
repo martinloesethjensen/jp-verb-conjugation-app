@@ -1,10 +1,11 @@
 import Foundation
 
 /// One counter quiz question. *Which counter?* shows a thing (傘) and asks for its counter (本);
-/// *Read it* shows a counted form (三本) and asks for its reading (さんぼん).
+/// *Read it* shows a counted form (三本) and asks for its reading (さんぼん); *Ask it* shows an English
+/// question (How many people are there?) and asks for the 何 phrase (何人).
 public struct CounterQuestion: Equatable, Sendable, Identifiable {
     public var id: UUID
-    /// `.counterChoice` or `.counterReading`.
+    /// `.counterChoice`, `.counterReading` or `.counterAsk`.
     public var kind: QuizQuestionKind
     /// What quiz history records as the attempt's subject: the right counter shown.
     public var counterID: String
@@ -56,6 +57,10 @@ public struct CounterQuestion: Equatable, Sendable, Identifiable {
 /// - `.counterReading`: one question per counter and number. The wrong choices are the counter's
 ///   generated `distractors`, then the preferred readings of the nearest other numbers; a question
 ///   with no wrong choice is skipped.
+/// - `.counterAsk`: one question per counter `askings` entry. The right choice is the counter's 何
+///   phrase (何人); the wrong ones are other counters' phrases, those sharing a group with the right
+///   counter first, never the same text twice (two counters written 日 show one 何日). A question with
+///   no wrong choice is skipped, and a counter without askings makes none.
 /// - Any other kind builds nothing.
 public func buildCounterQuestions(
     counters: [Counter], groups: [CounterGroup], kind: QuizQuestionKind, count: Int
@@ -65,6 +70,7 @@ public func buildCounterQuestions(
     switch kind {
     case .counterChoice: questions = whichCounterQuestions(counters: counters, groups: groups)
     case .counterReading: questions = counters.flatMap(readItQuestions)
+    case .counterAsk: questions = askItQuestions(counters: counters, groups: groups)
     default: return []
     }
     return Array(questions.shuffled().prefix(count))
@@ -84,6 +90,31 @@ public func buildCounterQuestions(
 ) -> [CounterQuestion] {
     guard count > 0 else { return [] }
     return Array(pairs.compactMap { readItQuestion(for: $0.counter, number: $0.number) }.prefix(count))
+}
+
+/// Bigger numbers: Read it questions for the numbers above 10 that the counters have readings for, drawn
+/// without replacement and weighted: a number whose sound changed, or any number of an irregular counter,
+/// is four times as likely as a plain one. Same question kind as Read it, so history, weak spots and
+/// "Practise missed" need nothing new. Pairs with no wrong choice to offer are skipped.
+public func buildBiggerNumberQuestions(
+    counters: [Counter], count: Int, using generator: inout some RandomNumberGenerator
+) -> [CounterQuestion] {
+    guard count > 0 else { return [] }
+    // Efraimidis-Spirakis: sort by random^(1/weight), take the largest keys.
+    var keyed: [(key: Double, question: CounterQuestion)] = []
+    for counter in counters {
+        for number in counter.extendedNumbers {
+            guard let question = readItQuestion(for: counter, number: number) else { continue }
+            let weight = counter.isChanged(number) || counter.sound == "irregular" ? 4.0 : 1.0
+            keyed.append((pow(Double.random(in: Double.leastNonzeroMagnitude..<1, using: &generator), 1 / weight), question))
+        }
+    }
+    return keyed.sorted { $0.key > $1.key }.prefix(count).map(\.question)
+}
+
+public func buildBiggerNumberQuestions(counters: [Counter], count: Int) -> [CounterQuestion] {
+    var generator = SystemRandomNumberGenerator()
+    return buildBiggerNumberQuestions(counters: counters, count: count, using: &generator)
 }
 
 // MARK: Which counter?
@@ -132,6 +163,32 @@ private func whichCounterQuestions(counters all: [Counter], groups: [CounterGrou
     return questions
 }
 
+// MARK: Ask it
+
+private func askItQuestions(counters: [Counter], groups: [CounterGroup]) -> [CounterQuestion] {
+    let askers = counters.filter { !$0.askings.isEmpty }
+    return askers.flatMap { counter -> [CounterQuestion] in
+        let correct = counter.written(.what)
+        let sharing = Set(groups.filter { $0.members.contains { $0.counter == counter.id } }
+            .flatMap { $0.members.map(\.counter) })
+        let others = askers.filter { $0.id != counter.id }
+        var wrong: [String] = []
+        for other in others.filter({ sharing.contains($0.id) }) + others.filter({ !sharing.contains($0.id) }) where wrong.count < 3 {
+            let phrase = other.written(.what)
+            if phrase != correct, !wrong.contains(phrase) { wrong.append(phrase) }
+        }
+        guard !wrong.isEmpty else { return [] }
+        let reading = counter.readings(for: .what).first ?? ""
+        return counter.askings.map { asking in
+            CounterQuestion(
+                kind: .counterAsk, counterID: counter.id, formID: asking.jp, prompt: asking.en,
+                detail: "Pick the 何 phrase", correct: correct, accepted: [correct],
+                choices: ([correct] + wrong).shuffled(), explanation: "\(asking.jp)  (\(correct): \(reading))"
+            )
+        }
+    }
+}
+
 // MARK: Read it
 
 private func readItQuestions(for counter: Counter) -> [CounterQuestion] {
@@ -159,7 +216,8 @@ private func wrongReadings(for counter: Counter, number: CounterNumber, accepted
         if wrong.count < 3, !accepted.contains(reading), !wrong.contains(reading) { wrong.append(reading) }
     }
     counter.distractors(for: number).forEach(offer)
-    let all = CounterNumber.allCases
+    // Nearest numbers in the same pool: 1 to 10 and 何, or the counter's numbers above 10.
+    let all = number.isExtended ? counter.extendedNumbers : CounterNumber.allCases
     guard let here = all.firstIndex(of: number) else { return wrong }
     let others = all.indices.filter { $0 != here }.sorted {
         abs($0 - here) != abs($1 - here) ? abs($0 - here) < abs($1 - here) : $0 < $1
@@ -173,6 +231,17 @@ private func wrongReadings(for counter: Counter, number: CounterNumber, accepted
 /// Names the pattern after a wrong answer, from the counter's own data: which numbers change, or
 /// that it is irregular, or that nothing changes.
 private func readingExplanation(for counter: Counter, number: CounterNumber, preferred: String) -> String {
+    if number.isExtended {
+        if counter.sound == "irregular" {
+            return "\(counter.counter) is irregular: learn each reading. \(counter.written(number)) is \(preferred)"
+        }
+        guard counter.isChanged(number) else {
+            return "\(counter.counter) keeps its plain reading at \(number.key): \(counter.written(number)) is \(preferred)."
+        }
+        let core = CounterNumber.allCases.filter(counter.isChanged).map { $0 == .what ? "何" : $0.key }
+        let tail = core.isEmpty ? "" : ", as it does at \(core.joined(separator: ", "))"
+        return "\(counter.written(number)) is \(preferred): the sound changes here\(tail)."
+    }
     if counter.sound == "irregular" {
         return "\(counter.counter) is irregular: learn each reading. \(counter.written(number)) is \(preferred)"
     }

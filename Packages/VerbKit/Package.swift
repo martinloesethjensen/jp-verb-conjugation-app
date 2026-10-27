@@ -13,12 +13,24 @@ let package = Package(
     targets: [
         .target(
             name: "VerbKit",
-            resources: [.copy("Resources/forms.json"), .copy("Resources/dialects.json")]
+            resources: [
+                .copy("Resources/forms.json"), .copy("Resources/forms.manifest.json"),
+                .copy("Resources/counters.json"), .copy("Resources/counters.manifest.json"),
+                .copy("Resources/verbs.json"), .copy("Resources/verbs.manifest.json"),
+                .copy("Resources/grammar.json"), .copy("Resources/grammar.manifest.json"),
+                .copy("Resources/furigana.json"), .copy("Resources/furigana.manifest.json"),
+                .copy("Resources/words.json"), .copy("Resources/words.manifest.json"),
+                .copy("Resources/dialects.json")
+            ]
         ),
         .testTarget(
             name: "VerbKitTests",
             dependencies: ["VerbKit"],
-            resources: [.copy("Fixtures/verbs-fixture.json"), .copy("Fixtures/quiz-history-v1.sqlite")]
+            resources: [
+                .copy("Fixtures/verbs-fixture.json"), .copy("Fixtures/quiz-history-v1.sqlite"),
+                .copy("Fixtures/lens-test-sentences.json"), .copy("Fixtures/lens-lesson-sentences.json"),
+                .copy("Fixtures/lens-sentence-tokens.json")
+            ]
         )
     ],
     swiftLanguageModes: [.v5]

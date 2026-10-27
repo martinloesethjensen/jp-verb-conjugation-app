@@ -612,6 +612,15 @@ class ValidateGrammarTests(unittest.TestCase):
         doc["grammar"][0]["pitfalls"][0]["explanation"] = ""
         self.assertTrue(any("pitfall" in e for e in ud.validate_grammar(doc)))
 
+    def test_pitfall_wrong_form_is_optional_but_not_blank(self):
+        doc = valid_grammar()
+        self.assertEqual(ud.validate_grammar(doc), [])
+        doc["grammar"][0]["pitfalls"][0]["wrong"] = "静かだので"
+        self.assertEqual(ud.validate_grammar(doc), [])
+        for bad in ("", "  ", 3):
+            doc["grammar"][0]["pitfalls"][0]["wrong"] = bad
+            self.assertTrue(any("wrong" in e for e in ud.validate_grammar(doc)), bad)
+
     def test_usage_without_examples(self):
         doc = valid_grammar()
         doc["grammar"][0]["usages"][0]["examples"] = []
@@ -742,6 +751,28 @@ class RunTests(unittest.TestCase):
         self.assertEqual(manifest["sha256"], ud.sha256_hex((d / "verbs.json").read_bytes()))
         self.assertEqual(manifest["grammar"]["sha256"], ud.sha256_hex((d / "grammar.json").read_bytes()))
         self.assertEqual(manifest["furigana"]["sha256"], ud.sha256_hex((d / "furigana.json").read_bytes()))
+
+    def with_example(self, form):
+        d = self.make_dir()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["examples"] = [{"form": form, "jp": "します。", "en": "I do."}]
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        return d
+
+    def test_an_example_may_use_a_generated_form(self):
+        code, messages = ud.run(self.with_example("tai"))
+        self.assertEqual(code, 0, messages)
+
+    def test_an_example_with_a_form_the_verb_lacks_fails_and_writes_nothing(self):
+        # Only godan verbs have the short causative-passive, so する has none.
+        d = self.with_example("causative_passive_short")
+        before = (d / "verbs.json").read_bytes()
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("causative_passive_short", "\n".join(messages))
+        code, _ = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertEqual((d / "verbs.json").read_bytes(), before)
 
     def test_a_missing_reading_fails_cleanly_and_writes_nothing(self):
         d = self.make_dir()
@@ -912,6 +943,115 @@ class WordsManifestTests(unittest.TestCase):
         self.assertNotIn("words", ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f"))
 
 
+class FormsManifestTests(unittest.TestCase):
+    def test_forms_entry_starts_at_1_0_0_and_bumps_on_change(self):
+        m = ud.build_manifest({}, b"v", b"g", forms_bytes=b"c1")
+        self.assertEqual(m["forms"], {"version": "1.0.0", "sha256": ud.sha256_hex(b"c1")})
+        m2 = ud.build_manifest(m, b"v", b"g", forms_bytes=b"c2")
+        self.assertEqual(m2["forms"]["version"], "1.1.0")
+        m3 = ud.build_manifest(m2, b"v", b"g", forms_bytes=b"c2")
+        self.assertEqual(m3["forms"]["version"], "1.1.0")
+        forced = ud.build_manifest(m3, b"v", b"g", forms_bytes=b"c2", forms_version="2.0.0")
+        self.assertEqual(forced["forms"]["version"], "2.0.0")
+
+    def test_a_ref_pins_the_forms_entry_until_it_changes(self):
+        m = ud.build_manifest({}, b"v", b"g", forms_bytes=b"c1", ref="data-v1")
+        self.assertEqual(m["forms"]["ref"], "data-v1")
+        self.assertEqual(ud.build_manifest(m, b"v", b"g", forms_bytes=b"c1")["forms"]["ref"], "data-v1")
+        self.assertNotIn("ref", ud.build_manifest(m, b"v", b"g", forms_bytes=b"c2")["forms"])
+
+
+class PublishedFormsTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    def test_run_publishes_forms_json_with_a_manifest_entry_and_the_bundled_copy(self):
+        d = self.make_dir()
+        bundled = d / "bundle" / "forms.json"
+        code, messages = ud.run(d, check=True, bundled_forms_path=bundled)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("data/forms.json" in m and "the bundled forms.json" in m for m in messages), messages)
+
+        code, _ = ud.run(d, bundled_forms_path=bundled)
+        self.assertEqual(code, 0)
+        published = (d / "forms.json").read_bytes()
+        self.assertEqual(published, ud.dump_forms().encode("utf-8"))
+        self.assertEqual(bundled.read_bytes(), published)
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["forms"], {"version": "1.0.0", "sha256": ud.sha256_hex(published)})
+        sidecar = json.loads(ud.bundled_forms_manifest_path(bundled).read_text(encoding="utf-8"))
+        self.assertEqual(sidecar, manifest["forms"])
+        self.assertEqual(ud.run(d, check=True, bundled_forms_path=bundled), (0, ["data is up to date"]))
+
+    def test_check_fails_when_the_bundled_copy_drifts(self):
+        d = self.make_dir()
+        bundled = d / "bundle" / "forms.json"
+        ud.run(d, bundled_forms_path=bundled)
+        bundled.write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True, bundled_forms_path=bundled)
+        self.assertEqual(code, 1)
+        self.assertIn("the bundled forms.json", messages[0])
+        self.assertNotIn("data/forms.json", messages[0])
+
+    def test_check_fails_when_data_forms_json_is_edited_by_hand(self):
+        d = self.make_dir()
+        ud.run(d)
+        (d / "forms.json").write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("data/forms.json", messages[0])
+
+
+class BundledDataTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    NAMES = ("verbs", "grammar", "furigana", "words")
+
+    def entry(self, manifest, name):
+        source = manifest if name == "verbs" else manifest[name]
+        return {"version": source["version"], "sha256": source["sha256"]}
+
+    def test_run_writes_a_bundled_copy_and_sidecar_for_each_data_file(self):
+        d = self.make_dir()
+        bundle = d / "bundle"
+        code, messages = ud.run(d, check=True, bundled_data_dir=bundle)
+        self.assertEqual(code, 1)
+        for name in self.NAMES:
+            self.assertTrue(any(f"the bundled {name}.json" in m for m in messages), (name, messages))
+        self.assertEqual(ud.run(d, bundled_data_dir=bundle)[0], 0)
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        for name in self.NAMES:
+            self.assertEqual((bundle / f"{name}.json").read_bytes(), (d / f"{name}.json").read_bytes(), name)
+            sidecar = json.loads((bundle / f"{name}.manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(sidecar, self.entry(manifest, name), name)
+        self.assertEqual(ud.run(d, check=True, bundled_data_dir=bundle), (0, ["data is up to date"]))
+
+    def test_check_names_only_the_copy_that_drifted(self):
+        d = self.make_dir()
+        bundle = d / "bundle"
+        ud.run(d, bundled_data_dir=bundle)
+        (bundle / "grammar.json").write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True, bundled_data_dir=bundle)
+        self.assertEqual(code, 1)
+        self.assertIn("the bundled grammar.json", messages[0])
+        for name in ("verbs", "furigana", "words"):
+            self.assertNotIn(f"the bundled {name}.json", messages[0])
+
+    def test_a_stale_sidecar_fails_check_and_run_fixes_it(self):
+        d = self.make_dir()
+        bundle = d / "bundle"
+        ud.run(d, bundled_data_dir=bundle)
+        (bundle / "verbs.manifest.json").write_text('{"version": "0.0.1", "sha256": "x"}\n', encoding="utf-8")
+        self.assertEqual(ud.run(d, check=True, bundled_data_dir=bundle)[0], 1)
+        self.assertEqual(ud.run(d, bundled_data_dir=bundle)[0], 0)
+        self.assertEqual(ud.run(d, check=True, bundled_data_dir=bundle)[0], 0)
+
+    def test_without_a_directory_nothing_is_written_or_checked(self):
+        d = self.make_dir()
+        ud.run(d)
+        self.assertEqual(ud.run(d, check=True), (0, ["data is up to date"]))
+        self.assertFalse((d / "bundle").exists())
+
+
 class OtherFormsTests(unittest.TestCase):
     def forms(self, dict_form, vtype, short_past):
         return ud.other_forms({"type": vtype, "dict": dict_form, "forms": {"short_past": short_past}})
@@ -959,6 +1099,31 @@ class OtherFormsTests(unittest.TestCase):
         self.assertNotIn("passive", self.forms("おわる", "u", "おわった"))
         for dict_form, kind in [("わかる", "u"), ("しる", "u"), ("つかれる", "ru")]:
             self.assertIsNone(ud.potential_base(potential_verb(dict_form, kind)))
+
+    def test_kureru_has_an_irregular_imperative_and_little_else(self):
+        self.assertEqual(self.forms("くれる", "ru", "くれた"), {
+            "conditional_ba": "くれれば", "conditional_tara": "くれたら", "imperative": "くれ",
+        })
+        self.assertIsNone(ud.potential_base(potential_verb("くれる", "ru")))
+        self.assertEqual(ud.IRREGULAR_IMPERATIVE, {"くれる": "くれ"})
+
+    def test_the_core_batch_exclusions(self):
+        self.assertEqual(self.forms("できる", "ru", "できた"),
+                         {"conditional_ba": "できれば", "conditional_tara": "できたら"})
+        self.assertNotIn("passive", self.forms("なる", "u", "なった"))
+        self.assertEqual(self.forms("なる", "u", "なった")["imperative"], "なれ")
+        self.assertEqual(set(self.forms("ふる", "u", "ふった")),
+                         {"passive", "causative", "conditional_ba", "conditional_tara"})
+        for dict_form, kind in [("できる", "ru"), ("みえる", "ru"), ("きこえる", "ru"), ("あく", "u"), ("ふる", "u")]:
+            self.assertIsNone(ud.potential_base(potential_verb(dict_form, kind)))
+
+    def test_partial_forms_name_real_verbs_and_forms(self):
+        data = json.loads((Path(__file__).resolve().parent.parent / "data" / "verbs.json")
+                          .read_text(encoding="utf-8"))
+        self.assertTrue(set(ud.PARTIAL_OTHER_FORMS) <= {v["dict"] for v in data["verbs"]})
+        self.assertTrue(set(ud.NO_POTENTIAL) <= {v["dict"] for v in data["verbs"]})
+        for names in ud.PARTIAL_OTHER_FORMS.values():
+            self.assertTrue(names <= set(ud.BASE_OTHER_FIELDS), names)
 
     def test_unknown_class_or_missing_past_fails(self):
         with self.assertRaises(ValueError):
@@ -1150,8 +1315,14 @@ COUNTER_GROUP = {"id": "long", "title": "Long things", "symbol": "pencil", "summ
                  "members": [{"counter": "hon", "note": "pencils"}]}
 
 
-def counters_doc(*counters, groups=None):
-    return {"counters": list(counters), "groups": [COUNTER_GROUP] if groups is None else groups}
+COUNTER_SECTION = {"id": "things", "title": "Things", "counters": ["hon"]}
+
+
+def counters_doc(*counters, groups=None, sections=None):
+    doc = {"counters": list(counters), "groups": [COUNTER_GROUP] if groups is None else groups}
+    if sections is not None:
+        doc["sections"] = sections
+    return doc
 
 
 class CheckCountersTests(unittest.TestCase):
@@ -1167,6 +1338,103 @@ class CheckCountersTests(unittest.TestCase):
         for needle, groups in cases.items():
             problems = ud.check_counters(counters_doc(counter(), groups=groups), COUNTER_READINGS)
             self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    def test_section_problems(self):
+        cases = {
+            "duplicate section": [COUNTER_SECTION, COUNTER_SECTION],
+            "not a counter": [dict(COUNTER_SECTION, counters=["nope"])],
+            "listed twice": [dict(COUNTER_SECTION, counters=["hon", "hon"])],
+            "in no section": [],
+            "title": [dict(COUNTER_SECTION, title="")],
+            "must be a list of counter ids": [{"id": "x", "title": "X"}],
+            "must be a list of counter ids ": [dict(COUNTER_SECTION, counters="hon")],
+            "must be a list of counter ids  ": [dict(COUNTER_SECTION, counters=[1])],
+            "has no counters": [dict(COUNTER_SECTION, counters=[]), dict(COUNTER_SECTION, id="y", counters=["hon"])],
+            "must be an object": ["hon"],
+        }
+        for needle, sections in cases.items():
+            needle = needle.strip()
+            problems = ud.check_counters(counters_doc(counter(), sections=sections), COUNTER_READINGS)
+            self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    NIN_CORE = {"1": ["ひとり"], "2": ["ふたり"], "3": ["さんにん"], "4": ["よにん"], "5": ["ごにん"],
+                "6": ["ろくにん"], "7": ["ななにん", "しちにん"], "8": ["はちにん"], "9": ["きゅうにん"],
+                "10": ["じゅうにん"], "what": ["なんにん"]}
+
+    def nin(self, **fields):
+        return counter(id="nin", counter="人", reading="にん", sound="irregular", overrides=dict(self.NIN_CORE), **fields)
+
+    def nin_doc(self, **fields):
+        return counters_doc(self.nin(**fields), groups=[dict(COUNTER_GROUP, members=[{"counter": "nin"}])])
+
+    def test_big_number_problems(self):
+        cases = {
+            "extent must be": [counter(extent=9), counter(extent=100), counter(extent="99"), counter(extent=True)],
+            "extra must be": [counter(extent=99, extra="100"), counter(extent=99, extra=[50]),
+                              counter(extent=99, extra=[200, 100]), counter(extent=99, extra=[100, 100])],
+            "must override": [counter(extent=99, extra=[100, 200])],
+            "compound must be": [counter(compound=["にん"]), counter(compound={"11": ["x"]}),
+                                 counter(compound={"0": []}), counter(compound={"0": ["ニン"]})],
+        }
+        for needle, variants in cases.items():
+            for variant in variants:
+                problems = ud.check_counters(counters_doc(variant), COUNTER_READINGS)
+                self.assertTrue(any(needle in p for p in problems), (needle, variant, problems))
+
+    def test_an_irregular_counter_with_extent_needs_compound_or_overrides(self):
+        problems = ud.check_counters(self.nin_doc(extent=24), COUNTER_READINGS)
+        self.assertTrue(any("irregular" in p and "extent" in p for p in problems), problems)
+        partial = self.nin_doc(extent=24, compound={"1": ["いちにん"]})   # no "0": round tens cannot compose
+        self.assertTrue(any("irregular" in p and "extent" in p for p in ud.check_counters(partial, COUNTER_READINGS)))
+
+    def test_an_override_key_must_be_one_the_counter_has(self):
+        problems = ud.check_counters(counters_doc(counter(overrides={"14": ["じゅうよんほん"]})), COUNTER_READINGS)
+        self.assertTrue(any("overrides key" in p for p in problems), problems)
+        ok = counters_doc(counter(extent=99, overrides={"14": ["じゅうよんほん"]}))
+        self.assertEqual(ud.check_counters(ok, COUNTER_READINGS), [])
+
+    def test_a_valid_big_counter_passes(self):
+        self.assertEqual(ud.check_counters(counters_doc(counter(extent=99, extra=[100])), COUNTER_READINGS), [])
+        compound = {"1": ["いちにん"], "2": ["ににん"], "0": ["にん"]}
+        self.assertEqual(ud.check_counters(self.nin_doc(extent=99, extra=[100], compound=compound), COUNTER_READINGS), [])
+
+    def test_a_tsu_style_counter_with_extent_10_passes(self):
+        self.assertEqual(ud.check_counters(self.nin_doc(extent=10), COUNTER_READINGS), [])
+        self.assertEqual(ud.check_counters(self.nin_doc(), COUNTER_READINGS), [])
+
+    def test_question_problems(self):
+        good = {"jp": "何本ありますか。", "en": "How many?"}
+        cases = {
+            "questions must be a list": "何本",
+            "question must be an object": ["何本"],
+            "question jp": [dict(good, jp="")],
+            "question en": [dict(good, en="")],
+            "must contain 何本": [dict(good, jp="本があります。")],
+        }
+        for needle, questions in cases.items():
+            problems = ud.check_counters(counters_doc(counter(questions=questions)), COUNTER_READINGS)
+            self.assertTrue(any(needle in p for p in problems), (needle, problems))
+
+    def test_a_duration_question_cannot_be_filed_under_the_point_in_time_counter(self):
+        ji = counter(id="ji", counter="時", reading="じ", sound="plain",
+                     questions=[{"jp": "毎日何時間寝ますか。", "en": "How many hours?"}])
+        problems = ud.check_counters(counters_doc(ji), COUNTER_READINGS)
+        self.assertTrue(any("must contain 何時" in p for p in problems), problems)
+        jikan = counter(id="jikan", counter="時間", reading="じかん", sound="plain",
+                        questions=[{"jp": "毎日何時間寝ますか。", "en": "How many hours?"}])
+        doc = counters_doc(jikan, groups=[dict(COUNTER_GROUP, members=[{"counter": "jikan"}])])
+        self.assertEqual(ud.check_counters(doc, COUNTER_READINGS), [])
+
+    def test_a_valid_question_passes(self):
+        doc = counters_doc(counter(questions=[{"jp": "何本ありますか。", "en": "How many?"}]))
+        self.assertEqual(ud.check_counters(doc, COUNTER_READINGS), [])
+
+    def test_sections_are_optional(self):
+        self.assertEqual(ud.check_counters(counters_doc(counter()), COUNTER_READINGS), [])
+
+    def test_a_counter_may_be_in_two_sections(self):
+        sections = [COUNTER_SECTION, dict(COUNTER_SECTION, id="drinks", title="Drinks")]
+        self.assertEqual(ud.check_counters(counters_doc(counter(), sections=sections), COUNTER_READINGS), [])
 
     def test_problems(self):
         cases = {
@@ -1208,6 +1476,15 @@ class CheckCountersTests(unittest.TestCase):
         self.assertTrue(any("example" in p for p in problems), problems)
         self.assertTrue(any("pitfall" in p for p in problems), problems)
 
+    def test_counter_pitfall_wrong_form_is_optional_but_not_blank(self):
+        pitfall = {"heading": "h", "explanation": "e"}
+        self.assertEqual(ud.check_counters(counters_doc(counter(pitfalls=[pitfall])), COUNTER_READINGS), [])
+        ok = dict(pitfall, wrong="さんほん")
+        self.assertEqual(ud.check_counters(counters_doc(counter(pitfalls=[ok])), COUNTER_READINGS), [])
+        bad = dict(pitfall, wrong="")
+        problems = ud.check_counters(counters_doc(counter(pitfalls=[bad])), COUNTER_READINGS)
+        self.assertTrue(any("wrong" in p for p in problems), problems)
+
 
 class CountedRunTests(unittest.TestCase):
     def test_counted_runs_must_read_as_the_counter_says(self):
@@ -1230,6 +1507,69 @@ class CountedRunTests(unittest.TestCase):
         doc = counters_doc(counter(examples=[{"jp": "二十本あります。", "en": "…"}]))
         ud.apply_counter_readings(doc)
         self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+
+    def test_a_counted_run_inside_a_longer_counter_is_not_checked(self):
+        ji = counter(id="ji", counter="時", reading="じ", sound="plain",
+                     examples=[{"jp": "三時間勉強しました。", "en": "…"}])
+        doc = counters_doc(ji, groups=[dict(COUNTER_GROUP, members=[{"counter": "ji"}])])
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+        doc["counters"][0]["examples"] = [{"jp": "三時に起きます。", "en": "…"}]
+        self.assertTrue(any("三時" in p for p in ud.check_counted_runs(doc, COUNTER_READINGS)))
+
+    def test_a_counter_ending_in_kan_checks_its_own_runs(self):
+        jikan = counter(id="jikan", counter="時間", reading="じかん", sound="plain",
+                        examples=[{"jp": "三時間勉強しました。", "en": "…"}])
+        doc = counters_doc(jikan, groups=[dict(COUNTER_GROUP, members=[{"counter": "jikan"}])])
+        ud.apply_counter_readings(doc)
+        self.assertTrue(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"三時間": "さんじ"})))
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"三時間": "さんじかん"})), [])
+
+    def test_parse_numeral(self):
+        cases = {"十": 10, "十五": 15, "二十": 20, "九十九": 99, "百": 100, "三百": 300, "千": 1000,
+                 "三千": 3000, "一万": 10000, "五": 5}
+        for text, value in cases.items():
+            self.assertEqual(ud.parse_numeral(text), value, text)
+        for text in ("a", "", "二十二百", "一十", "一百", "一千", "百五十0"):
+            self.assertIsNone(ud.parse_numeral(text), text)
+
+    def test_a_compound_counted_run_is_checked(self):
+        fun = counter(id="fun", counter="分", reading="ふん", sound="h-p", extent=59,
+                      examples=[{"jp": "十五分です。", "en": "…"}])
+        doc = counters_doc(fun, groups=[dict(COUNTER_GROUP, members=[{"counter": "fun"}])])
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"十五分": "じゅうごふん"})), [])
+        wrong = ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"十五分": "じゅうごぷん"}))
+        self.assertTrue(any("十五分" in p for p in wrong), wrong)
+
+    def test_nijuppon_is_no_longer_skipped(self):
+        doc = counters_doc(counter(extent=20, examples=[{"jp": "二十本あります。", "en": "…"}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"二十本": "にじゅっぽん"})), [])
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"二十本": "にじっぽん"})), [])
+        wrong = ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"二十本": "にじゅうほん"}))
+        self.assertTrue(any("二十本" in p for p in wrong), wrong)
+
+    def test_a_number_outside_the_counters_keys_is_not_checked(self):
+        doc = counters_doc(counter(extent=99, extra=[100], examples=[{"jp": "百五十本あります。", "en": "…"}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+
+    def test_pitfall_headings_and_explanations_are_checked_too(self):
+        doc = counters_doc(counter(pitfalls=[
+            {"heading": "三本 first", "explanation": "三本 is さんぼん.", "examples": []}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, COUNTER_READINGS), [])
+        wrong = dict(COUNTER_READINGS, **{"三本": "さんほん"})
+        problems = ud.check_counted_runs(doc, wrong)
+        self.assertTrue(any("heading" in p for p in problems), problems)
+        self.assertTrue(any("explanation" in p for p in problems), problems)
+
+    def test_question_runs_are_checked_like_examples(self):
+        doc = counters_doc(counter(questions=[{"jp": "何本ありますか。", "en": "How many?"}]))
+        ud.apply_counter_readings(doc)
+        self.assertEqual(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"何本": "なんぼん"})), [])
+        self.assertTrue(ud.check_counted_runs(doc, dict(COUNTER_READINGS, **{"何本": "なんほん"})))
 
     def test_an_example_reading_wins_over_the_dictionary(self):
         tsu = {key: ["x"] for key in ud.COUNTER_KEYS}
@@ -1260,6 +1600,14 @@ class CountersFileTests(unittest.TestCase):
         text = ud.dump_counters(doc)
         self.assertEqual(json.loads(text), doc)
         self.assertEqual(text.count("\n    {"), 2)
+
+    def test_dump_puts_each_section_on_one_line(self):
+        doc = {"version": "1.0.0", "description": "d", "counters": [counter()], "groups": [COUNTER_GROUP],
+               "sections": [COUNTER_SECTION]}
+        text = ud.dump_counters(doc)
+        self.assertEqual(json.loads(text), doc)
+        self.assertEqual(text.count("\n    {"), 3)
+        self.assertIn('    {"id": "things", "title": "Things", "counters": ["hon"]}', text)
 
     def test_manifest_entry_starts_at_1_0_0_and_bumps_on_change(self):
         m = ud.build_manifest({}, b"v", b"g", furigana_bytes=b"f", counters_bytes=b"c1")
@@ -1302,6 +1650,36 @@ class CountersRunTests(unittest.TestCase):
         self.assertEqual(written["counters"][0]["readings"]["3"], ["さんぼん"])
         manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["counters"]["sha256"], ud.sha256_hex((d / "counters.json").read_bytes()))
+
+    def test_run_writes_the_bundled_counters_copy_and_its_manifest_entry(self):
+        d = self.counters_dir()
+        bundled = d / "bundle" / "counters.json"
+        code, messages = ud.run(d, check=True, bundled_counters_path=bundled)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("the bundled counters.json" in m for m in messages), messages)
+        self.assertEqual(ud.run(d, bundled_counters_path=bundled)[0], 0)
+        published = (d / "counters.json").read_bytes()
+        self.assertEqual(bundled.read_bytes(), published)
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        sidecar = json.loads(ud.bundled_counters_manifest_path(bundled).read_text(encoding="utf-8"))
+        self.assertEqual(sidecar, {"version": manifest["counters"]["version"], "sha256": ud.sha256_hex(published)})
+        self.assertEqual(ud.run(d, check=True, bundled_counters_path=bundled), (0, ["data is up to date"]))
+
+    def test_check_fails_when_the_bundled_counters_copy_drifts(self):
+        d = self.counters_dir()
+        bundled = d / "bundle" / "counters.json"
+        ud.run(d, bundled_counters_path=bundled)
+        bundled.write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True, bundled_counters_path=bundled)
+        self.assertEqual(code, 1)
+        self.assertIn("the bundled counters.json", messages[0])
+        self.assertNotIn("data/counters.json", messages[0])
+
+    def test_without_a_bundled_path_nothing_is_written_or_checked(self):
+        d = self.counters_dir()
+        ud.run(d)
+        self.assertEqual(ud.run(d, check=True), (0, ["data is up to date"]))
+        self.assertFalse((d / "bundle").exists())
 
     def test_an_invalid_counters_file_blocks_everything_and_writes_nothing(self):
         d = self.counters_dir()
@@ -1395,7 +1773,7 @@ class VerbIdTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             data_dir = Path(tmp)
             for name in ("verbs.json", "grammar.json", "furigana.json", "manifest.json", "words.json",
-                         "counters.json"):
+                         "counters.json", "forms.json"):
                 (data_dir / name).write_bytes((Path(__file__).resolve().parent.parent / "data" / name).read_bytes())
             published = json.loads((data_dir / "verbs.json").read_text(encoding="utf-8"))
             published["verbs"].append({"dict": "ぬく", "id": "ぬく:抜く"})
@@ -1481,5 +1859,219 @@ class CounterDistractorTests(unittest.TestCase):
         self.assertTrue(any("accepted" in p for p in ud.check_counter_distractors(doc)))
 
 
+class CounterKeyTests(unittest.TestCase):
+    def test_plain_number(self):
+        cases = {5: "ご", 11: "じゅういち", 14: "じゅうよん", 20: "にじゅう", 70: "ななじゅう",
+                 99: "きゅうじゅうきゅう", 100: "ひゃく", 300: "さんびゃく", 600: "ろっぴゃく",
+                 800: "はっぴゃく", 1000: "せん", 3000: "さんぜん", 8000: "はっせん", 10000: "いちまん"}
+        for number, expected in cases.items():
+            self.assertEqual(ud.plain_number(number), expected, number)
+
+    def test_a_counter_opts_in_to_bigger_numbers(self):
+        self.assertEqual(ud.counter_keys({}), ud.COUNTER_KEYS)
+        keys = ud.counter_keys({"extent": 99})
+        self.assertEqual(keys[:11], ud.COUNTER_KEYS)
+        self.assertEqual(keys[11:], [str(n) for n in range(11, 100)])
+        self.assertEqual(len(keys), 100)
+
+    def test_extent_and_extra(self):
+        self.assertEqual(ud.counter_keys({"extent": 24})[-1], "24")
+        self.assertEqual(ud.counter_keys({"extent": 10}), ud.COUNTER_KEYS)
+        keys = ud.counter_keys({"extent": 59, "extra": [100]})
+        self.assertEqual(keys[-2:], ["59", "100"])
+
+
+class ComposeTests(unittest.TestCase):
+    """Expected readings are written by hand, one counter per sound class."""
+
+    def check(self, c, table):
+        core = ud.counter_readings(c)
+        for n, expected in table.items():
+            self.assertEqual(ud.compose_readings(c, n, core), expected, (c["id"], n))
+
+    def test_h_b_class_hon(self):
+        self.check(counter(), {
+            11: ["じゅういっぽん"], 13: ["じゅうさんぼん"], 14: ["じゅうよんほん"],
+            18: ["じゅうはっぽん", "じゅうはちほん"], 20: ["にじゅっぽん", "にじっぽん"],
+            30: ["さんじゅっぽん", "さんじっぽん"], 40: ["よんじゅっぽん", "よんじっぽん"], 100: ["ひゃっぽん"]})
+
+    def test_h_p_class_fun(self):
+        self.check(counter(id="fun", counter="分", reading="ふん", sound="h-p"), {
+            11: ["じゅういっぷん"], 14: ["じゅうよんぷん"], 18: ["じゅうはっぷん", "じゅうはちふん"],
+            20: ["にじゅっぷん", "にじっぷん"], 100: ["ひゃっぷん"]})
+
+    def test_k_class_ko(self):
+        self.check(counter(id="ko", counter="個", reading="こ", sound="k"), {
+            11: ["じゅういっこ"], 14: ["じゅうよんこ"], 18: ["じゅうはっこ", "じゅうはちこ"],
+            20: ["にじゅっこ", "にじっこ"], 100: ["ひゃっこ"]})
+
+    def test_s_class_satsu(self):
+        self.check(counter(id="satsu", counter="冊", reading="さつ", sound="s"), {
+            11: ["じゅういっさつ"], 14: ["じゅうよんさつ"], 18: ["じゅうはっさつ"],
+            20: ["にじゅっさつ", "にじっさつ"], 100: ["ひゃくさつ"]})
+
+    def test_plain_class_mai(self):
+        self.check(counter(id="mai", counter="枚", reading="まい", sound="plain"), {
+            11: ["じゅういちまい"], 14: ["じゅうよんまい"], 18: ["じゅうはちまい"], 20: ["にじゅうまい"],
+            70: ["ななじゅうまい"], 100: ["ひゃくまい"]})
+
+    def irregular_nin(self, **fields):
+        core = {"1": ["ひとり"], "2": ["ふたり"], "3": ["さんにん"], "4": ["よにん"], "5": ["ごにん"],
+                "6": ["ろくにん"], "7": ["ななにん", "しちにん"], "8": ["はちにん"], "9": ["きゅうにん"],
+                "10": ["じゅうにん"], "what": ["なんにん"]}
+        return counter(id="nin", counter="人", reading="にん", sound="irregular", overrides=core, **fields)
+
+    def test_irregular_counter_composes_through_compound(self):
+        c = self.irregular_nin(compound={"1": ["いちにん"], "2": ["ににん"], "0": ["にん"]})
+        self.check(c, {11: ["じゅういちにん"], 12: ["じゅうににん"], 13: ["じゅうさんにん"],
+                       14: ["じゅうよにん"], 17: ["じゅうななにん", "じゅうしちにん"],
+                       20: ["にじゅうにん"], 100: ["ひゃくにん"]})
+
+    def test_irregular_counter_without_compound_cannot_compose(self):
+        c = self.irregular_nin()
+        self.assertIsNone(ud.compose_readings(c, 11, ud.counter_readings(c)))
+        self.assertIsNone(ud.compose_readings(c, 20, ud.counter_readings(c)))
+
+    def test_numbers_it_cannot_compose_are_none_and_core_numbers_pass_through(self):
+        c = counter()
+        core = ud.counter_readings(c)
+        self.assertIsNone(ud.compose_readings(c, 300, core))
+        self.assertEqual(ud.compose_readings(c, 3, core), ["さんぼん"])
+
+
+class ExtendedReadingsTests(unittest.TestCase):
+    def doc(self, *counters):
+        return {"counters": list(counters)}
+
+    def test_extended_readings_are_generated_in_key_order(self):
+        readings = ud.counter_readings(counter(extent=99))
+        self.assertEqual(list(readings), ud.counter_keys(counter(extent=99)))
+        self.assertEqual(readings["20"], ["にじゅっぽん", "にじっぽん"])
+        self.assertEqual(readings["15"], ["じゅうごほん"])
+        self.assertEqual(readings["99"], ["きゅうじゅうきゅうほん"])
+
+    def test_an_override_beats_composition(self):
+        readings = ud.counter_readings(counter(extent=99, overrides={"14": ["じゅうよっぽん"]}))
+        self.assertEqual(readings["14"], ["じゅうよっぽん"])
+        self.assertEqual(readings["13"], ["じゅうさんぼん"])
+
+    def test_the_old_keys_are_unchanged(self):
+        hon = ud.counter_readings(counter())
+        self.assertEqual(hon["1"], ["いっぽん"])
+        self.assertEqual(hon["3"], ["さんぼん"])
+        self.assertEqual(hon["8"], ["はっぽん", "はちほん"])
+        self.assertEqual(hon["10"], ["じゅっぽん", "じっぽん"])
+        self.assertEqual(hon["what"], ["なんぼん"])
+        fun = ud.counter_readings(counter(id="fun", counter="分", reading="ふん", sound="h-p"))
+        self.assertEqual(fun["4"], ["よんぷん"])
+        mai = ud.counter_readings(counter(id="mai", counter="枚", reading="まい", sound="plain"))
+        self.assertEqual(mai["4"], ["よんまい"])
+
+    def test_changed_includes_extended_numbers(self):
+        doc = self.doc(counter(extent=99), counter(id="mai", counter="枚", reading="まい", sound="plain", extent=99))
+        ud.apply_counter_readings(doc)
+        hon, mai = doc["counters"]
+        self.assertIn("11", hon["changed"])
+        self.assertIn("20", hon["changed"])
+        self.assertNotIn("15", hon["changed"])
+        self.assertEqual([k for k in mai["changed"] if int(k) > 10 if k != "what"], [])
+
+    def test_distractors_cover_changed_extended_keys_only(self):
+        doc = self.doc(counter(extent=99))
+        ud.apply_counter_readings(doc)
+        hon = doc["counters"][0]
+        changed = set(hon["changed"])
+        self.assertEqual(list(hon["distractors"]),
+                         [k for k in ud.counter_keys(hon) if k in ud.COUNTER_KEYS or k in changed])
+        self.assertIn("にじゅうほん", hon["distractors"]["20"])
+        for key, wrong in hon["distractors"].items():
+            self.assertTrue(set(wrong).isdisjoint(hon["readings"][key]), key)
+        self.assertNotIn("15", hon["distractors"])      # unchanged: no key at all, which keeps the file small
+
+    def test_no_impossible_small_tsu_distractor_for_a_vowel_or_voiced_counter(self):
+        en = counter(id="en", counter="円", reading="えん", sound="plain", extent=99, extra=[100, 200],
+                     overrides={"4": ["よえん"], "200": ["にひゃくえん"]})
+        hon = counter(extent=99)
+        doc = self.doc(en, hon)
+        ud.apply_counter_readings(doc)
+        for key, wrong in doc["counters"][0]["distractors"].items():
+            if key not in ud.COUNTER_KEYS:
+                self.assertFalse([w for w in wrong if "っえ" in w], (key, wrong))
+        self.assertIn("200", doc["counters"][0]["distractors"])     # authored, so it has distractors
+        self.assertIn("じゅういちほん", doc["counters"][1]["distractors"]["11"])
+
+    def test_stale_detection_sees_the_new_keys(self):
+        doc = self.doc(counter(extent=99))
+        ud.apply_counter_readings(doc)
+        self.assertFalse(ud.apply_counter_readings(doc))
+        core_only = counter(extent=99, readings={k: v for k, v in doc["counters"][0]["readings"].items() if k in ud.COUNTER_KEYS})
+        stale = self.doc(core_only)
+        self.assertTrue(ud.apply_counter_readings(stale))
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReviewStampTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    def stamped(self, entry, generated=(), **stamp):
+        review = {"by": "teacher", "on": "2026-10-24", "sha256": ud.review_hash(entry, generated)}
+        review.update(stamp)
+        return {**entry, "review": review}
+
+    def test_review_hash_ignores_generated_fields_key_order_and_the_stamp(self):
+        a = counter(readings={"1": ["いっぽん"]}, changed=["1"])
+        b = {key: a[key] for key in reversed(list(a))}
+        b["readings"] = {"1": ["different"]}
+        b["review"] = {"by": "owner", "on": "2026-01-01", "sha256": "x"}
+        generated = ("readings", "changed", "distractors")
+        self.assertEqual(ud.review_hash(a, generated), ud.review_hash(b, generated))
+        self.assertNotEqual(ud.review_hash(a), ud.review_hash(b))
+
+    def test_review_hash_changes_with_the_text(self):
+        a = counter(examples=[{"jp": "傘を三本ください。", "en": "Three umbrellas."}])
+        b = counter(examples=[{"jp": "傘を二本ください。", "en": "Two umbrellas."}])
+        self.assertNotEqual(ud.review_hash(a), ud.review_hash(b))
+
+    def test_a_valid_stamp_and_no_stamp_pass(self):
+        entry = counter()
+        self.assertEqual(ud.check_reviews([entry, self.stamped(counter(id="hai"))]), [])
+
+    def test_an_edit_after_review_is_reported_with_the_entry_and_date(self):
+        entry = self.stamped(counter())
+        entry["meaning"] = "pencils and such"
+        problems = ud.check_reviews([entry])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("hon was edited after review on 2026-10-24", problems[0])
+        self.assertIn("mark_reviewed.py", problems[0])
+
+    def test_a_bad_reviewer_or_date_is_reported(self):
+        problems = ud.check_reviews([self.stamped(counter(), by="nobody"), self.stamped(counter(id="b"), on="24/10/2026"),
+                                     {**counter(id="c"), "review": "yes"}])
+        self.assertEqual(len(problems), 3, problems)
+        self.assertTrue(any("by" in p for p in problems))
+        self.assertTrue(any("on" in p for p in problems))
+
+    def test_regenerating_counters_keeps_a_stamp_valid(self):
+        d = self.make_dir()
+        furigana = {"version": "1.0.0", "description": "d", "readings": {"本": "ほん", "傘": "かさ"}}
+        (d / "furigana.json").write_text(json.dumps(furigana, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        doc = counters_doc(self.stamped(counter(), ud.COUNTER_GENERATED))
+        doc.update(version="1.0.0", description="d")
+        (d / "counters.json").write_text(json.dumps(doc, ensure_ascii=False) + "\n", encoding="utf-8")
+        self.assertEqual(ud.run(d)[0], 0)
+        first = (d / "counters.json").read_bytes()
+        self.assertEqual(ud.run(d)[0], 0)
+        self.assertEqual((d / "counters.json").read_bytes(), first)
+        self.assertEqual(ud.run(d, check=True)[0], 0)
+        written = json.loads(first)["counters"][0]
+        self.assertEqual(written["review"]["by"], "teacher")
+        written["meaning"] = "edited"
+        doc2 = counters_doc(written)
+        doc2.update(version="1.0.0", description="d")
+        (d / "counters.json").write_text(json.dumps(doc2, ensure_ascii=False) + "\n", encoding="utf-8")
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("hon was edited after review" in m for m in messages), messages)

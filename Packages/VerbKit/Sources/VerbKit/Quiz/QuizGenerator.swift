@@ -1,12 +1,15 @@
 /// Builds up to `count` questions from the (verb, form) pairs the verbs have in
 /// `topics`. Each is a conjugate, fill-in or identify question, drawn from `kinds`.
 ///
-/// - Conjugate: the choices are conjugated strings. Distractors are the same verb's
-///   other forms in the topics first, then the same form of other verbs.
+/// - Conjugate: the choices are conjugated strings. Distractors are up to one invented rule
+///   mistake where the data supports it (×いいて, ×たべらない, ×あらない; see
+///   `syntheticDistractors`), then the same verb's other forms in the topics, then the same
+///   form of other verbs. Every distractor is tagged in `QuizQuestion.errors`.
 /// - Fill in: an example sentence of the verb for that form, with the form blanked.
 ///   The choices are conjugated strings; distractors are the same verb's other
 ///   forms in the topics. Only used for entries with an example whose sentence
-///   contains the form string exactly, so other kinds are used otherwise.
+///   contains the form string exactly, in kana or written with the verb's kanji
+///   (`KanjiSpelling`), so other kinds are used otherwise.
 /// - Identify: the choices are form labels. Distractors are labels of the same
 ///   verb's other forms in the topics.
 ///
@@ -91,53 +94,80 @@ private func makeQuestion(
 
     let sameVerb = QuizForm.available(in: entry.verb.forms, topics: topics)
         .filter { $0.form != entry.form }
-    // A fill-in question needs an example sentence that contains the form string, and a
-    // form sharing its string with another of the verb's forms would have two right labels.
-    let example = entry.verb.examples.first {
-        $0.form.rawValue == entry.form.id && $0.jp.contains(entry.value)
-    }
+    // A fill-in question needs an example sentence that contains the form, in kana or written
+    // with the verb's kanji (食べます), and a form sharing its string with another of the
+    // verb's forms would have two right labels.
+    let spellings = [entry.value] + [KanjiSpelling(entry.verb)?.spell(entry.value)].compactMap { $0 }
+    let fillIn: (example: VerbExample, written: String)? = entry.verb.examples.lazy
+        .filter { $0.form.rawValue == entry.form.id }
+        .compactMap { example in spellings.first { example.jp.contains($0) }.map { (example, $0) } }
+        .first
+    let example = fillIn?.example
     let usable = kinds.filter { kind in
         switch kind {
         case .fillIn: return example != nil
         case .identify: return !entry.sharesString
         case .conjugate: return true
-        case .connect, .counterChoice, .counterReading: return false
+        case .connect, .counterChoice, .counterReading, .counterAsk: return false
         }
     }
     guard let kind = usable.randomElement() else { return nil }
 
     let correct: String
-    let distractors: [String]
+    // Every distractor carries the mistake it represents, in order.
+    var tagged: [(choice: String, tag: QuizErrorTag)] = []
+    func take(_ candidates: [(choice: String, tag: QuizErrorTag)], limit: Int = 3) {
+        var seen = Set(tagged.map(\.choice) + [correct])
+        for candidate in candidates where tagged.count < limit && seen.insert(candidate.choice).inserted {
+            tagged.append(candidate)
+        }
+    }
+    func sameVerbTagged(_ value: (form: QuizForm, value: String)) -> QuizErrorTag {
+        lookalikeTag(of: entry.form, chosen: value.form) ?? .otherForm(value.form.id)
+    }
+    /// The verb's other forms, the easily confused one (passive/potential, long/short
+    /// causative-passive) first, then the rest shuffled.
+    func sameVerbOrdered() -> [(form: QuizForm, value: String)] {
+        let shuffled = sameVerb.shuffled()
+        return shuffled.filter { lookalikeTag(of: entry.form, chosen: $0.form) != nil }
+            + shuffled.filter { lookalikeTag(of: entry.form, chosen: $0.form) == nil }
+    }
+    func synthetic() -> [(choice: String, tag: QuizErrorTag)] {
+        let real = Set(QuizForm.available(in: entry.verb.forms, topics: Set(QuizTopic.allCases)).map(\.value))
+        return syntheticDistractors(for: entry.verb, form: entry.form)
+            .filter { !real.contains($0.value) }
+            .map { (choice: $0.value, tag: $0.tag) }
+            .shuffled()
+    }
     switch kind {
     case .conjugate:
         correct = entry.value
-        let sameVerbStrings = sameVerb.map(\.value).filter { $0 != correct }
-        let otherVerbStrings = verbs
+        take(Array(synthetic().prefix(1)))
+        take(sameVerbOrdered().map { (choice: $0.value, tag: sameVerbTagged($0)) })
+        take(verbs
             .filter { $0.id != entry.verb.id }
-            .compactMap { entry.form.value(in: $0.forms) }
-            .filter { $0 != correct }
-        // Same verb's forms first, as before; shuffle within each group.
-        var seen = Set<String>()
-        distractors = Array(
-            (sameVerbStrings.shuffled() + otherVerbStrings.shuffled())
-                .filter { seen.insert($0).inserted }
-                .prefix(3)
-        )
+            .compactMap { other in
+                entry.form.value(in: other.forms).map { (choice: $0, tag: QuizErrorTag.otherVerb(other.dict)) }
+            }
+            .shuffled())
     case .fillIn:
+        // Real forms only: a fill-in choice is always a form the verb has.
         correct = entry.value
-        distractors = pick(sameVerb.map(\.value).filter { $0 != correct })
+        take(sameVerbOrdered().map { (choice: $0.value, tag: sameVerbTagged($0)) })
     case .identify:
         correct = entry.form.label
-        distractors = pick(sameVerb.map(\.form.label).filter { $0 != correct })
-    case .connect, .counterChoice, .counterReading:
+        take(sameVerbOrdered().map { (choice: $0.form.label, tag: sameVerbTagged($0)) })
+    case .connect, .counterChoice, .counterReading, .counterAsk:
         return nil
     }
 
-    guard !distractors.isEmpty else { return nil }
+    guard !tagged.isEmpty else { return nil }
+    let errors = Dictionary(tagged.map { ($0.choice, $0.tag) }, uniquingKeysWith: { first, _ in first })
     return QuizQuestion(
         verb: entry.verb, form: entry.form, kind: kind, formString: entry.value,
-        correct: correct, choices: ([correct] + distractors).shuffled(),
-        sentence: kind == .fillIn ? example.map { blanked($0.jp, replacing: entry.value) } : nil,
+        correct: correct, choices: ([correct] + tagged.map(\.choice)).shuffled(),
+        errors: errors,
+        sentence: kind == .fillIn ? fillIn.map { blanked($0.example.jp, replacing: $0.written) } : nil,
         translation: kind == .fillIn ? example?.en : nil
     )
 }

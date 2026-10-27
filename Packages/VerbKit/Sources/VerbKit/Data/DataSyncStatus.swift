@@ -4,7 +4,7 @@ import os
 
 /// One of the published data files the app syncs.
 public enum DataFile: String, CaseIterable, Identifiable, Sendable {
-    case verbs, grammar, furigana, words, counters
+    case verbs, grammar, furigana, words, counters, forms
 
     public var id: String { rawValue }
 
@@ -15,6 +15,7 @@ public enum DataFile: String, CaseIterable, Identifiable, Sendable {
         case .furigana: return "Furigana"
         case .words: return "Words"
         case .counters: return "Counters"
+        case .forms: return "Forms"
         }
     }
 }
@@ -30,8 +31,14 @@ public enum DataSyncProblem: Equatable, Sendable {
     case untrusted
     /// The download was fine but saving it on the device failed.
     case couldNotSave
+    /// Verified, but made for a newer app (a form catalogue with a newer major schema).
+    case needsAppUpdate
 
     public init(syncError error: Error) {
+        if error is FormCatalogue.LoadError {
+            self = .needsAppUpdate
+            return
+        }
         switch error as? VerbSyncError {
         case .offline: self = .offline
         case .serverUnreachable: self = .serverUnreachable
@@ -48,6 +55,7 @@ public enum DataSyncProblem: Equatable, Sendable {
         case .damaged: return "The download was incomplete, so it wasn't used."
         case .untrusted: return "The download couldn't be verified, so it wasn't used."
         case .couldNotSave: return "The download couldn't be saved on this device."
+        case .needsAppUpdate: return "The download needs a newer version of the app."
         }
     }
 }
@@ -64,6 +72,8 @@ public struct DataFileStatus: Equatable, Sendable {
     public var lastChecked: Date?
     /// Set when the latest check failed; cleared by the next one that succeeds.
     public var problem: DataSyncProblem?
+    /// The data on this device is the copy that shipped with the app, not yet confirmed by a sync.
+    public var isBundled = false
 
     public var hasData: Bool { version != nil }
 
@@ -101,7 +111,8 @@ public final class DataSyncStatus {
                 file: file,
                 version: defaults.string(forKey: key(file, "version")),
                 lastUpdated: defaults.object(forKey: key(file, "lastUpdated")) as? Date,
-                lastChecked: defaults.object(forKey: key(file, "lastChecked")) as? Date
+                lastChecked: defaults.object(forKey: key(file, "lastChecked")) as? Date,
+                isBundled: defaults.bool(forKey: key(file, "bundled"))
             )
         }
     }
@@ -120,6 +131,17 @@ public final class DataSyncStatus {
         var status = status(for: file)
         status.lastChecked = now()
         status.problem = nil
+        status.isBundled = false
+        save(status)
+    }
+
+    /// The copy that shipped with the app was installed as the data in use, `version`, without a
+    /// download. Leaves no "updated" time, since nothing was synced; the next sync clears the mark.
+    public func recordBundled(_ file: DataFile, version: String) {
+        var status = status(for: file)
+        status.version = version
+        status.lastUpdated = nil
+        status.isBundled = true
         save(status)
     }
 
@@ -133,6 +155,17 @@ public final class DataSyncStatus {
         status.version = version
         status.lastChecked = date
         status.problem = nil
+        status.isBundled = false
+        save(status)
+    }
+
+    /// The data in use is `version` without a download: the form catalogue the app ships with,
+    /// until a newer one is synced. Leaves the dates alone unless the version changes.
+    public func recordInUse(_ file: DataFile, version: String) {
+        var status = status(for: file)
+        guard status.version != version else { return }
+        status.version = version
+        status.lastUpdated = nil
         save(status)
     }
 
@@ -158,6 +191,7 @@ public final class DataSyncStatus {
         defaults.set(status.version, forKey: key(status.file, "version"))
         defaults.set(status.lastUpdated, forKey: key(status.file, "lastUpdated"))
         defaults.set(status.lastChecked, forKey: key(status.file, "lastChecked"))
+        defaults.set(status.isBundled, forKey: key(status.file, "bundled"))
     }
 
     private func key(_ file: DataFile, _ field: String) -> String {

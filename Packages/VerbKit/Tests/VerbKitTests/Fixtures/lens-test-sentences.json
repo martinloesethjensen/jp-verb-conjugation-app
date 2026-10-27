@@ -1,0 +1,264 @@
+{
+  "description": "The 41 hand-labelled test sentences of the voice research: 23 dev, 18 held out. Golden sentences for the Sentence lens (#142). Each verb lists its surface and `match`: exact (a generated form; `forms` are every form the index lists for that verb), rule (needs the tail rules of #145), notInApp (a verb the app lacks), homograph (an index surface whose real verb the app lacks) or notAVerb. A surface is the whole verb chain the matcher should highlight: it takes a polite です (飲みたいです) but not a question か.",
+  "sentences": [
+    {
+      "text": "昨日友達と映画を見に行きました。", "set": "dev",
+      "verbs": [
+        {"surface": "見", "verb": "みる", "match": "rule"},
+        {"surface": "行きました", "verb": "いく", "match": "exact", "forms": ["masu_past"]}
+      ]
+    },
+    {
+      "text": "毎朝コーヒーを飲みます。", "set": "dev",
+      "verbs": [
+        {"surface": "飲みます", "verb": "のむ", "match": "exact", "forms": ["masu_pos"]}
+      ]
+    },
+    {
+      "text": "日本語で手紙を書いています。", "set": "dev",
+      "verbs": [
+        {"surface": "書いています", "verb": "かく", "match": "exact", "forms": ["teiru_masu_pos"]}
+      ]
+    },
+    {
+      "text": "宿題を忘れてしまいました。", "set": "dev",
+      "verbs": [
+        {"surface": "忘れてしまいました", "verb": "わすれる", "match": "rule"}
+      ]
+    },
+    {
+      "text": "子供の時、泳げませんでした。", "set": "dev",
+      "verbs": [
+        {"surface": "泳げませんでした", "verb": "およぐ", "match": "exact", "forms": ["pot_masu_past_neg"]}
+      ]
+    },
+    {
+      "text": "雨が降ったら、家で本を読みましょう。", "set": "dev",
+      "verbs": [
+        {"surface": "降ったら", "verb": "ふる", "match": "exact", "forms": ["conditional_tara"]},
+        {"surface": "読みましょう", "verb": "よむ", "match": "exact", "forms": ["masu_volitional"]}
+      ]
+    },
+    {
+      "text": "先生に名前を呼ばれました。", "set": "dev",
+      "verbs": [
+        {"surface": "呼ばれました", "verb": "よぶ", "match": "rule"}
+      ]
+    },
+    {
+      "text": "母に野菜を食べさせられなかった。", "set": "dev",
+      "verbs": [
+        {"surface": "食べさせられなかった", "verb": "たべる", "match": "rule"}
+      ]
+    },
+    {
+      "text": "ここでたばこを吸ってはいけません。", "set": "dev",
+      "verbs": [
+        {"surface": "吸ってはいけません", "match": "notInApp"}
+      ]
+    },
+    {
+      "text": "明日は早く起きなければならない。", "set": "dev",
+      "verbs": [
+        {"surface": "起きなければならない", "verb": "おきる", "match": "exact", "forms": ["nakereba_naranai"]}
+      ]
+    },
+    {
+      "text": "窓を開けてもいいですか。", "set": "dev",
+      "verbs": [
+        {"surface": "開けてもいいです", "verb": "あける", "match": "rule"}
+      ]
+    },
+    {
+      "text": "電気を消さないでください。", "set": "dev",
+      "verbs": [
+        {"surface": "消さないでください", "verb": "けす", "match": "rule"}
+      ]
+    },
+    {
+      "text": "もう少しゆっくり話してくれませんか。", "set": "dev",
+      "verbs": [
+        {"surface": "話してくれません", "verb": "はなす", "match": "rule"}
+      ]
+    },
+    {
+      "text": "東京に住んでいる人は多いです。", "set": "dev",
+      "verbs": [
+        {"surface": "住んでいる", "verb": "すむ", "match": "exact", "forms": ["teiru"]}
+      ]
+    },
+    {
+      "text": "駅まで歩いて十分かかります。", "set": "dev",
+      "verbs": [
+        {"surface": "歩いて", "verb": "あるく", "match": "exact", "forms": ["te"]},
+        {"surface": "かかります", "match": "notInApp"}
+      ]
+    },
+    {
+      "text": "新しい服を着てみたいです。", "set": "dev",
+      "verbs": [
+        {"surface": "着てみたいです", "verb": "きる", "match": "rule"}
+      ]
+    },
+    {
+      "text": "私はお酒が飲めません。", "set": "dev",
+      "verbs": [
+        {"surface": "飲めません", "verb": "のむ", "match": "exact", "forms": ["pot_masu_neg"]}
+      ]
+    },
+    {
+      "text": "疲れたから、早く寝よう。", "set": "dev",
+      "verbs": [
+        {"surface": "疲れた", "verb": "つかれる", "match": "exact", "forms": ["short_past"]},
+        {"surface": "寝よう", "verb": "ねる", "match": "exact", "forms": ["volitional"]}
+      ]
+    },
+    {
+      "text": "彼が来るかどうか分かりません。", "set": "dev",
+      "verbs": [
+        {"surface": "来る", "verb": "くる", "match": "exact", "forms": ["short_pos"]},
+        {"surface": "分かりません", "verb": "わかる", "match": "exact", "forms": ["masu_neg"]}
+      ]
+    },
+    {
+      "text": "切符を買ってから、電車に乗りました。", "set": "dev",
+      "verbs": [
+        {"surface": "買って", "verb": "かう", "match": "exact", "forms": ["te"]},
+        {"surface": "乗りました", "verb": "のる", "match": "exact", "forms": ["masu_past"]}
+      ]
+    },
+    {
+      "text": "ともだちがうちにきた。", "set": "dev",
+      "verbs": [
+        {"surface": "きた", "verb": "くる", "match": "exact", "forms": ["short_past"]}
+      ]
+    },
+    {
+      "text": "もっと野菜を食べたくない。", "set": "dev",
+      "verbs": [
+        {"surface": "食べたくない", "verb": "たべる", "match": "rule"}
+      ]
+    },
+    {
+      "text": "会議の前に資料を作っておきました。", "set": "dev",
+      "verbs": [
+        {"surface": "作っておきました", "verb": "つくる", "match": "rule"}
+      ]
+    },
+    {
+      "text": "毎日日本語を勉強しています。", "set": "heldout",
+      "verbs": [
+        {"surface": "しています", "verb": "する", "match": "exact", "forms": ["teiru_masu_pos"]}
+      ]
+    },
+    {
+      "text": "今、何をしているの？", "set": "heldout",
+      "verbs": [
+        {"surface": "している", "verb": "する", "match": "exact", "forms": ["teiru"]}
+      ]
+    },
+    {
+      "text": "昨日は雨で、どこにも行かなかった。", "set": "heldout",
+      "verbs": [
+        {"surface": "行かなかった", "verb": "いく", "match": "exact", "forms": ["short_past_neg"]}
+      ]
+    },
+    {
+      "text": "夏休みに京都へ行こうと思っています。", "set": "heldout",
+      "verbs": [
+        {"surface": "行こう", "verb": "いく", "match": "exact", "forms": ["volitional"]},
+        {"surface": "思っています", "verb": "おもう", "match": "exact", "forms": ["teiru_masu_pos"]}
+      ]
+    },
+    {
+      "text": "お金がないから、何も買えない。", "set": "heldout",
+      "verbs": [
+        {"surface": "ない", "verb": "ある", "match": "exact", "forms": ["short_neg"]},
+        {"surface": "買えない", "verb": "かう", "match": "exact", "forms": ["pot_short_neg"]}
+      ]
+    },
+    {
+      "text": "宿題はもう終わった？", "set": "heldout",
+      "verbs": [
+        {"surface": "終わった", "verb": "おわる", "match": "exact", "forms": ["short_past"]}
+      ]
+    },
+    {
+      "text": "その話は聞いたことがあります。", "set": "heldout",
+      "verbs": [
+        {"surface": "聞いた", "verb": "きく", "match": "exact", "forms": ["short_past"]},
+        {"surface": "あります", "verb": "ある", "match": "exact", "forms": ["masu_pos"]}
+      ]
+    },
+    {
+      "text": "ちょっと待ってください。", "set": "heldout",
+      "verbs": [
+        {"surface": "待ってください", "verb": "まつ", "match": "rule"}
+      ]
+    },
+    {
+      "text": "子供が泣いている。", "set": "heldout",
+      "verbs": [
+        {"surface": "泣いている", "match": "notInApp"}
+      ]
+    },
+    {
+      "text": "先週買った本はとても面白かったです。", "set": "heldout",
+      "verbs": [
+        {"surface": "買った", "verb": "かう", "match": "exact", "forms": ["short_past"]}
+      ]
+    },
+    {
+      "text": "早く起きれば、間に合います。", "set": "heldout",
+      "verbs": [
+        {"surface": "起きれば", "verb": "おきる", "match": "exact", "forms": ["conditional_ba"]},
+        {"surface": "合います", "match": "notInApp"}
+      ]
+    },
+    {
+      "text": "電車の中で電話をかけないでください。", "set": "heldout",
+      "verbs": [
+        {"surface": "かけないでください", "match": "notInApp"}
+      ]
+    },
+    {
+      "text": "友達に日本語を教えてもらいました。", "set": "heldout",
+      "verbs": [
+        {"surface": "教えてもらいました", "verb": "おしえる", "match": "rule"}
+      ]
+    },
+    {
+      "text": "部屋の電気をつけたまま寝てしまった。", "set": "heldout",
+      "verbs": [
+        {"surface": "つけた", "verb": "つける", "match": "exact", "forms": ["short_past"]},
+        {"surface": "寝てしまった", "verb": "ねる", "match": "rule"}
+      ]
+    },
+    {
+      "text": "彼女は歌が上手で、よく歌っています。", "set": "heldout",
+      "verbs": [
+        {"surface": "歌っています", "verb": "うたう", "match": "exact", "forms": ["teiru_masu_pos"]}
+      ]
+    },
+    {
+      "text": "映画を見ながら、ポップコーンを食べた。", "set": "heldout",
+      "verbs": [
+        {"surface": "見ながら", "verb": "みる", "match": "exact", "forms": ["nagara"]},
+        {"surface": "食べた", "verb": "たべる", "match": "exact", "forms": ["short_past"]}
+      ]
+    },
+    {
+      "text": "窓を閉めてもらえますか。", "set": "heldout",
+      "verbs": [
+        {"surface": "閉めてもらえます", "verb": "しめる", "match": "rule"}
+      ]
+    },
+    {
+      "text": "日本に来てから三年になります。", "set": "heldout",
+      "verbs": [
+        {"surface": "来て", "verb": "くる", "match": "exact", "forms": ["te"]},
+        {"surface": "なります", "verb": "なる", "match": "exact", "forms": ["masu_pos"]}
+      ]
+    }
+  ]
+}

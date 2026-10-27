@@ -19,6 +19,10 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
     /// the explicit id when there is one, otherwise the dictionary form.
     public var id: String { explicitID ?? dict }
 
+    /// The title shown in widgets, Spotlight, intents and lists: the dictionary form,
+    /// with the kanji in parentheses when the verb has one.
+    public var displayTitle: String { kanji.map { "\(dict) (\($0))" } ?? dict }
+
     enum CodingKeys: String, CodingKey {
         case type, label, dict, kanji, meaning, description, notes, teGroup, jlpt, forms, examples
         case explicitID = "id"
