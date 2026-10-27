@@ -26,7 +26,7 @@ struct VerbAppEntity: AppEntity {
 
     init(_ verb: Verb) {
         id = verb.id
-        title = verb.kanji.map { "\(verb.dict) (\($0))" } ?? verb.dict
+        title = verb.displayTitle
         meaning = verb.meaning
     }
 }

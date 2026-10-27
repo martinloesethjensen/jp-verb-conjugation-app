@@ -14,7 +14,7 @@ public final class QuizSessionStore {
 
     /// An unreadable saved session (a damaged value, or one from a newer app) is dropped.
     public init(defaults: UserDefaults? = nil) {
-        self.defaults = defaults ?? UserDefaults(suiteName: VerbModelContainer.appGroupIdentifier) ?? .standard
+        self.defaults = defaults ?? .verbKitAppGroup
         if let data = self.defaults.data(forKey: Self.defaultsKey) {
             session = try? JSONDecoder().decode(QuizSession.self, from: data)
             if session == nil { self.defaults.removeObject(forKey: Self.defaultsKey) }

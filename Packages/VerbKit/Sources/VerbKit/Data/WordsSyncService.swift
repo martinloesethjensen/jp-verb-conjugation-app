@@ -24,41 +24,24 @@ public struct WordsSyncService: Sendable {
         guard let manifest = try await fetcher.fetchWordsManifest() else {
             return .upToDate
         }
-        try rejectRollback(of: manifest.version)
+        try SyncVerification.rejectRollback(of: manifest.version, for: .words, syncState: syncState)
         if let last = syncState.lastSyncedWordsManifest(), last == manifest {
             return .upToDate
         }
 
         let data = try await fetcher.fetchWordsData()
-        guard sha256Hex(of: data) == manifest.sha256 else {
-            throw VerbSyncError.malformedData
-        }
-
-        let decoded: WordsDataFile
-        do {
-            decoded = try JSONDecoder().decode(WordsDataFile.self, from: data)
-        } catch {
-            throw VerbSyncError.malformedData
-        }
+        let decoded = try SyncVerification.decode(WordsDataFile.self, from: data, sha256: manifest.sha256)
         return .updated(manifest: manifest, words: decoded.words)
     }
 
     /// Records `manifest` as synced. Call only after its words have been persisted.
     public func confirmSynced(_ manifest: WordsManifest) {
         syncState.saveLastSyncedWordsManifest(manifest)
-        syncState.saveHighestAcceptedVersion(manifest.version, for: "words")
+        syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.words.rawValue)
     }
 
     /// The highest version this device has accepted, which a bundled copy must beat to be installed.
     public func acceptedVersion() -> String? {
-        syncState.highestAcceptedVersion(for: "words")
-    }
-
-    /// Refuse a replayed manifest older than the highest version this device accepted.
-    private func rejectRollback(of version: String) throws {
-        if let highest = syncState.highestAcceptedVersion(for: "words"),
-           DataVersion.isOlder(version, than: highest) {
-            throw VerbSyncError.untrusted
-        }
+        syncState.highestAcceptedVersion(for: DataFile.words.rawValue)
     }
 }

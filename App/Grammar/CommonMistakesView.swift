@@ -73,7 +73,9 @@ struct CommonMistakesView: View {
             }
         }
         .navigationTitle("Common mistakes")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .searchable(text: $search, prompt: "Search mistakes…")
         .overlay {
             if groups.isEmpty {

@@ -84,10 +84,7 @@ extension WordBankArchive {
     public static func suggestedFileName(
         for scope: WordBankExportScope, in snapshot: WordBankSnapshot, on date: Date = Date()
     ) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        let day = formatter.string(from: date)
+        let day = WordBankDates.day(date)
         switch scope {
         case .everything:
             return "Word Bank \(day)"

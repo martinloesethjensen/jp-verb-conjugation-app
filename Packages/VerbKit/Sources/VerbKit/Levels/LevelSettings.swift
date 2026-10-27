@@ -61,15 +61,11 @@ public struct LevelSettings: Equatable, Sendable {
         return visible.map(\.rawValue).joined(separator: ", ")
     }
 
-    private static var appGroupDefaults: UserDefaults {
-        UserDefaults(suiteName: VerbModelContainer.appGroupIdentifier) ?? .standard
-    }
-
     public static func load(from defaults: UserDefaults? = nil) -> LevelSettings {
-        LevelSettings(rawValue: (defaults ?? appGroupDefaults).string(forKey: defaultsKey))
+        LevelSettings(rawValue: (defaults ?? .verbKitAppGroup).string(forKey: defaultsKey))
     }
 
     public func save(to defaults: UserDefaults? = nil) {
-        (defaults ?? Self.appGroupDefaults).set(rawValue, forKey: Self.defaultsKey)
+        (defaults ?? .verbKitAppGroup).set(rawValue, forKey: Self.defaultsKey)
     }
 }

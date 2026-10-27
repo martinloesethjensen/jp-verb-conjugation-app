@@ -192,15 +192,7 @@ struct WordBankSearchChips: View {
         Menu {
             menu()
         } label: {
-            HStack(spacing: 4) {
-                Text(title)
-                Image(systemName: "chevron.down").font(.caption2.weight(.bold)).accessibilityHidden(true)
-            }
-            .font(.callout.weight(active ? .bold : .semibold))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .chipBackground(nil)
-            .overlay { if active { Capsule().strokeBorder(Color.primary, lineWidth: 2) } }
+            FilterChip(title, isOn: active, showsChevron: true)
         }
         .buttonStyle(.plain)
         .menuIndicator(.hidden)

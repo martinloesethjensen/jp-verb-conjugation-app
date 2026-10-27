@@ -55,6 +55,10 @@ public struct Word: Hashable, Identifiable, Sendable {
     /// forms against; the citation form when the word has none.
     public var baseForm: String { forms[.shortPos] ?? dict }
 
+    /// The title shown in pickers and lists: the dictionary form, with the kanji in
+    /// parentheses when the word has one.
+    public var displayTitle: String { kanji.map { "\(dict) (\($0))" } ?? dict }
+
     public init(
         wordClass: WordClass,
         dict: String,

@@ -74,12 +74,7 @@ struct GrammarDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let level = point.jlpt {
-                Text(level.displayName)
-                    .font(.caption.weight(.bold))
-                    .padding(.horizontal, 8).padding(.vertical, 2)
-                    .glassEffect(in: Capsule())
-            }
+            LevelBadge(level: point.jlpt, emphasis: .header)
             if let lesson = lessonTag {
                 HStack(spacing: 8) {
                     Text(lesson.name)
@@ -103,27 +98,16 @@ struct GrammarDetailView: View {
         }
     }
 
-    private func sectionHeader(_ title: String, systemImage: String? = nil) -> some View {
-        Label {
-            Text(title)
-        } icon: {
-            if let systemImage { Image(systemName: systemImage) }
-        }
-        .font(.title3.weight(.semibold))
-    }
-
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8, content: content)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+            .glassCard()
     }
 
     // MARK: Don't confuse with
 
     private var contrastsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Don't confuse with", systemImage: "arrow.left.arrow.right")
+            SectionHeader("Don't confuse with", systemImage: "arrow.left.arrow.right")
             ForEach(Array(point.contrasts.enumerated()), id: \.offset) { _, contrast in
                 card {
                     JapaneseText(contrast.pattern).font(.headline)
@@ -141,7 +125,7 @@ struct GrammarDetailView: View {
 
     private var usagesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Usages")
+            SectionHeader("Usages")
             ForEach(Array(point.usages.enumerated()), id: \.offset) { index, usage in
                 card {
                     JapaneseText("\(index + 1). \(usage.heading)").font(.headline)
@@ -159,7 +143,7 @@ struct GrammarDetailView: View {
 
     private var conjugationsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Conjugations")
+            SectionHeader("Conjugations")
             ForEach(registerOrder, id: \.self) { register in
                 let forms = point.conjugations.filter { $0.register == register }
                 if !forms.isEmpty {
@@ -208,7 +192,7 @@ struct GrammarDetailView: View {
 
     private var pitfallsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("Watch out", systemImage: "exclamationmark.triangle")
+            SectionHeader("Watch out", systemImage: "exclamationmark.triangle")
             ForEach(Array(point.pitfalls.enumerated()), id: \.offset) { _, pitfall in
                 card {
                     JapaneseText(pitfall.heading).font(.headline)
@@ -227,7 +211,7 @@ struct GrammarDetailView: View {
 
     private var relatedSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("Related")
+            SectionHeader("Related")
             ForEach(relatedPoints) { related in
                 Button {
                     openRoute(.grammar(related.id))

@@ -38,7 +38,7 @@ struct VerbChoiceQuery: EntityStringQuery {
 
 extension VerbChoice {
     init(_ verb: Verb) {
-        self.init(id: verb.id, title: verb.kanji.map { "\(verb.dict) (\($0))" } ?? verb.dict)
+        self.init(id: verb.id, title: verb.displayTitle)
     }
 }
 

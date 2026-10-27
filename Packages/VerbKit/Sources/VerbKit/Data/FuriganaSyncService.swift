@@ -10,9 +10,9 @@ public enum FuriganaSyncResult: Equatable, Sendable {
 /// dictionary and only then calls `confirmSynced(_:)`, so a persistence
 /// failure can't be mistaken for "nothing changed" on the next attempt.
 ///
-/// This is deliberately a third concrete copy of the pattern rather than a
-/// shared abstraction: `VerbSyncService` has a different manifest shape, so a
-/// generic version would not cover all three. Revisit at a fourth file.
+/// Like every data file, this stays a concrete service: its manifest,
+/// result and sync state are its own, so one file's sync cannot disturb
+/// another's. The shared security rules live in `SyncVerification`.
 public struct FuriganaSyncService: Sendable {
     private let fetcher: VerbDataFetching
     private let syncState: SyncStateStoring
@@ -31,22 +31,13 @@ public struct FuriganaSyncService: Sendable {
         guard let manifest = try await fetcher.fetchFuriganaManifest() else {
             return .upToDate
         }
-        try rejectRollback(of: manifest.version)
+        try SyncVerification.rejectRollback(of: manifest.version, for: .furigana, syncState: syncState)
         if let last = syncState.lastSyncedFuriganaManifest(), last == manifest {
             return .upToDate
         }
 
         let data = try await fetcher.fetchFuriganaData()
-        guard sha256Hex(of: data) == manifest.sha256 else {
-            throw VerbSyncError.malformedData
-        }
-
-        let decoded: FuriganaDataFile
-        do {
-            decoded = try JSONDecoder().decode(FuriganaDataFile.self, from: data)
-        } catch {
-            throw VerbSyncError.malformedData
-        }
+        let decoded = try SyncVerification.decode(FuriganaDataFile.self, from: data, sha256: manifest.sha256)
 
         return .updated(manifest: manifest, dictionary: FuriganaDictionary(file: decoded))
     }
@@ -56,20 +47,11 @@ public struct FuriganaSyncService: Sendable {
     /// persisted.
     public func confirmSynced(_ manifest: FuriganaManifest) {
         syncState.saveLastSyncedFuriganaManifest(manifest)
-        syncState.saveHighestAcceptedVersion(manifest.version, for: "furigana")
+        syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.furigana.rawValue)
     }
 
     /// The highest version this device has accepted, which a bundled copy must beat to be installed.
     public func acceptedVersion() -> String? {
-        syncState.highestAcceptedVersion(for: "furigana")
-    }
-
-    /// A validly signed manifest can still be an old one replayed. Refuse any version
-    /// older than the highest this device has accepted.
-    private func rejectRollback(of version: String) throws {
-        if let highest = syncState.highestAcceptedVersion(for: "furigana"),
-           DataVersion.isOlder(version, than: highest) {
-            throw VerbSyncError.untrusted
-        }
+        syncState.highestAcceptedVersion(for: DataFile.furigana.rawValue)
     }
 }

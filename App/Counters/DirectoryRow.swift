@@ -16,12 +16,7 @@ struct DirectoryRow: View {
             .glassEffect(in: Capsule())
     }
 
-    private var chevron: some View {
-        Image(systemName: "chevron.right")
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(.tertiary)
-            .accessibilityHidden(true)
-    }
+    private var chevron: some View { RowChevron() }
 
     /// At accessibility sizes the meaning gets its own full-width line instead of sharing one with the
     /// reading, tag and chevron, so it wraps instead of truncating.

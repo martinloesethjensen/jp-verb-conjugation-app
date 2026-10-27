@@ -16,7 +16,7 @@ enum SpotlightIndexer {
         var items: [CSSearchableItem] = []
         for verb in verbs {
             let attributes = CSSearchableItemAttributeSet(contentType: .content)
-            attributes.title = verb.kanji.map { "\(verb.dict) (\($0))" } ?? verb.dict
+            attributes.title = verb.displayTitle
             attributes.contentDescription = "\(verb.meaning) · \(verb.label)"
             attributes.keywords = [verb.dict, verb.kanji, verb.meaning].compactMap { $0 }
             items.append(CSSearchableItem(

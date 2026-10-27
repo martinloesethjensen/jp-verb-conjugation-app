@@ -59,7 +59,7 @@ public enum WordBankEntryCombiner {
         if let note = incoming.notes {
             let have = local.notes ?? ""
             if !JapaneseNormalizer.key(have).contains(JapaneseNormalizer.key(note)) {
-                merged.notes = have.isEmpty ? note : have + "\n\nImported \(day(importedOn)): \(note)"
+                merged.notes = have.isEmpty ? note : have + "\n\nImported \(WordBankDates.day(importedOn)): \(note)"
             }
         }
         if merged.folderID == nil { merged.folderID = importedFolderID }
@@ -68,12 +68,5 @@ public enum WordBankEntryCombiner {
         if changed { merged.updatedAt = now }
         merged.createdAt = min(local.createdAt, incoming.createdAt)
         return Result(entry: merged, changed: changed)
-    }
-
-    private static func day(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
     }
 }

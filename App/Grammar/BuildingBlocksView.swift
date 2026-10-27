@@ -61,7 +61,7 @@ struct BuildingBlocksView: View {
         for word in all { spelledTheSame[word.dict, default: 0] += 1 }
         return all.map { word in
             let repeated = (spelledTheSame[word.dict] ?? 0) > 1
-            let title = repeated ? (word.kanji.map { "\(word.dict) (\($0))" } ?? word.dict) : word.dict
+            let title = repeated ? word.displayTitle : word.dict
             return Option(id: word.stableKey, title: title)
         }
     }
