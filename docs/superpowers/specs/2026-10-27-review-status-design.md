@@ -1,6 +1,6 @@
 # Marking content that has not been reviewed
 
-Status: design, 2026-10-27, for the owner's approval. The owner asked for a pill or info marker for data they
+Status: approved and built, 2026-10-27 (the owner chose all four recommendations below). The owner asked for a pill or info marker for data they
 have not reviewed yet, and asked me to propose the design and the approach. The choices are mine and marked.
 
 ## Problem
@@ -87,3 +87,37 @@ reviewing is: read the entries, run the script, sign. Old builds ignore the fiel
    but can say "reviewed" about text that changed afterwards.
 3. **Wording:** "Not yet reviewed" and "Reviewed", or "Unchecked" and "Checked by a teacher".
 4. **Where reviewers come from:** `owner` and `teacher` as the only two names, or free text.
+
+## Decisions (owner, 2026-10-27)
+
+1. **Scope:** counters and grammar points.
+2. **Stamp:** a hash, a date and a reviewer, so an edit un-reviews an entry.
+3. **Wording:** "Not yet reviewed" and "Reviewed".
+4. **Reviewers:** `owner` and `teacher` only.
+
+## As built
+
+Plan: `docs/superpowers/plans/2026-10-27-review-status.md`.
+
+- **Pipeline.** `update_data.py` validates every `review` stamp (reviewer, ISO date, hash) and fails with
+  "<id> was edited after review on <date>: re-review it, or run scripts/mark_reviewed.py again" when the entry's
+  hash no longer matches. The hash is SHA-256 of the entry's canonical JSON without `review` and, for a counter,
+  without the generated `readings`, `changed` and `distractors`, so `make data` never invalidates a stamp.
+  `scripts/mark_reviewed.py counters hon --by teacher --on 2026-10-24` (or `grammar n-desu --by owner`) writes
+  or refreshes stamps; the hand-formatted `grammar.json` is edited in place, one line per entry.
+- **App.** A capsule beside the JLPT level on counter and grammar pages ("Not yet reviewed" in amber, "Reviewed"
+  with a check) opens a sheet that says what the pipeline checks automatically, what no person has checked yet
+  and, when stamped, who reviewed it and when, with Report a problem. One quiet line under the Counters
+  directory and the Grammar list ("No counters reviewed yet", then "12 of 30 counters reviewed"), counting only
+  entries visible under the level settings. Settings > Content review shows the counts, the latest date and a
+  Show review status switch (on by default); off hides the capsule and the lines.
+- **Unchanged.** The "unreviewed" label on numbers above 10 stays: it is about generated number readings, not an
+  entry's prose. No entry carries a stamp yet.
+
+**To review entries:** read them, run `mark_reviewed.py`, then `make data` and `make sign-commit`. The stamp is
+part of `data/`, so it is re-signed like any data change.
+
+**Checked on screen** (iPhone 17 simulator): the capsule and its sheet on 年間 and the "No counters reviewed yet"
+line under the Counters list. **Not checked on screen:** the grammar page and list, Settings > Content review and
+the switch (the views are small and share the same components), a stamped entry ("Reviewed"), largest Dynamic
+Type, dark mode.
