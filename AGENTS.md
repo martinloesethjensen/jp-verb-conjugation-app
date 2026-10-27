@@ -95,6 +95,8 @@ Run `make` for the full list. Common ones:
 | `WordBankDates.day/timestamp` | Fixed, locale-independent date stamps in Word Bank file names and notes |
 | `matchesSearch`, `matchesGrammarSearch`, `searchCounters`, `WordBankSearchIndex` | Search implementations |
 | `DataSyncStatus` | Per-file sync status shown in Settings |
+| `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
+| `SyncVerification` (internal) | The six sync services' rollback rejection, hash verification and JSON decoding |
 | `UserDefaults.verbKitAppGroup` | The App Group defaults (falls back to `.standard`); App code aliases it as `.appGroup` |
 
 ### App UI components and modifiers
@@ -110,7 +112,10 @@ Run `make` for the full list. Common ones:
 | `SectionHeader(_:systemImage:)` | Detail-page section heading |
 | `TagPill` | Dialect/custom tag capsule |
 | `QuizChoiceButton` | Shared answer button (colors, shapes, correct/wrong states) |
-| `QuizResultsView` | Verb-quiz results screen (counter/connection quizzes currently have their own) |
+| `QuizHeader`, `QuizChoiceGrid` | Quiz progress/score header and two-column answer grid |
+| `QuizPromptCard`, `QuizFeedbackCard`, `QuizMissedCard` | Question, feedback and missed-question card surfaces |
+| `quizAdvanceBar`, `quizQuitDialog` | Pinned Next/See Results button and the quit confirmation |
+| `QuizResultsSummary` | Counter and connection quiz results; the verb quiz keeps its own `QuizResultsView` |
 | `LevelScopeBar`, `HiddenMatchesRow`, `NoMatchInLevelsView` | "My levels / All levels" search behavior |
 | `accentPill(_:)` | Pastel Liquid Glass capsule for verb-type accents |
 | `formCard()` | Quiet grouped-card surface for form tables |
@@ -129,24 +134,27 @@ Run `make` for the full list. Common ones:
   `WordsManifest`, `CountersManifest`) are separate on purpose: each file's sync state compares
   independently, so editing grammar does not re-download verbs. Do not merge them.
 - **Six concrete sync services** (`Verb`, `Grammar`, `Furigana`, `Words`, `Counters`, `Forms`) each
-  follow the same contract. The comments say this duplication is deliberate. **However**,
-  `FuriganaSyncService` says "Revisit at a fourth file" and there are now six. Treat a generic
-  sync service as a pending design decision, not a mechanical cleanup.
+  follow the same contract and stay concrete by decision (U12). Each file keeps its own manifest,
+  result type and sync-state entry, so syncing one never disturbs another. The rules that must not
+  drift — rollback rejection, hash verification, decoding — live once in `SyncVerification`. Do
+  not replace the six with a generic `ManifestSyncService`; revisit only if a file stops fitting
+  this shape.
 - **`RubyFlowLayout`** is intentionally specialized (glued punctuation, max lines, baseline
   alignment). Do not fold it into a generic flow layout.
 
-### Extraction backlog (remaining)
+### Extraction backlog (done)
 
-The mechanical extractions (U1–U10) are done: use the shared symbols above instead of
-reintroducing a local flow layout, filter chip, level pill, glass card, chevron, section header,
-title formatter, App Group defaults helper, date formatter or widget theme. U14 (moving the flow
-layout out of `ThingChips.swift`) came with U1: it now lives in `App/UI/WrappingFlowLayout.swift`.
+U1–U14 are complete. Use the shared symbols above instead of reintroducing a local flow
+layout, filter chip, level pill, glass card, chevron, section header, quiz chrome, title
+formatter, App Group defaults helper, date formatter or widget theme.
 
-| ID | Duplication | Locations | Proposed extraction |
-|---|---|---|---|
-| U11 | Quiz screen shell | `QuizQuestionView`, `CounterQuizView`, `ConnectionQuizView` | Shared shell for header, choice grid, pinned Next, feedback, quit dialog and results |
-| U12 | Sync-service flow | six `*SyncService` types | Generic `ManifestSyncService` **only after** a design decision |
-| U13 | Store sync orchestration | `WordsStore`, `FuriganaStore`, `CountersStore` | Shared persist/confirm/record-status coordinator |
+- U11: the quiz chrome lives in `App/UI/QuizChrome.swift`; the verb, counter and connection
+  quizzes share it. `QuizResultsView` stays the verb quiz's richer results screen.
+- U12: decided to keep the six concrete sync services; only `SyncVerification` is shared.
+- U13: `DataFileSync` owns the persist → confirm → record-status order for `WordsStore`,
+  `FuriganaStore` and `CountersStore`. `VerbStore` and `FormCatalogueStore` keep their own
+  flows because their state and first-launch handling differ.
+- U14: the flow layout lives in `App/UI/WrappingFlowLayout.swift` (moved with U1).
 
 ## Traps
 
