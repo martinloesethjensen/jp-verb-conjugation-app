@@ -31,7 +31,7 @@ final class RealCountersDataTests: XCTestCase {
         let file = try load()
         let ids = file.counters.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)
-        XCTAssertEqual(ids.count, 29)
+        XCTAssertEqual(ids.count, 30)
         for counter in file.counters {
             for related in counter.related { XCTAssertTrue(ids.contains(related), "\(counter.id) → \(related)") }
         }
@@ -70,7 +70,7 @@ final class RealCountersDataTests: XCTestCase {
         let ids = Set(file.counters.map(\.id))
         let groupIDs = file.groups.map(\.id)
         XCTAssertEqual(Set(groupIDs).count, groupIDs.count)
-        XCTAssertEqual(groupIDs.count, 18)
+        XCTAssertEqual(groupIDs.count, 19)
         var grouped = Set<String>()
         for group in file.groups {
             for member in group.members {
@@ -88,7 +88,7 @@ final class RealCountersDataTests: XCTestCase {
             "drinks", "people-animals", "things", "clothes-shoes", "how-long", "time-dates-age",
             "when-or-how-long", "money-events",
         ])
-        XCTAssertEqual(home.map(\.rows.count), [3, 4, 6, 2, 5, 7, 8, 4])
+        XCTAssertEqual(home.map(\.rows.count), [3, 4, 7, 2, 5, 7, 8, 4])
         XCTAssertEqual(Set(home.flatMap(\.rows).map(\.counter.id)), Set(file.counters.map(\.id)))
     }
 
@@ -280,5 +280,26 @@ final class RealCountersDataTests: XCTestCase {
         let gatsu = try counter("gatsu", in: file)
         XCTAssertFalse(gatsu.pitfalls.contains { $0.explanation.contains("ななに") })
         XCTAssertTrue(gatsu.pitfalls.contains { $0.explanation.contains("なながつ") })
+    }
+
+    /// 膳 counts pairs of chopsticks (一本 is a single stick). It has no sound changes.
+    func testTheChopsticksCounterCountsPairs() throws {
+        let file = try load()
+        let zen = try counter("zen", in: file)
+        XCTAssertEqual(zen.counter, "膳")
+        let expected: [(CounterNumber, String)] = [
+            (.n(1), "いちぜん"), (.n(2), "にぜん"), (.n(3), "さんぜん"), (.n(4), "よんぜん"),
+            (.n(8), "はちぜん"), (.n(10), "じゅうぜん"), (.what, "なんぜん"),
+        ]
+        for (number, reading) in expected {
+            XCTAssertEqual(zen.readings(for: number).first, reading, number.key)
+        }
+        XCTAssertTrue(zen.changed.isEmpty)
+        XCTAssertEqual(zen.readings(for: .n(20)).first, "にじゅうぜん")
+        XCTAssertTrue(zen.things.contains { $0.word == "箸" && $0.fit == .primary })
+        XCTAssertTrue(zen.pitfalls.contains { $0.explanation.contains("一本") }, "a single stick is 本")
+        XCTAssertFalse(zen.askings.isEmpty)
+        XCTAssertTrue(zen.related.contains("hon"))
+        XCTAssertTrue(file.sections.contains { $0.id == "things" && $0.counters.contains("zen") })
     }
 }
