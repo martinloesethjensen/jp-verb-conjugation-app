@@ -91,6 +91,10 @@ struct GrammarDetailView: View {
                     }
                 }
             }
+            ReviewStatusPill(
+                item: "Lesson: \(point.title) (\(point.id))", review: point.review,
+                checked: ["That every kanji has a reading", "That related lessons exist"],
+                unchecked: ["The explanations and example sentences", "The attachment rules", "The pitfalls"])
             JapaneseText(point.title)
                 .font(.largeTitle.weight(.heavy))
             JapaneseText(point.summary)
