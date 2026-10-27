@@ -83,6 +83,7 @@ Run `make` for the full list. Common ones:
 | `Romaji.toHiragana(_:)` | Convert romaji queries to hiragana (Hepburn/Nihon-shiki) |
 | `JapaneseNormalizer.key/looseKey/tagKey/kanaForm` | Canonical Japanese comparison (NFKC, katakana→hiragana, long vowels, tags) |
 | `KanjiExtraction.kanji(in:)` | Distinct kanji for lookup chips |
+| `Verb.displayTitle` / `Word.displayTitle` | `"dict (kanji)"` title for widgets, Spotlight, intents and pickers |
 | `LevelSettings` + `Leveled` | Hidden-JLPT-level filtering, summaries and visibility checks |
 | `SpeechText.spoken/clipName` | Clean text for TTS and the recorded-clip filename contract |
 | `DataVersion.isOlder(_:than:)` | Reject replayed/older manifests |
@@ -91,14 +92,22 @@ Run `make` for the full list. Common ones:
 | `FolderTree` | Word Bank folder queries (descendants, paths, moves) |
 | `WordBankArchive`, `WordBankImportPlanner`, `WordBankTransfer`, `WordBankEntryCombiner`, `WordBankSmartFolder`, `WordBankBackupStore` | Import/export/merge/backup logic |
 | `TagSuggester`, `RecentSearches`, `DialectCatalogue` | Word Bank tag and search supporting logic |
+| `WordBankDates.day/timestamp` | Fixed, locale-independent date stamps in Word Bank file names and notes |
 | `matchesSearch`, `matchesGrammarSearch`, `searchCounters`, `WordBankSearchIndex` | Search implementations |
 | `DataSyncStatus` | Per-file sync status shown in Settings |
+| `UserDefaults.verbKitAppGroup` | The App Group defaults (falls back to `.standard`); App code aliases it as `.appGroup` |
 
 ### App UI components and modifiers
 
 | Symbol | Use |
 |---|---|
 | `JapaneseText` | Any Japanese text that may need furigana. Use instead of `Text`; it styles like `Text` |
+| `WrappingFlowLayout` | Wrapping row layout for chips, tags and pills |
+| `FilterChip` / `chipBackground(_:)` | Filter-row capsule: menu or single-choice, outlined while on |
+| `LevelBadge(level:emphasis:)` | JLPT pill beside a row title or in a detail header; nil draws nothing |
+| `glassCard(cornerRadius:fillsWidth:)` | Liquid Glass card for detail sections |
+| `RowChevron` | Disclosure chevron at the end of an opening row |
+| `SectionHeader(_:systemImage:)` | Detail-page section heading |
 | `TagPill` | Dialect/custom tag capsule |
 | `QuizChoiceButton` | Shared answer button (colors, shapes, correct/wrong states) |
 | `QuizResultsView` | Verb-quiz results screen (counter/connection quizzes currently have their own) |
@@ -111,7 +120,6 @@ Run `make` for the full list. Common ones:
 | `inlineSearch(...)` | Platform-correct search field placement |
 | `speakOnTap(_:)`, `SpeakButton` | Pronunciation UI |
 | `openRoute` environment action | Navigate to a `Route` from any view |
-| `chipBackground(_:)` | Shared filter-chip capsule background |
 
 ## Duplication: intentional vs. backlog
 
@@ -127,24 +135,18 @@ Run `make` for the full list. Common ones:
 - **`RubyFlowLayout`** is intentionally specialized (glued punctuation, max lines, baseline
   alignment). Do not fold it into a generic flow layout.
 
-### Extraction backlog (documented, not yet implemented)
+### Extraction backlog (remaining)
+
+The mechanical extractions (U1–U10) are done: use the shared symbols above instead of
+reintroducing a local flow layout, filter chip, level pill, glass card, chevron, section header,
+title formatter, App Group defaults helper, date formatter or widget theme. U14 (moving the flow
+layout out of `ThingChips.swift`) came with U1: it now lives in `App/UI/WrappingFlowLayout.swift`.
 
 | ID | Duplication | Locations | Proposed extraction |
 |---|---|---|---|
-| U1 | Two wrapping `Layout` implementations | `ChipFlowLayout` in `App/Counters/ThingChips.swift`; `PillFlow` in `App/WordBank/TagPill.swift` | One shared `WrappingFlowLayout` in `App/UI/`, keeping `PillFlow`'s rounding slack |
-| U2 | Filter-chip style repeated | `TypeFilterChip.swift`, `TeFormFilter.swift`, `WordBankSearchSupport.swift` | `FilterChip` view or `.filterChipStyle(isOn:accent:)` |
-| U3 | JLPT level pill | `VerbRow`, `GrammarListView`, `GrammarDetailView`, `CounterListView`, `CounterDetailView`, `GroupTableView` | `LevelBadge` with emphasis variants |
-| U4 | Glass card chain | `GrammarDetailView`, `CounterDetailView`, `AttachmentSection`, `VerbDetailView`, `WordBankDetailView` | `.glassCard(cornerRadius:)`; keep `formCard()` distinct |
-| U5 | Row chevron | `DirectoryRow`, `MoreRowsCard`, `WordBankListView`, `TagManagerView`, `WordBankEditor`, `WordBankImportSheet` | `RowChevron` view |
-| U6 | Section header | `GrammarDetailView`, `WordBankDetailView` | `SectionHeader(title:systemImage:)` |
-| U7 | `"dict (kanji)"` title formatting | `VerbIntents`, `SpotlightIndexer`, `VerbWidgetIntent`, `BuildingBlocksView` | `Verb.displayTitle` / `Word.displayTitle` in VerbKit |
-| U8 | App Group defaults setup | `App/UserDefaults+AppGroup.swift`, `VerbModelContainer`, `LevelSettings`, `QuizSessionStore` | One public app-group `UserDefaults` helper in VerbKit |
-| U9 | Word Bank `DateFormatter` setup | `WordBankExport`, `WordBankEntryCombiner`, `WordBankBackupStore` | Static `WordBankDates` helper |
-| U10 | Widget theme | `VerbWidgetViews`, `CounterWidgetViews`, `GrammarWidgetViews` | `Widgets/WidgetTheme.swift` (navy, gradient, empty state, JLPT palette) |
 | U11 | Quiz screen shell | `QuizQuestionView`, `CounterQuizView`, `ConnectionQuizView` | Shared shell for header, choice grid, pinned Next, feedback, quit dialog and results |
 | U12 | Sync-service flow | six `*SyncService` types | Generic `ManifestSyncService` **only after** a design decision |
 | U13 | Store sync orchestration | `WordsStore`, `FuriganaStore`, `CountersStore` | Shared persist/confirm/record-status coordinator |
-| U14 | `ChipFlowLayout` placement | defined in `ThingChips.swift`, used by `SoundPatternsView` too | Move with U1 |
 
 ## Traps
 
@@ -154,7 +156,10 @@ Run `make` for the full list. Common ones:
   together and run `make check-project`.
 - Do not commit `.xcodeproj`, `DerivedData`, `.build`, signing keys or `__pycache__`.
 - Data edits without a fresh signature fail CI even when the JSON is valid.
-- `UserDefaults.appGroup` is currently an App-only extension; VerbKit code uses
-  `UserDefaults(suiteName: VerbModelContainer.appGroupIdentifier) ?? .standard` directly.
+- `UserDefaults.appGroup` is an App-only alias of VerbKit's `UserDefaults.verbKitAppGroup`; use
+  `userDefaults.verbKitAppGroup` (not a new `UserDefaults(suiteName:)`) inside VerbKit.
+- VerbKit deliberately has no SwiftUI dependency. Shared SwiftUI components live in `App/UI/` and
+  are visible to the app only; the widget target still gets just `Widgets/**` plus
+  `App/VerbColors.swift`.
 - The app and widgets rely on the App Group container at runtime; a signing/team misconfiguration
   makes the app fall back to an in-memory store. VerbKit tests use `VerbModelContainer.makeInMemory()`.
