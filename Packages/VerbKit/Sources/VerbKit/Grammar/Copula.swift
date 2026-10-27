@@ -30,8 +30,8 @@ public enum Copula {
 
     /// Short notes under the table about joining the copula to other patterns.
     public static let notes: [String] = [
-        "だ becomes な before ので (静かなので), not ×静かだので.",
-        "かもしれない follows the bare noun or な-adjective stem (学生かもしれない), not ×学生だかもしれない.",
+        "だ becomes な before ので (静かなので), not ×\u{2060}静かだので.",
+        "かもしれない follows the bare noun or な\u{2060}-adjective stem (学生かもしれない), not ×\u{2060}学生だかもしれない.",
     ]
 }
 

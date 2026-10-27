@@ -64,7 +64,7 @@ struct PoliteAdjectiveSection: View {
     var body: some View {
         Section {
             if let iAdjective, let rows = PoliteForms.rows(for: iAdjective) {
-                block(Text("い-adjective"), rows: rows)
+                block(Text("い\u{2060}-adjective"), rows: rows)
                 if let trap = PoliteForms.trap(for: iAdjective) {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(trap.wrong, id: \.self) { WrongForm(text: $0) }
@@ -78,13 +78,13 @@ struct PoliteAdjectiveSection: View {
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("Correct: \(right)")
                         }
-                        Text("The past goes on the い-adjective, not on です.")
+                        Text("The past goes on the い\u{2060}-adjective, not on です.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
             if let naAdjective, let rows = PoliteForms.rows(for: naAdjective) {
-                block(Text("な-adjective"), rows: rows)
+                block(Text("な\u{2060}-adjective"), rows: rows)
             }
         } header: {
             Text("Polite adjectives")
@@ -98,22 +98,37 @@ struct PoliteAdjectiveSection: View {
             title.font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 .accessibilityAddTraits(.isHeader)
             ForEach(rows, id: \.label) { row in
-                LabeledContent {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        HStack {
-                            JapaneseText(row.polite).font(.title3.weight(.semibold))
-                            SpeakButton(text: row.polite)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(row.label).font(.caption).foregroundStyle(.secondary)
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .top) {
+                            plainCell(row)
+                            Spacer()
+                            politeCell(row)
                         }
-                        if let alt = row.politeAlt {
-                            JapaneseText(alt).font(.caption).foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            plainCell(row)
+                            politeCell(row)
                         }
-                    }
-                } label: {
-                    VStack(alignment: .leading) {
-                        Text(row.label)
-                        JapaneseText(row.plain).font(.caption).foregroundStyle(.secondary)
                     }
                 }
+                .accessibilityElement(children: .contain)
+            }
+        }
+    }
+
+    private func plainCell(_ row: PolitePair) -> some View {
+        JapaneseText(row.plain).font(.callout).foregroundStyle(.secondary)
+    }
+
+    private func politeCell(_ row: PolitePair) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                JapaneseText(row.polite).font(.title3.weight(.semibold)).foregroundStyle(.primary)
+                SpeakButton(text: row.polite)
+            }
+            if let alt = row.politeAlt {
+                JapaneseText(alt).font(.caption).foregroundStyle(.secondary)
             }
         }
     }
