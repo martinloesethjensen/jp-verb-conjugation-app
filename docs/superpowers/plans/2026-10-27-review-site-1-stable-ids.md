@@ -218,10 +218,10 @@ class AssignIdsTests(unittest.TestCase):
         text, added = assign_ids.assign_grammar_text(GRAMMAR)
         self.assertEqual(added, 2)
         self.assertEqual(stable_ids.check_stable_ids("grammar", json.loads(text)), [])
-        stripped = re.sub(r'"id": "[a-hj-km-np-z2-9]{6}",\s?\n?\s*', "", text)
+        stripped = re.sub(r'"id": "[a-km-np-z2-9]{6}",\s?\n?\s*', "", text)
         self.assertEqual(re.sub(r"\s+", "", stripped), re.sub(r"\s+", "", GRAMMAR))
-        self.assertRegex(text, r'\n        \{\n          "id": "[a-hj-km-np-z2-9]{6}",\n          "heading": "h",')
-        self.assertRegex(text, r'\{ "id": "[a-hj-km-np-z2-9]{6}", "jp": "あ。", "en": "a" \}')
+        self.assertRegex(text, r'\n        \{\n          "id": "[a-km-np-z2-9]{6}",\n          "heading": "h",')
+        self.assertRegex(text, r'\{ "id": "[a-km-np-z2-9]{6}", "jp": "あ。", "en": "a" \}')
 
     def test_running_twice_changes_nothing(self):
         once, _ = assign_ids.assign_grammar_text(GRAMMAR)
