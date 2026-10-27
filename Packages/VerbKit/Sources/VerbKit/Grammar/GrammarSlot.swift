@@ -29,6 +29,8 @@ public protocol SlotSource {
     /// otherwise the citation form. Quiz history and pickers use it, never `dict`, so two words
     /// spelled the same stay apart.
     var stableKey: String { get }
+    /// The dictionary form, with the kanji in parentheses when the word has one.
+    var displayTitle: String { get }
     func slotForm(_ id: FormID) -> String?
 }
 
