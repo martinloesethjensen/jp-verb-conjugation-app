@@ -65,9 +65,12 @@ public struct QuizProgress: Sendable {
     public let weakestVerbs: [WeakVerb]
     public let weakestForms: [WeakForm]
     public let hasHistory: Bool
+    /// The mistake that dominates recent tagged wrong answers, if enough of them agree.
+    public let confusion: QuizConfusion?
 
     public init(attempts: [QuizAttempt], calendar: Calendar = .current, now: Date = Date()) {
         hasHistory = !attempts.isEmpty
+        confusion = QuizConfusion.dominant(in: attempts)
 
         // Weakness. Connection and counter answers count toward streaks and totals below, but weak
         // spots are verb and form pairs, which a connection (a word and a pattern) or a counter
