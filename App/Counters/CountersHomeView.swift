@@ -138,6 +138,7 @@ struct CountersHomeView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                ReviewSummaryLine(noun: "counters", summary: ReviewSummary(counters(in: settings)))
             }
         }
         .listStyle(.plain)

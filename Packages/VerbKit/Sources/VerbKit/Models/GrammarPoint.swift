@@ -174,6 +174,8 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     public var contrasts: [GrammarContrast]
     /// The textbook lessons that teach this point. Empty for most lessons.
     public var taughtIn: [LessonRef]
+    /// Set when someone has reviewed this lesson; nil means not yet reviewed.
+    public var review: ReviewStamp?
 
     /// The id verb detail pages link to for the んです lesson.
     public static let nDesuID = "n-desu"
@@ -198,7 +200,8 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         pitfalls: [GrammarPitfall],
         related: [String],
         contrasts: [GrammarContrast] = [],
-        taughtIn: [LessonRef] = []
+        taughtIn: [LessonRef] = [],
+        review: ReviewStamp? = nil
     ) {
         self.id = id
         self.title = title
@@ -211,14 +214,15 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         self.related = related
         self.contrasts = contrasts
         self.taughtIn = taughtIn
+        self.review = review
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, title, summary, jlpt, usages, attachment, conjugations, pitfalls, related, contrasts
+        case id, title, summary, jlpt, usages, attachment, conjugations, pitfalls, related, contrasts, review
         case taughtIn = "taught_in"
     }
 
-    /// `contrasts` and `taught_in` may be omitted from the JSON.
+    /// `contrasts`, `taught_in` and `review` may be omitted from the JSON.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
@@ -232,6 +236,7 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         related = try c.decode([String].self, forKey: .related)
         contrasts = try c.decodeIfPresent([GrammarContrast].self, forKey: .contrasts) ?? []
         taughtIn = try c.decodeIfPresent([LessonRef].self, forKey: .taughtIn) ?? []
+        review = try c.decodeIfPresent(ReviewStamp.self, forKey: .review)
     }
 }
 

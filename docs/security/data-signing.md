@@ -90,3 +90,10 @@ pushed unsigned. To block merges on it, make the `data` check required in branch
 ## Related, not done here
 
 - Branch and tag protection on GitHub (option A) is still to do; it protects the tags in step 2.
+
+## Review stamps
+
+Counters and grammar points may carry a `review` stamp (`by`, `on`, `sha256`). It is part of the data, so a
+stamp is signed like any other change: `scripts/mark_reviewed.py` writes it, `make data` regenerates the
+manifest, `make sign-commit` signs. The hash covers the entry's own content, so editing a reviewed entry makes
+`update_data.py` fail until the entry is reviewed again.

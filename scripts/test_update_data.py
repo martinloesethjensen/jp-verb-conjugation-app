@@ -2011,3 +2011,67 @@ class ExtendedReadingsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReviewStampTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    def stamped(self, entry, generated=(), **stamp):
+        review = {"by": "teacher", "on": "2026-10-24", "sha256": ud.review_hash(entry, generated)}
+        review.update(stamp)
+        return {**entry, "review": review}
+
+    def test_review_hash_ignores_generated_fields_key_order_and_the_stamp(self):
+        a = counter(readings={"1": ["いっぽん"]}, changed=["1"])
+        b = {key: a[key] for key in reversed(list(a))}
+        b["readings"] = {"1": ["different"]}
+        b["review"] = {"by": "owner", "on": "2026-01-01", "sha256": "x"}
+        generated = ("readings", "changed", "distractors")
+        self.assertEqual(ud.review_hash(a, generated), ud.review_hash(b, generated))
+        self.assertNotEqual(ud.review_hash(a), ud.review_hash(b))
+
+    def test_review_hash_changes_with_the_text(self):
+        a = counter(examples=[{"jp": "傘を三本ください。", "en": "Three umbrellas."}])
+        b = counter(examples=[{"jp": "傘を二本ください。", "en": "Two umbrellas."}])
+        self.assertNotEqual(ud.review_hash(a), ud.review_hash(b))
+
+    def test_a_valid_stamp_and_no_stamp_pass(self):
+        entry = counter()
+        self.assertEqual(ud.check_reviews([entry, self.stamped(counter(id="hai"))]), [])
+
+    def test_an_edit_after_review_is_reported_with_the_entry_and_date(self):
+        entry = self.stamped(counter())
+        entry["meaning"] = "pencils and such"
+        problems = ud.check_reviews([entry])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("hon was edited after review on 2026-10-24", problems[0])
+        self.assertIn("mark_reviewed.py", problems[0])
+
+    def test_a_bad_reviewer_or_date_is_reported(self):
+        problems = ud.check_reviews([self.stamped(counter(), by="nobody"), self.stamped(counter(id="b"), on="24/10/2026"),
+                                     {**counter(id="c"), "review": "yes"}])
+        self.assertEqual(len(problems), 3, problems)
+        self.assertTrue(any("by" in p for p in problems))
+        self.assertTrue(any("on" in p for p in problems))
+
+    def test_regenerating_counters_keeps_a_stamp_valid(self):
+        d = self.make_dir()
+        furigana = {"version": "1.0.0", "description": "d", "readings": {"本": "ほん", "傘": "かさ"}}
+        (d / "furigana.json").write_text(json.dumps(furigana, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        doc = counters_doc(self.stamped(counter(), ud.COUNTER_GENERATED))
+        doc.update(version="1.0.0", description="d")
+        (d / "counters.json").write_text(json.dumps(doc, ensure_ascii=False) + "\n", encoding="utf-8")
+        self.assertEqual(ud.run(d)[0], 0)
+        first = (d / "counters.json").read_bytes()
+        self.assertEqual(ud.run(d)[0], 0)
+        self.assertEqual((d / "counters.json").read_bytes(), first)
+        self.assertEqual(ud.run(d, check=True)[0], 0)
+        written = json.loads(first)["counters"][0]
+        self.assertEqual(written["review"]["by"], "teacher")
+        written["meaning"] = "edited"
+        doc2 = counters_doc(written)
+        doc2.update(version="1.0.0", description="d")
+        (d / "counters.json").write_text(json.dumps(doc2, ensure_ascii=False) + "\n", encoding="utf-8")
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("hon was edited after review" in m for m in messages), messages)
