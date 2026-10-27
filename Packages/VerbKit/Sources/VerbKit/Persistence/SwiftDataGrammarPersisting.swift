@@ -20,14 +20,21 @@ public final class SwiftDataGrammarPersisting: GrammarPersisting {
     }
 
     public func replaceAllGrammar(points: [GrammarPoint], textbooks: [Textbook]) throws {
-        try modelContext.delete(model: GrammarEntity.self)
-        try modelContext.delete(model: TextbookEntity.self)
-        for (index, book) in textbooks.enumerated() {
-            modelContext.insert(TextbookEntity(book, sortOrder: index))
+        // A failed save must not leave its pending delete and inserts in the shared context, where the
+        // next save of any store would commit them.
+        do {
+            try modelContext.delete(model: GrammarEntity.self)
+            try modelContext.delete(model: TextbookEntity.self)
+            for (index, book) in textbooks.enumerated() {
+                modelContext.insert(TextbookEntity(book, sortOrder: index))
+            }
+            for (index, point) in points.enumerated() {
+                modelContext.insert(GrammarEntity(point, sortOrder: index))
+            }
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            throw error
         }
-        for (index, point) in points.enumerated() {
-            modelContext.insert(GrammarEntity(point, sortOrder: index))
-        }
-        try modelContext.save()
     }
 }

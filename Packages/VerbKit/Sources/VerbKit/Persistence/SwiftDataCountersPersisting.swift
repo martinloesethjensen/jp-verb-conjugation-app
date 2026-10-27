@@ -13,8 +13,15 @@ public final class SwiftDataCountersPersisting: CountersPersisting {
     }
 
     public func replaceCounters(with file: CountersDataFile) throws {
-        try modelContext.delete(model: CountersEntity.self)
-        modelContext.insert(CountersEntity(file))
-        try modelContext.save()
+        // A failed save must not leave its pending delete and inserts in the shared context, where the
+        // next save of any store would commit them.
+        do {
+            try modelContext.delete(model: CountersEntity.self)
+            modelContext.insert(CountersEntity(file))
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            throw error
+        }
     }
 }
