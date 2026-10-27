@@ -9,6 +9,7 @@ struct QuizProgressView: View {
     @Environment(VerbStore.self) private var verbStore
     @Environment(CountersStore.self) private var countersStore
     @Environment(\.dismiss) private var dismiss
+    @State private var showGuide = false
 
     var body: some View {
         let progress = QuizProgress(attempts: quizHistory.attempts)
@@ -34,6 +35,7 @@ struct QuizProgressView: View {
                 }
             }
         }
+        .sheet(isPresented: $showGuide) { VerbGuideSheet() }
         #if os(macOS)
         .frame(minWidth: 420, minHeight: 520)
         #endif
@@ -41,6 +43,11 @@ struct QuizProgressView: View {
 
     private func content(_ progress: QuizProgress) -> some View {
         Form {
+            if let confusion = progress.confusion {
+                Section {
+                    ConfusionLine(confusion: confusion) { showGuide = true }
+                }
+            }
             Section("Streak") {
                 LabeledContent("Current", value: days(progress.currentStreak))
                 LabeledContent("Best", value: days(progress.bestStreak))
@@ -137,6 +144,35 @@ struct QuizProgressView: View {
     private func kanji(forID id: String) -> String? {
         guard let match = verb(withID: id), let kanji = match.kanji, !kanji.isEmpty, kanji != match.dict else { return nil }
         return kanji
+    }
+}
+
+/// "You often confuse ru- and u-verbs": the dominant mistake in recent wrong answers, with a
+/// link to the verb guide when it explains that mistake. Wraps at any Dynamic Type size.
+private struct ConfusionLine: View {
+    let confusion: QuizConfusion
+    let openGuide: () -> Void
+
+    private var detail: String {
+        "\(confusion.count) of your last \(confusion.windowSize) wrong answers. \(confusion.category.advice)"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label {
+                Text(confusion.category.headline).font(.headline)
+            } icon: {
+                Image(systemName: "lightbulb").foregroundStyle(.orange)
+            }
+            Text(detail).font(.callout).foregroundStyle(.secondary)
+            if confusion.category.opensVerbGuide {
+                Button("See the verb guide", systemImage: "book", action: openGuide)
+                    .buttonStyle(.bordered)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(confusion.category.headline). \(detail)")
     }
 }
 
