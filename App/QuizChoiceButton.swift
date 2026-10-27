@@ -9,6 +9,8 @@ struct QuizChoiceButton: View {
     let isCorrect: Bool
     let isSelected: Bool
     let isAnswered: Bool
+    /// Lines the choice may use; `nil` for choices that are whole phrases and must not be cut off.
+    var lineLimit: Int? = 3
     let action: () -> Void
 
     static let correctColor = Color(red: 0.13, green: 0.55, blue: 0.32)
@@ -37,7 +39,7 @@ struct QuizChoiceButton: View {
                 Text(choice)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.8)
-                    .lineLimit(3)
+                    .lineLimit(lineLimit)
                 if isAnswered && isCorrect { Image(systemName: "checkmark") }
                 if isAnswered && isSelected && !isCorrect { Image(systemName: "xmark") }
             }
@@ -45,8 +47,16 @@ struct QuizChoiceButton: View {
             .foregroundStyle(labelColor)
         }
         .buttonStyle(.glassProminent)
+        .accessibilityValue(statusDescription)
         .tint(background)
         .allowsHitTesting(!isAnswered)
         .opacity(isAnswered && !isCorrect && !isSelected ? 0.35 : 1)
+    }
+
+    /// What the check mark and cross say to VoiceOver, so the result is not only visual.
+    private var statusDescription: String {
+        guard isAnswered else { return "" }
+        if isCorrect { return isSelected ? "Your answer, correct" : "Correct answer" }
+        return isSelected ? "Your answer, wrong" : ""
     }
 }

@@ -30,6 +30,8 @@ struct RootView: View {
     @State private var pendingQuiz: QuizLaunch?
     @State private var connectionQuestions: [ConnectionQuestion]?
     @State private var pendingConnections: [ConnectionQuestion]?
+    @State private var spotQuestions: [SpotMistakeQuestion]?
+    @State private var pendingSpot: [SpotMistakeQuestion]?
     @State private var incomingRoute: Route?
     /// A link that arrived during a quiz, waiting for "Leave the quiz?" to be answered.
     @State private var linkLeavingQuiz: URL?
@@ -54,7 +56,7 @@ struct RootView: View {
             ) == nil ? nil : route
         }
         guard quizLink != nil || route != nil else { return }
-        if !confirmed && (quiz != nil || connectionQuestions != nil) {
+        if !confirmed && (quiz != nil || connectionQuestions != nil || spotQuestions != nil) {
             linkLeavingQuiz = url
             return
         }
@@ -68,6 +70,8 @@ struct RootView: View {
         quiz = nil
         connectionQuestions = nil
         pendingConnections = nil
+        spotQuestions = nil
+        pendingSpot = nil
         if let quizLink {
             let verbs = verbStore.verbs.visible(in: LevelSettings.load())
             let topics = quizLink.topic.map { Set([$0]) } ?? Set(QuizTopic.allCases)
@@ -178,16 +182,24 @@ struct RootView: View {
                 connectionQuestions = pendingConnections
                 self.pendingConnections = nil
             }
+            if let pendingSpot {
+                spotQuestions = pendingSpot
+                self.pendingSpot = nil
+            }
         }) {
             if let topicSheetVerbs {
                 QuizTopicSheet(
                     verbs: topicSheetVerbs,
                     connectionPatterns: verbStore.grammarPoints.visible(in: LevelSettings.load()).filter(\.hasConnections).count,
+                    spotMistakeQuestions: spotMistakeQuestions(count: .max).count,
                     weakSpotCount: { weakPairs(in: $0).count },
                     resumable: quizSessions.resumable(verbs: verbStore.verbs) == nil ? nil : quizSessions.session,
                     onResume: resumeQuiz,
                     onStart: { verbs, selection in
-                        if case .connections = selection {
+                        if case .spotMistake = selection {
+                            let built = spotMistakeQuestions(count: quizQuestionCount)
+                            pendingSpot = built.isEmpty ? nil : built
+                        } else if case .connections = selection {
                             let levels = LevelSettings.load()
                             let built = buildConnectionQuestions(
                                 points: verbStore.grammarPoints.visible(in: levels), verbs: verbs,
@@ -211,6 +223,9 @@ struct RootView: View {
         .fullScreenCover(isPresented: connectionPresentationBinding) {
             if let connectionQuestions { connectionScreen(connectionQuestions) }
         }
+        .fullScreenCover(isPresented: spotPresentationBinding) {
+            if let spotQuestions { spotScreen(spotQuestions) }
+        }
         #else
         .sheet(isPresented: quizPresentationBinding) {
             if let quiz {
@@ -221,6 +236,12 @@ struct RootView: View {
         .sheet(isPresented: connectionPresentationBinding) {
             if let connectionQuestions {
                 connectionScreen(connectionQuestions)
+                    .frame(minWidth: 560, minHeight: 640)
+            }
+        }
+        .sheet(isPresented: spotPresentationBinding) {
+            if let spotQuestions {
+                spotScreen(spotQuestions)
                     .frame(minWidth: 560, minHeight: 640)
             }
         }
@@ -254,6 +275,24 @@ struct RootView: View {
             } message: {
                 Text("This quiz ends here. The answers you have given are kept in your progress.")
             }
+    }
+
+    private func spotScreen(_ questions: [SpotMistakeQuestion]) -> some View {
+        SpotMistakeQuizView(questions: questions, recorder: { quizHistory.record($0) },
+                            onDone: { spotQuestions = nil })
+            .alert("Leave the quiz?", isPresented: leavingQuizBinding) {
+                leaveQuizButtons
+            } message: {
+                Text("This quiz ends here. The answers you have given are kept in your progress.")
+            }
+    }
+
+    /// Spot the mistake questions for the levels the user has switched on, as Common mistakes shows them.
+    private func spotMistakeQuestions(count: Int) -> [SpotMistakeQuestion] {
+        buildSpotMistakeQuestions(
+            mistakes: CommonMistakes.build(grammar: verbStore.grammarPoints, counters: countersStore.counters),
+            counters: countersStore.counters, levels: LevelSettings.load(), count: count
+        )
     }
 
     @ViewBuilder
@@ -293,7 +332,7 @@ struct RootView: View {
         case .weakSpots:
             // Takes the first N buildable pairs in rank order, then shuffles the quiz.
             return buildQuestions(pairs: weakPairs(in: verbs), among: verbs, count: quizQuestionCount, kinds: QuizQuestionKind.verbKinds).shuffled()
-        case .connections:
+        case .connections, .spotMistake:
             return []  // started from onStart instead
         }
     }
@@ -317,6 +356,13 @@ struct RootView: View {
         Binding(
             get: { connectionQuestions != nil },
             set: { isPresented in if !isPresented { connectionQuestions = nil } }
+        )
+    }
+
+    private var spotPresentationBinding: Binding<Bool> {
+        Binding(
+            get: { spotQuestions != nil },
+            set: { isPresented in if !isPresented { spotQuestions = nil } }
         )
     }
 
