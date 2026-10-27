@@ -109,7 +109,50 @@ final class CounterDecodingTests: XCTestCase {
                        ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "何"])
         XCTAssertEqual(CounterNumber(key: "what"), .what)
         XCTAssertEqual(CounterNumber(key: "7"), .n(7))
-        XCTAssertNil(CounterNumber(key: "11"))
+        XCTAssertEqual(CounterNumber(key: "11"), .n(11))
+        XCTAssertEqual(CounterNumber(key: "15")?.kanji, "十五")
+        XCTAssertEqual(CounterNumber(key: "20")?.kanji, "二十")
+        XCTAssertEqual(CounterNumber(key: "100")?.kanji, "百")
+        XCTAssertNil(CounterNumber(key: "0"))
+        XCTAssertNil(CounterNumber(key: "10001"))
+        XCTAssertNil(CounterNumber(key: "x"))
+    }
+
+    func testKanjiForExtendedNumbers() {
+        let expected: [Int: String] = [
+            11: "十一", 20: "二十", 45: "四十五", 99: "九十九", 100: "百", 300: "三百", 1000: "千",
+            3000: "三千", 10000: "一万",
+        ]
+        for (value, kanji) in expected {
+            XCTAssertEqual(CounterNumber.n(value).kanji, kanji, "\(value)")
+        }
+        XCTAssertEqual(CounterNumber.what.kanji, "何")
+    }
+
+    func testOnlyNumbersAboveTenAreExtended() {
+        XCTAssertFalse(CounterNumber.n(10).isExtended)
+        XCTAssertFalse(CounterNumber.what.isExtended)
+        XCTAssertTrue(CounterNumber.n(11).isExtended)
+    }
+
+    func testOldDataHasNoExtent() throws {
+        let hon = try decode(honJSON)
+        XCTAssertEqual(hon.extent, 10)
+        XCTAssertEqual(hon.extra, [])
+        XCTAssertEqual(hon.extendedNumbers, [])
+    }
+
+    func testExtendedNumbersFollowTheData() throws {
+        let json = """
+        {"id": "x", "counter": "分", "reading": "ふん", "meaning": "m", "sound": "h-b", "symbol": "clock",
+         "extent": 13, "extra": [100, 200],
+         "readings": {"1": ["いっぷん"], "11": ["じゅういっぷん"], "12": ["じゅうにふん"], "13": [],
+                      "100": ["ひゃっぷん"]}}
+        """
+        let counter = try decode(json)
+        XCTAssertEqual(counter.extent, 13)
+        XCTAssertEqual(counter.extra, [100, 200])
+        XCTAssertEqual(counter.extendedNumbers, [.n(11), .n(12), .n(100)])
     }
 
     func testAnExampleReadingWinsOverTheDictionary() throws {
