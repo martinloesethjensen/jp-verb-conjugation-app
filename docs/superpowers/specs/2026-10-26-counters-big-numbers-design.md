@@ -135,6 +135,8 @@ counted forms is a linear scan of a few thousand short strings.
 4. **Alternates.** Keep accepted alternates in compounds (にじっぽん, じゅうはちほん) as with 1 to 10, or only the
    preferred reading? *Recommended: keep them, shown small as now.*
 5. **Teacher gate.** The appendix is reviewed before stage 1 merges. Without it, I would not publish the data.
+   *Dropped by the owner on 2026-10-27:* the numbers ship without waiting, and every number above 10 is
+   marked "unreviewed" in the app, with the same small label the Genki lesson mappings use.
 
 ## Appendix: composition rules to be checked by a teacher
 
@@ -187,3 +189,27 @@ in the simulator with the new data.
 appendix questions before this data merges (100 before the s row, alternates for 70, 80 and 800, 三十分,
 二十四日). The owner signs the data on the feature branch. Stages 2 and 3 (the stepper, Compare ranges,
 search and the quiz) are not built, and the new numbers are not shown anywhere yet.
+
+## As built (stage 2)
+
+The app now shows the numbers above 10. The plan is `docs/superpowers/plans/2026-10-27-counters-stage-2.md`.
+
+- **Model.** `Counter` decodes `extent` and `extra` (old data: 10 and none). `CounterNumber.kanji` covers 1 to
+  10000 (十五, 二十, 百, 三千, 一万). `Counter.extendedNumbers` lists the numbers above 10 that have readings;
+  `Counter.step(_:by:)` moves through them, so the stepper cannot ask for a number the data lacks (円 steps
+  99, 100, 200 and so on). `CounterNumber.isExtended` is the one place that says a number is unreviewed.
+- **Counter page.** A stepper (−10, −1, the number, +1, +10) under the 1 to 10 strip, hidden for a counter with
+  nothing above 10. The reading block shows "unreviewed" under the written form for any number above 10, and
+  VoiceOver says it too.
+- **Compare tables.** A segmented picker (1–10, 11–20, 30–90, 100+) appears when some counter in the group has
+  numbers above 10, with "unreviewed" under it for every range but 1–10. A counter without a number shows a
+  dash. Rows above 10 are 1.7 times taller because the longer readings wrap in three columns.
+- **Search.** 15分, 十五分 and じゅうごふん find the same form; digits turn into kanji up to 10000; a bare
+  じゅう, さんじゅう or ひゃく matches nothing, as a bare さん already did.
+
+**Changed from the design.** The tens range lists only the round tens (30 to 90), so 21 to 29 and the other
+in-between numbers are on the counter page only. The quiz, examples and pitfalls (stage 3) are not built.
+
+**Checked on screen** (iPhone 17 Pro simulator): the stepper and the unreviewed label on 羽, and the Drinks
+table's 11–20 range. **Not checked:** the 30–90 and 100+ ranges and 円's steps on screen (covered by unit
+tests), largest Dynamic Type, dark mode, iPad, macOS, and the widgets.
