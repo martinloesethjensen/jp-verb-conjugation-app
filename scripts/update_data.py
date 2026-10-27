@@ -49,6 +49,7 @@ entries to that release tag; see docs/security/data-signing.md for the release s
 Standard library only.
 """
 import argparse
+import datetime
 import hashlib
 import json
 import re
@@ -90,8 +91,11 @@ IRREGULAR_POTENTIAL = {"する": "できる", "くる": "こられる"}
 # and any stale ones are removed. This is the only hand-maintained part of the
 # potential step; extend it as verbs are added. わかる is already potential in
 # meaning (わかれる reads as 分かれる), つかれる is not something you choose to do,
-# and しれる is mostly heard in しれない / かもしれない.
-NO_POTENTIAL = {"ある", "わかる", "しる", "つかれる"}
+# and しれる is mostly heard in しれない / かもしれない. できる already means "can"
+# (×できられる). みえる, きこえる, あく (開く) and ふる (降る) happen by themselves, so
+# "can be seen" and the like make no sense (あける would also read as 開ける). くれる has
+# no potential (×くれられる); people say もらえる instead.
+NO_POTENTIAL = {"ある", "わかる", "しる", "つかれる", "できる", "みえる", "きこえる", "あく", "ふる", "くれる"}
 
 # A potential verb is itself an ichidan verb, so its other forms are the
 # standard ichidan endings on its stem (the base form minus る), in JSON order.
@@ -141,6 +145,17 @@ IRREGULAR_OTHER_FORMS = {
 # - しる: no volitional or imperative. The passive stays (しられている); the long
 #   causative-passive しらせられる is not used (people say しらされる).
 # - おわる: the passive おわられる only reads as the honorific, so it is left out.
+# - なる: no passive (なられる only reads as the honorific) and no causative (people say
+#   医者にさせる, not ならせる), so no causative-passive either.
+# - くれる: only the ば and たら conditionals and the imperative, which is irregular (くれ, see
+#   IRREGULAR_IMPERATIVE). You cannot plan, want or be made to give to yourself.
+# - できる, みえる, きこえる, あく (開く): not volitional, so only the ば and たら conditionals
+#   (できれば, 見えたら). あく's passive あかれる and causative あかせる are not used.
+# - おくれる: like つかれる, not volitional: no volitional or imperative (おくれろ), and no passive.
+#   おくれさせる (to delay something) stays.
+# - ふる (降る): no volitional, imperative or たい. The passive stays (雨に降られた, "caught in
+#   the rain") and so does the causative (雨を降らせる); the causative-passive does not.
+# - つく (着く): no passive or causative (つかせる reads as 付かせる / 落ち着かせる).
 PARTIAL_OTHER_FORMS = {
     "ある": {"volitional", "conditional_ba", "conditional_tara", "tai"},
     "わかる": {"causative", "causative_passive", "conditional_ba", "conditional_tara", "tai"},
@@ -148,7 +163,20 @@ PARTIAL_OTHER_FORMS = {
     "つかれる": {"causative", "conditional_ba", "conditional_tara"},
     "おわる": {"volitional", "causative", "causative_passive", "conditional_ba", "conditional_tara",
              "imperative", "tai"},
+    "なる": {"volitional", "conditional_ba", "conditional_tara", "imperative", "tai"},
+    "くれる": {"conditional_ba", "conditional_tara", "imperative"},
+    "できる": {"conditional_ba", "conditional_tara"},
+    "みえる": {"conditional_ba", "conditional_tara"},
+    "きこえる": {"conditional_ba", "conditional_tara"},
+    "あく": {"conditional_ba", "conditional_tara"},
+    "おくれる": {"causative", "conditional_ba", "conditional_tara"},
+    "ふる": {"passive", "causative", "conditional_ba", "conditional_tara"},
+    "つく": {"volitional", "conditional_ba", "conditional_tara", "imperative", "tai"},
 }
+
+# Verbs whose imperative breaks the rule for their class. くれる is a ru-verb, but its imperative
+# is くれ, not ×くれろ.
+IRREGULAR_IMPERATIVE = {"くれる": "くれ"}
 
 
 def other_forms(verb):
@@ -186,6 +214,8 @@ def other_forms(verb):
             values["volitional"] = "あろう"
     else:
         raise ValueError(f"{dict_form}: unknown verb type '{kind}'")
+    if dict_form in IRREGULAR_IMPERATIVE:
+        values["imperative"] = IRREGULAR_IMPERATIVE[dict_form]
     keep = PARTIAL_OTHER_FORMS.get(dict_form)
     return {name: value for name, value in values.items() if keep is None or name in keep}
 
@@ -208,9 +238,14 @@ EXTRA_NEEDS = {
 #   しぬな ("don't die") is natural and stays. The imperative しね is a harsh insult; the verb's
 #   note says so, and the form stays for reference.
 # - おわる: おわりなさい and おわるな are not said (the event ends by itself). おわりましょう is.
+# - くれる: ×くれなさい is not said, and くれるな ("don't give me") is literary at best. The
+#   imperative くれ stays.
+# - ふる (降る): the short causative-passive ふらされる is not said.
 EXTRA_EXCLUDED = {
     "しぬ": {"nasai", "causative_passive_short"},
     "おわる": {"nasai", "neg_imperative"},
+    "くれる": {"nasai", "neg_imperative"},
+    "ふる": {"causative_passive_short"},
 }
 
 
@@ -302,8 +337,9 @@ def in_catalogue_order(forms):
 # Verbs that take none of the て-form auxiliaries (ている, てしまう, ておく,
 # てみる): they get no such fields, and any stale ones are removed. They keep
 # the stem-based forms. This is the only hand-maintained part of the step;
-# extend it as verbs are added (for example いる).
-NO_TE_AUXILIARIES = {"ある"}
+# extend it as verbs are added. いる takes none of them (×いている, ×いてしまう); its
+# stem-based forms (いすぎる, いながら) stay.
+NO_TE_AUXILIARIES = {"ある", "いる"}
 
 # ている is the one auxiliary conjugated in full: the verb's て-form plus いる
 # conjugated as an ichidan verb, in JSON order.
@@ -690,6 +726,21 @@ def check_verb_forms(verbs_doc):
     return problems
 
 
+def check_example_forms(verbs_doc):
+    """Problems with an example tagged with a form its verb does not have: one the
+    generators leave out for that verb (EXTRA_EXCLUDED, PARTIAL_OTHER_FORMS) or that
+    has no value. Run after the forms are generated; `check_verb_forms` has already
+    checked that the tag is a verb form in the catalogue."""
+    problems = []
+    for verb in verbs_doc["verbs"]:
+        forms = verb.get("forms", {})
+        for example in verb.get("examples", []):
+            form = example.get("form")
+            if not forms.get(form):
+                problems.append(f"{verb.get('dict', '?')}: example uses form '{form}', which the verb does not have")
+    return problems
+
+
 # --- Adjectives and nouns (words.json) ---------------------------------------
 
 WORD_FILE_CLASSES = ("i-adjective", "na-adjective", "noun")
@@ -775,6 +826,39 @@ SOUND_CLASSES = ("plain", "k", "s", "h-b", "h-p", "irregular")
 COUNTER_FITS = ("primary", "acceptable", "casual")
 BASE_NUMBERS = {"1": "いち", "2": "に", "3": "さん", "4": "よん", "5": "ご", "6": "ろく",
                 "7": "なな", "8": "はち", "9": "きゅう", "10": "じゅう", "what": "なん"}
+HUNDREDS = {1: "ひゃく", 2: "にひゃく", 3: "さんびゃく", 4: "よんひゃく", 5: "ごひゃく", 6: "ろっぴゃく",
+            7: "ななひゃく", 8: "はっぴゃく", 9: "きゅうひゃく"}
+THOUSANDS = {1: "せん", 2: "にせん", 3: "さんぜん", 4: "よんせん", 5: "ごせん", 6: "ろくせん", 7: "ななせん",
+             8: "はっせん", 9: "きゅうせん"}
+# The kana a small っ can come before (か, さ, た, は rows and their voiced forms).
+GEMINATING_ROWS = set("かきくけこがぎぐげごさしすせそざじずぜぞたちつてとだぢづでどはひふへほばびぶべぼぱぴぷぺぽ")
+# The numbers above `extent` a counter may list in `extra`: 100 is composed, the rest are authored.
+EXTRA_NUMBERS = ([100 * n for n in range(1, 10)] + [1000 * n for n in range(1, 10)] + [10000])
+
+
+def plain_number(n):
+    """The number said on its own, in hiragana, with the preferred reading of each part (にじゅう,
+    さんびゃく). Supports 1 to 99 and the round numbers in `EXTRA_NUMBERS`."""
+    if 1 <= n <= 9:
+        return BASE_NUMBERS[str(n)]
+    if 10 <= n <= 99:
+        tens, ones = divmod(n, 10)
+        return ("" if tens == 1 else BASE_NUMBERS[str(tens)]) + "じゅう" + (BASE_NUMBERS[str(ones)] if ones else "")
+    if n in EXTRA_NUMBERS:
+        if n == 10000:
+            return "いちまん"
+        return HUNDREDS[n // 100] if n < 1000 else THOUSANDS[n // 1000]
+    raise ValueError(f"no reading for {n}")
+
+
+def counter_keys(counter):
+    """Every key a counter has readings for, in order: 1 to 10 and 何, then 11 up to `extent`, then
+    `extra`. A counter opts in to bigger numbers: without `extent` it has only 1 to 10 and 何."""
+    extent = counter.get("extent", 10)
+    keys = list(COUNTER_KEYS) + [str(n) for n in range(11, extent + 1)]
+    return keys + [str(n) for n in counter.get("extra", [])]
+
+
 # The small-っ form of the numbers that can geminate (いち -> いっ).
 GEMINATED = {"1": "いっ", "6": "ろっ", "8": "はっ", "10": "じゅっ"}
 GEMINATING_KEYS = {"k": ("1", "6", "8", "10"), "s": ("1", "8", "10"),
@@ -791,38 +875,101 @@ def _voiced(reading, kind):
 
 
 def counter_readings(counter):
-    """Every key's readings, preferred first: the class's rule, then the author's overrides.
-    An irregular counter's readings are its overrides."""
+    """Every key's readings, preferred first: the class's rule, then the author's overrides, then for
+    each number above ten the composed reading unless an override covers it. An irregular counter's
+    readings for 1 to 10 are its overrides. A key the counter cannot compose and has no override for is
+    left out; `check_counters` reports it."""
     sound, reading = counter["sound"], counter["reading"]
     overrides = counter.get("overrides", {})
     if sound == "irregular":
-        return {key: list(overrides[key]) for key in COUNTER_KEYS}
-    result = {}
-    for key in COUNTER_KEYS:
-        plain = BASE_NUMBERS[key] + reading
-        if key in GEMINATING_KEYS.get(sound, ()):
-            rest = _voiced(reading, "p") if sound.startswith("h-") else reading
-            readings = [GEMINATED[key] + rest]
-            if key == "8" and sound != "s":
-                readings.append(plain)        # はちほん, はちこ are heard too
-            if key == "10":
-                readings.append("じっ" + rest)
-        elif key in VOICED_KEYS.get(sound, {}):
-            readings = [BASE_NUMBERS[key] + _voiced(reading, VOICED_KEYS[sound][key])]
+        core = {key: list(overrides[key]) for key in COUNTER_KEYS}
+    else:
+        core = {}
+        for key in COUNTER_KEYS:
+            plain = BASE_NUMBERS[key] + reading
+            if key in GEMINATING_KEYS.get(sound, ()):
+                rest = _voiced(reading, "p") if sound.startswith("h-") else reading
+                readings = [GEMINATED[key] + rest]
+                if key == "8" and sound != "s":
+                    readings.append(plain)        # はちほん, はちこ are heard too
+                if key == "10":
+                    readings.append("じっ" + rest)
+            elif key in VOICED_KEYS.get(sound, {}):
+                readings = [BASE_NUMBERS[key] + _voiced(reading, VOICED_KEYS[sound][key])]
+            else:
+                readings = [plain]
+            core[key] = readings
+        for key in COUNTER_KEYS:
+            if key in overrides:
+                core[key] = list(overrides[key])
+    result = dict(core)
+    for key in counter_keys(counter)[len(COUNTER_KEYS):]:
+        if key in overrides:
+            result[key] = list(overrides[key])
         else:
-            readings = [plain]
-        result[key] = readings
-    for key, value in overrides.items():
-        result[key] = list(value)
-    return result
+            composed = compose_readings(counter, int(key), core)
+            if composed:
+                result[key] = composed
+    return {key: result[key] for key in counter_keys(counter) if key in result}
+
+
+def _unique(items):
+    """`items` without repeats, in order."""
+    return list(dict.fromkeys(items))
+
+
+def compose_readings(counter, n, core):
+    """The readings for a number above ten, preferred first, built from the counter's readings for 1 to 10
+    (`core`) by the rules in the design: a tens prefix, then the last digit's readings; a round ten keeps
+    the counter's reading of 10 behind the prefix; 100 is ひゃっ before か and は row counters and ひゃく
+    otherwise. A counter's `compound` replaces a last digit (人: いちにん) and gives the reading after a
+    round ten. Returns None when the counter cannot compose `n` (an irregular counter with no `compound`,
+    or a round number above 100, which is authored)."""
+    compound = counter.get("compound", {})
+    if n <= 10:
+        return core.get(str(n))
+    if counter["sound"] == "irregular" and not compound:
+        return None     # an irregular counter's compounds are authored (compound or overrides), never guessed
+    if n == 100:
+        zero = compound.get("0")
+        if zero:
+            return _unique("ひゃく" + z for z in zero)
+        if counter["sound"] in ("k", "h-b", "h-p"):
+            first = core["10"][0]
+            return [("ひゃっ" + first[len("じゅっ"):])] if first.startswith("じゅっ") else None
+        return None if counter["sound"] == "irregular" else ["ひゃく" + counter["reading"]]
+    if not 11 <= n <= 99:
+        return None
+    tens, ones = divmod(n, 10)
+    prefix = "" if tens == 1 else BASE_NUMBERS[str(tens)]
+    if ones:
+        units = compound.get(str(ones)) or core[str(ones)]
+        return _unique(prefix + "じゅう" + reading for reading in units)
+    if "0" in compound:
+        return _unique(prefix + "じゅう" + reading for reading in compound["0"])
+    if counter["sound"] == "irregular":
+        return None
+    composed = []
+    for reading in core["10"]:
+        head = next((h for h in ("じゅう", "じゅっ", "じっ") if reading.startswith(h)), None)
+        if head is None:
+            return None
+        composed.append(prefix + head + reading[len(head):])
+    return _unique(composed)
+
+
+def _plain_reading(counter, key):
+    """The number said on its own followed by the counter's reading: the form a learner would guess."""
+    number = BASE_NUMBERS[key] if key in BASE_NUMBERS else plain_number(int(key))
+    return number + counter["reading"]
 
 
 def changed_keys(counter, readings):
-    """The keys whose preferred reading is not the base number plus the counter's reading.
+    """The keys whose preferred reading is not the plain number plus the counter's reading.
     Irregular counters have none: every cell differs, so marking them says nothing."""
     if counter["sound"] == "irregular":
         return []
-    return [key for key in COUNTER_KEYS if readings[key][0] != BASE_NUMBERS[key] + counter["reading"]]
+    return [key for key in readings if readings[key][0] != _plain_reading(counter, key)]
 
 
 def _swap_voicing(preferred, reading, sound):
@@ -852,17 +999,29 @@ def counter_distractors(counter, readings):
     Tried in order: the unchanged reading (さんほん); for h-b and h-p the preferred reading with its
     ば/ぱ sound flipped (さんぽん); the base number's last kana turned into a small っ before the
     counter's reading, its は-row sound as ぱ row for h-b and h-p (さっぽん). Irregular counters get
-    only the unchanged reading. A base number of one kana (に, ご) has no small-っ form."""
+    only the unchanged reading. A base number of one kana (に, ご) has no small-っ form.
+
+    A number above ten gets distractors only when it changed or is authored (an override); every
+    other extended key is left out, which keeps the file small. For those, the small-っ form is only
+    tried when the number ends in a syllable that geminates (にじゅう -> にじゅっ) and the counter starts
+    on a sound that can follow a small っ (か, さ, た, は rows): にひゃっえん is not Japanese."""
     sound, reading = counter["sound"], counter["reading"]
+    overrides = counter.get("overrides", {})
+    changed = set(changed_keys(counter, readings))
     result = {}
-    for key in COUNTER_KEYS:
+    for key in readings:
+        extended = key not in COUNTER_KEYS
+        if extended and key not in changed and key not in overrides:
+            continue            # no key at all: the app reads a missing key as no distractors
         accepted = set(readings[key])
-        base = BASE_NUMBERS[key]
+        base = BASE_NUMBERS[key] if not extended else plain_number(int(key))
         candidates = [base + reading]
         if sound != "irregular":
             if sound in ("h-b", "h-p"):
                 candidates.append(_swap_voicing(readings[key][0], reading, sound))
-            if len(base) > 1:
+            geminates = (base.endswith(("いち", "ろく", "はち", "じゅう", "ひゃく")) and reading[0] in GEMINATING_ROWS
+                         if extended else len(base) > 1)
+            if geminates:
                 rest = _voiced(reading, "p") if sound in ("h-b", "h-p") else reading
                 candidates.append(base[:-1] + "っ" + rest)
         wrong = []
@@ -925,19 +1084,34 @@ def check_counters(doc, readings):
             problems.append(f"{cid}: countsObjects must be true or false")
         if "questions" in c:
             _check_questions(c, problems)
+        big_fields_ok = _check_big_number_fields(c, problems)
+        keys = counter_keys(c) if big_fields_ok else COUNTER_KEYS
         overrides = c.get("overrides", {})
         if not isinstance(overrides, dict):
             problems.append(f"{cid}: overrides must be an object")
             overrides = {}
         for key, value in overrides.items():
-            if key not in COUNTER_KEYS:
-                problems.append(f"{cid}: overrides key '{key}' must be one of {COUNTER_KEYS}")
+            if key not in keys:
+                problems.append(f"{cid}: overrides key '{key}' must be one of its keys (1 to 10, 何, 11 up to "
+                                f"extent {c.get('extent', 10)}, and extra {c.get('extra', [])})")
             if not isinstance(value, list) or not value or not all(_is_hiragana(v) for v in value):
                 problems.append(f"{cid}: overrides['{key}'] must be a non-empty list of hiragana")
         if sound == "irregular":
             missing = [key for key in COUNTER_KEYS if key not in overrides]
             if missing:
                 problems.append(f"{cid}: an irregular counter must override every key; missing {missing}")
+        core_complete = sound != "irregular" or all(key in overrides for key in COUNTER_KEYS)
+        if big_fields_ok and core_complete and sound in SOUND_CLASSES and isinstance(overrides, dict):
+            try:
+                composed = counter_readings(c)
+            except (KeyError, IndexError, TypeError, ValueError):
+                composed = None         # a malformed reading or sound: the checks above report it
+            absent = [key for key in keys if key not in composed] if composed is not None else []
+            if absent and sound == "irregular":
+                problems.append(f"{cid}: an irregular counter with extent {c.get('extent', 10)} needs a compound "
+                                f"(with '0') or overrides for every bigger number; missing {absent[:6]}")
+            elif absent:
+                problems.append(f"{cid}: numbers {absent[:6]} are authored and must override")
         for related in c.get("related", []):
             if related not in ids:
                 problems.append(f"{cid}: related id '{related}' does not exist")
@@ -962,6 +1136,8 @@ def check_counters(doc, readings):
             for key in ("heading", "explanation"):
                 if not isinstance(pitfall.get(key), str) or not pitfall[key]:
                     problems.append(f"{cid}/{heading}: pitfall {key} missing or empty")
+            if "wrong" in pitfall and (not isinstance(pitfall["wrong"], str) or not pitfall["wrong"].strip()):
+                problems.append(f"{cid}/{heading}: pitfall wrong must be a non-empty string when present")
             for index, example in enumerate(pitfall.get("examples", [])):
                 _check_example(f"{cid}/{heading}: pitfall example {index}", example, problems)
 
@@ -991,6 +1167,33 @@ def check_counters(doc, readings):
     if "sections" in doc:
         problems.extend(_check_sections(doc["sections"], ids))
     return problems
+
+
+def _check_big_number_fields(c, problems):
+    """The optional `extent`, `extra` and `compound` of one counter. Returns False when any is malformed,
+    so later checks do not build on it."""
+    cid, ok = c.get("id", "<no id>"), True
+    extent = c.get("extent", 10)
+    if "extent" in c and (isinstance(extent, bool) or not isinstance(extent, int) or not 10 <= extent <= 99):
+        problems.append(f"{cid}: extent must be a whole number from 10 to 99")
+        ok = False
+    extra = c.get("extra", [])
+    if not isinstance(extra, list) or not all(isinstance(n, int) and not isinstance(n, bool) and n in EXTRA_NUMBERS
+                                                for n in extra) or extra != sorted(set(extra)):
+        problems.append(f"{cid}: extra must be an ascending list of numbers from {EXTRA_NUMBERS}")
+        ok = False
+    compound = c.get("compound", {})
+    if not isinstance(compound, dict):
+        problems.append(f"{cid}: compound must be an object with keys '0' to '9'")
+        return False
+    for key, value in compound.items():
+        if key not in [str(d) for d in range(10)]:
+            problems.append(f"{cid}: compound must be an object with keys '0' to '9', not '{key}'")
+            ok = False
+        elif not isinstance(value, list) or not value or not all(_is_hiragana(v) for v in value):
+            problems.append(f"{cid}: compound must be an object of non-empty hiragana lists; '{key}' is not")
+            ok = False
+    return ok
 
 
 def _check_questions(c, problems):
@@ -1054,12 +1257,12 @@ def apply_counter_readings(doc):
     """Set every counter's `readings` and `changed` (the script owns them). Returns True if anything changed."""
     changed = False
     for c in doc["counters"]:
-        readings = counter_readings(c)
-        wanted = {key: readings[key] for key in COUNTER_KEYS}
+        wanted = counter_readings(c)
         keys = changed_keys(c, wanted)
         wrong = counter_distractors(c, wanted)
-        if (c.get("readings") != wanted or list(c.get("readings", {})) != COUNTER_KEYS or c.get("changed") != keys
-                or c.get("distractors") != wrong or list(c.get("distractors", {})) != COUNTER_KEYS):
+        order = list(wanted)
+        if (c.get("readings") != wanted or list(c.get("readings", {})) != order or c.get("changed") != keys
+                or c.get("distractors") != wrong or list(c.get("distractors", {})) != list(wrong)):
             c["readings"], c["changed"], c["distractors"] = wanted, keys, wrong
             changed = True
     return changed
@@ -1070,7 +1273,9 @@ def check_counter_distractors(doc):
     at most three per key, and never an accepted reading of its key."""
     problems = []
     for c in doc["counters"]:
-        for key in COUNTER_KEYS:
+        for key in counter_keys(c):
+            if key not in COUNTER_KEYS and key not in (c.get("distractors") or {}):
+                continue        # an extended number with no distractors has no key
             wrong = (c.get("distractors") or {}).get(key)
             if not isinstance(wrong, list) or len(wrong) > 3:
                 problems.append(f"{c['id']}: distractors['{key}'] must be a list of at most three readings")
@@ -1083,6 +1288,33 @@ def check_counter_distractors(doc):
     return problems
 
 
+_DIGITS = "一二三四五六七八九"
+_NUMERAL_PARTS = (rf"(?:[{_DIGITS}]万)?(?:[二三四五六七八九]?千)?(?:[二三四五六七八九]?百)?"
+                  rf"(?:[二三四五六七八九]?十)?[{_DIGITS}]?")
+_NUMERAL_FULL = re.compile(
+    rf"(?:(?P<man>[{_DIGITS}])万)?(?:(?P<sen>[二三四五六七八九])?(?P<sen_mark>千))?"
+    rf"(?:(?P<hyaku>[二三四五六七八九])?(?P<hyaku_mark>百))?(?:(?P<ju>[二三四五六七八九])?(?P<ju_mark>十))?"
+    rf"(?P<one>[{_DIGITS}])?")
+
+
+def parse_numeral(text):
+    """The value of a kanji numeral (十五, 二十, 三百, 一万), or None if it is not a well-formed one:
+    no 一 before 十, 百 or 千 (those say 十, 百, 千), parts in descending order, and not empty."""
+    match = _NUMERAL_FULL.fullmatch(text)
+    if not text or not match:
+        return None
+    digit = lambda ch: _DIGITS.index(ch) + 1
+    total = 0
+    if match["man"]:
+        total += digit(match["man"]) * 10000
+    for mark, place, value in (("sen_mark", "sen", 1000), ("hyaku_mark", "hyaku", 100), ("ju_mark", "ju", 10)):
+        if match[mark]:
+            total += (digit(match[place]) if match[place] else 1) * value
+    if match["one"]:
+        total += digit(match["one"])
+    return total or None
+
+
 def check_counted_runs(doc, readings):
     """Every counted run (三本, 何日) in an example must read as one of its counter's readings
     for that number. The example's own `readings` come first, then furigana.json."""
@@ -1091,7 +1323,8 @@ def check_counted_runs(doc, readings):
         # 三時間 is a run of 時間, not of 時: leave a run followed by 間 to the longer counter.
         longer = "" if c["counter"].endswith("間") else "(?!間)"
         pattern = re.compile(
-            f"(?<![{NUMERAL_CHARS}])([{''.join(NUMBER_KANJI)}]){re.escape(c['counter'])}{longer}")
+            f"(?<![{NUMERAL_CHARS}])(何|(?=[{_DIGITS}十百千万]){_NUMERAL_PARTS}){re.escape(c['counter'])}{longer}")
+        keys = counter_keys(c)
         sources = [(f"examples[{i}]", e) for i, e in enumerate(c.get("examples", []))]
         sources += [(f"questions[{i}]", q) for i, q in enumerate(c.get("questions", [])) if isinstance(q, dict)]
         for pitfall in c.get("pitfalls", []):
@@ -1104,7 +1337,11 @@ def check_counted_runs(doc, readings):
             own = example.get("readings") or {}
             for match in pattern.finditer(example.get("jp", "")):
                 run = match.group(0)
-                accepted = c["readings"][NUMBER_KANJI[match.group(1)]]
+                number = match.group(1)
+                key = "what" if number == "何" else str(parse_numeral(number))
+                if key not in keys or key not in c["readings"]:
+                    continue        # a number the counter has no readings for (百五十本) is not checked
+                accepted = c["readings"][key]
                 got = own.get(run) or kana_reading(run, readings)
                 if got not in accepted:
                     problems.append(
@@ -1264,6 +1501,8 @@ def validate_grammar(doc):
             for key in ("heading", "explanation"):
                 if not isinstance(f.get(key), str) or not f[key]:
                     errors.append(f"{pid}/{heading}: pitfall {key} missing or empty")
+            if "wrong" in f and (not isinstance(f["wrong"], str) or not f["wrong"].strip()):
+                errors.append(f"{pid}/{heading}: pitfall wrong must be a non-empty string when present")
             for e in f.get("examples", []):
                 if not e.get("jp") or not e.get("en"):
                     errors.append(f"{pid}/{heading}: pitfall example needs jp and en")
@@ -1305,6 +1544,55 @@ def validate_grammar(doc):
                     f"'{p.get('id')}' back (related links must be mutual)"
                 )
     return errors
+
+
+# Review stamps: an entry (a counter, a grammar point) may carry {"by", "on", "sha256"}. The hash covers the
+# entry's own content without the stamp and without generated fields, so regenerating keeps a stamp valid and
+# any edit to the text makes it stale.
+REVIEWERS = ("owner", "teacher")
+COUNTER_GENERATED = ("readings", "changed", "distractors")
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def review_hash(entry, generated=()):
+    """SHA-256 of an entry's canonical JSON without `review` and the `generated` fields."""
+    content = {key: value for key, value in entry.items() if key != "review" and key not in generated}
+    text = json.dumps(content, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def valid_iso_date(text):
+    if not isinstance(text, str) or not ISO_DATE.match(text):
+        return False
+    try:
+        datetime.date.fromisoformat(text)
+    except ValueError:
+        return False
+    return True
+
+
+def check_reviews(entries, generated=()):
+    """Problems with the `review` stamps in `entries`: a bad shape, or a stamp whose hash no longer matches."""
+    problems = []
+    for entry in entries:
+        if "review" not in entry:
+            continue
+        name, stamp = entry.get("id", "<no id>"), entry["review"]
+        if not isinstance(stamp, dict):
+            problems.append(f"{name}: review must be an object with by, on and sha256")
+            continue
+        if stamp.get("by") not in REVIEWERS:
+            problems.append(f"{name}: review.by must be one of {list(REVIEWERS)}")
+        if not valid_iso_date(stamp.get("on")):
+            problems.append(f"{name}: review.on must be a date like 2026-10-24")
+        if not isinstance(stamp.get("sha256"), str):
+            problems.append(f"{name}: review.sha256 is missing")
+        elif stamp["sha256"] != review_hash(entry, generated) and stamp.get("by") in REVIEWERS \
+                and valid_iso_date(stamp.get("on")):
+            problems.append(
+                f"{name} was edited after review on {stamp['on']}: re-review it, "
+                f"or run scripts/mark_reviewed.py again")
+    return problems
 
 
 def sha256_hex(data):
@@ -1459,6 +1747,25 @@ DEFAULT_BUNDLED_FORMS_PATH = (
 )
 
 
+# The app's bundled copy of data/counters.json, written the same way: the Counters tab's offline
+# fallback until a synced copy arrives. counters.manifest.json beside it holds its version and hash.
+DEFAULT_BUNDLED_COUNTERS_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "Packages/VerbKit/Sources/VerbKit/Resources/counters.json"
+)
+
+
+# The app's bundled copies of verbs.json, grammar.json, furigana.json and words.json, written next to the
+# forms and counters copies, each with a sidecar of its manifest entry. The app installs a bundle into its
+# store when it is newer than anything it has, so a first launch works offline.
+DEFAULT_BUNDLED_DATA_DIR = Path(__file__).resolve().parent.parent / "Packages/VerbKit/Sources/VerbKit/Resources"
+
+
+def bundled_counters_manifest_path(bundled_counters_path):
+    """Where the bundled counters copy's version and hash go: counters.manifest.json, next to it."""
+    return Path(bundled_counters_path).with_name("counters.manifest.json")
+
+
 def bundled_forms_manifest_path(bundled_forms_path):
     """Where the bundled copy's version and hash go: forms.manifest.json, next to it. The app
     compares it with a synced catalogue's version to use whichever is newer."""
@@ -1467,10 +1774,12 @@ def bundled_forms_manifest_path(bundled_forms_path):
 
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
         bundled_forms_path=None, ref=None, words_version=None, counters_version=None, published_verbs=None,
-        forms_version=None):
+        forms_version=None, bundled_counters_path=None, bundled_data_dir=None):
     """Returns (exit_code, messages). data/forms.json is always written and checked;
     `bundled_forms_path` is where the app's bundled copy (and forms.manifest.json beside it) is
-    written and checked, and None leaves them alone. `ref` pins the manifest entries
+    written and checked, and None leaves them alone; `bundled_counters_path` does the same for
+    counters.json and counters.manifest.json, and `bundled_data_dir` for verbs, grammar, furigana and
+    words (each `<name>.json` with `<name>.manifest.json`). `ref` pins the manifest entries
     to a release tag. `published_verbs` is the published verbs.json (see
     `published_verbs_doc`) that no id may disappear from; None skips that check."""
     data_dir = Path(data_dir)
@@ -1486,7 +1795,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
 
     grammar_bytes = grammar_path.read_bytes()
     grammar_doc = json.loads(grammar_bytes)
-    problems = validate_grammar(grammar_doc)
+    problems = validate_grammar(grammar_doc) + check_reviews(grammar_doc["grammar"])
     if problems:
         return 1, ["grammar.json is invalid:"] + [f"  - {p}" for p in problems]
 
@@ -1520,6 +1829,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         apply_other_forms(verbs_doc)
     except ValueError as error:
         return 1, [f"cannot generate the other conjugations: {error}"]
+    problems = check_example_forms(verbs_doc)
+    if problems:
+        return 1, capped("verbs.json has examples with forms their verb lacks:", problems)
     words_path = data_dir / "words.json"
     words_doc = json.loads(words_path.read_text(encoding="utf-8")) if words_path.exists() else None
     words_bytes = None
@@ -1536,7 +1848,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     counters_doc = json.loads(counters_path.read_text(encoding="utf-8")) if counters_path.exists() else None
     counters_bytes = None
     if counters_doc is not None:
-        problems = check_counters(counters_doc, readings)
+        problems = check_counters(counters_doc, readings) + check_reviews(counters_doc["counters"], COUNTER_GENERATED)
         if problems:
             return 1, capped("counters.json is invalid:", problems)
         apply_counter_readings(counters_doc)
@@ -1590,6 +1902,28 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
             stale.append("the bundled forms.json")
     if counters_bytes is not None and counters_path.read_bytes() != counters_bytes:
         stale.append("data/counters.json")
+    bundled_counters_manifest_bytes = None
+    if bundled_counters_path is not None and counters_bytes is not None:
+        bundled_counters_path = Path(bundled_counters_path)
+        bundled_counters_sidecar = bundled_counters_manifest_path(bundled_counters_path)
+        entry = {"version": manifest["counters"]["version"], "sha256": manifest["counters"]["sha256"]}
+        bundled_counters_manifest_bytes = (json.dumps(entry, indent=2) + "\n").encode("utf-8")
+        if (differs(bundled_counters_path, counters_bytes)
+                or differs(bundled_counters_sidecar, bundled_counters_manifest_bytes)):
+            stale.append("the bundled counters.json")
+    bundled_data = {}
+    if bundled_data_dir is not None:
+        entries = {"verbs": ({"version": manifest["version"], "sha256": manifest["sha256"]}, verbs_bytes)}
+        for name, content in (("grammar", grammar_bytes), ("furigana", furigana_bytes), ("words", words_bytes)):
+            if name in manifest and content is not None:
+                entries[name] = ({"version": manifest[name]["version"], "sha256": manifest[name]["sha256"]}, content)
+        for name, (entry, content) in entries.items():
+            path = Path(bundled_data_dir) / f"{name}.json"
+            sidecar = path.with_name(f"{name}.manifest.json")
+            sidecar_bytes = (json.dumps(entry, indent=2) + "\n").encode("utf-8")
+            if differs(path, content) or differs(sidecar, sidecar_bytes):
+                stale.append(f"the bundled {name}.json")
+                bundled_data[name] = (path, content, sidecar, sidecar_bytes)
     if manifest_path.read_text(encoding="utf-8") != manifest_text:
         stale.append("data/manifest.json")
 
@@ -1610,6 +1944,16 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     if "data/forms.json" in stale:
         forms_path.write_bytes(forms_bytes)
         messages.append("updated data/forms.json")
+    for name, (path, content, sidecar, sidecar_bytes) in bundled_data.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        sidecar.write_bytes(sidecar_bytes)
+        messages.append(f"updated the bundled copy ({path.name}, {sidecar.name})")
+    if "the bundled counters.json" in stale:
+        bundled_counters_path.parent.mkdir(parents=True, exist_ok=True)
+        bundled_counters_path.write_bytes(counters_bytes)
+        bundled_counters_sidecar.write_bytes(bundled_counters_manifest_bytes)
+        messages.append(f"updated the bundled copy ({bundled_counters_path.name}, {bundled_counters_sidecar.name})")
     if "the bundled forms.json" in stale:
         bundled_forms_path.parent.mkdir(parents=True, exist_ok=True)
         bundled_forms_path.write_bytes(forms_bytes)
@@ -1642,6 +1986,10 @@ def main(argv=None):
     parser.add_argument("--forms-version", help="force the forms.json manifest version")
     parser.add_argument("--bundled-forms-path", default=str(DEFAULT_BUNDLED_FORMS_PATH),
                         help="where to write the app's bundled copy of data/forms.json")
+    parser.add_argument("--bundled-counters-path", default=str(DEFAULT_BUNDLED_COUNTERS_PATH),
+                        help="where to write the app's bundled copy of data/counters.json")
+    parser.add_argument("--bundled-data-dir", default=str(DEFAULT_BUNDLED_DATA_DIR),
+                        help="where to write the app's bundled copies of verbs, grammar, furigana and words")
     parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
     parser.add_argument("--published-ref", default=PUBLISHED_REF,
                         help="git ref of the published data that no verb id may disappear from "
@@ -1650,6 +1998,8 @@ def main(argv=None):
     published = published_verbs_doc(args.published_ref) if args.published_ref else None
     code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
                          args.furigana_version, bundled_forms_path=args.bundled_forms_path, ref=args.ref,
+                         bundled_counters_path=args.bundled_counters_path,
+                         bundled_data_dir=args.bundled_data_dir,
                          words_version=args.words_version, counters_version=args.counters_version,
                          published_verbs=published, forms_version=args.forms_version)
     for line in messages:

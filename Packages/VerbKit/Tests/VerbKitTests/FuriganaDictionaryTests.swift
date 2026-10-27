@@ -92,6 +92,55 @@ final class FuriganaDictionaryTests: XCTestCase {
         XCTAssertEqual(dictionary.units(for: "猫が食べる"), [plain("猫"), plain("が"), ruby("食", "た"), plain("べる", glue: true)])
     }
 
+    // MARK: word joiner and opening brackets
+
+    func testAUnitAfterAWordJoinerIsGlued() {
+        let units = dictionary.units(for: "×\u{2060}食")
+        XCTAssertEqual(units.map(\.text), ["×\u{2060}", "食"])
+        XCTAssertEqual(units.map(\.glueToPrevious), [false, true])
+    }
+
+    func testAUnitThatStartsWithAWordJoinerIsGlued() {
+        // Chunks are three characters, so the joiner can start the next chunk.
+        let units = dictionary.units(for: "あいう\u{2060}え")
+        XCTAssertTrue(units.contains { $0.text.hasPrefix("\u{2060}") })
+        for (index, unit) in units.enumerated() where unit.text.hasPrefix("\u{2060}") {
+            XCTAssertTrue(unit.glueToPrevious, "\(index)")
+        }
+    }
+
+    func testAWordAfterAJoinerAndHyphenIsGlued() {
+        let units = dictionary.units(for: "な\u{2060}-adjective")
+        XCTAssertEqual(units.map(\.text), ["な\u{2060}", "-adjective"])
+        XCTAssertTrue(units[1].glueToPrevious)
+    }
+
+    func testNothingBreaksAfterAnOpeningBracket() {
+        for text in ["(食べる)", "（食べる）"] {
+            let units = dictionary.units(for: text)
+            XCTAssertEqual(units[0].text.last.map(String.init), String(text.first!))
+            XCTAssertTrue(units[1].glueToPrevious, text)
+        }
+    }
+
+    func testTheCopulaNotesNeverBreakAfterTheMultiplySignOrInsideNaAdjective() {
+        let dictionary = FuriganaDictionary(readings: ["静": "しず", "学生": "がくせい"])
+        for note in Copula.notes {
+            let chars = Array(note)
+            var offset = 0
+            for unit in dictionary.units(for: note) {
+                if offset > 0, !unit.glueToPrevious {
+                    let before = chars[offset - 1]
+                    XCTAssertNotEqual(before, "\u{2060}", "\(note) @\(offset)")
+                    XCTAssertNotEqual(before, "×", "\(note) @\(offset)")
+                    XCTAssertNotEqual(before, "(", "\(note) @\(offset)")
+                }
+                offset += unit.text.count
+            }
+            XCTAssertEqual(offset, chars.count)
+        }
+    }
+
     // MARK: English, punctuation and spacing
 
     func testEnglishWordsKeepTheirTrailingSpace() {

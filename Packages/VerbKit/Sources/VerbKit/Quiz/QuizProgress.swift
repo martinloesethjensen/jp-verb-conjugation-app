@@ -76,14 +76,18 @@ public struct QuizProgress: Sendable {
             .sorted { Self.ranksBefore($0, $1) }
         weakPairs = verbPairs.map { WeakPair(verb: $0.subject, formID: $0.formID, weakness: $0.weakness) }
 
-        let numbers = Dictionary(uniqueKeysWithValues: CounterNumber.allCases.enumerated().map { ($1.key, $0) })
+        // Numbers above 10 count too (the Bigger numbers quiz); ordered 1 to 10, then 何, then the rest by value.
+        func order(_ key: String) -> Int {
+            guard let number = CounterNumber(key: key) else { return Int.max }
+            return CounterNumber.allCases.firstIndex(of: number) ?? 100 + number.sortValue
+        }
         let counterPairs = Self.pairWeakness(attempts) { $0.kind == .counterReading }
-            .filter { numbers[$0.formID] != nil }
+            .filter { CounterNumber(key: $0.formID) != nil }
             .sorted { a, b in
                 if a.weakness != b.weakness { return a.weakness > b.weakness }
                 if a.newest != b.newest { return a.newest > b.newest }
                 if a.subject != b.subject { return a.subject < b.subject }
-                return numbers[a.formID, default: 0] < numbers[b.formID, default: 0]
+                return order(a.formID) < order(b.formID)
             }
         weakCounterPairs = counterPairs.compactMap { entry in
             CounterNumber(key: entry.formID).map {

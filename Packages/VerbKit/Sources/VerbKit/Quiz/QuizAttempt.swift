@@ -17,11 +17,15 @@ public struct QuizAttempt: Equatable, Sendable, Identifiable {
     public var kind: QuizQuestionKind
     public var outcome: QuizOutcome
     public var date: Date
+    /// The mistake a wrong choice represented; nil for a correct answer, a timeout and history
+    /// recorded before tags existed.
+    public var errorTag: QuizErrorTag?
 
     public init(
         id: UUID = UUID(), subject: String, formID: String,
-        kind: QuizQuestionKind, outcome: QuizOutcome, date: Date
+        kind: QuizQuestionKind, outcome: QuizOutcome, date: Date, errorTag: QuizErrorTag? = nil
     ) {
+        self.errorTag = errorTag
         self.id = id
         self.subject = subject
         self.formID = formID

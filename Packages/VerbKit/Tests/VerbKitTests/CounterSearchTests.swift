@@ -130,8 +130,54 @@ final class CounterSearchTests: XCTestCase {
         XCTAssertEqual(kanjiNumerals(in: "1本"), "一本")
         XCTAssertEqual(kanjiNumerals(in: "10本"), "十本")
         XCTAssertEqual(kanjiNumerals(in: "３本"), "三本")
-        XCTAssertEqual(kanjiNumerals(in: "11本"), "11本")
+        XCTAssertEqual(kanjiNumerals(in: "11本"), "十一本")
         XCTAssertEqual(kanjiNumerals(in: "何本"), "何本")
         XCTAssertEqual(kanjiNumerals(in: "0本"), "0本")
+        XCTAssertEqual(kanjiNumerals(in: "15分"), "十五分")
+        XCTAssertEqual(kanjiNumerals(in: "100円"), "百円")
+        XCTAssertEqual(kanjiNumerals(in: "3000円"), "三千円")
+        XCTAssertEqual(kanjiNumerals(in: "10001本"), "10001本")
+    }
+
+    private lazy var fun: Counter = {
+        var fun = counter("fun", "分", "ふん", "minutes", readings: plain("ふん"))
+        fun.extent = 59
+        fun.extra = [100]
+        for value in 11...59 { fun.readings[String(value)] = ["じゅう" + String(value)] }
+        fun.readings["15"] = ["じゅうごふん"]
+        fun.readings["35"] = ["さんじゅうごふん"]
+        fun.readings["100"] = ["ひゃくふん"]
+        return fun
+    }()
+
+    private lazy var yen: Counter = {
+        var yen = counter("en", "円", "えん", "yen", readings: plain("えん"))
+        yen.extent = 99
+        yen.extra = [100, 3000]
+        yen.readings["3000"] = ["さんぜんえん"]
+        yen.readings["100"] = ["ひゃくえん"]
+        return yen
+    }()
+
+    func testNumbersAboveTenAreFoundByDigitsOrKanji() {
+        for query in ["15分", "十五分", "じゅうごふん"] {
+            let forms = searchCounters([fun, hon], groups: [], query: query).forms
+            XCTAssertEqual(forms.map(\.number), [.n(15)], query)
+            XCTAssertEqual(forms.first?.counter.id, "fun", query)
+        }
+        XCTAssertEqual(searchCounters([yen], groups: [], query: "3000円").forms.map(\.number), [.n(3000)])
+        XCTAssertEqual(searchCounters([fun], groups: [], query: "100分").forms.map(\.number), [.n(100)])
+    }
+
+    func testANumberTheCounterDoesNotHaveIsNotFound() {
+        XCTAssertTrue(searchCounters([hon], groups: [], query: "15本").forms.isEmpty)
+        XCTAssertTrue(searchCounters([fun], groups: [], query: "60分").forms.isEmpty)
+    }
+
+    func testBareTensPrefixesMatchNothing() {
+        for query in ["じゅう", "さんじゅう", "ひゃく", "にじゅう"] {
+            XCTAssertTrue(searchCounters([fun, yen], groups: [], query: query).forms.isEmpty, query)
+        }
+        XCTAssertEqual(searchCounters([fun], groups: [], query: "さんじゅうご").forms.map(\.number), [.n(35)])
     }
 }

@@ -42,6 +42,15 @@ class CollectTests(unittest.TestCase):
     def test_dictionary_form_falls_back_to_kana(self):
         self.assertIn("ある", ga.collect_texts(self.verbs, self.grammar))
 
+    def test_only_the_core_numbers_of_a_counter_are_spoken(self):
+        counters = {"counters": [{"counter": "本", "readings": {"1": ["いっぽん"], "what": ["なんぼん"],
+                                                                "15": ["じゅうごほん"], "100": ["ひゃっぽん"]}}]}
+        texts = ga.collect_texts({}, {}, counters, {})
+        self.assertIn("いっぽん", texts)
+        self.assertIn("なんぼん", texts)
+        self.assertNotIn("じゅうごほん", texts)
+        self.assertNotIn("ひゃっぽん", texts)
+
     def test_counter_readings_things_and_examples_are_spoken_from_kana(self):
         counters = {"counters": [{
             "counter": "日",

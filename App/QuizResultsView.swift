@@ -70,6 +70,11 @@ struct QuizResultsView: View {
                     Text("You chose: \(result.chosen)")
                         .font(.caption)
                         .foregroundStyle(.red)
+                    if let why = result.errorExplanation {
+                        Text(why)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Text("Correct: \(result.correct)")
                     .font(.caption)

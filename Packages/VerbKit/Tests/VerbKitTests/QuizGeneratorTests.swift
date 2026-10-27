@@ -172,7 +172,10 @@ final class QuizGeneratorTests: XCTestCase {
                     XCTAssertEqual(q.correct, q.form.value(in: taberu.forms))
                     // same verb's other forms come first: with 47 of them there are always 3.
                     XCTAssertEqual(q.choices.count, 4)
-                    XCTAssertTrue(Set(q.choices).isSubset(of: sameVerbStrings))
+                    // ...plus at most one synthetic rule mistake (たべらない), which is tagged as such.
+                    let invented = Set(q.choices).subtracting(sameVerbStrings)
+                    XCTAssertLessThanOrEqual(invented.count, 1)
+                    XCTAssertTrue(invented.allSatisfy { q.errors[$0] == .ruUConfusion })
                 }
             }
         }
@@ -231,6 +234,25 @@ final class QuizGeneratorTests: XCTestCase {
             let own = Set(QuizForm.available(in: question.verb.forms, topics: all).map(\.value))
             XCTAssertTrue(Set(question.choices).isSubset(of: own))
         }
+    }
+
+    func testFillInBlanksAFormWrittenWithKanji() throws {
+        var taberu = try XCTUnwrap(try verbs().first { $0.dict == "たべる" })
+        taberu.examples = [VerbExample(form: .masuPos, jp: "朝ご飯を食べます。", en: "I eat breakfast.")]
+        let questions = buildQuestions(verbs: [taberu], topics: all, count: 100, kinds: [.fillIn])
+        XCTAssertEqual(questions.count, 1)
+        XCTAssertEqual(questions.first?.sentence, "朝ご飯を\(QuizQuestion.blank)。")
+        XCTAssertEqual(questions.first?.correct, "たべます")
+    }
+
+    /// 来る's stem changes reading (きます), and the kanji spelling still matches.
+    func testFillInBlanksAKanjiFormOfKuru() throws {
+        var kuru = try XCTUnwrap(try verbs().first { $0.dict == "くる" })
+        kuru.examples = [VerbExample(form: .masuPos, jp: "バスがもうすぐ来ます。", en: "The bus is coming soon.")]
+        let questions = buildQuestions(verbs: [kuru], topics: all, count: 100, kinds: [.fillIn])
+        XCTAssertEqual(questions.count, 1)
+        XCTAssertEqual(questions.first?.sentence, "バスがもうすぐ\(QuizQuestion.blank)。")
+        XCTAssertEqual(questions.first?.correct, "きます")
     }
 
     func testFillInIsSkippedWithoutAMatchingExample() throws {

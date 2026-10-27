@@ -77,9 +77,12 @@ struct CounterSearchResultsView: View {
                         .font(.title2.weight(.bold))
                     Text(match.reading)
                         .font(.body)
-                    Text("\(match.counter.counter) at \(match.number == .what ? "何" : match.number.key)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text("\(match.counter.counter) at \(match.number == .what ? "何" : match.number.key)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if match.number.isExtended { UnreviewedLabel() }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())

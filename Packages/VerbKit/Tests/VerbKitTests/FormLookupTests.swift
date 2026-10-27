@@ -78,11 +78,11 @@ final class FormLookupTests: XCTestCase {
     }
 
     func testAVerbNotInTheAppHasGuessesAndNoReadings() throws {
-        let item = try XCTUnwrap(items("雨 が 降っ たら").first)
+        let item = try XCTUnwrap(items("約束 を 守っ たら").first)
         XCTAssertEqual(item.status, .notInApp)
-        XCTAssertEqual(item.surface, "降ったら")
+        XCTAssertEqual(item.surface, "守ったら")
         XCTAssertEqual(item.readings, [])
-        XCTAssertEqual(item.guesses.first, "降る")
+        XCTAssertEqual(item.guesses.first, "守る")
     }
 
     func testTheDictionaryFormIsFlagged() throws {
@@ -109,7 +109,7 @@ final class FormLookupTests: XCTestCase {
     func testTheWordBankOffersNothingForTheDictionaryFormASentenceOrAnUnknownVerb() {
         XCTAssertEqual(FormLookup.dictionaryForms(of: "食べる", in: items("食べる")), [])
         XCTAssertEqual(FormLookup.dictionaryForms(of: "野菜を食べた", in: items("野菜 を 食べ た")), [])
-        XCTAssertEqual(FormLookup.dictionaryForms(of: "降ったら", in: items("降っ たら")), [])
+        XCTAssertEqual(FormLookup.dictionaryForms(of: "守ったら", in: items("守っ たら")), [])
         XCTAssertEqual(FormLookup.dictionaryForms(of: "", in: []), [])
     }
 

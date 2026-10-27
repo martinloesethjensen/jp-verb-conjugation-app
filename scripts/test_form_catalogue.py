@@ -116,6 +116,39 @@ class CheckVerbFormsTests(unittest.TestCase):
         self.assertEqual(ud.check_verb_forms(self.doc(example_form="pot_masu_neg")), [])
 
 
+class CheckExampleFormsTests(unittest.TestCase):
+    def doc(self, example_form, forms=None):
+        return {"verbs": [{
+            "dict": "しぬ",
+            "forms": forms or {"te": "しんで", "tai": "しにたい"},
+            "examples": [{"form": example_form, "jp": "x", "en": "y"}],
+        }]}
+
+    def test_an_example_may_use_a_non_basic_form_the_verb_has(self):
+        self.assertEqual(ud.check_example_forms(self.doc("tai")), [])
+
+    def test_an_example_with_a_form_the_verb_lacks_is_reported(self):
+        problems = ud.check_example_forms(self.doc("volitional"))
+        self.assertEqual(problems, ["しぬ: example uses form 'volitional', which the verb does not have"])
+
+    def test_an_example_with_an_empty_form_is_reported(self):
+        self.assertEqual(len(ud.check_example_forms(self.doc("tai", forms={"tai": ""}))), 1)
+
+    def test_an_example_with_an_excluded_form_is_reported(self):
+        verb = {"type": "u", "dict": "しぬ", "forms": {
+            "masu_pos": "しにます", "te": "しんで", "short_pos": "しぬ", "short_neg": "しなない",
+            "short_past": "しんだ"}, "examples": [{"form": "nasai", "jp": "x", "en": "y"}]}
+        doc = {"verbs": [verb]}
+        ud.apply_other_forms(doc)
+        self.assertNotIn("nasai", verb["forms"])
+        self.assertIn("'nasai'", ud.check_example_forms(doc)[0])
+
+    def test_every_shipped_example_uses_a_form_its_verb_has(self):
+        doc = json.loads((DATA / "verbs.json").read_text(encoding="utf-8"))
+        self.assertEqual(ud.check_verb_forms(doc), [])
+        self.assertEqual(ud.check_example_forms(doc), [])
+
+
 class RealDataTests(unittest.TestCase):
     def test_data_is_up_to_date(self):
         """The golden check: regenerating the repo's data changes nothing."""

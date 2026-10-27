@@ -13,8 +13,15 @@ public final class SwiftDataWordsPersisting: WordsPersisting {
     }
 
     public func replaceWords(with words: [Word]) throws {
-        try modelContext.delete(model: WordsEntity.self)
-        modelContext.insert(WordsEntity(words))
-        try modelContext.save()
+        // A failed save must not leave its pending delete and inserts in the shared context, where the
+        // next save of any store would commit them.
+        do {
+            try modelContext.delete(model: WordsEntity.self)
+            modelContext.insert(WordsEntity(words))
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            throw error
+        }
     }
 }

@@ -1,7 +1,8 @@
 import Observation
 
-/// Owns the counters and their groups: loads the cached copy, then syncs a newer one. Like
-/// `WordsStore`, every failure is silent; `counters` stays empty until data is available.
+/// Owns the counters and their groups: installs the bundled copy when it is newer than anything this
+/// device has, loads the cached copy, then syncs a newer one. Like `WordsStore`, every failure is
+/// silent; `counters` stays empty only when there is neither a bundled copy nor synced data.
 @MainActor
 @Observable
 public final class CountersStore {
@@ -13,18 +14,38 @@ public final class CountersStore {
     private let syncService: CountersSyncService
     private let persisting: CountersPersisting
     private let syncStatus: DataSyncStatus?
+    private let bundled: BundledData<CountersDataFile>?
 
-    public init(syncService: CountersSyncService, persisting: CountersPersisting, syncStatus: DataSyncStatus? = nil) {
+    /// - Parameter bundled: the copy shipped in the app, installed as if synced when it is newer than
+    ///   anything this device has accepted, so a first launch works offline.
+    public init(
+        syncService: CountersSyncService, persisting: CountersPersisting, syncStatus: DataSyncStatus? = nil,
+        bundled: BundledData<CountersDataFile>? = nil
+    ) {
         self.syncService = syncService
         self.persisting = persisting
         self.syncStatus = syncStatus
+        self.bundled = bundled
     }
 
     public func start() async {
+        installBundled()
         if let cached = try? persisting.loadCounters() {
             apply(cached)
         }
         await sync()
+    }
+
+    /// Persist first and record only after the save succeeded; a failure leaves the cache as it was.
+    public func installBundled() {
+        guard let bundled, DataVersion.isNewer(bundled.version, than: syncService.acceptedVersion()) else { return }
+        do {
+            try persisting.replaceCounters(with: bundled.value)
+        } catch {
+            return
+        }
+        syncService.confirmSynced(CountersManifest(version: bundled.version, sha256: bundled.sha256))
+        syncStatus?.recordBundled(.counters, version: bundled.version)
     }
 
     /// Settings' Refresh data.
@@ -55,25 +76,21 @@ public final class CountersStore {
 
     /// Persist first, then confirm, so a failed save is retried next time.
     private func sync() async {
-        let result: CountersSyncResult
-        do {
-            result = try await syncService.sync()
-        } catch {
-            syncStatus?.recordFailure(.counters, error)
-            return
-        }
-        guard case let .updated(manifest, fresh) = result else {
-            syncStatus?.recordUpToDate(.counters)
-            return
-        }
-        do {
-            try persisting.replaceCounters(with: fresh)
-        } catch {
-            syncStatus?.recordFailure(.counters, error, whileSaving: true)
-            return
-        }
-        syncService.confirmSynced(manifest)
-        syncStatus?.recordUpdated(.counters, version: manifest.version)
+        guard let fresh = await DataFileSync.run(
+            for: .counters,
+            status: syncStatus,
+            fetch: {
+                switch try await syncService.sync() {
+                case .upToDate:
+                    return nil
+                case let .updated(manifest, counters):
+                    return PendingDataFile(version: manifest.version, payload: counters) {
+                        self.syncService.confirmSynced(manifest)
+                    }
+                }
+            },
+            persist: { try persisting.replaceCounters(with: $0) }
+        ) else { return }
         apply(fresh)
     }
 }

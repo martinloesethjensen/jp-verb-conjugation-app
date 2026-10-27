@@ -85,17 +85,17 @@
         "conditional_nara": "するなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいにちべんきょうします。", "en": "I study every day." },
-        { "form": "masu_neg", "jp": "しゅくだいはしません。", "en": "I don't do homework." },
-        { "form": "masu_past", "jp": "きのうそうじしました。", "en": "I cleaned yesterday." },
-        { "form": "masu_past_neg", "jp": "うんどうはしませんでした。", "en": "I didn't exercise." },
-        { "form": "te", "jp": "しずかにしてください。", "en": "Please be quiet." },
-        { "form": "te", "jp": "りょうりをしてから、たべます。", "en": "After cooking, I eat." },
+        { "form": "masu_pos", "jp": "毎日勉強します。", "en": "I study every day." },
+        { "form": "masu_neg", "jp": "宿題はしません。", "en": "I don't do homework." },
+        { "form": "masu_past", "jp": "昨日掃除しました。", "en": "I cleaned yesterday." },
+        { "form": "masu_past_neg", "jp": "運動はしませんでした。", "en": "I didn't exercise." },
+        { "form": "te", "jp": "静かにしてください。", "en": "Please be quiet." },
+        { "form": "te", "jp": "料理をしてから、食べます。", "en": "After cooking, I eat." },
         { "form": "short_pos", "jp": "週末何する？", "en": "What are you doing this weekend?" },
         { "form": "short_neg", "jp": "何もしない。", "en": "I'm not doing anything." },
         { "form": "short_past", "jp": "もうした。", "en": "I already did it." },
-        { "form": "short_past", "jp": "かれはりょうりをした。", "en": "He cooked." },
-        { "form": "short_past_neg", "jp": "きのうべんきょうしなかった。", "en": "I didn't study yesterday." }
+        { "form": "short_past", "jp": "彼は料理をした。", "en": "He cooked." },
+        { "form": "short_past_neg", "jp": "昨日勉強しなかった。", "en": "I didn't study yesterday." }
       ]
     },
     {
@@ -181,17 +181,17 @@
         "conditional_nara": "くるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "バスがもうすぐきます。", "en": "The bus is coming soon." },
-        { "form": "masu_pos", "jp": "ともだちがうちにきます。", "en": "My friend is coming to my house." },
-        { "form": "masu_neg", "jp": "たなかさんはきません。", "en": "Tanaka-san isn't coming." },
-        { "form": "masu_past", "jp": "せんせいがきょうしつにきました。", "en": "The teacher came to the classroom." },
-        { "form": "masu_past", "jp": "にほんからともだちがきました。", "en": "A friend came from Japan." },
-        { "form": "masu_past_neg", "jp": "かれはきませんでした。", "en": "He didn't come." },
-        { "form": "te", "jp": "こっちにきてください。", "en": "Please come this way." },
-        { "form": "te", "jp": "ここにきてよかった。", "en": "I'm glad I came here." },
-        { "form": "short_pos", "jp": "明日くる？", "en": "Are you coming tomorrow?" },
-        { "form": "short_neg", "jp": "今日はこない。", "en": "They're not coming today." },
-        { "form": "short_past", "jp": "あ、きた！", "en": "Oh, they're here!" }
+        { "form": "masu_pos", "jp": "バスがもうすぐ来ます。", "en": "The bus is coming soon." },
+        { "form": "masu_pos", "jp": "友達がうちに来ます。", "en": "My friend is coming to my house." },
+        { "form": "masu_neg", "jp": "田中さんは来ません。", "en": "Tanaka-san isn't coming." },
+        { "form": "masu_past", "jp": "先生が教室に来ました。", "en": "The teacher came to the classroom." },
+        { "form": "masu_past", "jp": "日本から友達が来ました。", "en": "A friend came from Japan." },
+        { "form": "masu_past_neg", "jp": "彼は来ませんでした。", "en": "He didn't come." },
+        { "form": "te", "jp": "こっちに来てください。", "en": "Please come this way." },
+        { "form": "te", "jp": "ここに来てよかった。", "en": "I'm glad I came here." },
+        { "form": "short_pos", "jp": "明日来る？", "en": "Are you coming tomorrow?" },
+        { "form": "short_neg", "jp": "今日は来ない。", "en": "They're not coming today." },
+        { "form": "short_past", "jp": "あ、来た！", "en": "Oh, they're here!" }
       ]
     },
     {
@@ -277,19 +277,19 @@
         "conditional_nara": "たべるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "あさごはんをたべます。", "en": "I eat breakfast." },
-        { "form": "masu_pos", "jp": "レストランでばんごはんをたべます。", "en": "I eat dinner at a restaurant." },
-        { "form": "masu_neg", "jp": "あまいものはたべません。", "en": "I don't eat sweets." },
-        { "form": "masu_past", "jp": "おすしをたべました。", "en": "I ate sushi." },
-        { "form": "masu_past", "jp": "はははやさいをたべました。", "en": "My mother ate vegetables." },
-        { "form": "masu_past_neg", "jp": "きのうはあさごはんをたべませんでした。", "en": "I didn't eat breakfast yesterday." },
-        { "form": "te", "jp": "たべてから、でかけます。", "en": "After eating, I'll go out." },
-        { "form": "te", "jp": "いっしょにたべてもいいですか。", "en": "Is it okay if I eat with you?" },
-        { "form": "short_pos", "jp": "何たべる？", "en": "What do you want to eat?" },
-        { "form": "short_neg", "jp": "朝はたべない。", "en": "I don't eat in the morning." },
-        { "form": "short_past", "jp": "もうたべた？", "en": "Did you eat already?" },
-        { "form": "short_past", "jp": "おいしいものをたべた。", "en": "I ate something delicious." },
-        { "form": "short_past_neg", "jp": "あさごはんをたべなかった。", "en": "I didn't eat breakfast." }
+        { "form": "masu_pos", "jp": "朝ご飯を食べます。", "en": "I eat breakfast." },
+        { "form": "masu_pos", "jp": "レストランで晩ご飯を食べます。", "en": "I eat dinner at a restaurant." },
+        { "form": "masu_neg", "jp": "甘いものは食べません。", "en": "I don't eat sweets." },
+        { "form": "masu_past", "jp": "おすしを食べました。", "en": "I ate sushi." },
+        { "form": "masu_past", "jp": "母は野菜を食べました。", "en": "My mother ate vegetables." },
+        { "form": "masu_past_neg", "jp": "昨日は朝ご飯を食べませんでした。", "en": "I didn't eat breakfast yesterday." },
+        { "form": "te", "jp": "食べてから、出かけます。", "en": "After eating, I'll go out." },
+        { "form": "te", "jp": "いっしょに食べてもいいですか。", "en": "Is it okay if I eat with you?" },
+        { "form": "short_pos", "jp": "何食べる？", "en": "What do you want to eat?" },
+        { "form": "short_neg", "jp": "朝は食べない。", "en": "I don't eat in the morning." },
+        { "form": "short_past", "jp": "もう食べた？", "en": "Did you eat already?" },
+        { "form": "short_past", "jp": "おいしいものを食べた。", "en": "I ate something delicious." },
+        { "form": "short_past_neg", "jp": "朝ご飯を食べなかった。", "en": "I didn't eat breakfast." }
       ]
     },
     {
@@ -375,16 +375,16 @@
         "conditional_nara": "みるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいにちテレビをみます。", "en": "I watch TV every day." },
-        { "form": "masu_neg", "jp": "こわいえいがはみません。", "en": "I don't watch scary movies." },
-        { "form": "masu_past", "jp": "きのうえいがをみました。", "en": "I watched a movie yesterday." },
-        { "form": "masu_past", "jp": "かのじょとえいがをみました。", "en": "I watched a movie with my girlfriend." },
-        { "form": "masu_past_neg", "jp": "そのばんぐみはみませんでした。", "en": "I didn't watch that show." },
-        { "form": "te", "jp": "これみて！", "en": "Look at this!" },
+        { "form": "masu_pos", "jp": "毎日テレビを見ます。", "en": "I watch TV every day." },
+        { "form": "masu_neg", "jp": "こわい映画は見ません。", "en": "I don't watch scary movies." },
+        { "form": "masu_past", "jp": "昨日映画を見ました。", "en": "I watched a movie yesterday." },
+        { "form": "masu_past", "jp": "彼女と映画を見ました。", "en": "I watched a movie with my girlfriend." },
+        { "form": "masu_past_neg", "jp": "その番組は見ませんでした。", "en": "I didn't watch that show." },
+        { "form": "te", "jp": "これ見て！", "en": "Look at this!" },
         { "form": "te", "jp": "やってみてください。", "en": "Please try doing it." },
-        { "form": "short_pos", "jp": "今夜何みる？", "en": "What shall we watch tonight?" },
-        { "form": "short_past", "jp": "もうみた？", "en": "Have you seen it?" },
-        { "form": "short_past", "jp": "はじめてふじさんをみた。", "en": "I saw Mt. Fuji for the first time." }
+        { "form": "short_pos", "jp": "今夜何見る？", "en": "What shall we watch tonight?" },
+        { "form": "short_past", "jp": "もう見た？", "en": "Have you seen it?" },
+        { "form": "short_past", "jp": "初めて富士山を見た。", "en": "I saw Mt. Fuji for the first time." }
       ]
     },
     {
@@ -394,7 +394,7 @@
       "kanji": "寝る",
       "meaning": "to sleep",
       "description": "A ru-verb for sleeping or going to bed.",
-      "notes": "Often used with time expressions: 十一時にねます.",
+      "notes": "Often used with time expressions: 十一時に寝ます. まだ寝ません means \"I'm not going to bed yet\" (a decision); \"I haven't gone to bed yet\" is まだ寝ていません. まだ + ている is the usual \"not yet\".",
       "jlpt": "N5",
       "forms": {
         "masu_pos": "ねます",
@@ -470,15 +470,15 @@
         "conditional_nara": "ねるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "じゅういちじにねます。", "en": "I go to sleep at eleven." },
-        { "form": "masu_neg", "jp": "まだねません。", "en": "I'm not sleeping yet." },
-        { "form": "masu_past", "jp": "きのうはやくねました。", "en": "I went to bed early yesterday." },
-        { "form": "masu_past", "jp": "つかれて、はやくねました。", "en": "I was tired, so I went to bed early." },
-        { "form": "masu_past_neg", "jp": "ゆうべはぜんぜんねませんでした。", "en": "I didn't sleep at all last night." },
-        { "form": "te", "jp": "もうねてください。", "en": "Please go to sleep now." },
-        { "form": "short_pos", "jp": "もうねる。", "en": "I'm going to bed now." },
-        { "form": "short_past", "jp": "よくねた！", "en": "I slept well!" },
-        { "form": "short_past_neg", "jp": "ゆうべはあまりねなかった。", "en": "I didn't sleep much last night." }
+        { "form": "masu_pos", "jp": "十一時に寝ます。", "en": "I go to sleep at eleven." },
+        { "form": "masu_neg", "jp": "まだ寝ません。", "en": "I'm not going to bed yet." },
+        { "form": "masu_past", "jp": "昨日は早く寝ました。", "en": "I went to bed early yesterday." },
+        { "form": "masu_past", "jp": "疲れて、早く寝ました。", "en": "I was tired, so I went to bed early." },
+        { "form": "masu_past_neg", "jp": "ゆうべは全然寝ませんでした。", "en": "I didn't sleep at all last night." },
+        { "form": "te", "jp": "もう寝てください。", "en": "Please go to sleep now." },
+        { "form": "short_pos", "jp": "もう寝る。", "en": "I'm going to bed now." },
+        { "form": "short_past", "jp": "よく寝た！", "en": "I slept well!" },
+        { "form": "short_past_neg", "jp": "ゆうべはあまり寝なかった。", "en": "I didn't sleep much last night." }
       ]
     },
     {
@@ -564,14 +564,14 @@
         "conditional_nara": "おきるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "しちじにおきます。", "en": "I wake up at seven." },
-        { "form": "masu_pos", "jp": "まいあさろくじにおきます。", "en": "I wake up every morning at six." },
-        { "form": "masu_neg", "jp": "しゅうまつははやくおきません。", "en": "I don't wake up early on weekends." },
-        { "form": "masu_past", "jp": "きょうはおそくおきました。", "en": "I woke up late today." },
-        { "form": "te", "jp": "おきてください！", "en": "Please wake up!" },
-        { "form": "te", "jp": "おきてから、シャワーをあびます。", "en": "After waking up, I take a shower." },
-        { "form": "short_pos", "jp": "何時におきる？", "en": "What time do you wake up?" },
-        { "form": "short_past", "jp": "やっとおきた。", "en": "I finally got up." }
+        { "form": "masu_pos", "jp": "七時に起きます。", "en": "I wake up at seven." },
+        { "form": "masu_pos", "jp": "毎朝六時に起きます。", "en": "I wake up every morning at six." },
+        { "form": "masu_neg", "jp": "週末は早く起きません。", "en": "I don't wake up early on weekends." },
+        { "form": "masu_past", "jp": "今日は遅く起きました。", "en": "I woke up late today." },
+        { "form": "te", "jp": "起きてください！", "en": "Please wake up!" },
+        { "form": "te", "jp": "起きてから、シャワーを浴びます。", "en": "After waking up, I take a shower." },
+        { "form": "short_pos", "jp": "何時に起きる？", "en": "What time do you wake up?" },
+        { "form": "short_past", "jp": "やっと起きた。", "en": "I finally got up." }
       ]
     },
     {
@@ -657,12 +657,12 @@
         "conditional_nara": "みせるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "しゃしんをみせます。", "en": "I'll show you a photo." },
-        { "form": "masu_neg", "jp": "だれにもみせません。", "en": "I won't show anyone." },
-        { "form": "masu_past", "jp": "せんせいにしゅくだいをみせました。", "en": "I showed my homework to the teacher." },
-        { "form": "te", "jp": "みせてください。", "en": "Please show me." },
-        { "form": "te", "jp": "パスポートをみせてください。", "en": "Please show me your passport." },
-        { "form": "short_pos", "jp": "ともだちにしゃしんをみせる。", "en": "I'll show the photos to my friend." }
+        { "form": "masu_pos", "jp": "写真を見せます。", "en": "I'll show you a photo." },
+        { "form": "masu_neg", "jp": "誰にも見せません。", "en": "I won't show anyone." },
+        { "form": "masu_past", "jp": "先生に宿題を見せました。", "en": "I showed my homework to the teacher." },
+        { "form": "te", "jp": "見せてください。", "en": "Please show me." },
+        { "form": "te", "jp": "パスポートを見せてください。", "en": "Please show me your passport." },
+        { "form": "short_pos", "jp": "友達に写真を見せる。", "en": "I'll show the photos to my friend." }
       ]
     },
     {
@@ -748,12 +748,12 @@
         "conditional_nara": "かりるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "としょかんで本をかります。", "en": "I borrow books from the library." },
-        { "form": "masu_pos", "jp": "ともだちにじしょをかります。", "en": "I borrow a dictionary from my friend." },
-        { "form": "masu_neg", "jp": "ひとのものはかりません。", "en": "I don't borrow other people's things." },
-        { "form": "masu_past", "jp": "ともだちからじてんしゃをかりました。", "en": "I borrowed a bicycle from a friend." },
-        { "form": "te", "jp": "かりてもいいですか。", "en": "May I borrow this?" },
-        { "form": "short_past", "jp": "かりた！ありがとう。", "en": "Borrowed it! Thanks." }
+        { "form": "masu_pos", "jp": "図書館で本を借ります。", "en": "I borrow books from the library." },
+        { "form": "masu_pos", "jp": "友達に辞書を借ります。", "en": "I borrow a dictionary from my friend." },
+        { "form": "masu_neg", "jp": "人の物は借りません。", "en": "I don't borrow other people's things." },
+        { "form": "masu_past", "jp": "友達から自転車を借りました。", "en": "I borrowed a bicycle from a friend." },
+        { "form": "te", "jp": "借りてもいいですか。", "en": "May I borrow this?" },
+        { "form": "short_past", "jp": "借りた！ありがとう。", "en": "Borrowed it! Thanks." }
       ]
     },
     {
@@ -841,13 +841,13 @@
         "conditional_nara": "かうなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "スーパーでたまごをかいます。", "en": "I buy eggs at the supermarket." },
-        { "form": "masu_neg", "jp": "こんしゅうはなにもかいません。", "en": "I'm not buying anything this week." },
-        { "form": "masu_past", "jp": "デパートでプレゼントをかいました。", "en": "I bought a present at the department store." },
-        { "form": "masu_past", "jp": "おみやげをたくさんかいました。", "en": "I bought lots of souvenirs." },
-        { "form": "te", "jp": "みずをかってきてください。", "en": "Please go and buy some water." },
-        { "form": "short_neg", "jp": "たかいから、かわない。", "en": "It's expensive, so I won't buy it." },
-        { "form": "short_past", "jp": "もうかった。", "en": "I already bought it." }
+        { "form": "masu_pos", "jp": "スーパーで卵を買います。", "en": "I buy eggs at the supermarket." },
+        { "form": "masu_neg", "jp": "今週は何も買いません。", "en": "I'm not buying anything this week." },
+        { "form": "masu_past", "jp": "デパートでプレゼントを買いました。", "en": "I bought a present at the department store." },
+        { "form": "masu_past", "jp": "おみやげをたくさん買いました。", "en": "I bought lots of souvenirs." },
+        { "form": "te", "jp": "水を買ってきてください。", "en": "Please go and buy some water." },
+        { "form": "short_neg", "jp": "高いから、買わない。", "en": "It's expensive, so I won't buy it." },
+        { "form": "short_past", "jp": "もう買った。", "en": "I already bought it." }
       ]
     },
     {
@@ -935,11 +935,11 @@
         "conditional_nara": "あうなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "えきでともだちにあいます。", "en": "I'm meeting my friend at the station." },
-        { "form": "masu_past", "jp": "えきであいました。", "en": "We met at the station." },
-        { "form": "masu_past", "jp": "こうえんでともだちにあいました。", "en": "I met my friend at the park." },
-        { "form": "te", "jp": "あってはなしましょう。", "en": "Let's meet and talk." },
-        { "form": "short_past", "jp": "ひさしぶりにあった！", "en": "I saw them for the first time in ages!" }
+        { "form": "masu_pos", "jp": "駅で友達に会います。", "en": "I'm meeting my friend at the station." },
+        { "form": "masu_past", "jp": "駅で会いました。", "en": "We met at the station." },
+        { "form": "masu_past", "jp": "公園で友達に会いました。", "en": "I met my friend at the park." },
+        { "form": "te", "jp": "会って話しましょう。", "en": "Let's meet and talk." },
+        { "form": "short_past", "jp": "ひさしぶりに会った！", "en": "I saw them for the first time in ages!" }
       ]
     },
     {
@@ -1027,11 +1027,11 @@
         "conditional_nara": "まつなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "えきのまえでまちます。", "en": "I'll wait in front of the station." },
-        { "form": "masu_pos", "jp": "バスていでバスをまちます。", "en": "I wait for the bus at the bus stop." },
-        { "form": "masu_past", "jp": "いちじかんまちました。", "en": "I waited one hour." },
-        { "form": "te", "jp": "ちょっとまってください。", "en": "Please wait a moment." },
-        { "form": "short_past", "jp": "ながくまった。", "en": "I waited a long time." }
+        { "form": "masu_pos", "jp": "駅の前で待ちます。", "en": "I'll wait in front of the station." },
+        { "form": "masu_pos", "jp": "バス停でバスを待ちます。", "en": "I wait for the bus at the bus stop." },
+        { "form": "masu_past", "jp": "一時間待ちました。", "en": "I waited one hour." },
+        { "form": "te", "jp": "ちょっと待ってください。", "en": "Please wait a moment." },
+        { "form": "short_past", "jp": "長く待った。", "en": "I waited a long time." }
       ]
     },
     {
@@ -1042,7 +1042,7 @@
       "meaning": "to take",
       "teGroup": "tte",
       "description": "A u-verb ending in る (not a ru-verb!). Stem change: と+り (masu), と+った (past).",
-      "notes": "Also means 'to take a photo' (しゃしんをとる) and 'to pass something' (しおをとる).",
+      "notes": "Also means 'to pass something' (塩を取る) and 'to get' (いい点を取る). For photos, use 撮る (写真を撮る).",
       "jlpt": "N5",
       "forms": {
         "masu_pos": "とります",
@@ -1119,11 +1119,11 @@
         "conditional_nara": "とるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "しゃしんをとります。", "en": "I'll take a photo." },
-        { "form": "masu_pos", "jp": "じゅぎょうのノートをとります。", "en": "I take notes in class." },
-        { "form": "masu_past", "jp": "いいしゃしんをとりました。", "en": "I took a good photo." },
-        { "form": "te", "jp": "しおをとってください。", "en": "Please pass the salt." },
-        { "form": "te", "jp": "しゃしんをとってもいいですか。", "en": "May I take a photo?" }
+        { "form": "masu_pos", "jp": "毎年、夏に一週間休みを取ります。", "en": "I take a week off every summer." },
+        { "form": "masu_pos", "jp": "授業のノートを取ります。", "en": "I take notes in class." },
+        { "form": "masu_past", "jp": "テストでいい点を取りました。", "en": "I got a good score on the test." },
+        { "form": "te", "jp": "塩を取ってください。", "en": "Please pass the salt." },
+        { "form": "te", "jp": "これ、一つ取ってもいいですか。", "en": "May I take one of these?" }
       ]
     },
     {
@@ -1180,11 +1180,11 @@
         "conditional_nara": "あるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "つくえのうえにほんがあります。", "en": "There is a book on the desk." },
-        { "form": "masu_neg", "jp": "いまおかねがありません。", "en": "I don't have money right now." },
-        { "form": "masu_neg", "jp": "ちかくにぎんこうがありません。", "en": "There's no bank nearby." },
-        { "form": "masu_past", "jp": "むかしここにえきがありました。", "en": "There used to be a station here." },
-        { "form": "short_neg", "jp": "じかんがない。", "en": "I don't have time." },
+        { "form": "masu_pos", "jp": "机の上に本があります。", "en": "There is a book on the desk." },
+        { "form": "masu_neg", "jp": "今、お金がありません。", "en": "I don't have money right now." },
+        { "form": "masu_neg", "jp": "近くに銀行がありません。", "en": "There's no bank nearby." },
+        { "form": "masu_past", "jp": "むかしここに駅がありました。", "en": "There used to be a station here." },
+        { "form": "short_neg", "jp": "時間がない。", "en": "I don't have time." },
         { "form": "short_past", "jp": "いいことがあった！", "en": "Something good happened!" }
       ]
     },
@@ -1273,11 +1273,11 @@
         "conditional_nara": "もつなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "かばんをもちます。", "en": "I'll carry the bag." },
-        { "form": "masu_past", "jp": "ともだちのかばんをもちました。", "en": "I carried my friend's bag." },
-        { "form": "te", "jp": "これもってください。", "en": "Please hold this." },
-        { "form": "te", "jp": "かさをもっていってください。", "en": "Please take an umbrella with you." },
-        { "form": "short_past_neg", "jp": "さいふをもたなかった。", "en": "I didn't bring my wallet." }
+        { "form": "masu_pos", "jp": "かばんを持ちます。", "en": "I'll carry the bag." },
+        { "form": "masu_past", "jp": "友達のかばんを持ちました。", "en": "I carried my friend's bag." },
+        { "form": "te", "jp": "これ持ってください。", "en": "Please hold this." },
+        { "form": "te", "jp": "傘を持っていってください。", "en": "Please take an umbrella with you." },
+        { "form": "teiru_past_neg", "jp": "財布を持っていなかった。", "en": "I didn't have my wallet on me." }
       ]
     },
     {
@@ -1365,12 +1365,12 @@
         "conditional_nara": "よむなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいにちしんぶんをよみます。", "en": "I read the newspaper every day." },
-        { "form": "masu_pos", "jp": "としょかんでほんをよみます。", "en": "I read books at the library." },
-        { "form": "masu_past", "jp": "おもしろいほんをよみました。", "en": "I read an interesting book." },
-        { "form": "masu_past", "jp": "にほんごのざっしをよみました。", "en": "I read a Japanese magazine." },
-        { "form": "te", "jp": "よんでみてください。", "en": "Please try reading it." },
-        { "form": "short_past", "jp": "もうよんだ？", "en": "Did you read it already?" }
+        { "form": "masu_pos", "jp": "毎日新聞を読みます。", "en": "I read the newspaper every day." },
+        { "form": "masu_pos", "jp": "図書館で本を読みます。", "en": "I read books at the library." },
+        { "form": "masu_past", "jp": "面白い本を読みました。", "en": "I read an interesting book." },
+        { "form": "masu_past", "jp": "日本語の雑誌を読みました。", "en": "I read a Japanese magazine." },
+        { "form": "te", "jp": "読んでみてください。", "en": "Please try reading it." },
+        { "form": "short_past", "jp": "もう読んだ？", "en": "Did you read it already?" }
       ]
     },
     {
@@ -1458,13 +1458,13 @@
         "conditional_nara": "のむなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいあさコーヒーをのみます。", "en": "I drink coffee every morning." },
-        { "form": "masu_pos", "jp": "くすりをのみます。", "en": "I take medicine." },
-        { "form": "masu_neg", "jp": "おさけはのみません。", "en": "I don't drink alcohol." },
-        { "form": "masu_past", "jp": "ともだちとおちゃをのみました。", "en": "I had tea with a friend." },
-        { "form": "masu_past", "jp": "びょういんでくすりをのみました。", "en": "I took medicine at the hospital." },
-        { "form": "te", "jp": "おみずをのんでください。", "en": "Please drink some water." },
-        { "form": "short_past", "jp": "おみずをたくさんのんだ。", "en": "I drank a lot of water." }
+        { "form": "masu_pos", "jp": "毎朝コーヒーを飲みます。", "en": "I drink coffee every morning." },
+        { "form": "masu_pos", "jp": "薬を飲みます。", "en": "I take medicine." },
+        { "form": "masu_neg", "jp": "お酒は飲みません。", "en": "I don't drink alcohol." },
+        { "form": "masu_past", "jp": "友達とお茶を飲みました。", "en": "I had tea with a friend." },
+        { "form": "masu_past", "jp": "病院で薬を飲みました。", "en": "I took medicine at the hospital." },
+        { "form": "te", "jp": "お水を飲んでください。", "en": "Please drink some water." },
+        { "form": "short_past", "jp": "水をたくさん飲んだ。", "en": "I drank a lot of water." }
       ]
     },
     {
@@ -1552,11 +1552,11 @@
         "conditional_nara": "あそぶなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "こうえんであそびます。", "en": "I play at the park." },
-        { "form": "masu_pos", "jp": "しゅうまつともだちとあそびます。", "en": "I hang out with friends on weekends." },
-        { "form": "masu_past", "jp": "こどもとこうえんであそびました。", "en": "I played at the park with the kids." },
-        { "form": "te", "jp": "こうえんであそんでから、かえります。", "en": "I'll play in the park and then go home." },
-        { "form": "short_past", "jp": "たのしくあそんだ！", "en": "We had such a good time!" }
+        { "form": "masu_pos", "jp": "公園で遊びます。", "en": "I play at the park." },
+        { "form": "masu_pos", "jp": "週末は友達と遊びます。", "en": "I hang out with friends on weekends." },
+        { "form": "masu_past", "jp": "子供と公園で遊びました。", "en": "I played at the park with the kids." },
+        { "form": "te", "jp": "公園で遊んでから、帰ります。", "en": "I'll play in the park and then go home." },
+        { "form": "short_past", "jp": "楽しく遊んだ！", "en": "We had such a good time!" }
       ]
     },
     {
@@ -1642,9 +1642,9 @@
         "conditional_nara": "しぬなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "むしはふゆにしにます。", "en": "Insects die in winter." },
-        { "form": "short_pos", "jp": "おなかすいてしぬ！", "en": "I'm so hungry I could die!" },
-        { "form": "short_past", "jp": "スマホのバッテリーがしんだ。", "en": "My phone battery died." }
+        { "form": "masu_pos", "jp": "虫は冬に死にます。", "en": "Insects die in winter." },
+        { "form": "short_pos", "jp": "おなかすいて死ぬ！", "en": "I'm so hungry I could die!" },
+        { "form": "short_past", "jp": "金魚が死んだ。", "en": "My goldfish died." }
       ]
     },
     {
@@ -1732,12 +1732,12 @@
         "conditional_nara": "かくなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "てがみをかきます。", "en": "I write a letter." },
-        { "form": "masu_pos", "jp": "にほんごでにっきをかきます。", "en": "I write my diary in Japanese." },
-        { "form": "masu_past", "jp": "レポートをかきました。", "en": "I wrote the report." },
-        { "form": "masu_past", "jp": "かんじをノートにかきました。", "en": "I wrote kanji in my notebook." },
-        { "form": "te", "jp": "ここになまえをかいてください。", "en": "Please write your name here." },
-        { "form": "short_past", "jp": "もうかいた？", "en": "Did you write it already?" }
+        { "form": "masu_pos", "jp": "手紙を書きます。", "en": "I write a letter." },
+        { "form": "masu_pos", "jp": "日本語で日記を書きます。", "en": "I write my diary in Japanese." },
+        { "form": "masu_past", "jp": "レポートを書きました。", "en": "I wrote the report." },
+        { "form": "masu_past", "jp": "漢字をノートに書きました。", "en": "I wrote kanji in my notebook." },
+        { "form": "te", "jp": "ここに名前を書いてください。", "en": "Please write your name here." },
+        { "form": "short_past", "jp": "もう書いた？", "en": "Did you write it already?" }
       ]
     },
     {
@@ -1825,11 +1825,11 @@
         "conditional_nara": "きくなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいにちおんがくをききます。", "en": "I listen to music every day." },
-        { "form": "masu_pos", "jp": "わからないときはせんせいにききます。", "en": "When I don't understand, I ask the teacher." },
-        { "form": "masu_past", "jp": "みちをひとにききました。", "en": "I asked someone for directions." },
-        { "form": "te", "jp": "よくきいてください。", "en": "Please listen carefully." },
-        { "form": "short_past", "jp": "あのうたきいた？", "en": "Did you hear that song?" }
+        { "form": "masu_pos", "jp": "毎日音楽を聞きます。", "en": "I listen to music every day." },
+        { "form": "masu_pos", "jp": "わからないときは先生に聞きます。", "en": "When I don't understand, I ask the teacher." },
+        { "form": "masu_past", "jp": "道を人に聞きました。", "en": "I asked someone for directions." },
+        { "form": "te", "jp": "よく聞いてください。", "en": "Please listen carefully." },
+        { "form": "short_past", "jp": "あの歌聞いた？", "en": "Have you heard that song?" }
       ]
     },
     {
@@ -1917,15 +1917,15 @@
         "conditional_nara": "いくなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "がっこうにいきます。", "en": "I go to school." },
-        { "form": "masu_pos", "jp": "あしたともだちのうちにいきます。", "en": "I'm going to a friend's house tomorrow." },
-        { "form": "masu_neg", "jp": "今日はどこへもいきません。", "en": "I'm not going anywhere today." },
-        { "form": "masu_past", "jp": "にほんにいきました。", "en": "I went to Japan." },
-        { "form": "masu_past", "jp": "かぞくといっしょにきょうとにいきました。", "en": "I went to Kyoto with my family." },
-        { "form": "te", "jp": "いってきます！", "en": "I'm heading out!" },
-        { "form": "te", "jp": "かいものにいってきました。", "en": "I went out shopping." },
-        { "form": "short_past", "jp": "もういった？", "en": "Did they go already?" },
-        { "form": "short_past", "jp": "こうえんにさんぽにいった。", "en": "I went to the park for a walk." }
+        { "form": "masu_pos", "jp": "学校に行きます。", "en": "I go to school." },
+        { "form": "masu_pos", "jp": "明日友達のうちに行きます。", "en": "I'm going to a friend's house tomorrow." },
+        { "form": "masu_neg", "jp": "今日はどこへも行きません。", "en": "I'm not going anywhere today." },
+        { "form": "masu_past", "jp": "日本に行きました。", "en": "I went to Japan." },
+        { "form": "masu_past", "jp": "家族といっしょに京都に行きました。", "en": "I went to Kyoto with my family." },
+        { "form": "te", "jp": "行ってきます！", "en": "I'm heading out!" },
+        { "form": "te", "jp": "買い物に行ってきました。", "en": "I went out shopping." },
+        { "form": "short_past", "jp": "もう行った？", "en": "Did they go already?" },
+        { "form": "short_past", "jp": "公園に散歩に行った。", "en": "I went to the park for a walk." }
       ]
     },
     {
@@ -2013,10 +2013,10 @@
         "conditional_nara": "いそぐなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "じかんがないので、いそぎます。", "en": "I don't have time, so I'll hurry." },
-        { "form": "te", "jp": "いそいでください！", "en": "Please hurry!" },
-        { "form": "short_neg", "jp": "きょうはいそがない。", "en": "I won't hurry today." },
-        { "form": "short_past", "jp": "バスにのるためにいそいだ。", "en": "I hurried to catch the bus." }
+        { "form": "masu_pos", "jp": "時間がないので、急ぎます。", "en": "I don't have time, so I'll hurry." },
+        { "form": "te", "jp": "急いでください！", "en": "Please hurry!" },
+        { "form": "short_neg", "jp": "今日は急がない。", "en": "I won't hurry today." },
+        { "form": "short_past", "jp": "バスに乗るために急いだ。", "en": "I hurried to catch the bus." }
       ]
     },
     {
@@ -2104,10 +2104,10 @@
         "conditional_nara": "およぐなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "うみでおよぎます。", "en": "I swim in the sea." },
-        { "form": "masu_past", "jp": "なつにうみでおよぎました。", "en": "I swam in the sea in summer." },
-        { "form": "te", "jp": "いっしょにおよいでください！", "en": "Please swim with me!" },
-        { "form": "short_past", "jp": "なつやすみにおよいだ。", "en": "I swam during summer vacation." }
+        { "form": "masu_pos", "jp": "海で泳ぎます。", "en": "I swim in the sea." },
+        { "form": "masu_past", "jp": "夏に海で泳ぎました。", "en": "I swam in the sea in summer." },
+        { "form": "te", "jp": "いっしょに泳いでください！", "en": "Please swim with me!" },
+        { "form": "short_past", "jp": "夏休みに泳いだ。", "en": "I swam during summer vacation." }
       ]
     },
     {
@@ -2194,13 +2194,13 @@
         "conditional_nara": "はなすなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "にほんごをすこしはなします。", "en": "I speak a little Japanese." },
-        { "form": "masu_pos", "jp": "せんせいとにほんごではなします。", "en": "I speak in Japanese with my teacher." },
-        { "form": "masu_past", "jp": "せんせいとはなしました。", "en": "I spoke with the teacher." },
-        { "form": "masu_past", "jp": "でんわでともだちとながくはなしました。", "en": "I talked on the phone with my friend for a long time." },
-        { "form": "te", "jp": "ゆっくりはなしてください。", "en": "Please speak slowly." },
-        { "form": "te", "jp": "せんせいにはなしてみます。", "en": "I'll try talking to the teacher." },
-        { "form": "short_past", "jp": "もうはなした？", "en": "Did you talk to them already?" }
+        { "form": "masu_pos", "jp": "日本語を少し話します。", "en": "I speak a little Japanese." },
+        { "form": "masu_pos", "jp": "先生と日本語で話します。", "en": "I speak in Japanese with my teacher." },
+        { "form": "masu_past", "jp": "先生と話しました。", "en": "I spoke with the teacher." },
+        { "form": "masu_past", "jp": "電話で友達と長く話しました。", "en": "I talked on the phone with my friend for a long time." },
+        { "form": "te", "jp": "ゆっくり話してください。", "en": "Please speak slowly." },
+        { "form": "te", "jp": "先生に話してみます。", "en": "I'll try talking to the teacher." },
+        { "form": "short_past", "jp": "もう話した？", "en": "Did you talk to them already?" }
       ]
     },
     {
@@ -2287,12 +2287,12 @@
         "conditional_nara": "かえすなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "あしたかえします。", "en": "I'll return it tomorrow." },
-        { "form": "masu_pos", "jp": "としょかんにほんをかえします。", "en": "I return the book to the library." },
-        { "form": "masu_past", "jp": "ほんをかえしました。", "en": "I returned the book." },
-        { "form": "masu_past", "jp": "かりたおかねをかえしました。", "en": "I returned the money I borrowed." },
-        { "form": "te", "jp": "かえしてください！", "en": "Please give it back!" },
-        { "form": "te", "jp": "よんでからかえしてください。", "en": "Please return it after reading." }
+        { "form": "masu_pos", "jp": "明日返します。", "en": "I'll return it tomorrow." },
+        { "form": "masu_pos", "jp": "図書館に本を返します。", "en": "I return the book to the library." },
+        { "form": "masu_past", "jp": "本を返しました。", "en": "I returned the book." },
+        { "form": "masu_past", "jp": "借りたお金を返しました。", "en": "I returned the money I borrowed." },
+        { "form": "te", "jp": "返してください！", "en": "Please give it back!" },
+        { "form": "te", "jp": "読んでから返してください。", "en": "Please return it after reading." }
       ]
     },
     {
@@ -2378,8 +2378,8 @@
         "conditional_nara": "おしえるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "せんせいがにほんごをおしえます。", "en": "The teacher teaches Japanese." },
-        { "form": "te", "jp": "みちをおしえてください。", "en": "Please tell me the way." }
+        { "form": "masu_pos", "jp": "先生が日本語を教えます。", "en": "The teacher teaches Japanese." },
+        { "form": "te", "jp": "道を教えてください。", "en": "Please tell me the way." }
       ]
     },
     {
@@ -2465,8 +2465,8 @@
         "conditional_nara": "あけるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まどをあけます。", "en": "I open the window." },
-        { "form": "short_neg", "jp": "まだドアをあけない。", "en": "I'm not opening the door yet." }
+        { "form": "masu_pos", "jp": "窓を開けます。", "en": "I open the window." },
+        { "form": "short_neg", "jp": "まだドアを開けない。", "en": "I'm not opening the door yet." }
       ]
     },
     {
@@ -2552,8 +2552,8 @@
         "conditional_nara": "しめるなら"
       },
       "examples": [
-        { "form": "te", "jp": "ドアをしめてください。", "en": "Please close the door." },
-        { "form": "masu_past", "jp": "まどをしめました。", "en": "I closed the window." }
+        { "form": "te", "jp": "ドアを閉めてください。", "en": "Please close the door." },
+        { "form": "masu_past", "jp": "窓を閉めました。", "en": "I closed the window." }
       ]
     },
     {
@@ -2638,7 +2638,7 @@
         "conditional_nara": "つけるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "へやのでんきをつけます。", "en": "I turn on the light in the room." },
+        { "form": "masu_pos", "jp": "部屋の電気をつけます。", "en": "I turn on the light in the room." },
         { "form": "short_past", "jp": "エアコンをつけた。", "en": "I turned on the air conditioner." }
       ]
     },
@@ -2725,8 +2725,8 @@
         "conditional_nara": "わすれるなら"
       },
       "examples": [
-        { "form": "masu_past", "jp": "かさをわすれました。", "en": "I forgot my umbrella." },
-        { "form": "short_neg", "jp": "やくそくはわすれない。", "en": "I won't forget the promise." }
+        { "form": "masu_past", "jp": "傘を忘れました。", "en": "I forgot my umbrella." },
+        { "form": "short_neg", "jp": "約束は忘れない。", "en": "I won't forget the promise." }
       ]
     },
     {
@@ -2812,8 +2812,8 @@
         "conditional_nara": "おぼえるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいにちたんごをおぼえます。", "en": "I memorize words every day." },
-        { "form": "short_past_neg", "jp": "なまえをおぼえなかった。", "en": "I didn't memorize the name." }
+        { "form": "masu_pos", "jp": "毎日単語を覚えます。", "en": "I memorize words every day." },
+        { "form": "short_past_neg", "jp": "名前を覚えなかった。", "en": "I didn't memorize the name." }
       ]
     },
     {
@@ -2899,8 +2899,8 @@
         "conditional_nara": "あびるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "あさシャワーをあびます。", "en": "I take a shower in the morning." },
-        { "form": "te", "jp": "シャワーをあびて、ねます。", "en": "I take a shower and then go to bed." }
+        { "form": "masu_pos", "jp": "朝シャワーを浴びます。", "en": "I take a shower in the morning." },
+        { "form": "te", "jp": "シャワーを浴びて、寝ます。", "en": "I take a shower and then go to bed." }
       ]
     },
     {
@@ -2986,8 +2986,8 @@
         "conditional_nara": "でるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "７じにいえをでます。", "en": "I leave the house at seven." },
-        { "form": "short_past", "jp": "さっきへやをでた。", "en": "I left the room a moment ago." }
+        { "form": "masu_pos", "jp": "七時に家を出ます。", "en": "I leave the house at seven." },
+        { "form": "short_past", "jp": "さっき部屋を出た。", "en": "I left the room a moment ago." }
       ]
     },
     {
@@ -3073,8 +3073,8 @@
         "conditional_nara": "いれるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "コーヒーにさとうをいれます。", "en": "I put sugar in my coffee." },
-        { "form": "te", "jp": "かばんにいれてください。", "en": "Please put it in the bag." }
+        { "form": "masu_pos", "jp": "コーヒーにさとうを入れます。", "en": "I put sugar in my coffee." },
+        { "form": "te", "jp": "かばんに入れてください。", "en": "Please put it in the bag." }
       ]
     },
     {
@@ -3160,8 +3160,8 @@
         "conditional_nara": "はじめるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "しごとをはじめます。", "en": "I begin work." },
-        { "form": "short_past", "jp": "べんきょうをはじめた。", "en": "I started studying." }
+        { "form": "masu_pos", "jp": "仕事を始めます。", "en": "I begin work." },
+        { "form": "short_past", "jp": "勉強を始めた。", "en": "I started studying." }
       ]
     },
     {
@@ -3247,8 +3247,8 @@
         "conditional_nara": "かんがえるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "よくかんがえます。", "en": "I think it over carefully." },
-        { "form": "te", "jp": "もういちどかんがえてください。", "en": "Please think about it once more." }
+        { "form": "masu_pos", "jp": "よく考えます。", "en": "I think it over carefully." },
+        { "form": "te", "jp": "もう一度考えてください。", "en": "Please think about it once more." }
       ]
     },
     {
@@ -3334,8 +3334,8 @@
         "conditional_nara": "すてるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "ごみをすてます。", "en": "I throw away the rubbish." },
-        { "form": "short_neg", "jp": "ふるいほんはすてない。", "en": "I don't throw away old books." }
+        { "form": "masu_pos", "jp": "ごみを捨てます。", "en": "I throw away the rubbish." },
+        { "form": "short_neg", "jp": "古い本は捨てない。", "en": "I don't throw away old books." }
       ]
     },
     {
@@ -3421,8 +3421,8 @@
         "conditional_nara": "きるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "あついのでシャツをきます。", "en": "It is hot, so I wear a shirt." },
-        { "form": "masu_past", "jp": "きょうはコートをきました。", "en": "I wore a coat today." }
+        { "form": "masu_pos", "jp": "寒いので、セーターを着ます。", "en": "It's cold, so I'll put on a sweater." },
+        { "form": "masu_past", "jp": "今日はコートを着ました。", "en": "I wore a coat today." }
       ]
     },
     {
@@ -3491,8 +3491,8 @@
         "conditional_nara": "つかれるなら"
       },
       "examples": [
-        { "form": "short_past", "jp": "きょうはつかれた。", "en": "I got tired today." },
-        { "form": "masu_past", "jp": "はしってつかれました。", "en": "I ran and got tired." }
+        { "form": "short_past", "jp": "今日は疲れた。", "en": "I'm tired today." },
+        { "form": "masu_past", "jp": "走って疲れました。", "en": "I ran and got tired." }
       ]
     },
     {
@@ -3580,8 +3580,8 @@
         "conditional_nara": "あるくなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "えきまであるきます。", "en": "I walk to the station." },
-        { "form": "te", "jp": "ゆっくりあるいて、いきます。", "en": "I walk slowly and go." }
+        { "form": "masu_pos", "jp": "駅まで歩きます。", "en": "I walk to the station." },
+        { "form": "te", "jp": "歩いて学校に行きます。", "en": "I walk to school." }
       ]
     },
     {
@@ -3669,8 +3669,8 @@
         "conditional_nara": "はたらくなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "ぎんこうではたらきます。", "en": "I work at a bank." },
-        { "form": "short_neg", "jp": "にちようびははたらかない。", "en": "I don't work on Sundays." }
+        { "form": "masu_pos", "jp": "来月から銀行で働きます。", "en": "I'll start working at a bank next month." },
+        { "form": "short_neg", "jp": "日曜日は働かない。", "en": "I don't work on Sundays." }
       ]
     },
     {
@@ -3758,8 +3758,8 @@
         "conditional_nara": "はいるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "へやにはいります。", "en": "I enter the room." },
-        { "form": "te", "jp": "どうぞはいってください。", "en": "Please come in." }
+        { "form": "masu_pos", "jp": "部屋に入ります。", "en": "I enter the room." },
+        { "form": "te", "jp": "どうぞ入ってください。", "en": "Please come in." }
       ]
     },
     {
@@ -3847,8 +3847,8 @@
         "conditional_nara": "かえるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいばんしちじにうちへかえります。", "en": "I go home at seven every night." },
-        { "form": "short_neg", "jp": "まだかえらない。", "en": "I'm not going home yet." }
+        { "form": "masu_pos", "jp": "毎晩七時にうちへ帰ります。", "en": "I go home at seven every night." },
+        { "form": "short_neg", "jp": "まだ帰らない。", "en": "I'm not going home yet." }
       ]
     },
     {
@@ -3936,8 +3936,8 @@
         "conditional_nara": "のるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいあさでんしゃにのります。", "en": "I ride the train every morning." },
-        { "form": "masu_neg", "jp": "バスにはのりません。", "en": "I don't ride buses." }
+        { "form": "masu_pos", "jp": "毎朝電車に乗ります。", "en": "I take the train every morning." },
+        { "form": "masu_neg", "jp": "バスには乗りません。", "en": "I don't take the bus." }
       ]
     },
     {
@@ -4025,8 +4025,8 @@
         "conditional_nara": "つくるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "ばんごはんをつくります。", "en": "I make dinner." },
-        { "form": "te", "jp": "ケーキをつくって、たべました。", "en": "I made a cake and ate it." }
+        { "form": "masu_pos", "jp": "晩ご飯を作ります。", "en": "I make dinner." },
+        { "form": "te", "jp": "ケーキを作って、食べました。", "en": "I made a cake and ate it." }
       ]
     },
     {
@@ -4099,8 +4099,8 @@
         "conditional_nara": "わかるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "にほんごがわかります。", "en": "I understand Japanese." },
-        { "form": "masu_neg", "jp": "いみがわかりません。", "en": "I don't understand the meaning." }
+        { "form": "masu_pos", "jp": "日本語がわかります。", "en": "I understand Japanese." },
+        { "form": "masu_neg", "jp": "意味がわかりません。", "en": "I don't understand the meaning." }
       ]
     },
     {
@@ -4173,8 +4173,8 @@
         "conditional_nara": "しるなら"
       },
       "examples": [
-        { "form": "masu_neg", "jp": "そのことはしりません。", "en": "I don't know about that." },
-        { "form": "short_neg", "jp": "ぜんぜんしらない。", "en": "I don't know at all." }
+        { "form": "masu_neg", "jp": "そのことは知りません。", "en": "I don't know about that." },
+        { "form": "short_neg", "jp": "全然知らない。", "en": "I don't know at all." }
       ]
     },
     {
@@ -4262,8 +4262,8 @@
         "conditional_nara": "すわるなら"
       },
       "examples": [
-        { "form": "te", "jp": "ここにすわってください。", "en": "Please sit here." },
-        { "form": "masu_pos", "jp": "いすにすわります。", "en": "I sit on the chair." }
+        { "form": "te", "jp": "ここに座ってください。", "en": "Please sit here." },
+        { "form": "masu_pos", "jp": "いすに座ります。", "en": "I sit on the chair." }
       ]
     },
     {
@@ -4351,8 +4351,8 @@
         "conditional_nara": "やすむなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "にちようびはやすみます。", "en": "I rest on Sundays." },
-        { "form": "masu_past", "jp": "きのうがっこうをやすみました。", "en": "I was absent from school yesterday." }
+        { "form": "masu_pos", "jp": "日曜日は休みます。", "en": "I rest on Sundays." },
+        { "form": "masu_past", "jp": "昨日学校を休みました。", "en": "I was absent from school yesterday." }
       ]
     },
     {
@@ -4363,7 +4363,7 @@
       "meaning": "to live (reside)",
       "teGroup": "nde",
       "description": "A u-verb ending in む. The て-form uses んで/んだ.",
-      "notes": "Says where you live: とうきょうにすんでいます.",
+      "notes": "Says where you live: 東京に住んでいます. Where you live now always takes ている (住んでいます); 住みます is for the future, usually as 住む予定です.",
       "jlpt": "N5",
       "forms": {
         "masu_pos": "すみます",
@@ -4440,8 +4440,8 @@
         "conditional_nara": "すむなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "らいねんからおおさかにすみます。", "en": "I will live in Osaka from next year." },
-        { "form": "te", "jp": "いまはきょうとにすんでいます。", "en": "I live in Kyoto now." }
+        { "form": "short_pos", "jp": "来年から大阪に住む予定です。", "en": "I'm planning to live in Osaka from next year." },
+        { "form": "teiru_masu_pos", "jp": "今は京都に住んでいます。", "en": "I live in Kyoto now." }
       ]
     },
     {
@@ -4529,8 +4529,8 @@
         "conditional_nara": "よぶなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "タクシーをよびます。", "en": "I call a taxi." },
-        { "form": "te", "jp": "ともだちをよんで、いっしょにたべます。", "en": "I invite a friend and we eat together." }
+        { "form": "masu_pos", "jp": "タクシーを呼びます。", "en": "I call a taxi." },
+        { "form": "te", "jp": "友達を呼んで、いっしょに食べます。", "en": "I invite a friend and we eat together." }
       ]
     },
     {
@@ -4618,8 +4618,8 @@
         "conditional_nara": "あらうなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいばんてをあらいます。", "en": "I wash my hands every night." },
-        { "form": "short_neg", "jp": "くるまをあらわない。", "en": "I don't wash the car." }
+        { "form": "masu_pos", "jp": "毎晩手を洗います。", "en": "I wash my hands every night." },
+        { "form": "short_neg", "jp": "車を洗わない。", "en": "I don't wash the car." }
       ]
     },
     {
@@ -4707,8 +4707,8 @@
         "conditional_nara": "つかうなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいにちスマホをつかいます。", "en": "I use my phone every day." },
-        { "form": "te", "jp": "ペンをつかってください。", "en": "Please use a pen." }
+        { "form": "masu_pos", "jp": "毎日スマホを使います。", "en": "I use my phone every day." },
+        { "form": "te", "jp": "ペンを使ってください。", "en": "Please use a pen." }
       ]
     },
     {
@@ -4796,8 +4796,8 @@
         "conditional_nara": "うたうなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "カラオケでうたをうたいます。", "en": "I sing at karaoke." },
-        { "form": "short_neg", "jp": "ひとまえではうたわない。", "en": "I don't sing in front of people." }
+        { "form": "masu_pos", "jp": "カラオケで歌を歌います。", "en": "I sing at karaoke." },
+        { "form": "short_neg", "jp": "人前では歌わない。", "en": "I don't sing in front of people." }
       ]
     },
     {
@@ -4885,8 +4885,8 @@
         "conditional_nara": "ならうなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "せんせいにピアノをならいます。", "en": "I learn piano from a teacher." },
-        { "form": "short_past", "jp": "こどものときにすいえいをならった。", "en": "I learned swimming as a child." }
+        { "form": "masu_pos", "jp": "先生にピアノを習います。", "en": "I learn piano from a teacher." },
+        { "form": "short_past", "jp": "子供のときに水泳を習った。", "en": "I learned swimming as a child." }
       ]
     },
     {
@@ -4974,8 +4974,8 @@
         "conditional_nara": "いうなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "せんせいにそういいます。", "en": "I say so to the teacher." },
-        { "form": "te", "jp": "もういちどいってください。", "en": "Please say it once more." }
+        { "form": "masu_pos", "jp": "先生にそう言います。", "en": "I'll tell the teacher that." },
+        { "form": "te", "jp": "もう一度言ってください。", "en": "Please say it once more." }
       ]
     },
     {
@@ -5062,8 +5062,8 @@
         "conditional_nara": "おすなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "ボタンをおします。", "en": "I press the button." },
-        { "form": "te", "jp": "ここをおしてください。", "en": "Please press here." }
+        { "form": "masu_pos", "jp": "ボタンを押します。", "en": "I press the button." },
+        { "form": "te", "jp": "ここを押してください。", "en": "Please press here." }
       ]
     },
     {
@@ -5150,8 +5150,8 @@
         "conditional_nara": "だすなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "てがみをだします。", "en": "I send a letter." },
-        { "form": "short_past", "jp": "ごみをだした。", "en": "I took out the rubbish." }
+        { "form": "masu_pos", "jp": "手紙を出します。", "en": "I send a letter." },
+        { "form": "short_past", "jp": "ごみを出した。", "en": "I took out the rubbish." }
       ]
     },
     {
@@ -5238,8 +5238,8 @@
         "conditional_nara": "けすなら"
       },
       "examples": [
-        { "form": "te", "jp": "でんきをけしてください。", "en": "Please turn off the light." },
-        { "form": "masu_pos", "jp": "テレビをけします。", "en": "I turn off the TV." }
+        { "form": "te", "jp": "電気を消してください。", "en": "Please turn off the light." },
+        { "form": "masu_pos", "jp": "テレビを消します。", "en": "I turn off the TV." }
       ]
     },
     {
@@ -5327,8 +5327,8 @@
         "conditional_nara": "たつなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "えきのまえにたちます。", "en": "I stand in front of the station." },
-        { "form": "te", "jp": "ここにたってください。", "en": "Please stand here." }
+        { "form": "teiru_masu_pos", "jp": "駅の前に田中さんが立っています。", "en": "Tanaka-san is standing in front of the station." },
+        { "form": "te", "jp": "ここに立ってください。", "en": "Please stand here." }
       ]
     },
     {
@@ -5416,8 +5416,8 @@
         "conditional_nara": "はしるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "まいあさこうえんをはしります。", "en": "I run in the park every morning." },
-        { "form": "short_neg", "jp": "あまりはしらない。", "en": "I don't run much." }
+        { "form": "masu_pos", "jp": "毎朝公園を走ります。", "en": "I run in the park every morning." },
+        { "form": "short_neg", "jp": "あまり走らない。", "en": "I don't run much." }
       ]
     },
     {
@@ -5502,8 +5502,8 @@
         "conditional_nara": "おわるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "じゅぎょうは３じにおわります。", "en": "Class ends at three." },
-        { "form": "short_past", "jp": "しごとがおわった。", "en": "Work ended." }
+        { "form": "masu_pos", "jp": "授業は三時に終わります。", "en": "Class ends at three." },
+        { "form": "short_past", "jp": "仕事が終わった。", "en": "Work's over." }
       ]
     },
     {
@@ -5591,8 +5591,8 @@
         "conditional_nara": "ぬぐなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "いえではくつをぬぎます。", "en": "I take off my shoes at home." },
-        { "form": "te", "jp": "コートをぬいでください。", "en": "Please take off your coat." }
+        { "form": "masu_pos", "jp": "家では靴を脱ぎます。", "en": "I take off my shoes at home." },
+        { "form": "te", "jp": "コートを脱いでください。", "en": "Please take off your coat." }
       ]
     },
     {
@@ -5680,8 +5680,8 @@
         "conditional_nara": "もらうなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "ともだちにプレゼントをもらいます。", "en": "I receive a present from a friend." },
-        { "form": "short_past", "jp": "たんじょうびにはなをもらった。", "en": "I got flowers on my birthday." }
+        { "form": "masu_pos", "jp": "友達にプレゼントをもらいます。", "en": "I receive a present from a friend." },
+        { "form": "short_past", "jp": "誕生日に花をもらった。", "en": "I got flowers on my birthday." }
       ]
     },
     {
@@ -5770,8 +5770,1592 @@
         "conditional_nara": "きるなら"
       },
       "examples": [
-        { "form": "masu_pos", "jp": "はさみでかみをきります。", "en": "I cut the paper with scissors." },
-        { "form": "te", "jp": "ケーキをきってください。", "en": "Please cut the cake." }
+        { "form": "masu_pos", "jp": "はさみで紙を切ります。", "en": "I cut the paper with scissors." },
+        { "form": "te", "jp": "ケーキを切ってください。", "en": "Please cut the cake." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "いる",
+      "kanji": null,
+      "meaning": "to be, to exist (people and animals)",
+      "description": "The existential verb for people and animals. A regular ru-verb: drop the final る and add your ending (います, いない).",
+      "notes": "Pair with ある (for things and plants): 犬がいる vs 本がある. The place takes に: 部屋に猫がいます. It is also the いる of ている (読んでいる). Not to be confused with 要る (いる, to need), a u-verb: いらない, いります. The kanji 居る is rarely written.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "います",
+        "masu_neg": "いません",
+        "masu_past": "いました",
+        "masu_past_neg": "いませんでした",
+        "te": "いて",
+        "short_pos": "いる",
+        "short_neg": "いない",
+        "short_past": "いた",
+        "short_past_neg": "いなかった",
+        "nd_pos": "いるんです",
+        "nd_neg": "いないんです",
+        "nd_past": "いたんです",
+        "nd_past_neg": "いなかったんです",
+        "nd_casual_pos": "いるんだ",
+        "nd_casual_neg": "いないんだ",
+        "nd_casual_past": "いたんだ",
+        "nd_casual_past_neg": "いなかったんだ",
+        "potential": "いられる",
+        "pot_masu_pos": "いられます",
+        "pot_masu_neg": "いられません",
+        "pot_masu_past": "いられました",
+        "pot_masu_past_neg": "いられませんでした",
+        "pot_te": "いられて",
+        "pot_short_neg": "いられない",
+        "pot_short_past": "いられた",
+        "pot_short_past_neg": "いられなかった",
+        "sugiru": "いすぎる",
+        "sugiru_polite": "いすぎます",
+        "yasui": "いやすい",
+        "yasui_polite": "いやすいです",
+        "nikui": "いにくい",
+        "nikui_polite": "いにくいです",
+        "nagara": "いながら",
+        "volitional": "いよう",
+        "passive": "いられる",
+        "causative": "いさせる",
+        "causative_passive": "いさせられる",
+        "conditional_ba": "いれば",
+        "conditional_tara": "いたら",
+        "imperative": "いろ",
+        "tai": "いたい",
+        "masu_volitional": "いましょう",
+        "neg_te": "いないで",
+        "nakute": "いなくて",
+        "te_mo_ii": "いてもいい",
+        "te_wa_ikenai": "いてはいけない",
+        "te_cha_dame": "いちゃだめ",
+        "nakereba_naranai": "いなければならない",
+        "nakute_wa_ikenai": "いなくてはいけない",
+        "nakya": "いなきゃ",
+        "nakucha": "いなくちゃ",
+        "nakute_mo_ii": "いなくてもいい",
+        "neg_imperative": "いるな",
+        "nasai": "いなさい",
+        "conditional_to": "いると",
+        "conditional_nara": "いるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "部屋に猫がいます。", "en": "There's a cat in the room." },
+        { "form": "masu_neg", "jp": "今、田中さんはいません。", "en": "Mr Tanaka isn't here right now." },
+        { "form": "masu_past", "jp": "昨日はずっと家にいました。", "en": "I was at home all day yesterday." },
+        { "form": "te", "jp": "ここにいてください。", "en": "Please stay here." },
+        { "form": "short_neg", "jp": "兄弟はいない。", "en": "I don't have any brothers or sisters." },
+        { "form": "short_past", "jp": "公園に子供がたくさんいた。", "en": "There were lots of children in the park." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "なる",
+      "kanji": null,
+      "meaning": "to become",
+      "teGroup": "tte",
+      "description": "A u-verb ending in る. The て-form uses って/った.",
+      "notes": "Describes a change. Nouns and な-adjectives take に (先生になる, 静かになる); い-adjectives change い to く (寒くなる). Often the change happens by itself: 春になりました. 〜ことになる is a decision made for you: 来月から大阪で働くことになった.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "なります",
+        "masu_neg": "なりません",
+        "masu_past": "なりました",
+        "masu_past_neg": "なりませんでした",
+        "te": "なって",
+        "short_pos": "なる",
+        "short_neg": "ならない",
+        "short_past": "なった",
+        "short_past_neg": "ならなかった",
+        "nd_pos": "なるんです",
+        "nd_neg": "ならないんです",
+        "nd_past": "なったんです",
+        "nd_past_neg": "ならなかったんです",
+        "nd_casual_pos": "なるんだ",
+        "nd_casual_neg": "ならないんだ",
+        "nd_casual_past": "なったんだ",
+        "nd_casual_past_neg": "ならなかったんだ",
+        "potential": "なれる",
+        "pot_masu_pos": "なれます",
+        "pot_masu_neg": "なれません",
+        "pot_masu_past": "なれました",
+        "pot_masu_past_neg": "なれませんでした",
+        "pot_te": "なれて",
+        "pot_short_neg": "なれない",
+        "pot_short_past": "なれた",
+        "pot_short_past_neg": "なれなかった",
+        "teiru": "なっている",
+        "teiru_neg": "なっていない",
+        "teiru_past": "なっていた",
+        "teiru_past_neg": "なっていなかった",
+        "teiru_masu_pos": "なっています",
+        "teiru_masu_neg": "なっていません",
+        "teiru_masu_past": "なっていました",
+        "teiru_masu_past_neg": "なっていませんでした",
+        "teiru_te": "なっていて",
+        "teshimau": "なってしまう",
+        "teshimau_polite": "なってしまいます",
+        "teoku": "なっておく",
+        "teoku_polite": "なっておきます",
+        "temiru": "なってみる",
+        "temiru_polite": "なってみます",
+        "sugiru": "なりすぎる",
+        "sugiru_polite": "なりすぎます",
+        "yasui": "なりやすい",
+        "yasui_polite": "なりやすいです",
+        "nikui": "なりにくい",
+        "nikui_polite": "なりにくいです",
+        "nagara": "なりながら",
+        "volitional": "なろう",
+        "conditional_ba": "なれば",
+        "conditional_tara": "なったら",
+        "imperative": "なれ",
+        "tai": "なりたい",
+        "masu_volitional": "なりましょう",
+        "neg_te": "ならないで",
+        "nakute": "ならなくて",
+        "te_mo_ii": "なってもいい",
+        "te_wa_ikenai": "なってはいけない",
+        "te_cha_dame": "なっちゃだめ",
+        "nakereba_naranai": "ならなければならない",
+        "nakute_wa_ikenai": "ならなくてはいけない",
+        "nakya": "ならなきゃ",
+        "nakucha": "ならなくちゃ",
+        "nakute_mo_ii": "ならなくてもいい",
+        "neg_imperative": "なるな",
+        "nasai": "なりなさい",
+        "conditional_to": "なると",
+        "conditional_nara": "なるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "もうすぐ春になります。", "en": "It'll soon be spring." },
+        { "form": "masu_past", "jp": "急に寒くなりました。", "en": "It suddenly got cold." },
+        { "form": "te", "jp": "暗くなってから、家に帰りました。", "en": "I went home after it got dark." },
+        { "form": "short_neg", "jp": "なかなか上手にならない。", "en": "I'm just not getting any better." },
+        { "form": "short_past", "jp": "妹は先生になった。", "en": "My younger sister became a teacher." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "おもう",
+      "kanji": "思う",
+      "meaning": "to think",
+      "teGroup": "tte",
+      "description": "A u-verb ending in う. The て-form uses って/った.",
+      "notes": "What you think is quoted with と: 明日は雨だと思います. Before と, nouns and な-adjectives need だ (雨だと思う, not ×雨と思う). Use 思う for your own opinion and 思っている for someone else's: 田中さんは高いと思っています. With the volitional it means \"I'm thinking of doing\": 日本に行こうと思います.",
+      "jlpt": "N4",
+      "forms": {
+        "masu_pos": "おもいます",
+        "masu_neg": "おもいません",
+        "masu_past": "おもいました",
+        "masu_past_neg": "おもいませんでした",
+        "te": "おもって",
+        "short_pos": "おもう",
+        "short_neg": "おもわない",
+        "short_past": "おもった",
+        "short_past_neg": "おもわなかった",
+        "nd_pos": "おもうんです",
+        "nd_neg": "おもわないんです",
+        "nd_past": "おもったんです",
+        "nd_past_neg": "おもわなかったんです",
+        "nd_casual_pos": "おもうんだ",
+        "nd_casual_neg": "おもわないんだ",
+        "nd_casual_past": "おもったんだ",
+        "nd_casual_past_neg": "おもわなかったんだ",
+        "potential": "おもえる",
+        "pot_masu_pos": "おもえます",
+        "pot_masu_neg": "おもえません",
+        "pot_masu_past": "おもえました",
+        "pot_masu_past_neg": "おもえませんでした",
+        "pot_te": "おもえて",
+        "pot_short_neg": "おもえない",
+        "pot_short_past": "おもえた",
+        "pot_short_past_neg": "おもえなかった",
+        "teiru": "おもっている",
+        "teiru_neg": "おもっていない",
+        "teiru_past": "おもっていた",
+        "teiru_past_neg": "おもっていなかった",
+        "teiru_masu_pos": "おもっています",
+        "teiru_masu_neg": "おもっていません",
+        "teiru_masu_past": "おもっていました",
+        "teiru_masu_past_neg": "おもっていませんでした",
+        "teiru_te": "おもっていて",
+        "teshimau": "おもってしまう",
+        "teshimau_polite": "おもってしまいます",
+        "teoku": "おもっておく",
+        "teoku_polite": "おもっておきます",
+        "temiru": "おもってみる",
+        "temiru_polite": "おもってみます",
+        "sugiru": "おもいすぎる",
+        "sugiru_polite": "おもいすぎます",
+        "yasui": "おもいやすい",
+        "yasui_polite": "おもいやすいです",
+        "nikui": "おもいにくい",
+        "nikui_polite": "おもいにくいです",
+        "nagara": "おもいながら",
+        "volitional": "おもおう",
+        "passive": "おもわれる",
+        "causative": "おもわせる",
+        "causative_passive": "おもわせられる",
+        "causative_passive_short": "おもわされる",
+        "conditional_ba": "おもえば",
+        "conditional_tara": "おもったら",
+        "imperative": "おもえ",
+        "tai": "おもいたい",
+        "masu_volitional": "おもいましょう",
+        "neg_te": "おもわないで",
+        "nakute": "おもわなくて",
+        "te_mo_ii": "おもってもいい",
+        "te_wa_ikenai": "おもってはいけない",
+        "te_cha_dame": "おもっちゃだめ",
+        "nakereba_naranai": "おもわなければならない",
+        "nakute_wa_ikenai": "おもわなくてはいけない",
+        "nakya": "おもわなきゃ",
+        "nakucha": "おもわなくちゃ",
+        "nakute_mo_ii": "おもわなくてもいい",
+        "neg_imperative": "おもうな",
+        "nasai": "おもいなさい",
+        "conditional_to": "おもうと",
+        "conditional_nara": "おもうなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "明日は雨だと思います。", "en": "I think it'll rain tomorrow." },
+        { "form": "masu_neg", "jp": "そうは思いません。", "en": "I don't think so." },
+        { "form": "masu_past", "jp": "とてもおいしいと思いました。", "en": "I thought it was really good." },
+        { "form": "short_pos", "jp": "このかばん、いいと思う。", "en": "I think this bag is nice." },
+        { "form": "teiru_masu_pos", "jp": "姉は日本で働きたいと思っています。", "en": "My older sister wants to work in Japan." },
+        { "form": "masu_pos", "jp": "来年、日本に行こうと思います。", "en": "I'm thinking of going to Japan next year." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "あげる",
+      "kanji": null,
+      "meaning": "to give (to someone else)",
+      "description": "A ru-verb. Drop the final る and add your ending.",
+      "notes": "The thing goes away from the speaker's side: 私は友達に本をあげた. The receiver takes に. When someone gives to you or your family, use くれる instead: 友達が本をくれた, not ×友達が私にあげた. Vてあげる is doing a favour for someone else; said to a superior it can sound condescending. Written 上げる it means \"to raise\" (手を上げる); in the giving sense it is usually kana.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "あげます",
+        "masu_neg": "あげません",
+        "masu_past": "あげました",
+        "masu_past_neg": "あげませんでした",
+        "te": "あげて",
+        "short_pos": "あげる",
+        "short_neg": "あげない",
+        "short_past": "あげた",
+        "short_past_neg": "あげなかった",
+        "nd_pos": "あげるんです",
+        "nd_neg": "あげないんです",
+        "nd_past": "あげたんです",
+        "nd_past_neg": "あげなかったんです",
+        "nd_casual_pos": "あげるんだ",
+        "nd_casual_neg": "あげないんだ",
+        "nd_casual_past": "あげたんだ",
+        "nd_casual_past_neg": "あげなかったんだ",
+        "potential": "あげられる",
+        "pot_masu_pos": "あげられます",
+        "pot_masu_neg": "あげられません",
+        "pot_masu_past": "あげられました",
+        "pot_masu_past_neg": "あげられませんでした",
+        "pot_te": "あげられて",
+        "pot_short_neg": "あげられない",
+        "pot_short_past": "あげられた",
+        "pot_short_past_neg": "あげられなかった",
+        "teiru": "あげている",
+        "teiru_neg": "あげていない",
+        "teiru_past": "あげていた",
+        "teiru_past_neg": "あげていなかった",
+        "teiru_masu_pos": "あげています",
+        "teiru_masu_neg": "あげていません",
+        "teiru_masu_past": "あげていました",
+        "teiru_masu_past_neg": "あげていませんでした",
+        "teiru_te": "あげていて",
+        "teshimau": "あげてしまう",
+        "teshimau_polite": "あげてしまいます",
+        "teoku": "あげておく",
+        "teoku_polite": "あげておきます",
+        "temiru": "あげてみる",
+        "temiru_polite": "あげてみます",
+        "sugiru": "あげすぎる",
+        "sugiru_polite": "あげすぎます",
+        "yasui": "あげやすい",
+        "yasui_polite": "あげやすいです",
+        "nikui": "あげにくい",
+        "nikui_polite": "あげにくいです",
+        "nagara": "あげながら",
+        "volitional": "あげよう",
+        "passive": "あげられる",
+        "causative": "あげさせる",
+        "causative_passive": "あげさせられる",
+        "conditional_ba": "あげれば",
+        "conditional_tara": "あげたら",
+        "imperative": "あげろ",
+        "tai": "あげたい",
+        "masu_volitional": "あげましょう",
+        "neg_te": "あげないで",
+        "nakute": "あげなくて",
+        "te_mo_ii": "あげてもいい",
+        "te_wa_ikenai": "あげてはいけない",
+        "te_cha_dame": "あげちゃだめ",
+        "nakereba_naranai": "あげなければならない",
+        "nakute_wa_ikenai": "あげなくてはいけない",
+        "nakya": "あげなきゃ",
+        "nakucha": "あげなくちゃ",
+        "nakute_mo_ii": "あげなくてもいい",
+        "neg_imperative": "あげるな",
+        "nasai": "あげなさい",
+        "conditional_to": "あげると",
+        "conditional_nara": "あげるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "友達に誕生日のプレゼントをあげます。", "en": "I'm giving my friend a birthday present." },
+        { "form": "masu_past", "jp": "妹にお菓子をあげました。", "en": "I gave my younger sister some sweets." },
+        { "form": "te", "jp": "猫にえさをあげてください。", "en": "Please feed the cat." },
+        { "form": "short_neg", "jp": "このケーキは誰にもあげない。", "en": "I'm not giving this cake to anyone." },
+        { "form": "short_past", "jp": "道を教えてあげた。", "en": "I showed them the way." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "くれる",
+      "kanji": null,
+      "meaning": "to give (to me or my side)",
+      "description": "A ru-verb with one irregular form: the imperative is くれ (not ×くれろ). Otherwise drop the final る and add your ending.",
+      "notes": "The giving comes toward the speaker or the speaker's family and group: 友達が(私に)本をくれた. The giver is the subject. Compare あげる (giving away from me) and もらう (I receive: 友達に本をもらった). Vてくれる is someone doing you a favour: 手伝ってくれてありがとう. The imperative くれ (\"give me\") is blunt; ください is the polite request.",
+      "jlpt": "N4",
+      "forms": {
+        "masu_pos": "くれます",
+        "masu_neg": "くれません",
+        "masu_past": "くれました",
+        "masu_past_neg": "くれませんでした",
+        "te": "くれて",
+        "short_pos": "くれる",
+        "short_neg": "くれない",
+        "short_past": "くれた",
+        "short_past_neg": "くれなかった",
+        "nd_pos": "くれるんです",
+        "nd_neg": "くれないんです",
+        "nd_past": "くれたんです",
+        "nd_past_neg": "くれなかったんです",
+        "nd_casual_pos": "くれるんだ",
+        "nd_casual_neg": "くれないんだ",
+        "nd_casual_past": "くれたんだ",
+        "nd_casual_past_neg": "くれなかったんだ",
+        "teiru": "くれている",
+        "teiru_neg": "くれていない",
+        "teiru_past": "くれていた",
+        "teiru_past_neg": "くれていなかった",
+        "teiru_masu_pos": "くれています",
+        "teiru_masu_neg": "くれていません",
+        "teiru_masu_past": "くれていました",
+        "teiru_masu_past_neg": "くれていませんでした",
+        "teiru_te": "くれていて",
+        "teshimau": "くれてしまう",
+        "teshimau_polite": "くれてしまいます",
+        "teoku": "くれておく",
+        "teoku_polite": "くれておきます",
+        "temiru": "くれてみる",
+        "temiru_polite": "くれてみます",
+        "sugiru": "くれすぎる",
+        "sugiru_polite": "くれすぎます",
+        "yasui": "くれやすい",
+        "yasui_polite": "くれやすいです",
+        "nikui": "くれにくい",
+        "nikui_polite": "くれにくいです",
+        "nagara": "くれながら",
+        "conditional_ba": "くれれば",
+        "conditional_tara": "くれたら",
+        "imperative": "くれ",
+        "neg_te": "くれないで",
+        "nakute": "くれなくて",
+        "te_mo_ii": "くれてもいい",
+        "te_wa_ikenai": "くれてはいけない",
+        "te_cha_dame": "くれちゃだめ",
+        "nakereba_naranai": "くれなければならない",
+        "nakute_wa_ikenai": "くれなくてはいけない",
+        "nakya": "くれなきゃ",
+        "nakucha": "くれなくちゃ",
+        "nakute_mo_ii": "くれなくてもいい",
+        "conditional_to": "くれると",
+        "conditional_nara": "くれるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "祖母はいつもお菓子をくれます。", "en": "My grandmother always gives me sweets." },
+        { "form": "masu_past", "jp": "友達が誕生日にカードをくれました。", "en": "My friend gave me a card for my birthday." },
+        { "form": "te", "jp": "手伝ってくれてありがとう。", "en": "Thanks for helping me." },
+        { "form": "short_neg", "jp": "誰も教えてくれない。", "en": "Nobody will tell me." },
+        { "form": "short_past", "jp": "兄がこの時計をくれた。", "en": "My older brother gave me this watch." },
+        { "form": "masu_past_neg", "jp": "誰も手伝ってくれませんでした。", "en": "Nobody helped me." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "できる",
+      "kanji": "出来る",
+      "meaning": "to be able to, can; to be ready, to be made",
+      "description": "A ru-verb that already means \"can\", so it has no potential form of its own. Drop the final る and add your ending.",
+      "notes": "What you can do takes が: 日本語ができる, 料理ができる. It is also the potential of する: 勉強する → 勉強できる. It also means \"to be ready\" or \"to come into being\": 準備ができた, 駅の前に店ができた. Usually written in kana; 出来る is the kanji spelling.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "できます",
+        "masu_neg": "できません",
+        "masu_past": "できました",
+        "masu_past_neg": "できませんでした",
+        "te": "できて",
+        "short_pos": "できる",
+        "short_neg": "できない",
+        "short_past": "できた",
+        "short_past_neg": "できなかった",
+        "nd_pos": "できるんです",
+        "nd_neg": "できないんです",
+        "nd_past": "できたんです",
+        "nd_past_neg": "できなかったんです",
+        "nd_casual_pos": "できるんだ",
+        "nd_casual_neg": "できないんだ",
+        "nd_casual_past": "できたんだ",
+        "nd_casual_past_neg": "できなかったんだ",
+        "teiru": "できている",
+        "teiru_neg": "できていない",
+        "teiru_past": "できていた",
+        "teiru_past_neg": "できていなかった",
+        "teiru_masu_pos": "できています",
+        "teiru_masu_neg": "できていません",
+        "teiru_masu_past": "できていました",
+        "teiru_masu_past_neg": "できていませんでした",
+        "teiru_te": "できていて",
+        "teshimau": "できてしまう",
+        "teshimau_polite": "できてしまいます",
+        "teoku": "できておく",
+        "teoku_polite": "できておきます",
+        "temiru": "できてみる",
+        "temiru_polite": "できてみます",
+        "sugiru": "できすぎる",
+        "sugiru_polite": "できすぎます",
+        "yasui": "できやすい",
+        "yasui_polite": "できやすいです",
+        "nikui": "できにくい",
+        "nikui_polite": "できにくいです",
+        "nagara": "できながら",
+        "conditional_ba": "できれば",
+        "conditional_tara": "できたら",
+        "neg_te": "できないで",
+        "nakute": "できなくて",
+        "te_mo_ii": "できてもいい",
+        "te_wa_ikenai": "できてはいけない",
+        "te_cha_dame": "できちゃだめ",
+        "nakereba_naranai": "できなければならない",
+        "nakute_wa_ikenai": "できなくてはいけない",
+        "nakya": "できなきゃ",
+        "nakucha": "できなくちゃ",
+        "nakute_mo_ii": "できなくてもいい",
+        "conditional_to": "できると",
+        "conditional_nara": "できるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "姉はピアノができます。", "en": "My older sister can play the piano." },
+        { "form": "masu_neg", "jp": "私は泳ぐことができません。", "en": "I can't swim." },
+        { "form": "short_past", "jp": "ご飯ができたよ。", "en": "Dinner's ready!" },
+        { "form": "teiru", "jp": "準備はもうできている。", "en": "Everything is ready." },
+        { "form": "short_past", "jp": "駅の前に新しい店ができた。", "en": "A new shop has opened in front of the station." },
+        { "form": "masu_past_neg", "jp": "昨日の試験は全然できませんでした。", "en": "Yesterday's exam went really badly." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "かす",
+      "kanji": "貸す",
+      "meaning": "to lend",
+      "teGroup": "shite",
+      "description": "A u-verb ending in す. The て-form uses して/した.",
+      "notes": "The opposite of かりる (借りる, to borrow). The person you lend to takes に: 友達に本を貸す. \"Can I borrow it?\" is either 貸してください (lend it to me) or 借りてもいいですか. Also used for renting something out.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "かします",
+        "masu_neg": "かしません",
+        "masu_past": "かしました",
+        "masu_past_neg": "かしませんでした",
+        "te": "かして",
+        "short_pos": "かす",
+        "short_neg": "かさない",
+        "short_past": "かした",
+        "short_past_neg": "かさなかった",
+        "nd_pos": "かすんです",
+        "nd_neg": "かさないんです",
+        "nd_past": "かしたんです",
+        "nd_past_neg": "かさなかったんです",
+        "nd_casual_pos": "かすんだ",
+        "nd_casual_neg": "かさないんだ",
+        "nd_casual_past": "かしたんだ",
+        "nd_casual_past_neg": "かさなかったんだ",
+        "potential": "かせる",
+        "pot_masu_pos": "かせます",
+        "pot_masu_neg": "かせません",
+        "pot_masu_past": "かせました",
+        "pot_masu_past_neg": "かせませんでした",
+        "pot_te": "かせて",
+        "pot_short_neg": "かせない",
+        "pot_short_past": "かせた",
+        "pot_short_past_neg": "かせなかった",
+        "teiru": "かしている",
+        "teiru_neg": "かしていない",
+        "teiru_past": "かしていた",
+        "teiru_past_neg": "かしていなかった",
+        "teiru_masu_pos": "かしています",
+        "teiru_masu_neg": "かしていません",
+        "teiru_masu_past": "かしていました",
+        "teiru_masu_past_neg": "かしていませんでした",
+        "teiru_te": "かしていて",
+        "teshimau": "かしてしまう",
+        "teshimau_polite": "かしてしまいます",
+        "teoku": "かしておく",
+        "teoku_polite": "かしておきます",
+        "temiru": "かしてみる",
+        "temiru_polite": "かしてみます",
+        "sugiru": "かしすぎる",
+        "sugiru_polite": "かしすぎます",
+        "yasui": "かしやすい",
+        "yasui_polite": "かしやすいです",
+        "nikui": "かしにくい",
+        "nikui_polite": "かしにくいです",
+        "nagara": "かしながら",
+        "volitional": "かそう",
+        "passive": "かされる",
+        "causative": "かさせる",
+        "causative_passive": "かさせられる",
+        "conditional_ba": "かせば",
+        "conditional_tara": "かしたら",
+        "imperative": "かせ",
+        "tai": "かしたい",
+        "masu_volitional": "かしましょう",
+        "neg_te": "かさないで",
+        "nakute": "かさなくて",
+        "te_mo_ii": "かしてもいい",
+        "te_wa_ikenai": "かしてはいけない",
+        "te_cha_dame": "かしちゃだめ",
+        "nakereba_naranai": "かさなければならない",
+        "nakute_wa_ikenai": "かさなくてはいけない",
+        "nakya": "かさなきゃ",
+        "nakucha": "かさなくちゃ",
+        "nakute_mo_ii": "かさなくてもいい",
+        "neg_imperative": "かすな",
+        "nasai": "かしなさい",
+        "conditional_to": "かすと",
+        "conditional_nara": "かすなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "友達に傘を貸します。", "en": "I'll lend my friend an umbrella." },
+        { "form": "masu_neg", "jp": "このノートは誰にも貸しません。", "en": "I don't lend this notebook to anyone." },
+        { "form": "te", "jp": "ペンを貸してください。", "en": "Could you lend me a pen?" },
+        { "form": "short_past", "jp": "兄に車を貸した。", "en": "I lent my car to my older brother." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "おくれる",
+      "kanji": "遅れる",
+      "meaning": "to be late",
+      "description": "A ru-verb. Drop the final る and add your ending.",
+      "notes": "What you are late for takes に: 学校に遅れる, 電車に遅れる (to miss the train). It is not something you choose, so it has no volitional or imperative form; the potential is mostly heard as 遅れられない (\"can't afford to be late\"). Compare 遅い (late, slow), an い-adjective.",
+      "jlpt": "N4",
+      "forms": {
+        "masu_pos": "おくれます",
+        "masu_neg": "おくれません",
+        "masu_past": "おくれました",
+        "masu_past_neg": "おくれませんでした",
+        "te": "おくれて",
+        "short_pos": "おくれる",
+        "short_neg": "おくれない",
+        "short_past": "おくれた",
+        "short_past_neg": "おくれなかった",
+        "nd_pos": "おくれるんです",
+        "nd_neg": "おくれないんです",
+        "nd_past": "おくれたんです",
+        "nd_past_neg": "おくれなかったんです",
+        "nd_casual_pos": "おくれるんだ",
+        "nd_casual_neg": "おくれないんだ",
+        "nd_casual_past": "おくれたんだ",
+        "nd_casual_past_neg": "おくれなかったんだ",
+        "potential": "おくれられる",
+        "pot_masu_pos": "おくれられます",
+        "pot_masu_neg": "おくれられません",
+        "pot_masu_past": "おくれられました",
+        "pot_masu_past_neg": "おくれられませんでした",
+        "pot_te": "おくれられて",
+        "pot_short_neg": "おくれられない",
+        "pot_short_past": "おくれられた",
+        "pot_short_past_neg": "おくれられなかった",
+        "teiru": "おくれている",
+        "teiru_neg": "おくれていない",
+        "teiru_past": "おくれていた",
+        "teiru_past_neg": "おくれていなかった",
+        "teiru_masu_pos": "おくれています",
+        "teiru_masu_neg": "おくれていません",
+        "teiru_masu_past": "おくれていました",
+        "teiru_masu_past_neg": "おくれていませんでした",
+        "teiru_te": "おくれていて",
+        "teshimau": "おくれてしまう",
+        "teshimau_polite": "おくれてしまいます",
+        "teoku": "おくれておく",
+        "teoku_polite": "おくれておきます",
+        "temiru": "おくれてみる",
+        "temiru_polite": "おくれてみます",
+        "sugiru": "おくれすぎる",
+        "sugiru_polite": "おくれすぎます",
+        "yasui": "おくれやすい",
+        "yasui_polite": "おくれやすいです",
+        "nikui": "おくれにくい",
+        "nikui_polite": "おくれにくいです",
+        "nagara": "おくれながら",
+        "causative": "おくれさせる",
+        "conditional_ba": "おくれれば",
+        "conditional_tara": "おくれたら",
+        "neg_te": "おくれないで",
+        "nakute": "おくれなくて",
+        "te_mo_ii": "おくれてもいい",
+        "te_wa_ikenai": "おくれてはいけない",
+        "te_cha_dame": "おくれちゃだめ",
+        "nakereba_naranai": "おくれなければならない",
+        "nakute_wa_ikenai": "おくれなくてはいけない",
+        "nakya": "おくれなきゃ",
+        "nakucha": "おくれなくちゃ",
+        "nakute_mo_ii": "おくれなくてもいい",
+        "conditional_to": "おくれると",
+        "conditional_nara": "おくれるなら"
+      },
+      "examples": [
+        { "form": "masu_past", "jp": "電車が遅れました。", "en": "The train was late." },
+        { "form": "te", "jp": "遅れてすみません。", "en": "Sorry I'm late." },
+        { "form": "short_past", "jp": "今朝、学校に遅れた。", "en": "I was late for school this morning." },
+        { "form": "neg_te", "jp": "明日は遅れないでください。", "en": "Please don't be late tomorrow." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "ふる",
+      "kanji": "降る",
+      "meaning": "to fall (rain, snow)",
+      "teGroup": "tte",
+      "description": "A u-verb ending in る. The て-form uses って/った.",
+      "notes": "Used for rain and snow, which take が: 雨が降る, 雪が降る. It happens by itself, so it has no volitional, potential, imperative or たい form. The passive 雨に降られた means \"I got caught in the rain\". Written with the same kanji as おりる (降りる, to get off).",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "ふります",
+        "masu_neg": "ふりません",
+        "masu_past": "ふりました",
+        "masu_past_neg": "ふりませんでした",
+        "te": "ふって",
+        "short_pos": "ふる",
+        "short_neg": "ふらない",
+        "short_past": "ふった",
+        "short_past_neg": "ふらなかった",
+        "nd_pos": "ふるんです",
+        "nd_neg": "ふらないんです",
+        "nd_past": "ふったんです",
+        "nd_past_neg": "ふらなかったんです",
+        "nd_casual_pos": "ふるんだ",
+        "nd_casual_neg": "ふらないんだ",
+        "nd_casual_past": "ふったんだ",
+        "nd_casual_past_neg": "ふらなかったんだ",
+        "teiru": "ふっている",
+        "teiru_neg": "ふっていない",
+        "teiru_past": "ふっていた",
+        "teiru_past_neg": "ふっていなかった",
+        "teiru_masu_pos": "ふっています",
+        "teiru_masu_neg": "ふっていません",
+        "teiru_masu_past": "ふっていました",
+        "teiru_masu_past_neg": "ふっていませんでした",
+        "teiru_te": "ふっていて",
+        "teshimau": "ふってしまう",
+        "teshimau_polite": "ふってしまいます",
+        "teoku": "ふっておく",
+        "teoku_polite": "ふっておきます",
+        "temiru": "ふってみる",
+        "temiru_polite": "ふってみます",
+        "sugiru": "ふりすぎる",
+        "sugiru_polite": "ふりすぎます",
+        "yasui": "ふりやすい",
+        "yasui_polite": "ふりやすいです",
+        "nikui": "ふりにくい",
+        "nikui_polite": "ふりにくいです",
+        "nagara": "ふりながら",
+        "passive": "ふられる",
+        "causative": "ふらせる",
+        "conditional_ba": "ふれば",
+        "conditional_tara": "ふったら",
+        "neg_te": "ふらないで",
+        "nakute": "ふらなくて",
+        "te_mo_ii": "ふってもいい",
+        "te_wa_ikenai": "ふってはいけない",
+        "te_cha_dame": "ふっちゃだめ",
+        "nakereba_naranai": "ふらなければならない",
+        "nakute_wa_ikenai": "ふらなくてはいけない",
+        "nakya": "ふらなきゃ",
+        "nakucha": "ふらなくちゃ",
+        "nakute_mo_ii": "ふらなくてもいい",
+        "conditional_to": "ふると",
+        "conditional_nara": "ふるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "明日は雪が降ります。", "en": "It's going to snow tomorrow." },
+        { "form": "masu_past", "jp": "昨日はたくさん雨が降りました。", "en": "It rained a lot yesterday." },
+        { "form": "teiru_masu_pos", "jp": "雨が降っています。", "en": "It's raining." },
+        { "form": "short_neg", "jp": "今年はあまり雪が降らない。", "en": "It hasn't snowed much this year." },
+        { "form": "short_past", "jp": "夜、雪が降った。", "en": "It snowed in the night." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "とる",
+      "id": "とる:撮る",
+      "kanji": "撮る",
+      "meaning": "to take (a photo, a video)",
+      "teGroup": "tte",
+      "description": "A u-verb ending in る. The て-form uses って/った.",
+      "notes": "Spelled the same as とる (取る, to take, to pick up). 撮る is only for photos and filming: 写真を撮る, ビデオを撮る. Asking permission: 写真を撮ってもいいですか.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "とります",
+        "masu_neg": "とりません",
+        "masu_past": "とりました",
+        "masu_past_neg": "とりませんでした",
+        "te": "とって",
+        "short_pos": "とる",
+        "short_neg": "とらない",
+        "short_past": "とった",
+        "short_past_neg": "とらなかった",
+        "nd_pos": "とるんです",
+        "nd_neg": "とらないんです",
+        "nd_past": "とったんです",
+        "nd_past_neg": "とらなかったんです",
+        "nd_casual_pos": "とるんだ",
+        "nd_casual_neg": "とらないんだ",
+        "nd_casual_past": "とったんだ",
+        "nd_casual_past_neg": "とらなかったんだ",
+        "potential": "とれる",
+        "pot_masu_pos": "とれます",
+        "pot_masu_neg": "とれません",
+        "pot_masu_past": "とれました",
+        "pot_masu_past_neg": "とれませんでした",
+        "pot_te": "とれて",
+        "pot_short_neg": "とれない",
+        "pot_short_past": "とれた",
+        "pot_short_past_neg": "とれなかった",
+        "teiru": "とっている",
+        "teiru_neg": "とっていない",
+        "teiru_past": "とっていた",
+        "teiru_past_neg": "とっていなかった",
+        "teiru_masu_pos": "とっています",
+        "teiru_masu_neg": "とっていません",
+        "teiru_masu_past": "とっていました",
+        "teiru_masu_past_neg": "とっていませんでした",
+        "teiru_te": "とっていて",
+        "teshimau": "とってしまう",
+        "teshimau_polite": "とってしまいます",
+        "teoku": "とっておく",
+        "teoku_polite": "とっておきます",
+        "temiru": "とってみる",
+        "temiru_polite": "とってみます",
+        "sugiru": "とりすぎる",
+        "sugiru_polite": "とりすぎます",
+        "yasui": "とりやすい",
+        "yasui_polite": "とりやすいです",
+        "nikui": "とりにくい",
+        "nikui_polite": "とりにくいです",
+        "nagara": "とりながら",
+        "volitional": "とろう",
+        "passive": "とられる",
+        "causative": "とらせる",
+        "causative_passive": "とらせられる",
+        "causative_passive_short": "とらされる",
+        "conditional_ba": "とれば",
+        "conditional_tara": "とったら",
+        "imperative": "とれ",
+        "tai": "とりたい",
+        "masu_volitional": "とりましょう",
+        "neg_te": "とらないで",
+        "nakute": "とらなくて",
+        "te_mo_ii": "とってもいい",
+        "te_wa_ikenai": "とってはいけない",
+        "te_cha_dame": "とっちゃだめ",
+        "nakereba_naranai": "とらなければならない",
+        "nakute_wa_ikenai": "とらなくてはいけない",
+        "nakya": "とらなきゃ",
+        "nakucha": "とらなくちゃ",
+        "nakute_mo_ii": "とらなくてもいい",
+        "neg_imperative": "とるな",
+        "nasai": "とりなさい",
+        "conditional_to": "とると",
+        "conditional_nara": "とるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "旅行では写真をたくさん撮ります。", "en": "I take lots of photos when I travel." },
+        { "form": "masu_past", "jp": "富士山の写真を撮りました。", "en": "I took a photo of Mount Fuji." },
+        { "form": "te", "jp": "すみません、写真を撮ってもらえませんか。", "en": "Excuse me, could you take a photo of us?" },
+        { "form": "short_past", "jp": "旅行で撮った写真を見せて。", "en": "Show me the photos you took on your trip." },
+        { "form": "neg_te", "jp": "ここでは写真を撮らないでください。", "en": "Please don't take photos here." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "とまる",
+      "kanji": "止まる",
+      "meaning": "to stop (come to a stop)",
+      "teGroup": "tte",
+      "description": "A u-verb ending in る. The て-form uses って/った.",
+      "notes": "Intransitive: the thing that stops takes が: 電車が止まった. The transitive partner is とめる (止める, to stop something): 車を止める. 止まれ is the \"STOP\" on Japanese road signs. Spelled the same as 泊まる (to stay the night).",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "とまります",
+        "masu_neg": "とまりません",
+        "masu_past": "とまりました",
+        "masu_past_neg": "とまりませんでした",
+        "te": "とまって",
+        "short_pos": "とまる",
+        "short_neg": "とまらない",
+        "short_past": "とまった",
+        "short_past_neg": "とまらなかった",
+        "nd_pos": "とまるんです",
+        "nd_neg": "とまらないんです",
+        "nd_past": "とまったんです",
+        "nd_past_neg": "とまらなかったんです",
+        "nd_casual_pos": "とまるんだ",
+        "nd_casual_neg": "とまらないんだ",
+        "nd_casual_past": "とまったんだ",
+        "nd_casual_past_neg": "とまらなかったんだ",
+        "potential": "とまれる",
+        "pot_masu_pos": "とまれます",
+        "pot_masu_neg": "とまれません",
+        "pot_masu_past": "とまれました",
+        "pot_masu_past_neg": "とまれませんでした",
+        "pot_te": "とまれて",
+        "pot_short_neg": "とまれない",
+        "pot_short_past": "とまれた",
+        "pot_short_past_neg": "とまれなかった",
+        "teiru": "とまっている",
+        "teiru_neg": "とまっていない",
+        "teiru_past": "とまっていた",
+        "teiru_past_neg": "とまっていなかった",
+        "teiru_masu_pos": "とまっています",
+        "teiru_masu_neg": "とまっていません",
+        "teiru_masu_past": "とまっていました",
+        "teiru_masu_past_neg": "とまっていませんでした",
+        "teiru_te": "とまっていて",
+        "teshimau": "とまってしまう",
+        "teshimau_polite": "とまってしまいます",
+        "teoku": "とまっておく",
+        "teoku_polite": "とまっておきます",
+        "temiru": "とまってみる",
+        "temiru_polite": "とまってみます",
+        "sugiru": "とまりすぎる",
+        "sugiru_polite": "とまりすぎます",
+        "yasui": "とまりやすい",
+        "yasui_polite": "とまりやすいです",
+        "nikui": "とまりにくい",
+        "nikui_polite": "とまりにくいです",
+        "nagara": "とまりながら",
+        "volitional": "とまろう",
+        "passive": "とまられる",
+        "causative": "とまらせる",
+        "causative_passive": "とまらせられる",
+        "causative_passive_short": "とまらされる",
+        "conditional_ba": "とまれば",
+        "conditional_tara": "とまったら",
+        "imperative": "とまれ",
+        "tai": "とまりたい",
+        "masu_volitional": "とまりましょう",
+        "neg_te": "とまらないで",
+        "nakute": "とまらなくて",
+        "te_mo_ii": "とまってもいい",
+        "te_wa_ikenai": "とまってはいけない",
+        "te_cha_dame": "とまっちゃだめ",
+        "nakereba_naranai": "とまらなければならない",
+        "nakute_wa_ikenai": "とまらなくてはいけない",
+        "nakya": "とまらなきゃ",
+        "nakucha": "とまらなくちゃ",
+        "nakute_mo_ii": "とまらなくてもいい",
+        "neg_imperative": "とまるな",
+        "nasai": "とまりなさい",
+        "conditional_to": "とまると",
+        "conditional_nara": "とまるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "このバスは駅の前に止まります。", "en": "This bus stops in front of the station." },
+        { "form": "short_past", "jp": "大雪で電車が止まった。", "en": "The trains stopped because of heavy snow." },
+        { "form": "teiru_masu_pos", "jp": "この時計は止まっています。", "en": "This clock has stopped." },
+        { "form": "masu_past", "jp": "車が急に止まりました。", "en": "The car stopped suddenly." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "みえる",
+      "kanji": "見える",
+      "meaning": "to be visible, can be seen; to look, to seem",
+      "description": "A ru-verb. Drop the final る and add your ending.",
+      "notes": "What can be seen takes が: 窓から山が見える. Seeing here happens by itself; 見られる (the potential of 見る) is about having the chance to see something: 映画が見られる. It also means \"to look, to seem\": 若く見える.",
+      "jlpt": "N4",
+      "forms": {
+        "masu_pos": "みえます",
+        "masu_neg": "みえません",
+        "masu_past": "みえました",
+        "masu_past_neg": "みえませんでした",
+        "te": "みえて",
+        "short_pos": "みえる",
+        "short_neg": "みえない",
+        "short_past": "みえた",
+        "short_past_neg": "みえなかった",
+        "nd_pos": "みえるんです",
+        "nd_neg": "みえないんです",
+        "nd_past": "みえたんです",
+        "nd_past_neg": "みえなかったんです",
+        "nd_casual_pos": "みえるんだ",
+        "nd_casual_neg": "みえないんだ",
+        "nd_casual_past": "みえたんだ",
+        "nd_casual_past_neg": "みえなかったんだ",
+        "teiru": "みえている",
+        "teiru_neg": "みえていない",
+        "teiru_past": "みえていた",
+        "teiru_past_neg": "みえていなかった",
+        "teiru_masu_pos": "みえています",
+        "teiru_masu_neg": "みえていません",
+        "teiru_masu_past": "みえていました",
+        "teiru_masu_past_neg": "みえていませんでした",
+        "teiru_te": "みえていて",
+        "teshimau": "みえてしまう",
+        "teshimau_polite": "みえてしまいます",
+        "teoku": "みえておく",
+        "teoku_polite": "みえておきます",
+        "temiru": "みえてみる",
+        "temiru_polite": "みえてみます",
+        "sugiru": "みえすぎる",
+        "sugiru_polite": "みえすぎます",
+        "yasui": "みえやすい",
+        "yasui_polite": "みえやすいです",
+        "nikui": "みえにくい",
+        "nikui_polite": "みえにくいです",
+        "nagara": "みえながら",
+        "conditional_ba": "みえれば",
+        "conditional_tara": "みえたら",
+        "neg_te": "みえないで",
+        "nakute": "みえなくて",
+        "te_mo_ii": "みえてもいい",
+        "te_wa_ikenai": "みえてはいけない",
+        "te_cha_dame": "みえちゃだめ",
+        "nakereba_naranai": "みえなければならない",
+        "nakute_wa_ikenai": "みえなくてはいけない",
+        "nakya": "みえなきゃ",
+        "nakucha": "みえなくちゃ",
+        "nakute_mo_ii": "みえなくてもいい",
+        "conditional_to": "みえると",
+        "conditional_nara": "みえるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "部屋から富士山が見えます。", "en": "You can see Mount Fuji from the room." },
+        { "form": "masu_neg", "jp": "暗くて、何も見えません。", "en": "It's dark and I can't see anything." },
+        { "form": "short_past", "jp": "窓から海が見えた。", "en": "I could see the sea from the window." },
+        { "form": "short_pos", "jp": "田中さんは若く見える。", "en": "Mr Tanaka looks young." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "あく",
+      "kanji": "開く",
+      "meaning": "to open (by itself), to be open",
+      "teGroup": "ite",
+      "description": "A u-verb ending in く. The て-form uses いて/いた.",
+      "notes": "Intransitive: the thing that opens takes が: ドアが開く. The transitive partner is あける (開ける): ドアを開ける. 開いている describes the state: 窓が開いています (the window is open). The same kanji is also read ひらく (to open a book, to hold a meeting).",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "あきます",
+        "masu_neg": "あきません",
+        "masu_past": "あきました",
+        "masu_past_neg": "あきませんでした",
+        "te": "あいて",
+        "short_pos": "あく",
+        "short_neg": "あかない",
+        "short_past": "あいた",
+        "short_past_neg": "あかなかった",
+        "nd_pos": "あくんです",
+        "nd_neg": "あかないんです",
+        "nd_past": "あいたんです",
+        "nd_past_neg": "あかなかったんです",
+        "nd_casual_pos": "あくんだ",
+        "nd_casual_neg": "あかないんだ",
+        "nd_casual_past": "あいたんだ",
+        "nd_casual_past_neg": "あかなかったんだ",
+        "teiru": "あいている",
+        "teiru_neg": "あいていない",
+        "teiru_past": "あいていた",
+        "teiru_past_neg": "あいていなかった",
+        "teiru_masu_pos": "あいています",
+        "teiru_masu_neg": "あいていません",
+        "teiru_masu_past": "あいていました",
+        "teiru_masu_past_neg": "あいていませんでした",
+        "teiru_te": "あいていて",
+        "teshimau": "あいてしまう",
+        "teshimau_polite": "あいてしまいます",
+        "teoku": "あいておく",
+        "teoku_polite": "あいておきます",
+        "temiru": "あいてみる",
+        "temiru_polite": "あいてみます",
+        "sugiru": "あきすぎる",
+        "sugiru_polite": "あきすぎます",
+        "yasui": "あきやすい",
+        "yasui_polite": "あきやすいです",
+        "nikui": "あきにくい",
+        "nikui_polite": "あきにくいです",
+        "nagara": "あきながら",
+        "conditional_ba": "あけば",
+        "conditional_tara": "あいたら",
+        "neg_te": "あかないで",
+        "nakute": "あかなくて",
+        "te_mo_ii": "あいてもいい",
+        "te_wa_ikenai": "あいてはいけない",
+        "te_cha_dame": "あいちゃだめ",
+        "nakereba_naranai": "あかなければならない",
+        "nakute_wa_ikenai": "あかなくてはいけない",
+        "nakya": "あかなきゃ",
+        "nakucha": "あかなくちゃ",
+        "nakute_mo_ii": "あかなくてもいい",
+        "conditional_to": "あくと",
+        "conditional_nara": "あくなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "この店は十時に開きます。", "en": "This shop opens at ten." },
+        { "form": "teiru_masu_pos", "jp": "窓が開いています。", "en": "The window is open." },
+        { "form": "short_neg", "jp": "ドアが開かない。", "en": "The door won't open." },
+        { "form": "short_past", "jp": "風でドアが開いた。", "en": "The wind blew the door open." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "つく",
+      "kanji": "着く",
+      "meaning": "to arrive",
+      "teGroup": "ite",
+      "description": "A u-verb ending in く. The て-form uses いて/いた.",
+      "notes": "The place you arrive at takes に: 駅に着く. Written with the same kanji as きる (着る, to wear). Not to be confused with つく (to come on, of lights), which is usually written in kana.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "つきます",
+        "masu_neg": "つきません",
+        "masu_past": "つきました",
+        "masu_past_neg": "つきませんでした",
+        "te": "ついて",
+        "short_pos": "つく",
+        "short_neg": "つかない",
+        "short_past": "ついた",
+        "short_past_neg": "つかなかった",
+        "nd_pos": "つくんです",
+        "nd_neg": "つかないんです",
+        "nd_past": "ついたんです",
+        "nd_past_neg": "つかなかったんです",
+        "nd_casual_pos": "つくんだ",
+        "nd_casual_neg": "つかないんだ",
+        "nd_casual_past": "ついたんだ",
+        "nd_casual_past_neg": "つかなかったんだ",
+        "potential": "つける",
+        "pot_masu_pos": "つけます",
+        "pot_masu_neg": "つけません",
+        "pot_masu_past": "つけました",
+        "pot_masu_past_neg": "つけませんでした",
+        "pot_te": "つけて",
+        "pot_short_neg": "つけない",
+        "pot_short_past": "つけた",
+        "pot_short_past_neg": "つけなかった",
+        "teiru": "ついている",
+        "teiru_neg": "ついていない",
+        "teiru_past": "ついていた",
+        "teiru_past_neg": "ついていなかった",
+        "teiru_masu_pos": "ついています",
+        "teiru_masu_neg": "ついていません",
+        "teiru_masu_past": "ついていました",
+        "teiru_masu_past_neg": "ついていませんでした",
+        "teiru_te": "ついていて",
+        "teshimau": "ついてしまう",
+        "teshimau_polite": "ついてしまいます",
+        "teoku": "ついておく",
+        "teoku_polite": "ついておきます",
+        "temiru": "ついてみる",
+        "temiru_polite": "ついてみます",
+        "sugiru": "つきすぎる",
+        "sugiru_polite": "つきすぎます",
+        "yasui": "つきやすい",
+        "yasui_polite": "つきやすいです",
+        "nikui": "つきにくい",
+        "nikui_polite": "つきにくいです",
+        "nagara": "つきながら",
+        "volitional": "つこう",
+        "conditional_ba": "つけば",
+        "conditional_tara": "ついたら",
+        "imperative": "つけ",
+        "tai": "つきたい",
+        "masu_volitional": "つきましょう",
+        "neg_te": "つかないで",
+        "nakute": "つかなくて",
+        "te_mo_ii": "ついてもいい",
+        "te_wa_ikenai": "ついてはいけない",
+        "te_cha_dame": "ついちゃだめ",
+        "nakereba_naranai": "つかなければならない",
+        "nakute_wa_ikenai": "つかなくてはいけない",
+        "nakya": "つかなきゃ",
+        "nakucha": "つかなくちゃ",
+        "nakute_mo_ii": "つかなくてもいい",
+        "neg_imperative": "つくな",
+        "nasai": "つきなさい",
+        "conditional_to": "つくと",
+        "conditional_nara": "つくなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "電車は十時に着きます。", "en": "The train arrives at ten." },
+        { "form": "masu_past", "jp": "九時に駅に着きました。", "en": "I got to the station at nine." },
+        { "form": "te", "jp": "空港に着いて、すぐ電話しました。", "en": "I called as soon as I got to the airport." },
+        { "form": "short_neg", "jp": "バスがなかなか着かない。", "en": "The bus is taking ages to arrive." },
+        { "form": "short_past", "jp": "やっと着いた！", "en": "We're finally here!" }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "おく",
+      "kanji": "置く",
+      "meaning": "to put, to place",
+      "teGroup": "ite",
+      "description": "A u-verb ending in く. The て-form uses いて/いた.",
+      "notes": "The place takes に: 机の上に本を置く. The auxiliary Vておく (doing something in advance, 買っておく) comes from this verb.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "おきます",
+        "masu_neg": "おきません",
+        "masu_past": "おきました",
+        "masu_past_neg": "おきませんでした",
+        "te": "おいて",
+        "short_pos": "おく",
+        "short_neg": "おかない",
+        "short_past": "おいた",
+        "short_past_neg": "おかなかった",
+        "nd_pos": "おくんです",
+        "nd_neg": "おかないんです",
+        "nd_past": "おいたんです",
+        "nd_past_neg": "おかなかったんです",
+        "nd_casual_pos": "おくんだ",
+        "nd_casual_neg": "おかないんだ",
+        "nd_casual_past": "おいたんだ",
+        "nd_casual_past_neg": "おかなかったんだ",
+        "potential": "おける",
+        "pot_masu_pos": "おけます",
+        "pot_masu_neg": "おけません",
+        "pot_masu_past": "おけました",
+        "pot_masu_past_neg": "おけませんでした",
+        "pot_te": "おけて",
+        "pot_short_neg": "おけない",
+        "pot_short_past": "おけた",
+        "pot_short_past_neg": "おけなかった",
+        "teiru": "おいている",
+        "teiru_neg": "おいていない",
+        "teiru_past": "おいていた",
+        "teiru_past_neg": "おいていなかった",
+        "teiru_masu_pos": "おいています",
+        "teiru_masu_neg": "おいていません",
+        "teiru_masu_past": "おいていました",
+        "teiru_masu_past_neg": "おいていませんでした",
+        "teiru_te": "おいていて",
+        "teshimau": "おいてしまう",
+        "teshimau_polite": "おいてしまいます",
+        "teoku": "おいておく",
+        "teoku_polite": "おいておきます",
+        "temiru": "おいてみる",
+        "temiru_polite": "おいてみます",
+        "sugiru": "おきすぎる",
+        "sugiru_polite": "おきすぎます",
+        "yasui": "おきやすい",
+        "yasui_polite": "おきやすいです",
+        "nikui": "おきにくい",
+        "nikui_polite": "おきにくいです",
+        "nagara": "おきながら",
+        "volitional": "おこう",
+        "passive": "おかれる",
+        "causative": "おかせる",
+        "causative_passive": "おかせられる",
+        "causative_passive_short": "おかされる",
+        "conditional_ba": "おけば",
+        "conditional_tara": "おいたら",
+        "imperative": "おけ",
+        "tai": "おきたい",
+        "masu_volitional": "おきましょう",
+        "neg_te": "おかないで",
+        "nakute": "おかなくて",
+        "te_mo_ii": "おいてもいい",
+        "te_wa_ikenai": "おいてはいけない",
+        "te_cha_dame": "おいちゃだめ",
+        "nakereba_naranai": "おかなければならない",
+        "nakute_wa_ikenai": "おかなくてはいけない",
+        "nakya": "おかなきゃ",
+        "nakucha": "おかなくちゃ",
+        "nakute_mo_ii": "おかなくてもいい",
+        "neg_imperative": "おくな",
+        "nasai": "おきなさい",
+        "conditional_to": "おくと",
+        "conditional_nara": "おくなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "かばんはここに置きます。", "en": "I'll put my bag here." },
+        { "form": "masu_past", "jp": "机の上に本を置きました。", "en": "I put the book on the desk." },
+        { "form": "te", "jp": "荷物はそこに置いてください。", "en": "Please put your luggage over there." },
+        { "form": "short_past", "jp": "鍵をどこに置いたか忘れた。", "en": "I forgot where I put my keys." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "でかける",
+      "kanji": "出かける",
+      "meaning": "to go out",
+      "description": "A ru-verb. Drop the final る and add your ending.",
+      "notes": "Leaving home to go somewhere: 買い物に出かける. Where you are going takes に or へ. Also written 出掛ける.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "でかけます",
+        "masu_neg": "でかけません",
+        "masu_past": "でかけました",
+        "masu_past_neg": "でかけませんでした",
+        "te": "でかけて",
+        "short_pos": "でかける",
+        "short_neg": "でかけない",
+        "short_past": "でかけた",
+        "short_past_neg": "でかけなかった",
+        "nd_pos": "でかけるんです",
+        "nd_neg": "でかけないんです",
+        "nd_past": "でかけたんです",
+        "nd_past_neg": "でかけなかったんです",
+        "nd_casual_pos": "でかけるんだ",
+        "nd_casual_neg": "でかけないんだ",
+        "nd_casual_past": "でかけたんだ",
+        "nd_casual_past_neg": "でかけなかったんだ",
+        "potential": "でかけられる",
+        "pot_masu_pos": "でかけられます",
+        "pot_masu_neg": "でかけられません",
+        "pot_masu_past": "でかけられました",
+        "pot_masu_past_neg": "でかけられませんでした",
+        "pot_te": "でかけられて",
+        "pot_short_neg": "でかけられない",
+        "pot_short_past": "でかけられた",
+        "pot_short_past_neg": "でかけられなかった",
+        "teiru": "でかけている",
+        "teiru_neg": "でかけていない",
+        "teiru_past": "でかけていた",
+        "teiru_past_neg": "でかけていなかった",
+        "teiru_masu_pos": "でかけています",
+        "teiru_masu_neg": "でかけていません",
+        "teiru_masu_past": "でかけていました",
+        "teiru_masu_past_neg": "でかけていませんでした",
+        "teiru_te": "でかけていて",
+        "teshimau": "でかけてしまう",
+        "teshimau_polite": "でかけてしまいます",
+        "teoku": "でかけておく",
+        "teoku_polite": "でかけておきます",
+        "temiru": "でかけてみる",
+        "temiru_polite": "でかけてみます",
+        "sugiru": "でかけすぎる",
+        "sugiru_polite": "でかけすぎます",
+        "yasui": "でかけやすい",
+        "yasui_polite": "でかけやすいです",
+        "nikui": "でかけにくい",
+        "nikui_polite": "でかけにくいです",
+        "nagara": "でかけながら",
+        "volitional": "でかけよう",
+        "passive": "でかけられる",
+        "causative": "でかけさせる",
+        "causative_passive": "でかけさせられる",
+        "conditional_ba": "でかければ",
+        "conditional_tara": "でかけたら",
+        "imperative": "でかけろ",
+        "tai": "でかけたい",
+        "masu_volitional": "でかけましょう",
+        "neg_te": "でかけないで",
+        "nakute": "でかけなくて",
+        "te_mo_ii": "でかけてもいい",
+        "te_wa_ikenai": "でかけてはいけない",
+        "te_cha_dame": "でかけちゃだめ",
+        "nakereba_naranai": "でかけなければならない",
+        "nakute_wa_ikenai": "でかけなくてはいけない",
+        "nakya": "でかけなきゃ",
+        "nakucha": "でかけなくちゃ",
+        "nakute_mo_ii": "でかけなくてもいい",
+        "neg_imperative": "でかけるな",
+        "nasai": "でかけなさい",
+        "conditional_to": "でかけると",
+        "conditional_nara": "でかけるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "日曜日は家族と出かけます。", "en": "On Sunday I'm going out with my family." },
+        { "form": "masu_past", "jp": "母は朝早く出かけました。", "en": "My mother went out early in the morning." },
+        { "form": "short_neg", "jp": "雨なので、今日は出かけない。", "en": "It's raining, so I'm not going out today." },
+        { "form": "te", "jp": "ちょっと出かけてきます。", "en": "I'm just popping out." }
+      ]
+    },
+    {
+      "type": "u",
+      "label": "U-verb",
+      "dict": "てつだう",
+      "kanji": "手伝う",
+      "meaning": "to help (with a task)",
+      "teGroup": "tte",
+      "description": "A u-verb ending in う. The て-form uses って/った.",
+      "notes": "The person or the task takes を: 母を手伝う, 宿題を手伝う; both together: 母の料理を手伝う. Asking: 手伝ってください, or more softly 手伝ってもらえませんか. Thanking: 手伝ってくれてありがとう.",
+      "jlpt": "N4",
+      "forms": {
+        "masu_pos": "てつだいます",
+        "masu_neg": "てつだいません",
+        "masu_past": "てつだいました",
+        "masu_past_neg": "てつだいませんでした",
+        "te": "てつだって",
+        "short_pos": "てつだう",
+        "short_neg": "てつだわない",
+        "short_past": "てつだった",
+        "short_past_neg": "てつだわなかった",
+        "nd_pos": "てつだうんです",
+        "nd_neg": "てつだわないんです",
+        "nd_past": "てつだったんです",
+        "nd_past_neg": "てつだわなかったんです",
+        "nd_casual_pos": "てつだうんだ",
+        "nd_casual_neg": "てつだわないんだ",
+        "nd_casual_past": "てつだったんだ",
+        "nd_casual_past_neg": "てつだわなかったんだ",
+        "potential": "てつだえる",
+        "pot_masu_pos": "てつだえます",
+        "pot_masu_neg": "てつだえません",
+        "pot_masu_past": "てつだえました",
+        "pot_masu_past_neg": "てつだえませんでした",
+        "pot_te": "てつだえて",
+        "pot_short_neg": "てつだえない",
+        "pot_short_past": "てつだえた",
+        "pot_short_past_neg": "てつだえなかった",
+        "teiru": "てつだっている",
+        "teiru_neg": "てつだっていない",
+        "teiru_past": "てつだっていた",
+        "teiru_past_neg": "てつだっていなかった",
+        "teiru_masu_pos": "てつだっています",
+        "teiru_masu_neg": "てつだっていません",
+        "teiru_masu_past": "てつだっていました",
+        "teiru_masu_past_neg": "てつだっていませんでした",
+        "teiru_te": "てつだっていて",
+        "teshimau": "てつだってしまう",
+        "teshimau_polite": "てつだってしまいます",
+        "teoku": "てつだっておく",
+        "teoku_polite": "てつだっておきます",
+        "temiru": "てつだってみる",
+        "temiru_polite": "てつだってみます",
+        "sugiru": "てつだいすぎる",
+        "sugiru_polite": "てつだいすぎます",
+        "yasui": "てつだいやすい",
+        "yasui_polite": "てつだいやすいです",
+        "nikui": "てつだいにくい",
+        "nikui_polite": "てつだいにくいです",
+        "nagara": "てつだいながら",
+        "volitional": "てつだおう",
+        "passive": "てつだわれる",
+        "causative": "てつだわせる",
+        "causative_passive": "てつだわせられる",
+        "causative_passive_short": "てつだわされる",
+        "conditional_ba": "てつだえば",
+        "conditional_tara": "てつだったら",
+        "imperative": "てつだえ",
+        "tai": "てつだいたい",
+        "masu_volitional": "てつだいましょう",
+        "neg_te": "てつだわないで",
+        "nakute": "てつだわなくて",
+        "te_mo_ii": "てつだってもいい",
+        "te_wa_ikenai": "てつだってはいけない",
+        "te_cha_dame": "てつだっちゃだめ",
+        "nakereba_naranai": "てつだわなければならない",
+        "nakute_wa_ikenai": "てつだわなくてはいけない",
+        "nakya": "てつだわなきゃ",
+        "nakucha": "てつだわなくちゃ",
+        "nakute_mo_ii": "てつだわなくてもいい",
+        "neg_imperative": "てつだうな",
+        "nasai": "てつだいなさい",
+        "conditional_to": "てつだうと",
+        "conditional_nara": "てつだうなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "週末は父の仕事を手伝います。", "en": "At weekends I help my father with his work." },
+        { "form": "masu_past", "jp": "友達の引っ越しを手伝いました。", "en": "I helped a friend move house." },
+        { "form": "te", "jp": "ちょっと手伝ってください。", "en": "Could you give me a hand?" }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "おりる",
+      "kanji": "降りる",
+      "meaning": "to get off (a vehicle), to go down",
+      "description": "A ru-verb. Drop the final る and add your ending.",
+      "notes": "What you get off takes を: 電車を降りる, バスを降りる. The opposite is のる (乗る), which takes に. Written with the same kanji as ふる (降る, of rain); the okurigana tell them apart, though 降ります can be either.",
+      "jlpt": "N5",
+      "forms": {
+        "masu_pos": "おります",
+        "masu_neg": "おりません",
+        "masu_past": "おりました",
+        "masu_past_neg": "おりませんでした",
+        "te": "おりて",
+        "short_pos": "おりる",
+        "short_neg": "おりない",
+        "short_past": "おりた",
+        "short_past_neg": "おりなかった",
+        "nd_pos": "おりるんです",
+        "nd_neg": "おりないんです",
+        "nd_past": "おりたんです",
+        "nd_past_neg": "おりなかったんです",
+        "nd_casual_pos": "おりるんだ",
+        "nd_casual_neg": "おりないんだ",
+        "nd_casual_past": "おりたんだ",
+        "nd_casual_past_neg": "おりなかったんだ",
+        "potential": "おりられる",
+        "pot_masu_pos": "おりられます",
+        "pot_masu_neg": "おりられません",
+        "pot_masu_past": "おりられました",
+        "pot_masu_past_neg": "おりられませんでした",
+        "pot_te": "おりられて",
+        "pot_short_neg": "おりられない",
+        "pot_short_past": "おりられた",
+        "pot_short_past_neg": "おりられなかった",
+        "teiru": "おりている",
+        "teiru_neg": "おりていない",
+        "teiru_past": "おりていた",
+        "teiru_past_neg": "おりていなかった",
+        "teiru_masu_pos": "おりています",
+        "teiru_masu_neg": "おりていません",
+        "teiru_masu_past": "おりていました",
+        "teiru_masu_past_neg": "おりていませんでした",
+        "teiru_te": "おりていて",
+        "teshimau": "おりてしまう",
+        "teshimau_polite": "おりてしまいます",
+        "teoku": "おりておく",
+        "teoku_polite": "おりておきます",
+        "temiru": "おりてみる",
+        "temiru_polite": "おりてみます",
+        "sugiru": "おりすぎる",
+        "sugiru_polite": "おりすぎます",
+        "yasui": "おりやすい",
+        "yasui_polite": "おりやすいです",
+        "nikui": "おりにくい",
+        "nikui_polite": "おりにくいです",
+        "nagara": "おりながら",
+        "volitional": "おりよう",
+        "passive": "おりられる",
+        "causative": "おりさせる",
+        "causative_passive": "おりさせられる",
+        "conditional_ba": "おりれば",
+        "conditional_tara": "おりたら",
+        "imperative": "おりろ",
+        "tai": "おりたい",
+        "masu_volitional": "おりましょう",
+        "neg_te": "おりないで",
+        "nakute": "おりなくて",
+        "te_mo_ii": "おりてもいい",
+        "te_wa_ikenai": "おりてはいけない",
+        "te_cha_dame": "おりちゃだめ",
+        "nakereba_naranai": "おりなければならない",
+        "nakute_wa_ikenai": "おりなくてはいけない",
+        "nakya": "おりなきゃ",
+        "nakucha": "おりなくちゃ",
+        "nakute_mo_ii": "おりなくてもいい",
+        "neg_imperative": "おりるな",
+        "nasai": "おりなさい",
+        "conditional_to": "おりると",
+        "conditional_nara": "おりるなら"
+      },
+      "examples": [
+        { "form": "te", "jp": "次の駅で降りてください。", "en": "Please get off at the next station." },
+        { "form": "short_pos", "jp": "どこで降りるの？", "en": "Where are you getting off?" },
+        { "form": "neg_te", "jp": "まだ降りないで。", "en": "Don't get off yet." },
+        { "form": "short_past", "jp": "駅前でバスを降りた。", "en": "I got off the bus in front of the station." }
+      ]
+    },
+    {
+      "type": "ru",
+      "label": "Ru-verb",
+      "dict": "きこえる",
+      "kanji": "聞こえる",
+      "meaning": "to be audible, can be heard",
+      "description": "A ru-verb. Drop the final る and add your ending.",
+      "notes": "What can be heard takes が: 音楽が聞こえる. Like 見える, it is hearing that happens by itself; 聞ける (the potential of 聞く) is about being able to listen. 聞こえますか is \"Can you hear me?\"",
+      "jlpt": "N4",
+      "forms": {
+        "masu_pos": "きこえます",
+        "masu_neg": "きこえません",
+        "masu_past": "きこえました",
+        "masu_past_neg": "きこえませんでした",
+        "te": "きこえて",
+        "short_pos": "きこえる",
+        "short_neg": "きこえない",
+        "short_past": "きこえた",
+        "short_past_neg": "きこえなかった",
+        "nd_pos": "きこえるんです",
+        "nd_neg": "きこえないんです",
+        "nd_past": "きこえたんです",
+        "nd_past_neg": "きこえなかったんです",
+        "nd_casual_pos": "きこえるんだ",
+        "nd_casual_neg": "きこえないんだ",
+        "nd_casual_past": "きこえたんだ",
+        "nd_casual_past_neg": "きこえなかったんだ",
+        "teiru": "きこえている",
+        "teiru_neg": "きこえていない",
+        "teiru_past": "きこえていた",
+        "teiru_past_neg": "きこえていなかった",
+        "teiru_masu_pos": "きこえています",
+        "teiru_masu_neg": "きこえていません",
+        "teiru_masu_past": "きこえていました",
+        "teiru_masu_past_neg": "きこえていませんでした",
+        "teiru_te": "きこえていて",
+        "teshimau": "きこえてしまう",
+        "teshimau_polite": "きこえてしまいます",
+        "teoku": "きこえておく",
+        "teoku_polite": "きこえておきます",
+        "temiru": "きこえてみる",
+        "temiru_polite": "きこえてみます",
+        "sugiru": "きこえすぎる",
+        "sugiru_polite": "きこえすぎます",
+        "yasui": "きこえやすい",
+        "yasui_polite": "きこえやすいです",
+        "nikui": "きこえにくい",
+        "nikui_polite": "きこえにくいです",
+        "nagara": "きこえながら",
+        "conditional_ba": "きこえれば",
+        "conditional_tara": "きこえたら",
+        "neg_te": "きこえないで",
+        "nakute": "きこえなくて",
+        "te_mo_ii": "きこえてもいい",
+        "te_wa_ikenai": "きこえてはいけない",
+        "te_cha_dame": "きこえちゃだめ",
+        "nakereba_naranai": "きこえなければならない",
+        "nakute_wa_ikenai": "きこえなくてはいけない",
+        "nakya": "きこえなきゃ",
+        "nakucha": "きこえなくちゃ",
+        "nakute_mo_ii": "きこえなくてもいい",
+        "conditional_to": "きこえると",
+        "conditional_nara": "きこえるなら"
+      },
+      "examples": [
+        { "form": "masu_pos", "jp": "私の声が聞こえますか。", "en": "Can you hear me?" },
+        { "form": "masu_neg", "jp": "すみません、よく聞こえません。", "en": "Sorry, I can't hear you very well." },
+        { "form": "short_past", "jp": "隣の部屋から音楽が聞こえた。", "en": "I could hear music from the next room." }
       ]
     }
   ]

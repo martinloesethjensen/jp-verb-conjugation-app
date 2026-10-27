@@ -14,13 +14,7 @@ struct CounterRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(counter.reading)
                         .font(.body)
-                    if let level = counter.jlpt {
-                        Text(level.displayName)
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .glassEffect(in: Capsule())
-                    }
+                    LevelBadge(level: counter.jlpt)
                 }
                 Text(counter.meaning)
                     .font(.caption)

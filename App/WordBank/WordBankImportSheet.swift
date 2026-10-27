@@ -82,7 +82,7 @@ struct WordBankImportSheet: View {
                     HStack {
                         Label(destinationName, systemImage: destinationFolder == nil ? "books.vertical" : "folder")
                         Spacer()
-                        Image(systemName: "chevron.right").font(.footnote).foregroundStyle(.tertiary)
+                        RowChevron()
                     }
                     .contentShape(Rectangle())
                 }

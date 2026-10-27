@@ -3,7 +3,7 @@ import VerbKit
 
 /// What the counter quiz sheet reports.
 enum CounterQuizSelection {
-    case whichCounter, readIt, askIt, mixed, weakSpots
+    case whichCounter, readIt, askIt, biggerNumbers, mixed, weakSpots
 }
 
 /// Asks what to practise before a counter quiz starts. A row is disabled when it would build no
@@ -13,13 +13,14 @@ struct CounterQuizSheet: View {
     let whichCounterAvailable: Bool
     let readItAvailable: Bool
     let askItAvailable: Bool
+    let biggerNumbersAvailable: Bool
     let weakSpotCount: Int
     var onStart: (CounterQuizSelection) -> Void
     var onCancel: () -> Void
 
     @State private var choice: CounterQuizSelection = .mixed
 
-    private var mixedAvailable: Bool { whichCounterAvailable || readItAvailable || askItAvailable }
+    private var mixedAvailable: Bool { whichCounterAvailable || readItAvailable || askItAvailable || biggerNumbersAvailable }
 
     private func isAvailable(_ value: CounterQuizSelection) -> Bool {
         switch value {
@@ -27,6 +28,7 @@ struct CounterQuizSheet: View {
         case .whichCounter: whichCounterAvailable
         case .readIt: readItAvailable
         case .askIt: askItAvailable
+        case .biggerNumbers: biggerNumbersAvailable
         case .mixed: mixedAvailable
         }
     }
@@ -39,7 +41,8 @@ struct CounterQuizSheet: View {
                     row("Which counter?", detail: "Pick 本 for 傘", value: .whichCounter)
                     row("Read it", detail: "三本 is さんぼん", value: .readIt)
                     row("Ask it", detail: "何人 for \"How many people?\"", value: .askIt)
-                    row("Mixed", detail: "All three", value: .mixed)
+                    row("Bigger numbers", detail: "三十分 is さんじゅっぷん", value: .biggerNumbers)
+                    row("Mixed", detail: "All of them", value: .mixed)
                 }
             }
             .navigationTitle("Counter quiz")
@@ -56,9 +59,9 @@ struct CounterQuizSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .onAppear {
-            if !isAvailable(choice) { choice = [.whichCounter, .readIt, .askIt].first(where: isAvailable) ?? .mixed }
+            if !isAvailable(choice) { choice = [.whichCounter, .readIt, .askIt, .biggerNumbers].first(where: isAvailable) ?? .mixed }
         }
     }
 

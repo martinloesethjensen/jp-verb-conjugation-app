@@ -2,7 +2,7 @@ import SwiftUI
 import VerbKit
 
 /// A counter's page: the counter and what it is, the pitfall in one line, the reading for the selected
-/// number with a 1 to 10 strip to change it, then Examples, Things and Related behind a control, and
+/// number with a 1 to 10 strip and a stepper for numbers above 10 to change it, then Examples, Things and Related behind a control, and
 /// Practise. `focus` selects a number (a Forms search result lands on it).
 struct CounterDetailView: View {
     let counter: Counter
@@ -50,6 +50,7 @@ struct CounterDetailView: View {
                 if !counter.pitfalls.isEmpty { pitfalls }
                 ReadingBlock(counter: counter, number: number)
                 NumberStrip(counter: counter, selection: $number)
+                NumberStepper(counter: counter, selection: $number)
                 if let shown = shownSegment { segmented(shown) }
                 if !buildCounterQuestions(for: counter, count: 1).isEmpty { practise }
             }
@@ -70,9 +71,7 @@ struct CounterDetailView: View {
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8, content: content)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+            .glassCard()
     }
 
     private var header: some View {
@@ -85,16 +84,15 @@ struct CounterDetailView: View {
                 SpeakButton(text: counter.reading)
             }
             HStack(spacing: 8) {
-                if let level = counter.jlpt {
-                    Text(level.displayName)
-                        .font(.caption.weight(.bold))
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .glassEffect(in: Capsule())
-                }
+                LevelBadge(level: counter.jlpt, emphasis: .header)
                 Text(counter.meaning)
                     .font(.headline)
                     .foregroundStyle(.secondary)
             }
+            ReviewStatusPill(
+                item: "Counter: \(counter.counter) (\(counter.id))", review: counter.review,
+                checked: ["The readings and which numbers change sound", "That every counted word in an example reads as this counter says"],
+                unchecked: ["The example sentences", "The things it counts", "The pitfalls", "The 何 questions"])
             if !sections.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {
@@ -116,6 +114,7 @@ struct CounterDetailView: View {
             ForEach(Array(counter.pitfalls.enumerated()), id: \.offset) { _, pitfall in
                 card {
                     JapaneseText(pitfall.heading).font(.headline)
+                    if let wrong = pitfall.wrong { WrongForm(text: wrong) }
                     JapaneseText(pitfall.explanation).font(.subheadline)
                     ForEach(Array(pitfall.examples.enumerated()), id: \.offset) { _, example in
                         Divider()

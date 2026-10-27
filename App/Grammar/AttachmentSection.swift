@@ -79,9 +79,7 @@ struct AttachmentSection: View {
                         JapaneseText(note).font(.footnote).foregroundStyle(.secondary)
                     }
                 }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                .glassCard()
             }
         }
         .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }

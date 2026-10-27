@@ -17,24 +17,12 @@ struct GrammarWidgetView: View {
         }
     }
 
-    private static let navy = Color(red: 0.043, green: 0.063, blue: 0.149)
-
     @ViewBuilder private var background: some View {
-        if isHome {
-            LinearGradient(colors: [Self.navy, .black], startPoint: .top, endPoint: .bottom)
-        } else {
-            Color.clear
-        }
+        WidgetTheme.background(isHome: isHome)
     }
 
     @ViewBuilder private var empty: some View {
-        let text = Text("Open Verb Table to load verbs")
-        if isInline {
-            text
-        } else {
-            text.font(.caption).multilineTextAlignment(.center)
-                .foregroundStyle(isHome ? .white : .primary)
-        }
+        WidgetEmptyState(message: "Open Verb Table to load verbs", isHome: isHome, isInline: isInline)
     }
 
     private var isHome: Bool { family == .systemSmall || family == .systemMedium }
@@ -46,17 +34,6 @@ struct GrammarWidgetView: View {
     private var isInline: Bool { false }
     private var isRectangular: Bool { false }
     #endif
-
-    private func accent(_ level: JLPTLevel?) -> Color {
-        switch level {
-        case .n5: Color(red: 0.176, green: 0.831, blue: 0.749)
-        case .n4: Color(red: 0.486, green: 0.831, blue: 0.992)
-        case .n3: Color(red: 0.655, green: 0.545, blue: 0.980)
-        case .n2: Color(red: 0.992, green: 0.792, blue: 0.243)
-        case .n1: Color(red: 0.973, green: 0.443, blue: 0.400)
-        case nil: .white.opacity(0.8)
-        }
-    }
 
     private func levelName(_ level: JLPTLevel?) -> String {
         level?.rawValue ?? ""
@@ -92,7 +69,7 @@ struct GrammarWidgetView: View {
                 .font(.title3.weight(.heavy))
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-                .foregroundStyle(accent(point.jlpt))
+                .foregroundStyle(WidgetTheme.accent(for: point.jlpt))
             Text(levelName(point.jlpt)).font(.caption2).foregroundStyle(.white.opacity(0.6))
             Text(point.summary).font(.caption).foregroundStyle(.white.opacity(0.85)).lineLimit(3)
             Spacer(minLength: 0)
