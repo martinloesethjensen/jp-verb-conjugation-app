@@ -1,6 +1,6 @@
 # A review site for teachers and native speakers
 
-Status: draft for the owner's approval, 2026-10-27 (all questions answered). The owner's decisions are stated as theirs; everything
+Status: approved by the owner, 2026-10-27. The owner's decisions are stated as theirs; everything
 marked *my call* is the assistant's and can be overturned.
 
 ## Intent
