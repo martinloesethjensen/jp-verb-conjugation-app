@@ -205,7 +205,7 @@ final class FormTransformerTests: XCTestCase {
     }
 
     func testGreyedAndUnresolvedSpansHaveNoTransforms() throws {
-        XCTAssertEqual(try transforms("雨 が 降っ たら 行か ない 。", at: "降ったら"), .unavailable(.notInApp))
+        XCTAssertEqual(try transforms("約束 を 守っ たら 行き ます 。", at: "守ったら"), .unavailable(.notInApp))
         // Kana きた is 来る or 着る: the learner picks first.
         XCTAssertEqual(try transforms("ともだち が うち に き た 。", at: "きた"), .unavailable(.chooseReading))
         XCTAssertEqual(TransformReason.notInApp.message, "Not in the app yet")

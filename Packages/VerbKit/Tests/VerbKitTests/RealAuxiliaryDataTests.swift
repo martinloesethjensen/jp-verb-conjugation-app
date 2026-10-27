@@ -19,7 +19,7 @@ final class RealAuxiliaryDataTests: XCTestCase {
     }
 
     /// Verbs that take none of the て-form auxiliaries.
-    private let withoutTeAuxiliaries: Set<String> = ["ある"]
+    private let withoutTeAuxiliaries: Set<String> = ["ある", "いる"]
 
     func testEveryVerbHasItsAuxiliaryFormsBuiltFromItsTeFormAndStem() throws {
         let verbs = try loadVerbs()

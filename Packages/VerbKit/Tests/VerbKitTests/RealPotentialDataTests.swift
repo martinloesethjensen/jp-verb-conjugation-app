@@ -33,7 +33,8 @@ final class RealPotentialDataTests: XCTestCase {
     /// An independent re-statement of the formation rules, so the test checks
     /// the generated data against the rules and not against the generator.
     private func expectedBase(for verb: Verb) -> String? {
-        if ["ある", "わかる", "しる", "つかれる"].contains(verb.dict) { return nil }
+        if ["ある", "わかる", "しる", "つかれる", "できる", "みえる", "きこえる", "あく", "ふる", "くれる"]
+            .contains(verb.dict) { return nil }
         let eRow: [Character: String] = [
             "う": "え", "く": "け", "ぐ": "げ", "す": "せ", "つ": "て",
             "ぬ": "ね", "ぶ": "べ", "む": "め", "る": "れ",
