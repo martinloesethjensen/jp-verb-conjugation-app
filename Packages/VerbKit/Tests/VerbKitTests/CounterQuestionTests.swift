@@ -283,4 +283,101 @@ final class CounterQuestionTests: XCTestCase {
         XCTAssertEqual(ask([askHon, askHai, askHiki, askNin], count: 2).count, 2)
         XCTAssertTrue(ask([askHon, askHai], count: 0).isEmpty)
     }
+
+    // MARK: Bigger numbers
+
+    /// 分 with readings 11 to 59 (じゅう…ふん, 30 and 40 changed) and 100.
+    private func minutes() -> Counter {
+        var fun = make("fun", "分", "ふん", "minutes", sound: "h-p", changed: ["1", "3", "4", "6", "8", "10", "what"])
+        fun.extent = 59
+        fun.extra = [100]
+        for value in 11...59 { fun.readings[String(value)] = ["r\(value)ふん"] }
+        fun.readings["30"] = ["さんじゅっぷん", "さんじっぷん"]
+        fun.readings["40"] = ["よんじゅっぷん"]
+        fun.readings["100"] = ["ひゃっぷん"]
+        fun.changed += ["30", "40"]
+        return fun
+    }
+
+    func testBiggerNumbersAreExtendedNumbersOnly() {
+        let fun = minutes()
+        let questions = buildBiggerNumberQuestions(counters: [fun, hon], count: 200)
+        XCTAssertEqual(questions.count, fun.extendedNumbers.count)
+        for question in questions {
+            XCTAssertEqual(question.kind, .counterReading)
+            let number = CounterNumber(key: question.formID)
+            XCTAssertTrue(number?.isExtended == true, question.formID)
+            XCTAssertEqual(question.prompt, fun.written(number!))
+            XCTAssertEqual(question.accepted, Set(fun.readings(for: number!)))
+            XCTAssertEqual(question.correct, fun.readings(for: number!).first)
+        }
+    }
+
+    func testNoExtendedNumbersMeansNoQuestions() {
+        XCTAssertTrue(buildBiggerNumberQuestions(counters: [hon, hai], count: 10).isEmpty)
+        XCTAssertTrue(buildBiggerNumberQuestions(counters: [minutes()], count: 0).isEmpty)
+    }
+
+    func testWrongChoicesAreOtherNumbersReadings() {
+        let fun = minutes()
+        for question in buildBiggerNumberQuestions(counters: [fun], count: 200) {
+            XCTAssertTrue(question.choices.contains(question.correct))
+            XCTAssertEqual(Set(question.choices).count, question.choices.count)
+            XCTAssertTrue(question.choices.count >= 2 && question.choices.count <= 4)
+            for choice in question.choices where !question.accepted.contains(choice) {
+                XCTAssertTrue(fun.readings.values.contains { $0.first == choice }, choice)
+            }
+        }
+    }
+
+    func testChangedNumbersAreDrawnMoreOften() {
+        let fun = minutes()
+        var generator = SeededGenerator(seed: 7)
+        var changed = 0, plain = 0
+        for _ in 0..<400 {
+            guard let question = buildBiggerNumberQuestions(counters: [fun], count: 1, using: &generator).first else { continue }
+            if question.formID == "30" || question.formID == "40" { changed += 1 } else if question.formID == "35" { plain += 1 }
+        }
+        // 30 and 40 are two numbers of weight 4 against 35 alone at weight 1: expect about 8 to 1.
+        XCTAssertGreaterThan(changed, plain * 3)
+    }
+
+    func testExplanationNamesThePatternForAnExtendedNumber() {
+        let fun = minutes()
+        let questions = buildBiggerNumberQuestions(counters: [fun], count: 200)
+        let thirty = questions.first { $0.formID == "30" }!
+        XCTAssertTrue(thirty.explanation.contains("三十分"), thirty.explanation)
+        XCTAssertTrue(thirty.explanation.contains("さんじゅっぷん"), thirty.explanation)
+        XCTAssertTrue(thirty.explanation.contains("sound changes"), thirty.explanation)
+        let plain = questions.first { $0.formID == "35" }!
+        XCTAssertTrue(plain.explanation.contains("plain reading"), plain.explanation)
+        XCTAssertFalse(thirty.explanation.contains("changes at 1"), thirty.explanation)
+    }
+
+    func testPairsAcceptExtendedNumbers() {
+        let fun = minutes()
+        let questions = buildCounterQuestions(pairs: [(fun, .n(30)), (fun, .n(35)), (fun, .n(3))], count: 10)
+        XCTAssertEqual(questions.map(\.formID), ["30", "35", "3"])
+    }
+
+    func testCoreReadItStillExcludesExtendedNumbers() {
+        let fun = minutes()
+        let all = buildCounterQuestions(counters: [fun], groups: [], kind: .counterReading, count: 500)
+        XCTAssertFalse(all.isEmpty)
+        XCTAssertTrue(all.allSatisfy { CounterNumber(key: $0.formID)?.isExtended == false })
+        XCTAssertTrue(buildCounterQuestions(for: fun, count: 500).allSatisfy { CounterNumber(key: $0.formID)?.isExtended == false })
+    }
+}
+
+/// A repeatable generator for tests (SplitMix64).
+struct SeededGenerator: RandomNumberGenerator {
+    private var state: UInt64
+    init(seed: UInt64) { state = seed }
+    mutating func next() -> UInt64 {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        return z ^ (z >> 31)
+    }
 }
