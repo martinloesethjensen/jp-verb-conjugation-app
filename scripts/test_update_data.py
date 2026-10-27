@@ -970,6 +970,57 @@ class PublishedFormsTests(unittest.TestCase):
         self.assertIn("data/forms.json", messages[0])
 
 
+class BundledDataTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    NAMES = ("verbs", "grammar", "furigana", "words")
+
+    def entry(self, manifest, name):
+        source = manifest if name == "verbs" else manifest[name]
+        return {"version": source["version"], "sha256": source["sha256"]}
+
+    def test_run_writes_a_bundled_copy_and_sidecar_for_each_data_file(self):
+        d = self.make_dir()
+        bundle = d / "bundle"
+        code, messages = ud.run(d, check=True, bundled_data_dir=bundle)
+        self.assertEqual(code, 1)
+        for name in self.NAMES:
+            self.assertTrue(any(f"the bundled {name}.json" in m for m in messages), (name, messages))
+        self.assertEqual(ud.run(d, bundled_data_dir=bundle)[0], 0)
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        for name in self.NAMES:
+            self.assertEqual((bundle / f"{name}.json").read_bytes(), (d / f"{name}.json").read_bytes(), name)
+            sidecar = json.loads((bundle / f"{name}.manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(sidecar, self.entry(manifest, name), name)
+        self.assertEqual(ud.run(d, check=True, bundled_data_dir=bundle), (0, ["data is up to date"]))
+
+    def test_check_names_only_the_copy_that_drifted(self):
+        d = self.make_dir()
+        bundle = d / "bundle"
+        ud.run(d, bundled_data_dir=bundle)
+        (bundle / "grammar.json").write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True, bundled_data_dir=bundle)
+        self.assertEqual(code, 1)
+        self.assertIn("the bundled grammar.json", messages[0])
+        for name in ("verbs", "furigana", "words"):
+            self.assertNotIn(f"the bundled {name}.json", messages[0])
+
+    def test_a_stale_sidecar_fails_check_and_run_fixes_it(self):
+        d = self.make_dir()
+        bundle = d / "bundle"
+        ud.run(d, bundled_data_dir=bundle)
+        (bundle / "verbs.manifest.json").write_text('{"version": "0.0.1", "sha256": "x"}\n', encoding="utf-8")
+        self.assertEqual(ud.run(d, check=True, bundled_data_dir=bundle)[0], 1)
+        self.assertEqual(ud.run(d, bundled_data_dir=bundle)[0], 0)
+        self.assertEqual(ud.run(d, check=True, bundled_data_dir=bundle)[0], 0)
+
+    def test_without_a_directory_nothing_is_written_or_checked(self):
+        d = self.make_dir()
+        ud.run(d)
+        self.assertEqual(ud.run(d, check=True), (0, ["data is up to date"]))
+        self.assertFalse((d / "bundle").exists())
+
+
 class OtherFormsTests(unittest.TestCase):
     def forms(self, dict_form, vtype, short_past):
         return ud.other_forms({"type": vtype, "dict": dict_form, "forms": {"short_past": short_past}})
