@@ -1643,6 +1643,19 @@ DEFAULT_BUNDLED_FORMS_PATH = (
 )
 
 
+# The app's bundled copy of data/counters.json, written the same way: the Counters tab's offline
+# fallback until a synced copy arrives. counters.manifest.json beside it holds its version and hash.
+DEFAULT_BUNDLED_COUNTERS_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "Packages/VerbKit/Sources/VerbKit/Resources/counters.json"
+)
+
+
+def bundled_counters_manifest_path(bundled_counters_path):
+    """Where the bundled counters copy's version and hash go: counters.manifest.json, next to it."""
+    return Path(bundled_counters_path).with_name("counters.manifest.json")
+
+
 def bundled_forms_manifest_path(bundled_forms_path):
     """Where the bundled copy's version and hash go: forms.manifest.json, next to it. The app
     compares it with a synced catalogue's version to use whichever is newer."""
@@ -1651,10 +1664,11 @@ def bundled_forms_manifest_path(bundled_forms_path):
 
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
         bundled_forms_path=None, ref=None, words_version=None, counters_version=None, published_verbs=None,
-        forms_version=None):
+        forms_version=None, bundled_counters_path=None):
     """Returns (exit_code, messages). data/forms.json is always written and checked;
     `bundled_forms_path` is where the app's bundled copy (and forms.manifest.json beside it) is
-    written and checked, and None leaves them alone. `ref` pins the manifest entries
+    written and checked, and None leaves them alone; `bundled_counters_path` does the same for
+    counters.json and counters.manifest.json. `ref` pins the manifest entries
     to a release tag. `published_verbs` is the published verbs.json (see
     `published_verbs_doc`) that no id may disappear from; None skips that check."""
     data_dir = Path(data_dir)
@@ -1774,6 +1788,15 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
             stale.append("the bundled forms.json")
     if counters_bytes is not None and counters_path.read_bytes() != counters_bytes:
         stale.append("data/counters.json")
+    bundled_counters_manifest_bytes = None
+    if bundled_counters_path is not None and counters_bytes is not None:
+        bundled_counters_path = Path(bundled_counters_path)
+        bundled_counters_sidecar = bundled_counters_manifest_path(bundled_counters_path)
+        entry = {"version": manifest["counters"]["version"], "sha256": manifest["counters"]["sha256"]}
+        bundled_counters_manifest_bytes = (json.dumps(entry, indent=2) + "\n").encode("utf-8")
+        if (differs(bundled_counters_path, counters_bytes)
+                or differs(bundled_counters_sidecar, bundled_counters_manifest_bytes)):
+            stale.append("the bundled counters.json")
     if manifest_path.read_text(encoding="utf-8") != manifest_text:
         stale.append("data/manifest.json")
 
@@ -1794,6 +1817,11 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     if "data/forms.json" in stale:
         forms_path.write_bytes(forms_bytes)
         messages.append("updated data/forms.json")
+    if "the bundled counters.json" in stale:
+        bundled_counters_path.parent.mkdir(parents=True, exist_ok=True)
+        bundled_counters_path.write_bytes(counters_bytes)
+        bundled_counters_sidecar.write_bytes(bundled_counters_manifest_bytes)
+        messages.append(f"updated the bundled copy ({bundled_counters_path.name}, {bundled_counters_sidecar.name})")
     if "the bundled forms.json" in stale:
         bundled_forms_path.parent.mkdir(parents=True, exist_ok=True)
         bundled_forms_path.write_bytes(forms_bytes)
@@ -1826,6 +1854,8 @@ def main(argv=None):
     parser.add_argument("--forms-version", help="force the forms.json manifest version")
     parser.add_argument("--bundled-forms-path", default=str(DEFAULT_BUNDLED_FORMS_PATH),
                         help="where to write the app's bundled copy of data/forms.json")
+    parser.add_argument("--bundled-counters-path", default=str(DEFAULT_BUNDLED_COUNTERS_PATH),
+                        help="where to write the app's bundled copy of data/counters.json")
     parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
     parser.add_argument("--published-ref", default=PUBLISHED_REF,
                         help="git ref of the published data that no verb id may disappear from "
@@ -1834,6 +1864,7 @@ def main(argv=None):
     published = published_verbs_doc(args.published_ref) if args.published_ref else None
     code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
                          args.furigana_version, bundled_forms_path=args.bundled_forms_path, ref=args.ref,
+                         bundled_counters_path=args.bundled_counters_path,
                          words_version=args.words_version, counters_version=args.counters_version,
                          published_verbs=published, forms_version=args.forms_version)
     for line in messages:

@@ -1535,6 +1535,36 @@ class CountersRunTests(unittest.TestCase):
         manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["counters"]["sha256"], ud.sha256_hex((d / "counters.json").read_bytes()))
 
+    def test_run_writes_the_bundled_counters_copy_and_its_manifest_entry(self):
+        d = self.counters_dir()
+        bundled = d / "bundle" / "counters.json"
+        code, messages = ud.run(d, check=True, bundled_counters_path=bundled)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("the bundled counters.json" in m for m in messages), messages)
+        self.assertEqual(ud.run(d, bundled_counters_path=bundled)[0], 0)
+        published = (d / "counters.json").read_bytes()
+        self.assertEqual(bundled.read_bytes(), published)
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        sidecar = json.loads(ud.bundled_counters_manifest_path(bundled).read_text(encoding="utf-8"))
+        self.assertEqual(sidecar, {"version": manifest["counters"]["version"], "sha256": ud.sha256_hex(published)})
+        self.assertEqual(ud.run(d, check=True, bundled_counters_path=bundled), (0, ["data is up to date"]))
+
+    def test_check_fails_when_the_bundled_counters_copy_drifts(self):
+        d = self.counters_dir()
+        bundled = d / "bundle" / "counters.json"
+        ud.run(d, bundled_counters_path=bundled)
+        bundled.write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True, bundled_counters_path=bundled)
+        self.assertEqual(code, 1)
+        self.assertIn("the bundled counters.json", messages[0])
+        self.assertNotIn("data/counters.json", messages[0])
+
+    def test_without_a_bundled_path_nothing_is_written_or_checked(self):
+        d = self.counters_dir()
+        ud.run(d)
+        self.assertEqual(ud.run(d, check=True), (0, ["data is up to date"]))
+        self.assertFalse((d / "bundle").exists())
+
     def test_an_invalid_counters_file_blocks_everything_and_writes_nothing(self):
         d = self.counters_dir()
         doc = json.loads((d / "counters.json").read_text(encoding="utf-8"))
