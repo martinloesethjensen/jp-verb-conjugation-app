@@ -69,37 +69,68 @@ public enum QuizErrorTag: Hashable, Sendable, Codable {
         }
     }
 
-    /// One line on what the chosen wrong answer was, for the feedback after an answer.
-    /// `verb` and `form` are the question's.
-    public func explanation(verb: Verb, form: QuizForm) -> String {
-        let right = form.value(in: verb.forms) ?? verb.dict
+    /// One or two sentences on what the chosen wrong answer was, for the feedback after an answer.
+    /// It does not repeat the right answer: the feedback shows that. `chosen` is the choice
+    /// picked: a conjugated string, or for an identify question a form label.
+    public func explanation(verb: Verb, form: QuizForm, kind: QuizQuestionKind, chosen: String) -> String {
+        let identify = kind == .identify
+        // What the choice is: its form label and the verb's string for that form, either may be unknown.
+        let picked = Self.resolve(verb: verb, form: form, identify: identify, chosen: chosen, hint: self)
+        let asked = form.value(in: verb.forms) ?? verb.dict
+        let head: String
+        if identify {
+            head = "\(asked) is the \(form.label) form."
+        } else if let label = picked.label {
+            head = "\(chosen) is the \(label) form."
+        } else {
+            head = "\(chosen) is not the \(form.label) form of \(verb.dict)."
+        }
+        var tail = ""
+        if identify, let label = picked.label, let value = picked.value {
+            tail = " \(label) would be \(value)."
+        }
+
         switch self {
         case .wrongTeGroup(let group):
             guard let own = verb.teGroup, let rule = TeFormRule.all.first(where: { $0.group == own }) else {
-                return "Check the て-form rule for \(verb.dict): \(right)."
+                return "Check the て-form rule for \(verb.dict)."
             }
             if group == own, let exception = rule.exception, exception.dict == verb.dict {
-                return "\(verb.dict) is the exception: its て-form is \(right), not the regular \(rule.result)."
+                return "\(verb.dict) is the exception: its て-form does not follow the regular \(rule.result) rule."
             }
-            return "\(rule.endings) verbs make the て-form with \(rule.result), like \(rule.example.dict) → \(rule.example.te): \(right)."
+            return "\(rule.endings) verbs make the て-form with \(rule.result), like \(rule.example.dict) → \(rule.example.te)."
         case .ruUConfusion:
             if verb.type == .ru {
-                return "\(verb.dict) is a ru-verb: drop る and add the ending (\(right)). It does not change る to ら or り."
+                return "\(verb.dict) is a ru-verb: drop る and add the ending. It does not change る to ら or り."
             }
-            return "\(verb.dict) looks like a ru-verb but is a u-verb: る changes to ら or り (\(right)), it is not dropped."
+            return "\(verb.dict) looks like a ru-verb but is a u-verb: る changes to ら or り, it is not dropped."
         case .aruNegative:
             return "The plain negative of ある is ない, not あらない."
         case .passivePotential:
-            return "The passive (it is done to someone) and the potential (can do) are easy to mix up. The question asked for \(form.label): \(right)."
+            return head + " The passive and the potential are easy to mix up." + tail
         case .causativePassiveLongShort:
-            return "The long and the short causative-passive are different forms. The question asked for \(form.label): \(right)."
-        case .otherForm(let id):
-            let label = QuizForm.all.first { $0.id == id }?.label ?? id
-            return "That is the \(label) form. The question asked for \(form.label): \(right)."
+            return head + " The long and the short causative-passive are easy to mix up." + tail
+        case .otherForm:
+            return head + tail
         case .otherVerb(let dict):
-            return "That is the \(form.label) form of \(dict), not of \(verb.dict): \(right)."
+            return "\(chosen) is the \(form.label) form of \(dict), not of \(verb.dict)."
         case .generic:
-            return "Not the \(form.label) form of \(verb.dict): \(right)."
+            return head + tail
         }
+    }
+
+    private static func resolve(
+        verb: Verb, form: QuizForm, identify: Bool, chosen: String, hint: QuizErrorTag
+    ) -> (label: String?, value: String?) {
+        if identify {
+            let match = QuizForm.all.first { $0.label == chosen }
+            return (chosen, match.flatMap { $0.value(in: verb.forms) })
+        }
+        if case .otherForm(let id) = hint, let match = QuizForm.all.first(where: { $0.id == id }) {
+            return (match.label, chosen)
+        }
+        let match = QuizForm.available(in: verb.forms, topics: Set(QuizTopic.allCases))
+            .first { $0.value == chosen && $0.form != form }
+        return (match?.form.label, chosen)
     }
 }

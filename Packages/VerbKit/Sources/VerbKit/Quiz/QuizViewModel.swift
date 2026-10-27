@@ -66,7 +66,7 @@ public final class QuizViewModel {
         results.append(QuizResult(
             verb: question.verb.dict, formLabel: question.form.label, formID: question.form.id, formString: question.formString,
             kind: question.kind, correct: question.correct, chosen: choice, ok: ok,
-            error: error, errorExplanation: error?.explanation(verb: question.verb, form: question.form)
+            error: error, errorExplanation: error?.explanation(verb: question.verb, form: question.form, kind: question.kind, chosen: choice)
         ))
         record(question, ok ? .correct : .wrong, error: error)
     }

@@ -122,9 +122,12 @@ final class QuizErrorTagTests: XCTestCase {
             .otherForm("te"), .wrongTeGroup(.tte), .ruUConfusion, .aruNegative, .passivePotential,
             .causativePassiveLongShort, .otherVerb("のむ"), .generic,
         ]
-        for tag in tags { XCTAssertFalse(tag.explanation(verb: taberu, form: te).isEmpty) }
+        for tag in tags {
+            XCTAssertFalse(tag.explanation(verb: taberu, form: te, kind: .conjugate, chosen: "たべない").isEmpty)
+            XCTAssertFalse(tag.explanation(verb: taberu, form: te, kind: .identify, chosen: "Plain · negative").isEmpty)
+        }
         let iku = try verb("いく")
-        XCTAssertTrue(QuizErrorTag.wrongTeGroup(.ite).explanation(verb: iku, form: te).contains("exception"))
+        XCTAssertTrue(QuizErrorTag.wrongTeGroup(.ite).explanation(verb: iku, form: te, kind: .conjugate, chosen: "いいて").contains("exception"))
     }
 
     // MARK: raw values and storage
@@ -174,5 +177,42 @@ final class QuizErrorTagTests: XCTestCase {
         right.choose(question.correct)
         XCTAssertNil(recorded.last?.errorTag)
         XCTAssertNil(right.results.first?.error)
+    }
+
+    func testIdentifyExplanationDescribesTheAskedFormNotTheChosenOneAsAString() throws {
+        let wakaru = try verb("わかる")
+        let asked = try form("masu_pos")
+        let chosen = try form("short_past_neg")
+        let text = QuizErrorTag.otherForm(chosen.id).explanation(
+            verb: wakaru, form: asked, kind: .identify, chosen: chosen.label)
+        XCTAssertEqual(text, "わかります is the \(asked.label) form. \(chosen.label) would be わからなかった.")
+        XCTAssertFalse(text.contains("The question asked"))
+    }
+
+    func testIdentifyExplanationOmitsTheSecondSentenceWhenTheVerbLacksThatForm() throws {
+        let aru = try verb("ある")
+        let potential = try form("potential")
+        let text = QuizErrorTag.otherForm(potential.id).explanation(
+            verb: aru, form: try form("masu_pos"), kind: .identify, chosen: potential.label)
+        XCTAssertEqual(text, "あります is the \(try form("masu_pos").label) form.")
+    }
+
+    func testConjugateExplanationNamesTheChosenFormAndNotTheAnswer() throws {
+        let wakaru = try verb("わかる")
+        let asked = try form("masu_pos")
+        let chosen = try form("short_past_neg")
+        let text = QuizErrorTag.otherForm(chosen.id).explanation(
+            verb: wakaru, form: asked, kind: .conjugate, chosen: "わからなかった")
+        XCTAssertEqual(text, "わからなかった is the \(chosen.label) form.")
+        XCTAssertFalse(text.contains("わかります"))
+    }
+
+    func testPassivePotentialKeepsTheMixUpSentenceOnly() throws {
+        let nomu = try verb("のむ")
+        let text = QuizErrorTag.passivePotential.explanation(
+            verb: nomu, form: try form("passive"), kind: .conjugate, chosen: "のめる")
+        XCTAssertTrue(text.hasPrefix("のめる is the "))
+        XCTAssertTrue(text.contains("easy to mix up"))
+        XCTAssertFalse(text.contains("のまれる"))
     }
 }
