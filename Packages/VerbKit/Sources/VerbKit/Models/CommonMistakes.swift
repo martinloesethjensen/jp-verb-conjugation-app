@@ -70,6 +70,7 @@ public enum CommonMistakes {
         "appearance#0": .lookAlike, "appearance#1": .joining, "appearance#2": .lookAlike,
         "ppoi#0": .meaningAndRegister, "ppoi#1": .joining,
         "teiru#0": .meaningAndRegister, "teiru#1": .meaningAndRegister, "teiru#2": .joining,
+        "teiru#3": .lookAlike,
         "teshimau#0": .meaningAndRegister, "teshimau#1": .lookAlike, "teshimau#2": .meaningAndRegister,
         "temiru#0": .meaningAndRegister, "temiru#1": .joining, "temiru#2": .meaningAndRegister,
         "sugiru#0": .joining, "sugiru#1": .meaningAndRegister, "sugiru#2": .lookAlike,

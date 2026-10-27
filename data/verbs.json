@@ -95,7 +95,12 @@
         { "form": "short_neg", "jp": "何もしない。", "en": "I'm not doing anything." },
         { "form": "short_past", "jp": "もうした。", "en": "I already did it." },
         { "form": "short_past", "jp": "彼は料理をした。", "en": "He cooked." },
-        { "form": "short_past_neg", "jp": "昨日勉強しなかった。", "en": "I didn't study yesterday." }
+        { "form": "short_past_neg", "jp": "昨日勉強しなかった。", "en": "I didn't study yesterday." },
+        { "form": "teiru_masu_neg", "jp": "宿題をまだしていません。", "en": "I haven't done my homework yet." },
+        { "form": "conditional_ba", "jp": "毎日練習すれば、上手になります。", "en": "If you practise every day, you'll get better." },
+        { "form": "passive", "jp": "授業中に寝ると、先生に注意される。", "en": "If you sleep in class, the teacher tells you off." },
+        { "form": "causative", "jp": "母は私に毎日掃除をさせる。", "en": "My mother makes me clean every day." },
+        { "form": "imperative", "jp": "静かにしろ！", "en": "Be quiet!" }
       ]
     },
     {
@@ -191,7 +196,11 @@
         { "form": "te", "jp": "ここに来てよかった。", "en": "I'm glad I came here." },
         { "form": "short_pos", "jp": "明日来る？", "en": "Are you coming tomorrow?" },
         { "form": "short_neg", "jp": "今日は来ない。", "en": "They're not coming today." },
-        { "form": "short_past", "jp": "あ、来た！", "en": "Oh, they're here!" }
+        { "form": "short_past", "jp": "あ、来た！", "en": "Oh, they're here!" },
+        { "form": "teiru_masu_neg", "jp": "バスがまだ来ていません。", "en": "The bus hasn't come yet." },
+        { "form": "pot_masu_pos", "jp": "明日は来られますか。", "en": "Can you come tomorrow?" },
+        { "form": "conditional_tara", "jp": "田中さんが来たら、教えてください。", "en": "Please let me know when Tanaka-san comes." },
+        { "form": "imperative", "jp": "こっちへ来い！", "en": "Come over here!" }
       ]
     },
     {
@@ -289,7 +298,14 @@
         { "form": "short_neg", "jp": "朝は食べない。", "en": "I don't eat in the morning." },
         { "form": "short_past", "jp": "もう食べた？", "en": "Did you eat already?" },
         { "form": "short_past", "jp": "おいしいものを食べた。", "en": "I ate something delicious." },
-        { "form": "short_past_neg", "jp": "朝ご飯を食べなかった。", "en": "I didn't eat breakfast." }
+        { "form": "short_past_neg", "jp": "朝ご飯を食べなかった。", "en": "I didn't eat breakfast." },
+        { "form": "teiru_masu_neg", "jp": "朝ご飯をまだ食べていません。", "en": "I haven't eaten breakfast yet." },
+        { "form": "tai", "jp": "今日はラーメンが食べたいです。", "en": "I want to eat ramen today." },
+        { "form": "pot_masu_pos", "jp": "辛い料理も食べられます。", "en": "I can eat spicy food too." },
+        { "form": "volitional", "jp": "何か食べよう。", "en": "Let's eat something." },
+        { "form": "passive", "jp": "早く食べないと、弟に食べられる。", "en": "If I don't eat it quickly, my little brother will eat it." },
+        { "form": "causative", "jp": "子供に毎日野菜を食べさせる。", "en": "I make my children eat vegetables every day." },
+        { "form": "te_mo_ii", "jp": "これ、食べてもいい？", "en": "Can I eat this?" }
       ]
     },
     {
@@ -384,7 +400,11 @@
         { "form": "te", "jp": "やってみてください。", "en": "Please try doing it." },
         { "form": "short_pos", "jp": "今夜何見る？", "en": "What shall we watch tonight?" },
         { "form": "short_past", "jp": "もう見た？", "en": "Have you seen it?" },
-        { "form": "short_past", "jp": "初めて富士山を見た。", "en": "I saw Mt. Fuji for the first time." }
+        { "form": "short_past", "jp": "初めて富士山を見た。", "en": "I saw Mt. Fuji for the first time." },
+        { "form": "tai", "jp": "その映画が見たいです。", "en": "I want to see that movie." },
+        { "form": "volitional", "jp": "今夜は映画を見よう。", "en": "Let's watch a movie tonight." },
+        { "form": "passive", "jp": "人に見られると、緊張します。", "en": "I get nervous when people watch me." },
+        { "form": "imperative", "jp": "あれを見ろ！", "en": "Look at that!" }
       ]
     },
     {
@@ -478,7 +498,11 @@
         { "form": "te", "jp": "もう寝てください。", "en": "Please go to sleep now." },
         { "form": "short_pos", "jp": "もう寝る。", "en": "I'm going to bed now." },
         { "form": "short_past", "jp": "よく寝た！", "en": "I slept well!" },
-        { "form": "short_past_neg", "jp": "ゆうべはあまり寝なかった。", "en": "I didn't sleep much last night." }
+        { "form": "short_past_neg", "jp": "ゆうべはあまり寝なかった。", "en": "I didn't sleep much last night." },
+        { "form": "teiru_masu_neg", "jp": "子供はまだ寝ていません。", "en": "The kids haven't gone to bed yet." },
+        { "form": "tai", "jp": "今日は早く寝たい。", "en": "I want to go to bed early today." },
+        { "form": "conditional_ba", "jp": "早く寝れば、疲れが取れますよ。", "en": "If you go to bed early, you'll get over your tiredness." },
+        { "form": "imperative", "jp": "もう寝ろ。", "en": "Go to bed already." }
       ]
     },
     {
@@ -571,7 +595,10 @@
         { "form": "te", "jp": "起きてください！", "en": "Please wake up!" },
         { "form": "te", "jp": "起きてから、シャワーを浴びます。", "en": "After waking up, I take a shower." },
         { "form": "short_pos", "jp": "何時に起きる？", "en": "What time do you wake up?" },
-        { "form": "short_past", "jp": "やっと起きた。", "en": "I finally got up." }
+        { "form": "short_past", "jp": "やっと起きた。", "en": "I finally got up." },
+        { "form": "pot_masu_pos", "jp": "明日は六時に起きられます。", "en": "I can get up at six tomorrow." },
+        { "form": "conditional_tara", "jp": "起きたら、もう十時でした。", "en": "When I woke up, it was already ten o'clock." },
+        { "form": "imperative", "jp": "早く起きろ！", "en": "Get up, now!" }
       ]
     },
     {
@@ -753,7 +780,8 @@
         { "form": "masu_neg", "jp": "人の物は借りません。", "en": "I don't borrow other people's things." },
         { "form": "masu_past", "jp": "友達から自転車を借りました。", "en": "I borrowed a bicycle from a friend." },
         { "form": "te", "jp": "借りてもいいですか。", "en": "May I borrow this?" },
-        { "form": "short_past", "jp": "借りた！ありがとう。", "en": "Borrowed it! Thanks." }
+        { "form": "short_past", "jp": "借りた！ありがとう。", "en": "Borrowed it! Thanks." },
+        { "form": "te_mo_ii", "jp": "この本を借りてもいいですか。", "en": "May I borrow this book?" }
       ]
     },
     {
@@ -847,7 +875,9 @@
         { "form": "masu_past", "jp": "おみやげをたくさん買いました。", "en": "I bought lots of souvenirs." },
         { "form": "te", "jp": "水を買ってきてください。", "en": "Please go and buy some water." },
         { "form": "short_neg", "jp": "高いから、買わない。", "en": "It's expensive, so I won't buy it." },
-        { "form": "short_past", "jp": "もう買った。", "en": "I already bought it." }
+        { "form": "short_past", "jp": "もう買った。", "en": "I already bought it." },
+        { "form": "tai", "jp": "新しい靴が買いたいです。", "en": "I want to buy new shoes." },
+        { "form": "conditional_ba", "jp": "今買えば、安いですよ。", "en": "If you buy it now, it's cheap." }
       ]
     },
     {
@@ -939,7 +969,10 @@
         { "form": "masu_past", "jp": "駅で会いました。", "en": "We met at the station." },
         { "form": "masu_past", "jp": "公園で友達に会いました。", "en": "I met my friend at the park." },
         { "form": "te", "jp": "会って話しましょう。", "en": "Let's meet and talk." },
-        { "form": "short_past", "jp": "ひさしぶりに会った！", "en": "I saw them for the first time in ages!" }
+        { "form": "short_past", "jp": "ひさしぶりに会った！", "en": "I saw them for the first time in ages!" },
+        { "form": "tai", "jp": "また会いたいです。", "en": "I want to see you again." },
+        { "form": "masu_volitional", "jp": "駅の前で会いましょう。", "en": "Let's meet in front of the station." },
+        { "form": "conditional_tara", "jp": "田中さんに会ったら、よろしく伝えてください。", "en": "If you see Tanaka-san, please give him my regards." }
       ]
     },
     {
@@ -1031,7 +1064,9 @@
         { "form": "masu_pos", "jp": "バス停でバスを待ちます。", "en": "I wait for the bus at the bus stop." },
         { "form": "masu_past", "jp": "一時間待ちました。", "en": "I waited one hour." },
         { "form": "te", "jp": "ちょっと待ってください。", "en": "Please wait a moment." },
-        { "form": "short_past", "jp": "長く待った。", "en": "I waited a long time." }
+        { "form": "short_past", "jp": "長く待った。", "en": "I waited a long time." },
+        { "form": "volitional", "jp": "もう少し待とう。", "en": "Let's wait a little longer." },
+        { "form": "causative", "jp": "人を待たせるのはよくない。", "en": "It's not good to keep people waiting." }
       ]
     },
     {
@@ -1123,7 +1158,8 @@
         { "form": "masu_pos", "jp": "授業のノートを取ります。", "en": "I take notes in class." },
         { "form": "masu_past", "jp": "テストでいい点を取りました。", "en": "I got a good score on the test." },
         { "form": "te", "jp": "塩を取ってください。", "en": "Please pass the salt." },
-        { "form": "te", "jp": "これ、一つ取ってもいいですか。", "en": "May I take one of these?" }
+        { "form": "te", "jp": "これ、一つ取ってもいいですか。", "en": "May I take one of these?" },
+        { "form": "passive", "jp": "電車で寝ていると、財布を取られるよ。", "en": "If you fall asleep on the train, your wallet will get stolen." }
       ]
     },
     {
@@ -1185,7 +1221,8 @@
         { "form": "masu_neg", "jp": "近くに銀行がありません。", "en": "There's no bank nearby." },
         { "form": "masu_past", "jp": "むかしここに駅がありました。", "en": "There used to be a station here." },
         { "form": "short_neg", "jp": "時間がない。", "en": "I don't have time." },
-        { "form": "short_past", "jp": "いいことがあった！", "en": "Something good happened!" }
+        { "form": "short_past", "jp": "いいことがあった！", "en": "Something good happened!" },
+        { "form": "conditional_ba", "jp": "お金があれば、旅行したいです。", "en": "If I had the money, I'd like to travel." }
       ]
     },
     {
@@ -1370,7 +1407,11 @@
         { "form": "masu_past", "jp": "面白い本を読みました。", "en": "I read an interesting book." },
         { "form": "masu_past", "jp": "日本語の雑誌を読みました。", "en": "I read a Japanese magazine." },
         { "form": "te", "jp": "読んでみてください。", "en": "Please try reading it." },
-        { "form": "short_past", "jp": "もう読んだ？", "en": "Did you read it already?" }
+        { "form": "short_past", "jp": "もう読んだ？", "en": "Did you read it already?" },
+        { "form": "teiru_masu_neg", "jp": "その本はまだ読んでいません。", "en": "I haven't read that book yet." },
+        { "form": "pot_masu_pos", "jp": "漢字が少し読めます。", "en": "I can read a little kanji." },
+        { "form": "passive", "jp": "この本は若い人によく読まれる。", "en": "This book is widely read by young people." },
+        { "form": "causative", "jp": "先生は学生に本を読ませる。", "en": "The teacher has the students read books." }
       ]
     },
     {
@@ -1464,7 +1505,12 @@
         { "form": "masu_past", "jp": "友達とお茶を飲みました。", "en": "I had tea with a friend." },
         { "form": "masu_past", "jp": "病院で薬を飲みました。", "en": "I took medicine at the hospital." },
         { "form": "te", "jp": "お水を飲んでください。", "en": "Please drink some water." },
-        { "form": "short_past", "jp": "水をたくさん飲んだ。", "en": "I drank a lot of water." }
+        { "form": "short_past", "jp": "水をたくさん飲んだ。", "en": "I drank a lot of water." },
+        { "form": "tai", "jp": "冷たい水が飲みたい。", "en": "I want to drink some cold water." },
+        { "form": "masu_volitional", "jp": "コーヒーを飲みましょう。", "en": "Let's have some coffee." },
+        { "form": "conditional_ba", "jp": "この薬を飲めば、よくなりますよ。", "en": "If you take this medicine, you'll get better." },
+        { "form": "conditional_tara", "jp": "お酒を飲んだら、運転しないでください。", "en": "If you drink alcohol, please don't drive." },
+        { "form": "causative", "jp": "犬に水を飲ませる。", "en": "I give the dog some water to drink." }
       ]
     },
     {
@@ -1556,7 +1602,10 @@
         { "form": "masu_pos", "jp": "週末は友達と遊びます。", "en": "I hang out with friends on weekends." },
         { "form": "masu_past", "jp": "子供と公園で遊びました。", "en": "I played at the park with the kids." },
         { "form": "te", "jp": "公園で遊んでから、帰ります。", "en": "I'll play in the park and then go home." },
-        { "form": "short_past", "jp": "楽しく遊んだ！", "en": "We had such a good time!" }
+        { "form": "short_past", "jp": "楽しく遊んだ！", "en": "We had such a good time!" },
+        { "form": "tai", "jp": "週末は友達と遊びたい。", "en": "I want to hang out with my friends at the weekend." },
+        { "form": "volitional", "jp": "公園で遊ぼう！", "en": "Let's play in the park!" },
+        { "form": "causative", "jp": "週末は子供を公園で遊ばせる。", "en": "At the weekend, I let the kids play in the park." }
       ]
     },
     {
@@ -1737,7 +1786,9 @@
         { "form": "masu_past", "jp": "レポートを書きました。", "en": "I wrote the report." },
         { "form": "masu_past", "jp": "漢字をノートに書きました。", "en": "I wrote kanji in my notebook." },
         { "form": "te", "jp": "ここに名前を書いてください。", "en": "Please write your name here." },
-        { "form": "short_past", "jp": "もう書いた？", "en": "Did you write it already?" }
+        { "form": "short_past", "jp": "もう書いた？", "en": "Did you write it already?" },
+        { "form": "teiru_masu_neg", "jp": "レポートはまだ書いていません。", "en": "I haven't written the report yet." },
+        { "form": "pot_masu_pos", "jp": "ひらがなが書けます。", "en": "I can write hiragana." }
       ]
     },
     {
@@ -1829,7 +1880,9 @@
         { "form": "masu_pos", "jp": "わからないときは先生に聞きます。", "en": "When I don't understand, I ask the teacher." },
         { "form": "masu_past", "jp": "道を人に聞きました。", "en": "I asked someone for directions." },
         { "form": "te", "jp": "よく聞いてください。", "en": "Please listen carefully." },
-        { "form": "short_past", "jp": "あの歌聞いた？", "en": "Have you heard that song?" }
+        { "form": "short_past", "jp": "あの歌聞いた？", "en": "Have you heard that song?" },
+        { "form": "conditional_ba", "jp": "先生に聞けば、教えてくれますよ。", "en": "If you ask the teacher, they'll tell you." },
+        { "form": "passive", "jp": "先生に聞かれると、何も言えなくなる。", "en": "When the teacher asks me something, I can't say a thing." }
       ]
     },
     {
@@ -1925,7 +1978,10 @@
         { "form": "te", "jp": "行ってきます！", "en": "I'm heading out!" },
         { "form": "te", "jp": "買い物に行ってきました。", "en": "I went out shopping." },
         { "form": "short_past", "jp": "もう行った？", "en": "Did they go already?" },
-        { "form": "short_past", "jp": "公園に散歩に行った。", "en": "I went to the park for a walk." }
+        { "form": "short_past", "jp": "公園に散歩に行った。", "en": "I went to the park for a walk." },
+        { "form": "tai", "jp": "夏休みに京都へ行きたいです。", "en": "I want to go to Kyoto over the summer holidays." },
+        { "form": "volitional", "jp": "一緒に行こう。", "en": "Let's go together." },
+        { "form": "causative", "jp": "子供を一人で行かせるのは心配です。", "en": "I worry about letting my child go alone." }
       ]
     },
     {
@@ -2016,7 +2072,9 @@
         { "form": "masu_pos", "jp": "時間がないので、急ぎます。", "en": "I don't have time, so I'll hurry." },
         { "form": "te", "jp": "急いでください！", "en": "Please hurry!" },
         { "form": "short_neg", "jp": "今日は急がない。", "en": "I won't hurry today." },
-        { "form": "short_past", "jp": "バスに乗るために急いだ。", "en": "I hurried to catch the bus." }
+        { "form": "short_past", "jp": "バスに乗るために急いだ。", "en": "I hurried to catch the bus." },
+        { "form": "conditional_ba", "jp": "急げば、電車に乗れます。", "en": "If we hurry, we can catch the train." },
+        { "form": "imperative", "jp": "急げ！遅れるぞ。", "en": "Hurry up! We'll be late." }
       ]
     },
     {
@@ -2107,7 +2165,8 @@
         { "form": "masu_pos", "jp": "海で泳ぎます。", "en": "I swim in the sea." },
         { "form": "masu_past", "jp": "夏に海で泳ぎました。", "en": "I swam in the sea in summer." },
         { "form": "te", "jp": "いっしょに泳いでください！", "en": "Please swim with me!" },
-        { "form": "short_past", "jp": "夏休みに泳いだ。", "en": "I swam during summer vacation." }
+        { "form": "short_past", "jp": "夏休みに泳いだ。", "en": "I swam during summer vacation." },
+        { "form": "pot_masu_pos", "jp": "百メートルぐらい泳げます。", "en": "I can swim about 100 metres." }
       ]
     },
     {
@@ -2200,7 +2259,8 @@
         { "form": "masu_past", "jp": "電話で友達と長く話しました。", "en": "I talked on the phone with my friend for a long time." },
         { "form": "te", "jp": "ゆっくり話してください。", "en": "Please speak slowly." },
         { "form": "te", "jp": "先生に話してみます。", "en": "I'll try talking to the teacher." },
-        { "form": "short_past", "jp": "もう話した？", "en": "Did you talk to them already?" }
+        { "form": "short_past", "jp": "もう話した？", "en": "Did you talk to them already?" },
+        { "form": "pot_masu_pos", "jp": "日本語が少し話せます。", "en": "I can speak a little Japanese." }
       ]
     },
     {
@@ -2466,7 +2526,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "窓を開けます。", "en": "I open the window." },
-        { "form": "short_neg", "jp": "まだドアを開けない。", "en": "I'm not opening the door yet." }
+        { "form": "short_neg", "jp": "まだドアを開けない。", "en": "I'm not opening the door yet." },
+        { "form": "masu_volitional", "jp": "窓を開けましょうか。", "en": "Shall I open the window?" }
       ]
     },
     {
@@ -2553,7 +2614,8 @@
       },
       "examples": [
         { "form": "te", "jp": "ドアを閉めてください。", "en": "Please close the door." },
-        { "form": "masu_past", "jp": "窓を閉めました。", "en": "I closed the window." }
+        { "form": "masu_past", "jp": "窓を閉めました。", "en": "I closed the window." },
+        { "form": "te_mo_ii", "jp": "ドアを閉めてもいいですか。", "en": "May I close the door?" }
       ]
     },
     {
@@ -2987,7 +3049,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "七時に家を出ます。", "en": "I leave the house at seven." },
-        { "form": "short_past", "jp": "さっき部屋を出た。", "en": "I left the room a moment ago." }
+        { "form": "short_past", "jp": "さっき部屋を出た。", "en": "I left the room a moment ago." },
+        { "form": "conditional_tara", "jp": "家を出たら、雨が降ってきました。", "en": "When I left the house, it started to rain." }
       ]
     },
     {
@@ -3161,7 +3224,9 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "仕事を始めます。", "en": "I begin work." },
-        { "form": "short_past", "jp": "勉強を始めた。", "en": "I started studying." }
+        { "form": "short_past", "jp": "勉強を始めた。", "en": "I started studying." },
+        { "form": "teiru_masu_neg", "jp": "試験の勉強をまだ始めていません。", "en": "I haven't started studying for the exam yet." },
+        { "form": "volitional", "jp": "じゃあ、始めよう。", "en": "OK, let's start." }
       ]
     },
     {
@@ -3335,7 +3400,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "ごみを捨てます。", "en": "I throw away the rubbish." },
-        { "form": "short_neg", "jp": "古い本は捨てない。", "en": "I don't throw away old books." }
+        { "form": "short_neg", "jp": "古い本は捨てない。", "en": "I don't throw away old books." },
+        { "form": "volitional", "jp": "この古い服は捨てようと思います。", "en": "I think I'll throw these old clothes away." }
       ]
     },
     {
@@ -3581,7 +3647,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "駅まで歩きます。", "en": "I walk to the station." },
-        { "form": "te", "jp": "歩いて学校に行きます。", "en": "I walk to school." }
+        { "form": "te", "jp": "歩いて学校に行きます。", "en": "I walk to school." },
+        { "form": "masu_volitional", "jp": "駅まで歩きましょう。", "en": "Let's walk to the station." }
       ]
     },
     {
@@ -3670,7 +3737,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "来月から銀行で働きます。", "en": "I'll start working at a bank next month." },
-        { "form": "short_neg", "jp": "日曜日は働かない。", "en": "I don't work on Sundays." }
+        { "form": "short_neg", "jp": "日曜日は働かない。", "en": "I don't work on Sundays." },
+        { "form": "tai", "jp": "将来、日本で働きたいです。", "en": "In the future, I want to work in Japan." }
       ]
     },
     {
@@ -3759,7 +3827,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "部屋に入ります。", "en": "I enter the room." },
-        { "form": "te", "jp": "どうぞ入ってください。", "en": "Please come in." }
+        { "form": "te", "jp": "どうぞ入ってください。", "en": "Please come in." },
+        { "form": "te_mo_ii", "jp": "入ってもいいですか。", "en": "May I come in?" }
       ]
     },
     {
@@ -3848,7 +3917,11 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "毎晩七時にうちへ帰ります。", "en": "I go home at seven every night." },
-        { "form": "short_neg", "jp": "まだ帰らない。", "en": "I'm not going home yet." }
+        { "form": "short_neg", "jp": "まだ帰らない。", "en": "I'm not going home yet." },
+        { "form": "teiru_masu_neg", "jp": "父はまだ帰っていません。", "en": "My father isn't home yet." },
+        { "form": "volitional", "jp": "そろそろ帰ろう。", "en": "Let's head home soon." },
+        { "form": "conditional_tara", "jp": "家に帰ったら、すぐ寝ます。", "en": "When I get home, I'll go straight to bed." },
+        { "form": "te_mo_ii", "jp": "もう帰ってもいいですよ。", "en": "You can go home now." }
       ]
     },
     {
@@ -3937,7 +4010,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "毎朝電車に乗ります。", "en": "I take the train every morning." },
-        { "form": "masu_neg", "jp": "バスには乗りません。", "en": "I don't take the bus." }
+        { "form": "masu_neg", "jp": "バスには乗りません。", "en": "I don't take the bus." },
+        { "form": "pot_masu_pos", "jp": "自転車に乗れます。", "en": "I can ride a bicycle." }
       ]
     },
     {
@@ -4026,7 +4100,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "晩ご飯を作ります。", "en": "I make dinner." },
-        { "form": "te", "jp": "ケーキを作って、食べました。", "en": "I made a cake and ate it." }
+        { "form": "te", "jp": "ケーキを作って、食べました。", "en": "I made a cake and ate it." },
+        { "form": "pot_masu_pos", "jp": "カレーが作れます。", "en": "I can make curry." }
       ]
     },
     {
@@ -4263,7 +4338,9 @@
       },
       "examples": [
         { "form": "te", "jp": "ここに座ってください。", "en": "Please sit here." },
-        { "form": "masu_pos", "jp": "いすに座ります。", "en": "I sit on the chair." }
+        { "form": "masu_pos", "jp": "いすに座ります。", "en": "I sit on the chair." },
+        { "form": "masu_volitional", "jp": "ここに座りましょう。", "en": "Let's sit here." },
+        { "form": "te_mo_ii", "jp": "ここに座ってもいいですか。", "en": "May I sit here?" }
       ]
     },
     {
@@ -4352,7 +4429,11 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "日曜日は休みます。", "en": "I rest on Sundays." },
-        { "form": "masu_past", "jp": "昨日学校を休みました。", "en": "I was absent from school yesterday." }
+        { "form": "masu_past", "jp": "昨日学校を休みました。", "en": "I was absent from school yesterday." },
+        { "form": "tai", "jp": "疲れたから、少し休みたい。", "en": "I'm tired, so I want to rest a little." },
+        { "form": "volitional", "jp": "ちょっと休もう。", "en": "Let's take a short break." },
+        { "form": "conditional_ba", "jp": "ゆっくり休めば、元気になります。", "en": "If you get a good rest, you'll feel better." },
+        { "form": "causative", "jp": "子供に熱があるので、今日は学校を休ませる。", "en": "My child has a fever, so I'm keeping them home from school today." }
       ]
     },
     {
@@ -4441,7 +4522,8 @@
       },
       "examples": [
         { "form": "short_pos", "jp": "来年から大阪に住む予定です。", "en": "I'm planning to live in Osaka from next year." },
-        { "form": "teiru_masu_pos", "jp": "今は京都に住んでいます。", "en": "I live in Kyoto now." }
+        { "form": "teiru_masu_pos", "jp": "今は京都に住んでいます。", "en": "I live in Kyoto now." },
+        { "form": "tai", "jp": "海の近くに住みたい。", "en": "I want to live near the sea." }
       ]
     },
     {
@@ -4708,7 +4790,12 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "毎日スマホを使います。", "en": "I use my phone every day." },
-        { "form": "te", "jp": "ペンを使ってください。", "en": "Please use a pen." }
+        { "form": "te", "jp": "ペンを使ってください。", "en": "Please use a pen." },
+        { "form": "pot_masu_pos", "jp": "このカードはどこでも使えます。", "en": "You can use this card anywhere." },
+        { "form": "masu_volitional", "jp": "この部屋を使いましょう。", "en": "Let's use this room." },
+        { "form": "conditional_ba", "jp": "辞書を使えば、すぐ分かります。", "en": "If you use a dictionary, you'll understand right away." },
+        { "form": "passive", "jp": "この言葉は今もよく使われる。", "en": "This word is still often used today." },
+        { "form": "te_mo_ii", "jp": "このペンを使ってもいいですか。", "en": "Can I use this pen?" }
       ]
     },
     {
@@ -4797,7 +4884,9 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "カラオケで歌を歌います。", "en": "I sing at karaoke." },
-        { "form": "short_neg", "jp": "人前では歌わない。", "en": "I don't sing in front of people." }
+        { "form": "short_neg", "jp": "人前では歌わない。", "en": "I don't sing in front of people." },
+        { "form": "pot_masu_pos", "jp": "この歌が歌えます。", "en": "I can sing this song." },
+        { "form": "masu_volitional", "jp": "みんなで歌いましょう。", "en": "Let's all sing together." }
       ]
     },
     {
@@ -4886,7 +4975,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "先生にピアノを習います。", "en": "I learn piano from a teacher." },
-        { "form": "short_past", "jp": "子供のときに水泳を習った。", "en": "I learned swimming as a child." }
+        { "form": "short_past", "jp": "子供のときに水泳を習った。", "en": "I learned swimming as a child." },
+        { "form": "tai", "jp": "ピアノを習いたいです。", "en": "I want to learn the piano." }
       ]
     },
     {
@@ -4975,7 +5065,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "先生にそう言います。", "en": "I'll tell the teacher that." },
-        { "form": "te", "jp": "もう一度言ってください。", "en": "Please say it once more." }
+        { "form": "te", "jp": "もう一度言ってください。", "en": "Please say it once more." },
+        { "form": "passive", "jp": "よく父に似ていると言われる。", "en": "People often tell me I look like my father." }
       ]
     },
     {
@@ -5063,7 +5154,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "ボタンを押します。", "en": "I press the button." },
-        { "form": "te", "jp": "ここを押してください。", "en": "Please press here." }
+        { "form": "te", "jp": "ここを押してください。", "en": "Please press here." },
+        { "form": "conditional_ba", "jp": "このボタンを押せば、ドアが開きます。", "en": "If you press this button, the door opens." }
       ]
     },
     {
@@ -5239,7 +5331,8 @@
       },
       "examples": [
         { "form": "te", "jp": "電気を消してください。", "en": "Please turn off the light." },
-        { "form": "masu_pos", "jp": "テレビを消します。", "en": "I turn off the TV." }
+        { "form": "masu_pos", "jp": "テレビを消します。", "en": "I turn off the TV." },
+        { "form": "te_mo_ii", "jp": "電気を消してもいいですか。", "en": "May I turn off the light?" }
       ]
     },
     {
@@ -5417,7 +5510,9 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "毎朝公園を走ります。", "en": "I run in the park every morning." },
-        { "form": "short_neg", "jp": "あまり走らない。", "en": "I don't run much." }
+        { "form": "short_neg", "jp": "あまり走らない。", "en": "I don't run much." },
+        { "form": "volitional", "jp": "明日から毎朝走ろうと思う。", "en": "I'm thinking of running every morning, starting tomorrow." },
+        { "form": "imperative", "jp": "走れ！電車が来るぞ。", "en": "Run! The train's coming." }
       ]
     },
     {
@@ -5503,7 +5598,9 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "授業は三時に終わります。", "en": "Class ends at three." },
-        { "form": "short_past", "jp": "仕事が終わった。", "en": "Work's over." }
+        { "form": "short_past", "jp": "仕事が終わった。", "en": "Work's over." },
+        { "form": "teiru_masu_neg", "jp": "仕事がまだ終わっていません。", "en": "Work isn't finished yet." },
+        { "form": "conditional_tara", "jp": "仕事が終わったら、飲みに行きましょう。", "en": "Let's go for a drink when work is over." }
       ]
     },
     {
@@ -5681,7 +5778,8 @@
       },
       "examples": [
         { "form": "masu_pos", "jp": "友達にプレゼントをもらいます。", "en": "I receive a present from a friend." },
-        { "form": "short_past", "jp": "誕生日に花をもらった。", "en": "I got flowers on my birthday." }
+        { "form": "short_past", "jp": "誕生日に花をもらった。", "en": "I got flowers on my birthday." },
+        { "form": "conditional_tara", "jp": "給料をもらったら、新しいパソコンを買います。", "en": "When I get paid, I'll buy a new computer." }
       ]
     },
     {
@@ -5935,7 +6033,8 @@
         { "form": "masu_past", "jp": "急に寒くなりました。", "en": "It suddenly got cold." },
         { "form": "te", "jp": "暗くなってから、家に帰りました。", "en": "I went home after it got dark." },
         { "form": "short_neg", "jp": "なかなか上手にならない。", "en": "I'm just not getting any better." },
-        { "form": "short_past", "jp": "妹は先生になった。", "en": "My younger sister became a teacher." }
+        { "form": "short_past", "jp": "妹は先生になった。", "en": "My younger sister became a teacher." },
+        { "form": "conditional_tara", "jp": "春になったら、花見に行きたいです。", "en": "When spring comes, I want to go and see the cherry blossoms." }
       ]
     },
     {
@@ -6265,7 +6364,8 @@
         { "form": "short_past", "jp": "ご飯ができたよ。", "en": "Dinner's ready!" },
         { "form": "teiru", "jp": "準備はもうできている。", "en": "Everything is ready." },
         { "form": "short_past", "jp": "駅の前に新しい店ができた。", "en": "A new shop has opened in front of the station." },
-        { "form": "masu_past_neg", "jp": "昨日の試験は全然できませんでした。", "en": "Yesterday's exam went really badly." }
+        { "form": "masu_past_neg", "jp": "昨日の試験は全然できませんでした。", "en": "Yesterday's exam went really badly." },
+        { "form": "conditional_tara", "jp": "宿題ができたら、遊んでもいいよ。", "en": "When your homework is done, you can play." }
       ]
     },
     {
@@ -6511,7 +6611,8 @@
         { "form": "masu_past", "jp": "昨日はたくさん雨が降りました。", "en": "It rained a lot yesterday." },
         { "form": "teiru_masu_pos", "jp": "雨が降っています。", "en": "It's raining." },
         { "form": "short_neg", "jp": "今年はあまり雪が降らない。", "en": "It hasn't snowed much this year." },
-        { "form": "short_past", "jp": "夜、雪が降った。", "en": "It snowed in the night." }
+        { "form": "short_past", "jp": "夜、雪が降った。", "en": "It snowed in the night." },
+        { "form": "conditional_tara", "jp": "雨が降ったら、家にいます。", "en": "If it rains, I'll stay at home." }
       ]
     },
     {
@@ -6604,7 +6705,8 @@
         { "form": "masu_past", "jp": "富士山の写真を撮りました。", "en": "I took a photo of Mount Fuji." },
         { "form": "te", "jp": "すみません、写真を撮ってもらえませんか。", "en": "Excuse me, could you take a photo of us?" },
         { "form": "short_past", "jp": "旅行で撮った写真を見せて。", "en": "Show me the photos you took on your trip." },
-        { "form": "neg_te", "jp": "ここでは写真を撮らないでください。", "en": "Please don't take photos here." }
+        { "form": "neg_te", "jp": "ここでは写真を撮らないでください。", "en": "Please don't take photos here." },
+        { "form": "te_mo_ii", "jp": "写真を撮ってもいいですか。", "en": "May I take a photo?" }
       ]
     },
     {
@@ -6695,7 +6797,8 @@
         { "form": "masu_pos", "jp": "このバスは駅の前に止まります。", "en": "This bus stops in front of the station." },
         { "form": "short_past", "jp": "大雪で電車が止まった。", "en": "The trains stopped because of heavy snow." },
         { "form": "teiru_masu_pos", "jp": "この時計は止まっています。", "en": "This clock has stopped." },
-        { "form": "masu_past", "jp": "車が急に止まりました。", "en": "The car stopped suddenly." }
+        { "form": "masu_past", "jp": "車が急に止まりました。", "en": "The car stopped suddenly." },
+        { "form": "imperative", "jp": "止まれ！", "en": "Stop!" }
       ]
     },
     {
@@ -6926,7 +7029,9 @@
         { "form": "masu_past", "jp": "九時に駅に着きました。", "en": "I got to the station at nine." },
         { "form": "te", "jp": "空港に着いて、すぐ電話しました。", "en": "I called as soon as I got to the airport." },
         { "form": "short_neg", "jp": "バスがなかなか着かない。", "en": "The bus is taking ages to arrive." },
-        { "form": "short_past", "jp": "やっと着いた！", "en": "We're finally here!" }
+        { "form": "short_past", "jp": "やっと着いた！", "en": "We're finally here!" },
+        { "form": "teiru_masu_neg", "jp": "荷物がまだ着いていません。", "en": "The package hasn't arrived yet." },
+        { "form": "conditional_tara", "jp": "駅に着いたら、電話してください。", "en": "Please call me when you get to the station." }
       ]
     },
     {
@@ -7196,7 +7301,8 @@
       "examples": [
         { "form": "masu_pos", "jp": "週末は父の仕事を手伝います。", "en": "At weekends I help my father with his work." },
         { "form": "masu_past", "jp": "友達の引っ越しを手伝いました。", "en": "I helped a friend move house." },
-        { "form": "te", "jp": "ちょっと手伝ってください。", "en": "Could you give me a hand?" }
+        { "form": "te", "jp": "ちょっと手伝ってください。", "en": "Could you give me a hand?" },
+        { "form": "masu_volitional", "jp": "手伝いましょうか。", "en": "Shall I help you?" }
       ]
     },
     {

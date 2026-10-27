@@ -890,6 +890,15 @@
           "examples": [
             { "jp": "窓が開けてあります。", "en": "The window has been opened. (by someone)" }
           ]
+        },
+        {
+          "heading": "\"Not yet\" needs ていません",
+          "explanation": "まだ with the plain negative (まだ寝ません) states an intention: \"I won't go to bed yet.\" To say that something hasn't happened yet, use まだ with the ている negative: まだ寝ていません, \"I haven't gone to bed yet.\"",
+          "examples": [
+            { "jp": "まだ寝ていません。", "en": "I haven't gone to bed yet." },
+            { "jp": "まだ寝ません。", "en": "I won't go to bed yet. (I'm staying up)" },
+            { "jp": "宿題をまだしていません。", "en": "I haven't done my homework yet." }
+          ]
         }
       ],
       "related": ["teshimau"]
