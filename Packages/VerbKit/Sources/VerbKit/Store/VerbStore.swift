@@ -52,9 +52,8 @@ public final class VerbStore {
             }
         }
 
-        installBundledGrammar()
+        installBundled()
         loadCachedGrammar()
-        installBundledVerbs()
 
         if let cached = try? persisting.loadAllVerbs(), !cached.isEmpty {
             verbs = cached
@@ -152,6 +151,14 @@ public final class VerbStore {
         syncService.confirmSynced(manifest)
         syncStatus?.recordUpdated(.verbs, version: manifest.version)
         verbs = fetchedVerbs
+    }
+
+    /// Installs the bundled grammar and verbs when they are newer than anything this device has accepted.
+    /// Synchronous and idempotent: the app calls it before any network await, so a slow connection cannot
+    /// hold the bundled data back; `start()` calls it again and finds nothing to do.
+    public func installBundled() {
+        installBundledGrammar()
+        installBundledVerbs()
     }
 
     /// Installs the bundled verbs as if they had been synced, when they are newer than anything this device

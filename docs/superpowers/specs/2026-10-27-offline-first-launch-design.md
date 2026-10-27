@@ -165,7 +165,7 @@ when `DataVersion.isNewer(bundled, than: floor)`: persist, then `confirmSynced`,
 in-memory counters logic (`BundledCounters`, `cacheIsUsable`, the sync service's bundled rules) is gone.
 `DataSyncStatus` gained `recordBundled` and `isBundled` (persisted), and Settings > Data shows
 "Bundled · v1.13.0" until a sync confirms the version. The app wiring for all six was done in Task 5, since
-removing `BundledCounters` broke the build. The Python suite and 1104 Swift tests pass.
+removing `BundledCounters` broke the build. The Python suite and 1105 Swift tests pass.
 
 **Checked on screen** (iPhone 17 Pro simulator, build pointed at an unreachable host, app uninstalled first):
 the app opens to the tabs; the verb table shows with furigana, Grammar lists its points (and Building blocks,
@@ -186,3 +186,13 @@ carries unmerged counters stage-1 data and a newer furigana) sets the rollback f
 manifest, so the sync of that file is refused as "couldn't be verified" and Settings keeps showing "Bundled".
 That is the rollback rule doing its job, and it goes away once the data reaches `main` and is signed. A
 released build always ships data that is already published.
+
+**Final review.** An independent review found no critical issues and one important one, fixed: the bundles
+for furigana, words and counters waited behind the form catalogue's network sync, so on a weak connection
+they could be held back for minutes. Every store now has a synchronous `installBundled()` that the app calls
+in `init` before any await (`start()` calls it again and finds nothing to do). Deferred minors: a failed save
+is not rolled back in the shared context; every launch reads and hashes all bundles even when nothing is newer
+(decode the sidecar first); a floor with an empty store never reinstalls (in-memory fallback); the
+`firstLaunchState` wording above; the "Bundled" mark clears when a file has no manifest entry and forms uses
+a different call; `docs/security/data-signing.md` does not yet mention bundled copies raising the floor;
+orphaned bundled copies are not flagged.

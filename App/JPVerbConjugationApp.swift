@@ -68,6 +68,12 @@ struct JPVerbConjugationApp: App {
             syncStatus: status
         )
         forms.loadCached()
+        // Install every bundled copy now, before any network await, so a slow or captive connection cannot
+        // hold the shipped data back behind a sync that may take a minute to time out.
+        verbs.installBundled()
+        furigana.installBundled()
+        words.installBundled()
+        counters.installBundled()
         // Settings' Refresh data: same order as launch, verbs (and grammar) first.
         status.refreshHandler = {
             await verbs.refresh()

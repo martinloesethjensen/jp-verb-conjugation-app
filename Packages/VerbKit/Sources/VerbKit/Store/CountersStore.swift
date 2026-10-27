@@ -37,7 +37,7 @@ public final class CountersStore {
     }
 
     /// Persist first and record only after the save succeeded; a failure leaves the cache as it was.
-    private func installBundled() {
+    public func installBundled() {
         guard let bundled, DataVersion.isNewer(bundled.version, than: syncService.acceptedVersion()) else { return }
         do {
             try persisting.replaceCounters(with: bundled.value)

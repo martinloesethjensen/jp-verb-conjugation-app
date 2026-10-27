@@ -199,4 +199,20 @@ final class BundledInstallTests: XCTestCase {
         XCTAssertEqual(status.status(for: .words).version, bundled.version)
         XCTAssertNil(status.status(for: .words).lastUpdated)
     }
+
+    /// A weak connection can hold a store's `start()` behind network syncs for a minute; the app installs
+    /// every bundle up front, before any await, so the data is there at once.
+    func testInstallingNeedsNoStartAndNoNetwork() throws {
+        let furigana = furiganaStore(try furiganaPersisting(), InMemorySyncStateStore(), bundled: bundledFurigana())
+        furigana.installBundled()
+        XCTAssertNil(furigana.dictionary, "the install fills the persisted store; the cached load shows it at start")
+        let persisting = try wordsPersisting()
+        let state = InMemorySyncStateStore()
+        let words = wordsStore(persisting, state, bundled: try bundledWords())
+        words.installBundled()
+        XCTAssertFalse(try XCTUnwrap(persisting.loadWords()).isEmpty)
+        XCTAssertNotNil(state.highestAcceptedVersion(for: "words"))
+        // Installing again at start() does nothing more.
+        words.installBundled()
+    }
 }

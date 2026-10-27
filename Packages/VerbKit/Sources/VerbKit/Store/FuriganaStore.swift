@@ -35,7 +35,7 @@ public final class FuriganaStore {
 
     /// Installs the bundled copy as if it had been synced, when it is newer than anything this device has
     /// accepted. Persist first and record only after the save succeeded; a failure leaves the cache as it was.
-    private func installBundled() {
+    public func installBundled() {
         guard let bundled, DataVersion.isNewer(bundled.version, than: syncService.acceptedVersion()) else { return }
         do {
             try persisting.replaceFuriganaDictionary(with: FuriganaDictionary(file: bundled.value))
