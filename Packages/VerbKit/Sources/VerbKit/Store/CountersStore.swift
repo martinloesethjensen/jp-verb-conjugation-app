@@ -55,25 +55,21 @@ public final class CountersStore {
 
     /// Persist first, then confirm, so a failed save is retried next time.
     private func sync() async {
-        let result: CountersSyncResult
-        do {
-            result = try await syncService.sync()
-        } catch {
-            syncStatus?.recordFailure(.counters, error)
-            return
-        }
-        guard case let .updated(manifest, fresh) = result else {
-            syncStatus?.recordUpToDate(.counters)
-            return
-        }
-        do {
-            try persisting.replaceCounters(with: fresh)
-        } catch {
-            syncStatus?.recordFailure(.counters, error, whileSaving: true)
-            return
-        }
-        syncService.confirmSynced(manifest)
-        syncStatus?.recordUpdated(.counters, version: manifest.version)
+        guard let fresh = await DataFileSync.run(
+            for: .counters,
+            status: syncStatus,
+            fetch: {
+                switch try await syncService.sync() {
+                case .upToDate:
+                    return nil
+                case let .updated(manifest, counters):
+                    return PendingDataFile(version: manifest.version, payload: counters) {
+                        self.syncService.confirmSynced(manifest)
+                    }
+                }
+            },
+            persist: { try persisting.replaceCounters(with: $0) }
+        ) else { return }
         apply(fresh)
     }
 }

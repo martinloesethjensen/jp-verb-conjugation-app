@@ -36,25 +36,21 @@ public final class FuriganaStore {
     /// then confirm the manifest, so a persistence failure leaves it
     /// unrecorded and the next attempt genuinely retries.
     private func sync() async {
-        let result: FuriganaSyncResult
-        do {
-            result = try await syncService.sync()
-        } catch {
-            syncStatus?.recordFailure(.furigana, error)
-            return
-        }
-        guard case let .updated(manifest, fresh) = result else {
-            syncStatus?.recordUpToDate(.furigana)
-            return
-        }
-        do {
-            try persisting.replaceFuriganaDictionary(with: fresh)
-        } catch {
-            syncStatus?.recordFailure(.furigana, error, whileSaving: true)
-            return
-        }
-        syncService.confirmSynced(manifest)
-        syncStatus?.recordUpdated(.furigana, version: manifest.version)
+        guard let fresh = await DataFileSync.run(
+            for: .furigana,
+            status: syncStatus,
+            fetch: {
+                switch try await syncService.sync() {
+                case .upToDate:
+                    return nil
+                case let .updated(manifest, dictionary):
+                    return PendingDataFile(version: manifest.version, payload: dictionary) {
+                        self.syncService.confirmSynced(manifest)
+                    }
+                }
+            },
+            persist: { try persisting.replaceFuriganaDictionary(with: $0) }
+        ) else { return }
         dictionary = fresh
     }
 }

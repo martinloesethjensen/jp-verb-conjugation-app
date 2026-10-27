@@ -37,25 +37,21 @@ public final class WordsStore {
 
     /// Persist first, then confirm, so a failed save is retried next time.
     private func sync() async {
-        let result: WordsSyncResult
-        do {
-            result = try await syncService.sync()
-        } catch {
-            syncStatus?.recordFailure(.words, error)
-            return
-        }
-        guard case let .updated(manifest, fresh) = result else {
-            syncStatus?.recordUpToDate(.words)
-            return
-        }
-        do {
-            try persisting.replaceWords(with: fresh)
-        } catch {
-            syncStatus?.recordFailure(.words, error, whileSaving: true)
-            return
-        }
-        syncService.confirmSynced(manifest)
-        syncStatus?.recordUpdated(.words, version: manifest.version)
+        guard let fresh = await DataFileSync.run(
+            for: .words,
+            status: syncStatus,
+            fetch: {
+                switch try await syncService.sync() {
+                case .upToDate:
+                    return nil
+                case let .updated(manifest, words):
+                    return PendingDataFile(version: manifest.version, payload: words) {
+                        self.syncService.confirmSynced(manifest)
+                    }
+                }
+            },
+            persist: { try persisting.replaceWords(with: $0) }
+        ) else { return }
         words = fresh
     }
 }

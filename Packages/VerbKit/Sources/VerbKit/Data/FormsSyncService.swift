@@ -29,15 +29,13 @@ public struct FormsSyncService: Sendable {
         guard let manifest = try await fetcher.fetchFormsManifest() else {
             return .upToDate
         }
-        try rejectRollback(of: manifest.version)
+        try SyncVerification.rejectRollback(of: manifest.version, for: .forms, syncState: syncState)
         if let last = syncState.lastSyncedFormsManifest(), last == manifest {
             return .upToDate
         }
 
         let data = try await fetcher.fetchFormsData()
-        guard sha256Hex(of: data) == manifest.sha256 else {
-            throw VerbSyncError.malformedData
-        }
+        try SyncVerification.verify(data, sha256: manifest.sha256)
         do {
             _ = try FormCatalogue.replacement(data: data, version: manifest.version)
         } catch FormCatalogue.LoadError.malformed {
@@ -49,14 +47,6 @@ public struct FormsSyncService: Sendable {
     /// Records `manifest` as synced. Call only after its file has been persisted.
     public func confirmSynced(_ manifest: FormsManifest) {
         syncState.saveLastSyncedFormsManifest(manifest)
-        syncState.saveHighestAcceptedVersion(manifest.version, for: "forms")
-    }
-
-    /// Refuse a replayed manifest older than the highest version this device accepted.
-    private func rejectRollback(of version: String) throws {
-        if let highest = syncState.highestAcceptedVersion(for: "forms"),
-           DataVersion.isOlder(version, than: highest) {
-            throw VerbSyncError.untrusted
-        }
+        syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.forms.rawValue)
     }
 }

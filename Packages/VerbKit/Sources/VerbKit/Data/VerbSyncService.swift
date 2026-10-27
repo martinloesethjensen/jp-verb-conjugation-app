@@ -30,22 +30,13 @@ public struct VerbSyncService: Sendable {
     /// trigger a re-fetch.
     public func sync() async throws -> VerbSyncResult {
         let manifest = try await fetcher.fetchManifest()
-        try rejectRollback(of: manifest.version)
+        try SyncVerification.rejectRollback(of: manifest.version, for: .verbs, syncState: syncState)
         if let last = syncState.lastSyncedManifest(), last == manifest {
             return .upToDate
         }
 
         let data = try await fetcher.fetchVerbData()
-        guard sha256Hex(of: data) == manifest.sha256 else {
-            throw VerbSyncError.malformedData
-        }
-
-        let decoded: VerbDataFile
-        do {
-            decoded = try JSONDecoder().decode(VerbDataFile.self, from: data)
-        } catch {
-            throw VerbSyncError.malformedData
-        }
+        let decoded = try SyncVerification.decode(VerbDataFile.self, from: data, sha256: manifest.sha256)
 
         return .updated(manifest: manifest, verbs: decoded.verbs)
     }
@@ -55,15 +46,6 @@ public struct VerbSyncService: Sendable {
     /// the verbs that came with it — see `sync()`'s documentation.
     public func confirmSynced(_ manifest: VerbManifest) {
         syncState.saveLastSyncedManifest(manifest)
-        syncState.saveHighestAcceptedVersion(manifest.version, for: "verbs")
-    }
-
-    /// A validly signed manifest can still be an old one replayed. Refuse any version
-    /// older than the highest this device has accepted.
-    private func rejectRollback(of version: String) throws {
-        if let highest = syncState.highestAcceptedVersion(for: "verbs"),
-           DataVersion.isOlder(version, than: highest) {
-            throw VerbSyncError.untrusted
-        }
+        syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.verbs.rawValue)
     }
 }

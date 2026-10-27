@@ -10,8 +10,9 @@ public enum GrammarSyncResult: Equatable, Sendable {
 /// points and only then calls `confirmSynced(_:)`, so a persistence
 /// failure can't be mistaken for "nothing changed" on the next attempt.
 ///
-/// It is deliberately a second concrete service, not a generic one: with
-/// two users an abstraction isn't earning its keep yet.
+/// Like every data file, this stays a concrete service: its manifest,
+/// result and sync state are its own, so one file's sync cannot disturb
+/// another's. The shared security rules live in `SyncVerification`.
 public struct GrammarSyncService: Sendable {
     private let fetcher: VerbDataFetching
     private let syncState: SyncStateStoring
@@ -30,22 +31,13 @@ public struct GrammarSyncService: Sendable {
         guard let manifest = try await fetcher.fetchGrammarManifest() else {
             return .upToDate
         }
-        try rejectRollback(of: manifest.version)
+        try SyncVerification.rejectRollback(of: manifest.version, for: .grammar, syncState: syncState)
         if let last = syncState.lastSyncedGrammarManifest(), last == manifest {
             return .upToDate
         }
 
         let data = try await fetcher.fetchGrammarData()
-        guard sha256Hex(of: data) == manifest.sha256 else {
-            throw VerbSyncError.malformedData
-        }
-
-        let decoded: GrammarDataFile
-        do {
-            decoded = try JSONDecoder().decode(GrammarDataFile.self, from: data)
-        } catch {
-            throw VerbSyncError.malformedData
-        }
+        let decoded = try SyncVerification.decode(GrammarDataFile.self, from: data, sha256: manifest.sha256)
 
         return .updated(manifest: manifest, points: decoded.grammar, books: decoded.books)
     }
@@ -55,15 +47,6 @@ public struct GrammarSyncService: Sendable {
     /// durably persisted.
     public func confirmSynced(_ manifest: GrammarManifest) {
         syncState.saveLastSyncedGrammarManifest(manifest)
-        syncState.saveHighestAcceptedVersion(manifest.version, for: "grammar")
-    }
-
-    /// A validly signed manifest can still be an old one replayed. Refuse any version
-    /// older than the highest this device has accepted.
-    private func rejectRollback(of version: String) throws {
-        if let highest = syncState.highestAcceptedVersion(for: "grammar"),
-           DataVersion.isOlder(version, than: highest) {
-            throw VerbSyncError.untrusted
-        }
+        syncState.saveHighestAcceptedVersion(manifest.version, for: DataFile.grammar.rawValue)
     }
 }
