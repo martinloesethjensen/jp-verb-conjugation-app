@@ -108,7 +108,7 @@ private func makeQuestion(
         case .fillIn: return example != nil
         case .identify: return !entry.sharesString
         case .conjugate: return true
-        case .connect, .counterChoice, .counterReading, .counterAsk: return false
+        case .connect, .counterChoice, .counterReading, .counterAsk, .spotMistake: return false
         }
     }
     guard let kind = usable.randomElement() else { return nil }
@@ -157,7 +157,7 @@ private func makeQuestion(
     case .identify:
         correct = entry.form.label
         take(sameVerbOrdered().map { (choice: $0.form.label, tag: sameVerbTagged($0)) })
-    case .connect, .counterChoice, .counterReading, .counterAsk:
+    case .connect, .counterChoice, .counterReading, .counterAsk, .spotMistake:
         return nil
     }
 

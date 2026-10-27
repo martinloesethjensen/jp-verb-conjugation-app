@@ -18,9 +18,17 @@ public enum QuizQuestionKind: String, CaseIterable, Codable, Sendable {
     /// phrase that asks it (何人). Only recorded in quiz history, with the Japanese sentence as the
     /// form id. Builds on old kinds' history: an older app build skips an attempt of this kind.
     case counterAsk
+    /// A Spot the mistake question: pick the wrong form among correct ones, built from a Common
+    /// mistakes pitfall. Only recorded in quiz history, with the pitfall's id ("node#0",
+    /// "counter:hon#0") as the subject. Builds on old kinds' history: an older app build skips an
+    /// attempt of this kind. It is neither a verb question nor a counter question.
+    case spotMistake
 
     /// A counter question, which verb code (the verb quiz, weak spots, the widget) never handles.
     public var isCounter: Bool { self == .counterChoice || self == .counterReading || self == .counterAsk }
+
+    /// A kind about a verb and a form: the only kind that makes weak verb spots.
+    public var isVerbQuestion: Bool { Self.verbKinds.contains(self) }
 
     /// The kinds the verb quiz may build. `allCases` also holds kinds with their own screens.
     public static let verbKinds: [QuizQuestionKind] = [.conjugate, .identify, .fillIn]
