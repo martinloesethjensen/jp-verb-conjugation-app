@@ -46,11 +46,11 @@ def assign_json(dataset, doc):
 def assign_grammar_text(text):
     """Returns (grammar.json text with an id on every usage, pitfall and example, number added). Raises
     ValueError, and changes nothing, when an object is laid out in a way this cannot place an id in."""
-    taken = _taken("grammar", json.loads(text))
+    taken = _taken("grammar", stable_ids.loads(text))
     lines = text.split("\n")
     out, added = [], 0
     for index, line in enumerate(lines):
-        if ONE_LINE_EXAMPLE.match(line):
+        if ONE_LINE_EXAMPLE.match(line) and '"id": ' not in line:
             line = line.replace("{ ", f'{{ "id": "{stable_ids.new_id(taken)}", ', 1)
             added += 1
         else:
@@ -60,7 +60,7 @@ def assign_grammar_text(text):
                 added += 1
         out.append(line)
     result = "\n".join(out)
-    problems = stable_ids.check_stable_ids("grammar", json.loads(result))
+    problems = stable_ids.check_stable_ids("grammar", stable_ids.loads(result))
     if problems:
         raise ValueError("cannot place an id in grammar.json for: " + "; ".join(problems))
     return result, added

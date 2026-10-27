@@ -13,7 +13,7 @@
 ## Roadmap (one plan per piece; later plans are written when the previous one lands)
 
 1. **This plan:** stable ids. Data PR, owner signs.
-2. Site foundation: `review/` layout, Access, Rust Worker with JWT verification and roles, D1 schema, Svelte shell, CI, snapshot import with signature check, browse and item pages.
+2. Site foundation: a JSON Schema per data file as the one definition of the shapes (checked by `update_data.py`; the Rust `serde` types are tested against it, and later Kotlin), including the stable-id slots and their pattern; `review/` layout, Access, Rust Worker with JWT verification and roles, D1 schema, Svelte shell, CI, snapshot import with signature check, browse and item pages.
 3. Review path: queues, approve, suggest change and delete, counter-suggestions, the admin inbox.
 4. Add path: per-type add forms, furigana prompts, locked id fields.
 5. Export: `make review-pull`, applying accepted work, stamps with `name`, PR summary.
@@ -22,7 +22,7 @@
 ## Global Constraints
 
 - Every `data/` change is re-signed by the owner (`make sign-commit PUSH=1`). Agents never run `scripts/sign_manifest.py sign` or `make sign-commit`.
-- Id format: 6 characters from `abcdefghijkmnpqrstuvwxyz23456789` (no `l`, `o`, `0`, `1`), regex `^[a-hj-km-np-z2-9]{6}$`. Generated with `secrets`. Unique within its file.
+- Id format: 6 characters from `abcdefghijkmnpqrstuvwxyz23456789` (no `l`, `o`, `0`, `1`), regex `^[a-km-np-z2-9]{6}$` (corrected during execution: the first draft left out `i`, which the alphabet includes; shipped ids contain `i`). Generated with `secrets`. Unique within its file.
 - The key is `"id"` and comes first in the object.
 - `grammar.json` is hand-formatted: apart from the inserted ids it must stay byte for byte as it was (same approach as `stamp_grammar_text` in `scripts/mark_reviewed.py`).
 - `verbs.json` examples stay on one line: `{ "id": "…", "form": "…", "jp": "…", "en": "…" }`.
@@ -49,12 +49,12 @@
 **Interfaces:**
 - Produces:
   - `ALPHABET: str = "abcdefghijkmnpqrstuvwxyz23456789"`
-  - `ID_PATTERN: re.Pattern` matching `^[a-hj-km-np-z2-9]{6}$`
+  - `ID_PATTERN: re.Pattern` matching `^[a-km-np-z2-9]{6}$`
   - `new_id(taken: set[str]) -> str`: a fresh id not in `taken`; adds it to `taken`.
   - `id_slots(dataset: str, doc: dict) -> list[tuple[str, dict]]`: `(label, obj)` for every object that must carry an id. `dataset` is `"verbs"`, `"counters"` or `"grammar"`; any other raises `ValueError`. Slots, in document order:
     - verbs: `verbs[*].examples[*]`, label `"<verb id> example <n>"` (verb id is `id` if present else `dict`; n is 1-based)
     - counters: `counters[*].things[*]`, `.examples[*]`, `.pitfalls[*]`, `.pitfalls[*].examples[*]`, labels like `"hon thing 2"`, `"hon example 1"`, `"hon pitfall 1"`, `"hon pitfall 1 example 2"`
-    - grammar: `grammar[*].usages[*]`, `.usages[*].examples[*]`, `.pitfalls[*]`, `.pitfalls[*].examples[*]`, labels like `"n-desu usage 1"`, `"n-desu usage 1 example 2"`, `"n-desu pitfall 1"`
+    - grammar: `grammar[*].usages[*]`, `.usages[*].examples[*]`, `.pitfalls[*]`, `.pitfalls[*].examples[*]`, `.contrasts[*].examples[*]` (added after review; a contrast's own `id` names another grammar point, so the contrast itself is not a slot), labels like `"n-desu usage 1"`, `"n-desu usage 1 example 2"`, `"n-desu pitfall 1"`, `"node contrast 1 example 2"`
   - `check_stable_ids(dataset: str, doc: dict) -> list[str]`: problems, one string each.
 
 - [ ] **Step 1: Write the failing tests**

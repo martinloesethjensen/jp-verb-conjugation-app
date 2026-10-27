@@ -58,7 +58,7 @@ import sys
 from pathlib import Path
 
 import form_catalogue
-from stable_ids import check_stable_ids
+from stable_ids import check_stable_ids, loads as loads_without_duplicate_keys
 
 ND_SUFFIX = "んです"
 ND_CASUAL_SUFFIX = "んだ"
@@ -1795,7 +1795,10 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         return 1, capped("the form catalogue is invalid:", problems)
 
     grammar_bytes = grammar_path.read_bytes()
-    grammar_doc = json.loads(grammar_bytes)
+    try:
+        grammar_doc = loads_without_duplicate_keys(grammar_bytes)
+    except ValueError as error:
+        return 1, [f"grammar.json is invalid: {error}"]
     problems = check_stable_ids("grammar", grammar_doc)
     if problems:
         return 1, capped("grammar.json has items without a valid stable id:", problems)
@@ -1810,7 +1813,10 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         return 1, capped("furigana.json is invalid:", problems)
     readings = furigana_doc["readings"]
 
-    verbs_doc = json.loads(verbs_path.read_text(encoding="utf-8"))
+    try:
+        verbs_doc = loads_without_duplicate_keys(verbs_path.read_text(encoding="utf-8"))
+    except ValueError as error:
+        return 1, [f"verbs.json is invalid: {error}"]
     problems = check_verb_jlpt(verbs_doc)
     if problems:
         return 1, capped("verbs.json has an invalid jlpt level:", problems)
@@ -1852,7 +1858,11 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
             return 1, [f"cannot generate word forms: {error}"]
         words_bytes = dump_words(words_doc).encode("utf-8")
     counters_path = data_dir / "counters.json"
-    counters_doc = json.loads(counters_path.read_text(encoding="utf-8")) if counters_path.exists() else None
+    try:
+        counters_doc = (loads_without_duplicate_keys(counters_path.read_text(encoding="utf-8"))
+                        if counters_path.exists() else None)
+    except ValueError as error:
+        return 1, [f"counters.json is invalid: {error}"]
     counters_bytes = None
     if counters_doc is not None:
         problems = check_stable_ids("counters", counters_doc)

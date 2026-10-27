@@ -28,6 +28,18 @@ class StableIdTests(unittest.TestCase):
                          ["n-desu usage 1", "n-desu usage 1 example 1", "n-desu pitfall 1",
                           "n-desu pitfall 1 example 1", "n-desu pitfall 1 example 2"])
 
+    def test_grammar_contrast_examples_are_slots_but_the_contrast_is_not(self):
+        doc = {"grammar": [{"id": "node", "contrasts": [{"id": "kara", "pattern": "から",
+                                                        "examples": [{"jp": "a"}, {"jp": "b"}]}]}]}
+        self.assertEqual([label for label, _ in stable_ids.id_slots("grammar", doc)],
+                         ["node contrast 1 example 1", "node contrast 1 example 2"])
+
+    def test_a_duplicate_key_is_rejected_when_parsing(self):
+        with self.assertRaises(ValueError) as caught:
+            stable_ids.loads('{"examples": [{"id": "abcdef", "jp": "a", "id": "bcdefg"}]}')
+        self.assertIn("'id'", str(caught.exception))
+        self.assertEqual(stable_ids.loads('{"a": {"id": "x"}, "b": {"id": "y"}}'), {"a": {"id": "x"}, "b": {"id": "y"}})
+
     def test_counter_slots_cover_things_examples_and_pitfalls(self):
         doc = {"counters": [{"id": "hon", "things": [{"word": "ペン"}], "examples": [{"jp": "a"}],
                              "pitfalls": [{"heading": "p", "examples": [{"jp": "b"}]}]}]}

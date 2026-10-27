@@ -5,6 +5,7 @@ reordered. Verbs, words, counters and grammar points already have their own ids.
 An id is 6 characters from ALPHABET (no l, o, 0 or 1), unique within its file, and the first key of its object.
 `scripts/assign_ids.py` fills in missing ones; `scripts/update_data.py` fails while any is missing.
 """
+import json
 import re
 import secrets
 
@@ -19,6 +20,21 @@ def new_id(taken):
         if candidate not in taken:
             taken.add(candidate)
             return candidate
+
+
+def _no_duplicate_keys(pairs):
+    seen = set()
+    for key, _ in pairs:
+        if key in seen:
+            raise ValueError(f"an object has the key {key!r} twice")
+        seen.add(key)
+    return dict(pairs)
+
+
+def loads(text):
+    """json.loads, but an object with the same key twice raises ValueError instead of keeping the last one
+    (a second "id" would otherwise hide the first)."""
+    return json.loads(text, object_pairs_hook=_no_duplicate_keys)
 
 
 def _examples(owner, label):
@@ -51,6 +67,9 @@ def id_slots(dataset, doc):
             name = point.get("id")
             slots.extend(_sections(point, "usages", "usage", name))
             slots.extend(_sections(point, "pitfalls", "pitfall", name))
+            # A contrast's own "id" names another grammar point, so only its examples are slots.
+            for n, contrast in enumerate(point.get("contrasts") or [], 1):
+                slots.extend(_examples(contrast, f"{name} contrast {n}"))
     else:
         raise ValueError(f"no stable ids for dataset {dataset!r}")
     return slots

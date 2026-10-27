@@ -793,6 +793,15 @@ class RunTests(unittest.TestCase):
         self.assertIn("grammar.json has items without a valid stable id:", messages[0])
         self.assertTrue(any("n-desu usage 1 has no id" in m for m in messages), messages)
 
+    def test_a_duplicate_key_in_grammar_fails_the_run(self):
+        d = self.make_dir()
+        text = (d / "grammar.json").read_text(encoding="utf-8")
+        text = text.replace('"heading": "h",', '"heading": "h", "id": "abcdef",', 1)
+        (d / "grammar.json").write_text(text, encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("'id'" in m for m in messages), messages)
+
     def test_an_example_may_use_a_generated_form(self):
         code, messages = ud.run(self.with_example("tai"))
         self.assertEqual(code, 0, messages)

@@ -46,6 +46,18 @@ class AssignIdsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             assign_ids.assign_grammar_text(odd)
 
+    def test_an_example_with_its_id_last_does_not_get_a_second_one(self):
+        late = GRAMMAR.replace('{ "jp": "あ。", "en": "a" }', '{ "jp": "あ。", "en": "a", "id": "abcdef" }')
+        text, added = assign_ids.assign_grammar_text(late)
+        self.assertEqual(added, 1)  # only the usage
+        self.assertEqual(text.count('"abcdef"'), 1)
+        self.assertNotRegex(text, rf'"id": "{AN_ID}", "jp": "あ。"')
+
+    def test_a_usage_with_its_id_after_the_heading_raises_instead_of_doubling_it(self):
+        late = GRAMMAR.replace('"heading": "h",', '"heading": "h",\n          "id": "abcdef",')
+        with self.assertRaises(ValueError):
+            assign_ids.assign_grammar_text(late)
+
     def test_json_assignment_keeps_existing_ids_and_puts_new_ones_first(self):
         doc = {"verbs": [{"dict": "たべる", "examples": [{"id": "abcdef", "jp": "a"}, {"form": "te", "jp": "b"}]}]}
         self.assertEqual(assign_ids.assign_json("verbs", doc), 1)
