@@ -49,4 +49,17 @@ final class RealVerbExamplesTests: XCTestCase {
             XCTAssertFalse(value.isEmpty, "\(verb.dict): \(example.form.rawValue)")
         }
     }
+
+    /// The sentence contains the form it is tagged with, in kana or written with the verb's
+    /// kanji, so the tag matches the sentence and the fill-in quiz can blank it.
+    func testEveryShippedExampleContainsItsForm() throws {
+        for verb in try RealVerbs.load() {
+            for example in verb.examples {
+                let value = try XCTUnwrap(verb.forms[id: example.form], "\(verb.dict): \(example.form.rawValue)")
+                let spellings = [value] + [KanjiSpelling(verb)?.spell(value)].compactMap { $0 }
+                XCTAssertTrue(spellings.contains { example.jp.contains($0) },
+                              "\(verb.dict): \(example.jp) does not contain \(spellings) (\(example.form.rawValue))")
+            }
+        }
+    }
 }
