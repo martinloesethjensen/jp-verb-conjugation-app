@@ -7,6 +7,7 @@ struct QuizQuestionView: View {
     var onDone: () -> Void
 
     @State private var confirmingQuit = false
+    @State private var showGuide = false
 
     var body: some View {
         // A ScrollView here (matching QuizResultsView) is what makes the
@@ -136,6 +137,23 @@ struct QuizQuestionView: View {
     }
 
     private var feedback: some View {
+        VStack(spacing: 10) {
+            feedbackBanner
+            if let result = viewModel.results.last, !result.ok, !viewModel.timedOut,
+               let why = result.errorExplanation {
+                Text(why)
+                    .font(.callout)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if result.error?.opensVerbGuide == true {
+                    Button("See the verb guide", systemImage: "book") { showGuide = true }
+                        .buttonStyle(.bordered)
+                }
+            }
+        }
+        .sheet(isPresented: $showGuide) { VerbGuideSheet() }
+    }
+
+    private var feedbackBanner: some View {
         Group {
             if viewModel.timedOut {
                 Label("Time's up!", systemImage: "alarm")

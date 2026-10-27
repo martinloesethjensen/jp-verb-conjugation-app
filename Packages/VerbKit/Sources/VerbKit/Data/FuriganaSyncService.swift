@@ -59,6 +59,11 @@ public struct FuriganaSyncService: Sendable {
         syncState.saveHighestAcceptedVersion(manifest.version, for: "furigana")
     }
 
+    /// The highest version this device has accepted, which a bundled copy must beat to be installed.
+    public func acceptedVersion() -> String? {
+        syncState.highestAcceptedVersion(for: "furigana")
+    }
+
     /// A validly signed manifest can still be an old one replayed. Refuse any version
     /// older than the highest this device has accepted.
     private func rejectRollback(of version: String) throws {

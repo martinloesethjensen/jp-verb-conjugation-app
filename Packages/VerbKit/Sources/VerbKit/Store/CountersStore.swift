@@ -1,8 +1,8 @@
 import Observation
 
-/// Owns the counters and their groups: starts on the bundled copy, loads the cached copy when it is
-/// not older, then syncs a newer one. Like `WordsStore`, every failure is silent; `counters` stays
-/// empty only when there is neither a bundled copy nor synced data.
+/// Owns the counters and their groups: installs the bundled copy when it is newer than anything this
+/// device has, loads the cached copy, then syncs a newer one. Like `WordsStore`, every failure is
+/// silent; `counters` stays empty only when there is neither a bundled copy nor synced data.
 @MainActor
 @Observable
 public final class CountersStore {
@@ -14,13 +14,13 @@ public final class CountersStore {
     private let syncService: CountersSyncService
     private let persisting: CountersPersisting
     private let syncStatus: DataSyncStatus?
-    private let bundled: BundledCounters?
+    private let bundled: BundledData<CountersDataFile>?
 
-    /// - Parameter bundled: the copy shipped in the app (`BundledCounters.load()`), used until a synced
-    ///   copy that is not older than it is available, so a first launch works offline.
+    /// - Parameter bundled: the copy shipped in the app, installed as if synced when it is newer than
+    ///   anything this device has accepted, so a first launch works offline.
     public init(
         syncService: CountersSyncService, persisting: CountersPersisting, syncStatus: DataSyncStatus? = nil,
-        bundled: BundledCounters? = nil
+        bundled: BundledData<CountersDataFile>? = nil
     ) {
         self.syncService = syncService
         self.persisting = persisting
@@ -28,24 +28,24 @@ public final class CountersStore {
         self.bundled = bundled
     }
 
-    /// Starts on the bundled copy, switches to the cached synced copy when it is not older than the
-    /// bundled one, then syncs.
     public func start() async {
-        if let bundled {
-            apply(bundled.file)
-        }
-        if let cached = try? persisting.loadCounters(), cacheIsUsable {
+        installBundled()
+        if let cached = try? persisting.loadCounters() {
             apply(cached)
         }
         await sync()
     }
 
-    /// With a bundle, the cache counts only when its recorded version is known and not older than the
-    /// bundled version (after an app update a stale cache must not hide newer bundled data).
-    private var cacheIsUsable: Bool {
-        guard let bundled else { return true }
-        guard let cachedVersion = syncService.lastSyncedVersion() else { return false }
-        return !DataVersion.isOlder(cachedVersion, than: bundled.manifest.version)
+    /// Persist first and record only after the save succeeded; a failure leaves the cache as it was.
+    public func installBundled() {
+        guard let bundled, DataVersion.isNewer(bundled.version, than: syncService.acceptedVersion()) else { return }
+        do {
+            try persisting.replaceCounters(with: bundled.value)
+        } catch {
+            return
+        }
+        syncService.confirmSynced(CountersManifest(version: bundled.version, sha256: bundled.sha256))
+        syncStatus?.recordBundled(.counters, version: bundled.version)
     }
 
     /// Settings' Refresh data.

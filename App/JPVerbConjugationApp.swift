@@ -30,32 +30,35 @@ struct JPVerbConjugationApp: App {
         let monitor = NetworkMonitor()
         let status = DataSyncStatus()
         _networkMonitor = State(initialValue: monitor)
+        // Each data file also ships in the app; a store installs its copy when it is newer than anything
+        // this device has, so a first launch with no network still has everything.
         let verbs = VerbStore(
             syncService: VerbSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataVerbPersisting(modelContext: context),
             networkMonitor: monitor,
             grammarSyncService: GrammarSyncService(fetcher: fetcher, syncState: syncState),
             grammarPersisting: SwiftDataGrammarPersisting(modelContext: context),
-            syncStatus: status
+            syncStatus: status,
+            bundledVerbs: BundledData<VerbDataFile>.load(named: "verbs"),
+            bundledGrammar: BundledData<GrammarDataFile>.load(named: "grammar")
         )
         let furigana = FuriganaStore(
             syncService: FuriganaSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataFuriganaPersisting(modelContext: context),
-            syncStatus: status
+            syncStatus: status,
+            bundled: BundledData<FuriganaDataFile>.load(named: "furigana")
         )
         let words = WordsStore(
             syncService: WordsSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataWordsPersisting(modelContext: context),
-            syncStatus: status
+            syncStatus: status,
+            bundled: BundledData<WordsDataFile>.load(named: "words")
         )
-        // The counters shipped in the app: shown on a first launch with no network, and never replaced
-        // by a synced copy that is older.
-        let bundledCounters = BundledCounters.load()
         let counters = CountersStore(
-            syncService: CountersSyncService(fetcher: fetcher, syncState: syncState, bundled: bundledCounters?.manifest),
+            syncService: CountersSyncService(fetcher: fetcher, syncState: syncState),
             persisting: SwiftDataCountersPersisting(modelContext: context),
             syncStatus: status,
-            bundled: bundledCounters
+            bundled: BundledData<CountersDataFile>.load(named: "counters")
         )
         // The form catalogue the quiz reads: bundled, or the cached synced one when newer.
         // Loaded here, before any screen can read it; synced at launch with the enhancements.
@@ -65,6 +68,12 @@ struct JPVerbConjugationApp: App {
             syncStatus: status
         )
         forms.loadCached()
+        // Install every bundled copy now, before any network await, so a slow or captive connection cannot
+        // hold the shipped data back behind a sync that may take a minute to time out.
+        verbs.installBundled()
+        furigana.installBundled()
+        words.installBundled()
+        counters.installBundled()
         // Settings' Refresh data: same order as launch, verbs (and grammar) first.
         status.refreshHandler = {
             await verbs.refresh()

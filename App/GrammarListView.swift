@@ -40,6 +40,9 @@ struct GrammarListView: View {
     @State private var search = ""
     @State private var scope: LevelScope = .mine
     @State private var showingBlocks = false
+    @State private var showingMistakes = false
+    @Environment(CountersStore.self) private var countersStore
+    @Environment(\.openRoute) private var openRoute
     @State private var showingCourse = false
     @Environment(CourseStore.self) private var courseStore
     @AppStorage("grammarListMode", store: .appGroup) private var modeRaw = GrammarListMode.byLevel.rawValue
@@ -55,6 +58,14 @@ struct GrammarListView: View {
 
     private func matching(in levels: LevelSettings) -> [GrammarPoint] {
         verbStore.grammarPoints.visible(in: levels).filter { matchesGrammarSearch($0, query: search, furigana: furigana) }
+    }
+
+    /// Pitfalls that match the search, within the visible levels, for the results section.
+    private var matchingMistakes: [CommonMistake] {
+        guard !search.isEmpty, verbStore.hasGrammar else { return [] }
+        return CommonMistakes.build(grammar: verbStore.grammarPoints, counters: countersStore.counters)
+            .visible(in: currentLevels)
+            .filter { matchesMistakeSearch($0, query: search, furigana: furigana) }
     }
 
     private var mode: GrammarListMode { GrammarListMode(rawValue: modeRaw) ?? .byLevel }
@@ -114,8 +125,16 @@ struct GrammarListView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    Button {
+                        showingMistakes = true
+                    } label: {
+                        Label("Common mistakes", systemImage: "exclamationmark.triangle")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 } footer: {
-                    Text("The forms every lesson attaches to.")
+                    Text("The forms every lesson attaches to, and the slips learners make most.")
                 }
             }
             if mode == .byLevel {
@@ -131,6 +150,14 @@ struct GrammarListView: View {
                                 Text("unreviewed").font(.caption2).textCase(nil)
                             }
                         }
+                    }
+                }
+            }
+            if !matchingMistakes.isEmpty {
+                Section("Common mistakes") {
+                    ForEach(matchingMistakes) { mistake in
+                        Button { openRoute(mistake.source) } label: { MistakeRow(mistake: mistake) }
+                            .buttonStyle(.plain)
                     }
                 }
             }
@@ -154,6 +181,7 @@ struct GrammarListView: View {
         .onChange(of: search) { if search.isEmpty { scope = .mine } }
         .navigationTitle("Grammar")
         .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }
+        .sheet(isPresented: $showingMistakes) { CommonMistakesSheet() }
         .sheet(isPresented: $showingCourse) {
             NavigationStack {
                 MyCourseView()
@@ -203,7 +231,7 @@ struct GrammarListView: View {
                     Button("Set Up My Course") { showingCourse = true }
                         .buttonStyle(.glassProminent)
                 }
-            } else if filtered.isEmpty {
+            } else if filtered.isEmpty && matchingMistakes.isEmpty {
                 if hiddenMatchCount > 0 {
                     NoMatchInLevelsView(summary: summary, hiddenCount: hiddenMatchCount)
                 } else {
