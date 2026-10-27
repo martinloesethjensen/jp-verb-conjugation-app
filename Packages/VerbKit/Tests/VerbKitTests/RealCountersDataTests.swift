@@ -302,4 +302,19 @@ final class RealCountersDataTests: XCTestCase {
         XCTAssertTrue(zen.related.contains("hon"))
         XCTAssertTrue(file.sections.contains { $0.id == "things" && $0.counters.contains("zen") })
     }
+
+    /// The app's bundled copy is written by scripts/update_data.py; it must be the data file, byte for byte,
+    /// with the version and hash of the manifest's `counters` entry.
+    func testTheBundledCopyEqualsTheDataFile() throws {
+        let bundled = try XCTUnwrap(BundledCounters.load())
+        let data = try Data(contentsOf: repoRoot.appendingPathComponent("data/counters.json"))
+        XCTAssertEqual(bundled.data, data)
+        let manifestData = try Data(contentsOf: repoRoot.appendingPathComponent("data/manifest.json"))
+        let manifest = try JSONDecoder().decode(CountersManifestEnvelope.self, from: manifestData)
+        XCTAssertEqual(bundled.manifest, manifest.counters)
+    }
+
+    private struct CountersManifestEnvelope: Decodable {
+        var counters: CountersManifest
+    }
 }
