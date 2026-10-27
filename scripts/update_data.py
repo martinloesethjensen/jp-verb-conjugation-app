@@ -58,6 +58,7 @@ import sys
 from pathlib import Path
 
 import form_catalogue
+from stable_ids import check_stable_ids
 
 ND_SUFFIX = "んです"
 ND_CASUAL_SUFFIX = "んだ"
@@ -1373,8 +1374,8 @@ def dump_verbs(doc):
     kept, and each example object on a single line."""
     text = json.dumps(doc, ensure_ascii=False, indent=2)
     text = re.sub(
-        r'\{\n\s+("form": [^\n]+),\n\s+("jp": [^\n]+),\n\s+("en": [^\n]+)\n\s+\}',
-        r"{ \1, \2, \3 }",
+        r'\{\n(?:\s+("id": [^\n]+),\n)?\s+("form": [^\n]+),\n\s+("jp": [^\n]+),\n\s+("en": [^\n]+)\n\s+\}',
+        lambda m: "{ " + ", ".join(part for part in m.groups() if part) + " }",
         text,
     )
     return text + "\n"
@@ -1795,6 +1796,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
 
     grammar_bytes = grammar_path.read_bytes()
     grammar_doc = json.loads(grammar_bytes)
+    problems = check_stable_ids("grammar", grammar_doc)
+    if problems:
+        return 1, capped("grammar.json has items without a valid stable id:", problems)
     problems = validate_grammar(grammar_doc) + check_reviews(grammar_doc["grammar"])
     if problems:
         return 1, ["grammar.json is invalid:"] + [f"  - {p}" for p in problems]
@@ -1813,6 +1817,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_verb_ids(verbs_doc) + check_published_ids(verbs_doc, published_verbs)
     if problems:
         return 1, capped("verbs.json has invalid ids:", problems)
+    problems = check_stable_ids("verbs", verbs_doc)
+    if problems:
+        return 1, capped("verbs.json has items without a valid stable id:", problems)
     problems = check_verb_forms(verbs_doc)
     if problems:
         return 1, capped("verbs.json has invalid forms:", problems)
@@ -1848,6 +1855,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     counters_doc = json.loads(counters_path.read_text(encoding="utf-8")) if counters_path.exists() else None
     counters_bytes = None
     if counters_doc is not None:
+        problems = check_stable_ids("counters", counters_doc)
+        if problems:
+            return 1, capped("counters.json has items without a valid stable id:", problems)
         problems = check_counters(counters_doc, readings) + check_reviews(counters_doc["counters"], COUNTER_GENERATED)
         if problems:
             return 1, capped("counters.json is invalid:", problems)

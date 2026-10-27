@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import stable_ids
 import update_data as ud
 
 
@@ -21,8 +22,16 @@ def verb(dict_form, short_pos, short_neg, short_past, short_past_neg, vtype="ru"
     }
 
 
+def with_ids(dataset, doc):
+    """`doc` with a stable id on every item that needs one, the way assign_ids.py leaves real data."""
+    taken = set()
+    for _, item in stable_ids.id_slots(dataset, doc):
+        item.setdefault("id", stable_ids.new_id(taken))
+    return doc
+
+
 def valid_grammar():
-    return {
+    return with_ids("grammar", {
         "version": "1.0.0",
         "description": "d",
         "grammar": [
@@ -42,7 +51,7 @@ def valid_grammar():
                 "related": [],
             }
         ],
-    }
+    })
 
 
 class NdFormsTests(unittest.TestCase):
@@ -462,6 +471,11 @@ class DumpTests(unittest.TestCase):
         self.assertTrue(text.endswith("\n"))
 
 
+    def test_an_example_with_an_id_stays_on_one_line(self):
+        doc = {"verbs": [{"examples": [{"id": "abcdef", "form": "te", "jp": "たべて。", "en": "Eat."}]}]}
+        self.assertIn('{ "id": "abcdef", "form": "te", "jp": "たべて。", "en": "Eat." }', ud.dump_verbs(doc))
+
+
 class BooksTests(unittest.TestCase):
     def doc(self, books=None, taught_in=None):
         doc = valid_grammar()
@@ -755,9 +769,29 @@ class RunTests(unittest.TestCase):
     def with_example(self, form):
         d = self.make_dir()
         doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
-        doc["verbs"][0]["examples"] = [{"form": form, "jp": "します。", "en": "I do."}]
+        doc["verbs"][0]["examples"] = [{"id": "abcdef", "form": form, "jp": "します。", "en": "I do."}]
         (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
         return d
+
+    def test_a_verb_example_without_an_id_fails_the_run(self):
+        d = self.with_example("tai")
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        del doc["verbs"][0]["examples"][0]["id"]
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("verbs.json has items without a valid stable id:", messages[0])
+        self.assertTrue(any("する example 1 has no id: run scripts/assign_ids.py" in m for m in messages), messages)
+
+    def test_a_grammar_usage_without_an_id_fails_the_run(self):
+        d = self.make_dir()
+        doc = json.loads((d / "grammar.json").read_text(encoding="utf-8"))
+        del doc["grammar"][0]["usages"][0]["id"]
+        (d / "grammar.json").write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("grammar.json has items without a valid stable id:", messages[0])
+        self.assertTrue(any("n-desu usage 1 has no id" in m for m in messages), messages)
 
     def test_an_example_may_use_a_generated_form(self):
         code, messages = ud.run(self.with_example("tai"))
@@ -1632,10 +1666,20 @@ class CountersRunTests(unittest.TestCase):
         furigana = {"version": "1.0.0", "description": "d",
                     "readings": {"食": "た", "本": "ほん", "三本": "さんぼん", "傘": "かさ"}}
         (d / "furigana.json").write_text(json.dumps(furigana, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        doc = counters_doc(counter(examples=[{"jp": "傘を三本ください。", "en": "Three umbrellas."}]))
+        doc = with_ids("counters", counters_doc(counter(examples=[{"jp": "傘を三本ください。", "en": "Three umbrellas."}])))
         doc.update(version="1.0.0", description="d")
         (d / "counters.json").write_text(json.dumps(doc, ensure_ascii=False) + "\n", encoding="utf-8")
         return d
+
+    def test_a_counter_thing_without_an_id_fails_the_run(self):
+        d = self.counters_dir()
+        doc = json.loads((d / "counters.json").read_text(encoding="utf-8"))
+        del doc["counters"][0]["things"][0]["id"]
+        (d / "counters.json").write_text(json.dumps(doc, ensure_ascii=False) + "\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("counters.json has items without a valid stable id:", messages[0])
+        self.assertTrue(any("hon thing 1 has no id" in m for m in messages), messages)
 
     def test_a_stale_counters_file_fails_check_then_run_fixes_it(self):
         d = self.counters_dir()
@@ -2058,7 +2102,8 @@ class ReviewStampTests(unittest.TestCase):
         d = self.make_dir()
         furigana = {"version": "1.0.0", "description": "d", "readings": {"本": "ほん", "傘": "かさ"}}
         (d / "furigana.json").write_text(json.dumps(furigana, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        doc = counters_doc(self.stamped(counter(), ud.COUNTER_GENERATED))
+        with_stable_ids = with_ids("counters", {"counters": [counter()]})["counters"][0]
+        doc = counters_doc(self.stamped(with_stable_ids, ud.COUNTER_GENERATED))
         doc.update(version="1.0.0", description="d")
         (d / "counters.json").write_text(json.dumps(doc, ensure_ascii=False) + "\n", encoding="utf-8")
         self.assertEqual(ud.run(d)[0], 0)
