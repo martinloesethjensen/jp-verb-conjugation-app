@@ -118,7 +118,26 @@ public struct FuriganaDictionary: Equatable, Sendable {
                 i = j
             }
         }
-        return units
+        return Self.gluingJoinersAndOpeners(units)
+    }
+
+    /// U+2060 WORD JOINER.
+    private static let wordJoiner: Character = "\u{2060}"
+    private static let openingPunctuation: Set<Character> = ["(", "（", "「", "『"]
+
+    /// Glues a unit to the one before it when a line must not break between them: after a
+    /// word joiner (the joiner may also start the unit, when the chunking split it from what
+    /// it follows) and after an opening bracket.
+    private static func gluingJoinersAndOpeners(_ units: [TextUnit]) -> [TextUnit] {
+        var result = units
+        for index in result.indices.dropFirst() {
+            let previous = result[index - 1].text.last
+            let startsWithJoiner = result[index].text.first == wordJoiner
+            if startsWithJoiner || previous == wordJoiner || previous.map(openingPunctuation.contains) == true {
+                result[index].glueToPrevious = true
+            }
+        }
+        return result
     }
 
     private func longestMatch(in chars: [Character], at start: Int) -> (kanjiLength: Int, reading: String)? {
