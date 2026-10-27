@@ -12,6 +12,15 @@ enum DataVersion {
         return numbers
     }
 
+    /// True when a bundled `version` should be installed over a device whose rollback floor is `floor`: the
+    /// version is readable and strictly newer (or there is no readable floor). Equal or older never installs,
+    /// and an unreadable bundled version never does.
+    static func isNewer(_ version: String, than floor: String?) -> Bool {
+        guard parse(version) != nil else { return false }
+        guard let floor, parse(floor) != nil else { return true }
+        return isOlder(floor, than: version)
+    }
+
     /// True when `version` is older than `highest`. An unreadable version on either
     /// side counts as older, so garbage can never pass for a newer release.
     static func isOlder(_ version: String, than highest: String) -> Bool {
