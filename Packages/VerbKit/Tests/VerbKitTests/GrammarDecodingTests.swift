@@ -98,6 +98,24 @@ final class GrammarDecodingTests: XCTestCase {
         XCTAssertEqual(point.pitfalls[1].examples, [])
     }
 
+    func testPitfallWrongFormIsOptional() throws {
+        let withWrong = """
+        {"heading": "h", "explanation": "e", "wrong": "静かだので"}
+        """
+        let without = """
+        {"heading": "h", "explanation": "e"}
+        """
+        XCTAssertEqual(try JSONDecoder().decode(GrammarPitfall.self, from: Data(withWrong.utf8)).wrong, "静かだので")
+        XCTAssertNil(try JSONDecoder().decode(GrammarPitfall.self, from: Data(without.utf8)).wrong)
+        XCTAssertNil(try decode().grammar[0].pitfalls[0].wrong)
+    }
+
+    func testPitfallWrongFormSurvivesARoundTrip() throws {
+        let pitfall = GrammarPitfall(heading: "h", explanation: "e", wrong: "静かだので")
+        let again = try JSONDecoder().decode(GrammarPitfall.self, from: JSONEncoder().encode(pitfall))
+        XCTAssertEqual(again, pitfall)
+    }
+
     func testIDIsSlug() throws {
         XCTAssertEqual(try decode().grammar[0].id, GrammarPoint.nDesuID)
     }
