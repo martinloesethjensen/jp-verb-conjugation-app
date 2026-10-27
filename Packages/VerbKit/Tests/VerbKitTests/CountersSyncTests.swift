@@ -66,4 +66,36 @@ final class CountersSyncTests: XCTestCase {
             XCTAssertEqual(error as? VerbSyncError, .untrusted)
         }
     }
+
+    func testARemoteEqualToTheBundleDownloadsNothing() async throws {
+        let fetcher = fetcher(version: "1.0.0", sha: "bundled")
+        let bundled = CountersManifest(version: "1.0.0", sha256: "bundled")
+        let service = CountersSyncService(fetcher: fetcher, syncState: InMemorySyncStateStore(), bundled: bundled)
+        let result = try await service.sync()
+        XCTAssertEqual(result, .upToDate)
+        XCTAssertEqual(fetcher.countersDataFetches, 0)
+    }
+
+    func testARemoteOlderThanTheBundleIsIgnored() async throws {
+        let fetcher = fetcher(version: "1.0.0")
+        let bundled = CountersManifest(version: "1.2.0", sha256: "bundled")
+        let service = CountersSyncService(fetcher: fetcher, syncState: InMemorySyncStateStore(), bundled: bundled)
+        let result = try await service.sync()
+        XCTAssertEqual(result, .upToDate)
+        XCTAssertEqual(fetcher.countersDataFetches, 0)
+    }
+
+    func testARemoteNewerThanTheBundleIsFetched() async throws {
+        let fetcher = fetcher(version: "1.3.0")
+        let bundled = CountersManifest(version: "1.2.0", sha256: "bundled")
+        let service = CountersSyncService(fetcher: fetcher, syncState: InMemorySyncStateStore(), bundled: bundled)
+        guard case .updated = try await service.sync() else { return XCTFail("expected updated") }
+        XCTAssertEqual(fetcher.countersDataFetches, 1)
+    }
+
+    func testWithoutABundleTheRulesAreUnchanged() async throws {
+        let fetcher = fetcher(version: "0.0.1")
+        let service = CountersSyncService(fetcher: fetcher, syncState: InMemorySyncStateStore())
+        guard case .updated = try await service.sync() else { return XCTFail("expected updated") }
+    }
 }

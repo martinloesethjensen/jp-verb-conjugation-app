@@ -15,9 +15,25 @@ final class CountersStoreTests: XCTestCase {
 
     private func makeStore(
         fetcher: MockVerbDataFetcher, state: InMemorySyncStateStore = InMemorySyncStateStore(),
-        persisting: CountersPersisting
+        persisting: CountersPersisting, bundled: BundledCounters? = nil
     ) -> CountersStore {
-        CountersStore(syncService: CountersSyncService(fetcher: fetcher, syncState: state), persisting: persisting)
+        CountersStore(
+            syncService: CountersSyncService(fetcher: fetcher, syncState: state, bundled: bundled?.manifest),
+            persisting: persisting, bundled: bundled
+        )
+    }
+
+    private func bundled(version: String = "1.0.0", ids: [String] = ["b1", "b2"]) -> BundledCounters {
+        BundledCounters(
+            file: SwiftDataCountersPersistingTests.file(ids: ids),
+            manifest: CountersManifest(version: version, sha256: "bundled"), data: Data()
+        )
+    }
+
+    private func offline() -> MockVerbDataFetcher {
+        let fetcher = MockVerbDataFetcher()
+        fetcher.countersManifestResult = .failure(VerbSyncError.offline)
+        return fetcher
     }
 
     private func persisting() throws -> SwiftDataCountersPersisting {
@@ -98,5 +114,56 @@ final class CountersStoreTests: XCTestCase {
         let store = makeStore(fetcher: MockVerbDataFetcher(), persisting: persisting)
         await store.start()
         XCTAssertEqual(store.sections.map(\.id), ["s"])
+    }
+
+    // MARK: the bundled copy
+
+    func testAFirstLaunchWithoutNetworkShowsTheBundledCounters() async throws {
+        let store = makeStore(fetcher: offline(), persisting: try persisting(), bundled: bundled())
+        await store.start()
+        XCTAssertEqual(store.counters.map(\.id), ["b1", "b2"])
+        XCTAssertEqual(store.groups.map(\.id), ["g"])
+    }
+
+    func testANewerCacheWinsOverTheBundle() async throws {
+        let persisting = try persisting()
+        try persisting.replaceCounters(with: SwiftDataCountersPersistingTests.file(ids: ["cached"]))
+        let state = InMemorySyncStateStore()
+        state.saveLastSyncedCountersManifest(CountersManifest(version: "1.5.0", sha256: "c"))
+        let store = makeStore(fetcher: offline(), state: state, persisting: persisting, bundled: bundled())
+        await store.start()
+        XCTAssertEqual(store.counters.map(\.id), ["cached"])
+    }
+
+    func testACacheOlderThanTheBundleIsIgnored() async throws {
+        let persisting = try persisting()
+        try persisting.replaceCounters(with: SwiftDataCountersPersistingTests.file(ids: ["stale"]))
+        let state = InMemorySyncStateStore()
+        state.saveLastSyncedCountersManifest(CountersManifest(version: "0.9.0", sha256: "c"))
+        let store = makeStore(fetcher: offline(), state: state, persisting: persisting, bundled: bundled())
+        await store.start()
+        XCTAssertEqual(store.counters.map(\.id), ["b1", "b2"])
+    }
+
+    func testACacheWithNoRecordedVersionIsIgnoredWhenThereIsABundle() async throws {
+        let persisting = try persisting()
+        try persisting.replaceCounters(with: SwiftDataCountersPersistingTests.file(ids: ["unknown"]))
+        let store = makeStore(fetcher: offline(), persisting: persisting, bundled: bundled())
+        await store.start()
+        XCTAssertEqual(store.counters.map(\.id), ["b1", "b2"])
+    }
+
+    func testASyncNewerThanTheBundleReplacesIt() async throws {
+        let store = makeStore(fetcher: fetcher(), persisting: try persisting(), bundled: bundled(version: "0.5.0"))
+        await store.start()
+        XCTAssertEqual(store.counters.map(\.id), ["hon"])
+    }
+
+    func testWithoutABundleACacheIsUsedAsBefore() async throws {
+        let persisting = try persisting()
+        try persisting.replaceCounters(with: SwiftDataCountersPersistingTests.file(ids: ["cached"]))
+        let store = makeStore(fetcher: offline(), persisting: persisting)
+        await store.start()
+        XCTAssertEqual(store.counters.map(\.id), ["cached"])
     }
 }

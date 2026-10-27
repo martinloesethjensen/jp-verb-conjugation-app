@@ -11,10 +11,19 @@ public enum CountersSyncResult: Equatable, Sendable {
 public struct CountersSyncService: Sendable {
     private let fetcher: VerbDataFetching
     private let syncState: SyncStateStoring
+    private let bundled: CountersManifest?
 
-    public init(fetcher: VerbDataFetching, syncState: SyncStateStoring) {
+    /// - Parameter bundled: the manifest entry of the copy shipped in the app. A remote copy equal to
+    ///   it needs no download, and one older than it is never used.
+    public init(fetcher: VerbDataFetching, syncState: SyncStateStoring, bundled: CountersManifest? = nil) {
         self.fetcher = fetcher
         self.syncState = syncState
+        self.bundled = bundled
+    }
+
+    /// The version of the copy last synced and persisted on this device, if any.
+    public func lastSyncedVersion() -> String? {
+        syncState.lastSyncedCountersManifest()?.version
     }
 
     /// Fetches the manifest's `counters` entry. No entry, or an entry unchanged since the last
@@ -25,6 +34,9 @@ public struct CountersSyncService: Sendable {
             return .upToDate
         }
         try rejectRollback(of: manifest.version)
+        if let bundled, manifest == bundled || DataVersion.isOlder(manifest.version, than: bundled.version) {
+            return .upToDate
+        }
         if let last = syncState.lastSyncedCountersManifest(), last == manifest {
             return .upToDate
         }

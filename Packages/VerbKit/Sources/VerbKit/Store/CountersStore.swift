@@ -1,7 +1,8 @@
 import Observation
 
-/// Owns the counters and their groups: loads the cached copy, then syncs a newer one. Like
-/// `WordsStore`, every failure is silent; `counters` stays empty until data is available.
+/// Owns the counters and their groups: starts on the bundled copy, loads the cached copy when it is
+/// not older, then syncs a newer one. Like `WordsStore`, every failure is silent; `counters` stays
+/// empty only when there is neither a bundled copy nor synced data.
 @MainActor
 @Observable
 public final class CountersStore {
@@ -13,18 +14,38 @@ public final class CountersStore {
     private let syncService: CountersSyncService
     private let persisting: CountersPersisting
     private let syncStatus: DataSyncStatus?
+    private let bundled: BundledCounters?
 
-    public init(syncService: CountersSyncService, persisting: CountersPersisting, syncStatus: DataSyncStatus? = nil) {
+    /// - Parameter bundled: the copy shipped in the app (`BundledCounters.load()`), used until a synced
+    ///   copy that is not older than it is available, so a first launch works offline.
+    public init(
+        syncService: CountersSyncService, persisting: CountersPersisting, syncStatus: DataSyncStatus? = nil,
+        bundled: BundledCounters? = nil
+    ) {
         self.syncService = syncService
         self.persisting = persisting
         self.syncStatus = syncStatus
+        self.bundled = bundled
     }
 
+    /// Starts on the bundled copy, switches to the cached synced copy when it is not older than the
+    /// bundled one, then syncs.
     public func start() async {
-        if let cached = try? persisting.loadCounters() {
+        if let bundled {
+            apply(bundled.file)
+        }
+        if let cached = try? persisting.loadCounters(), cacheIsUsable {
             apply(cached)
         }
         await sync()
+    }
+
+    /// With a bundle, the cache counts only when its recorded version is known and not older than the
+    /// bundled version (after an app update a stale cache must not hide newer bundled data).
+    private var cacheIsUsable: Bool {
+        guard let bundled else { return true }
+        guard let cachedVersion = syncService.lastSyncedVersion() else { return false }
+        return !DataVersion.isOlder(cachedVersion, than: bundled.manifest.version)
     }
 
     /// Settings' Refresh data.
