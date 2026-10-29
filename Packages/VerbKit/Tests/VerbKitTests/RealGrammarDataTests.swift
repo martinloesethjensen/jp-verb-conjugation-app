@@ -32,6 +32,25 @@ final class RealGrammarDataTests: XCTestCase {
         return try JSONDecoder().decode(GrammarDataFile.self, from: data)
     }
 
+    /// Issue #102: an N4-only learner sees "maybe" in the certainty lesson, and not わけ (N3).
+    func testCertaintyWithOnlyN4ShowsHazuAndKamoshirenaiButNotWake() throws {
+        let certainty = try XCTUnwrap(loadGrammar().first { $0.id == "certainty" })
+        let onlyN4 = LevelSettings(hidden: [.n5, .n3, .n2, .n1])
+        XCTAssertTrue(certainty.isVisible(in: onlyN4))
+        let shown = certainty.visibleUsages(in: onlyN4).map(\.heading)
+        XCTAssertTrue(shown.contains { $0.contains("かもしれない") })
+        XCTAssertTrue(shown.contains { $0.hasPrefix("はず") })
+        XCTAssertFalse(shown.contains { $0.contains("わけ") })
+        XCTAssertEqual(certainty.levelRange, .n4 ... .n3)
+    }
+
+    func testTeiruIsN5WithTearuAtN4() throws {
+        let teiru = try XCTUnwrap(loadGrammar().first { $0.id == "teiru" })
+        let onlyN5 = LevelSettings(hidden: [.n4, .n3, .n2, .n1])
+        XCTAssertFalse(teiru.visibleUsages(in: onlyN5).contains { $0.heading.contains("てある") })
+        XCTAssertEqual(teiru.levelRange, .n5 ... .n4)
+    }
+
     func testEveryLessonRefPointsAtAKnownBookAndLesson() throws {
         let file = try loadGrammarFile()
         XCTAssertEqual(Set(file.books.map(\.id)), ["genki-1", "genki-2"])

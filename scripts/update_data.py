@@ -1423,6 +1423,20 @@ def check_books(doc):
     return errors
 
 
+def check_usage_jlpt(pid, heading, usage, lesson_level):
+    """A usage may carry its own `jlpt`, overriding the lesson's level for that usage only.
+
+    Omit it when it would equal the lesson's level: the lesson level is the default."""
+    if "jlpt" not in usage:
+        return []
+    level = usage["jlpt"]
+    if level not in JLPT_LEVELS:
+        return [f"{pid}/{heading}: usage jlpt must be one of {sorted(JLPT_LEVELS)} when present"]
+    if level == lesson_level:
+        return [f"{pid}/{heading}: usage jlpt {level} equals the lesson's level; omit it"]
+    return []
+
+
 def check_keywords(pid, point):
     """Problems with a grammar point's optional `keywords`: English intents and glosses
     ("because", "had better") that search matches as strongly as the title."""
@@ -1479,6 +1493,7 @@ def validate_grammar(doc):
             for key in ("heading", "explanation"):
                 if not isinstance(u.get(key), str) or not u[key]:
                     errors.append(f"{pid}/{heading}: {key} missing or empty")
+            errors.extend(check_usage_jlpt(pid, heading, u, p.get("jlpt")))
             examples = u.get("examples")
             if not isinstance(examples, list) or not examples:
                 errors.append(f"{pid}/{heading}: needs at least one example")

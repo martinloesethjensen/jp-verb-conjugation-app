@@ -63,7 +63,9 @@ be added to the app's credits.
   [2026-10-29-grammar-keywords-design.md](2026-10-29-grammar-keywords-design.md))
 - `level` — beginner / intermediate
 - `usages: [GrammarUsage]` — each has a `heading`, an `explanation`, and
-  `examples: [GrammarExample]` (`jp`, `en`)
+  `examples: [GrammarExample]` (`jp`, `en`). Later addition: an optional `jlpt` per usage
+  that overrides the lesson's `jlpt` for that usage only (see `docs/jlpt-levels.md`, "Lesson and
+  usage levels", for the visibility and range rules)
 - `attachment: [AttachmentRule]` — one per word class and, where the rule
   differs, per condition: `wordClass`, optional `condition` (e.g.
   "non-past, affirmative"), `pattern`, a worked `example`, optional `note`

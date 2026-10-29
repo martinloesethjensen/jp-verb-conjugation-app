@@ -9,6 +9,9 @@ struct GrammarDetailView: View {
     @Environment(QuizHistoryStore.self) private var quizHistory
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @State private var connectionQuestions: [ConnectionQuestion]?
+    @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
+    /// Shows the usages the level setting hides, for this visit only.
+    @State private var showingHiddenUsages = false
 
     @Environment(CourseStore.self) private var courseStore
 
@@ -74,7 +77,7 @@ struct GrammarDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            LevelBadge(level: point.jlpt, emphasis: .header)
+            LevelBadge(range: point.levelRange, emphasis: .header)
             if let lesson = lessonTag {
                 HStack(spacing: 8) {
                     Text(lesson.name)
@@ -123,12 +126,28 @@ struct GrammarDetailView: View {
 
     // MARK: Usages
 
+    /// The usages to show: those at visible levels, or all of them once the learner asks.
+    private var shownUsages: [GrammarUsage] {
+        showingHiddenUsages ? point.usages : point.visibleUsages(in: LevelSettings(rawValue: hiddenLevelsRaw))
+    }
+
+    private var hiddenUsageCount: Int {
+        point.usages.count - point.visibleUsages(in: LevelSettings(rawValue: hiddenLevelsRaw)).count
+    }
+
     private var usagesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader("Usages")
-            ForEach(Array(point.usages.enumerated()), id: \.offset) { index, usage in
+            ForEach(Array(shownUsages.enumerated()), id: \.offset) { index, usage in
                 card {
-                    JapaneseText("\(index + 1). \(usage.heading)").font(.headline)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        JapaneseText("\(index + 1). \(usage.heading)").font(.headline)
+                        // Only a lesson that spans levels labels its usages; otherwise the header says it all.
+                        if point.hasMixedLevels {
+                            Spacer(minLength: 0)
+                            LevelBadge(level: point.level(of: usage))
+                        }
+                    }
                     JapaneseText(usage.explanation).font(.subheadline)
                     ForEach(Array(usage.examples.enumerated()), id: \.offset) { _, example in
                         Divider()
@@ -136,7 +155,21 @@ struct GrammarDetailView: View {
                     }
                 }
             }
+            if hiddenUsageCount > 0 {
+                Button(showingHiddenUsages ? "Hide usages at hidden levels" : hiddenUsagesLabel) {
+                    withAnimation { showingHiddenUsages.toggle() }
+                }
+                .font(.subheadline)
+            }
         }
+    }
+
+    private var hiddenUsagesLabel: String {
+        let levels = Set(point.usages.compactMap { point.level(of: $0) })
+            .filter { !LevelSettings(rawValue: hiddenLevelsRaw).isVisible($0) }
+            .sorted().map(\.displayName).joined(separator: ", ")
+        let noun = hiddenUsageCount == 1 ? "usage" : "usages"
+        return "Show \(hiddenUsageCount) more \(noun) (\(levels))"
     }
 
     // MARK: Conjugations

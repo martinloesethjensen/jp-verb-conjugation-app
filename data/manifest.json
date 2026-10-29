@@ -2,8 +2,8 @@
   "version": "1.17.0",
   "sha256": "5234d281d006042de03934a12b04c8a2005f8e39199eaffacbf369ca85eb55d4",
   "grammar": {
-    "version": "1.15.0",
-    "sha256": "65fafe19a952248a367d6bd75ab8bc28da3fde7a704720451ec0191d3143fd9f"
+    "version": "1.16.0",
+    "sha256": "0ce647078f3da075701cc83d77d0d319563a00474d2d19068bef11b10bfc52d4"
   },
   "furigana": {
     "version": "1.20.0",
