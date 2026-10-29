@@ -621,6 +621,33 @@ class ValidateGrammarTests(unittest.TestCase):
     def test_valid_document_has_no_errors(self):
         self.assertEqual(ud.validate_grammar(valid_grammar()), [])
 
+    def keywords(self, keywords):
+        doc = valid_grammar()
+        doc["grammar"][0]["keywords"] = keywords
+        return ud.validate_grammar(doc)
+
+    def test_keywords_are_optional(self):
+        self.assertNotIn("keywords", valid_grammar()["grammar"][0])
+        self.assertEqual(ud.validate_grammar(valid_grammar()), [])
+
+    def test_valid_keywords(self):
+        self.assertEqual(self.keywords(["because", "the reason is"]), [])
+
+    def test_non_string_keyword_fails(self):
+        self.assertEqual(self.keywords(["because", 3]), ["n-desu: keyword 3 must be a non-empty string"])
+        self.assertTrue(self.keywords([None]))
+        self.assertTrue(self.keywords([["because"]]))
+
+    def test_empty_keyword_fails(self):
+        self.assertTrue(self.keywords(["because", "  "]))
+
+    def test_keywords_must_be_a_non_empty_list(self):
+        self.assertTrue(self.keywords("because"))
+        self.assertTrue(self.keywords([]))
+
+    def test_duplicate_keyword_fails(self):
+        self.assertEqual(self.keywords(["because", "Because"]), ["n-desu: keyword 'Because' is listed twice"])
+
     def test_bad_jlpt(self):
         doc = valid_grammar()
         doc["grammar"][0]["jlpt"] = "expert"

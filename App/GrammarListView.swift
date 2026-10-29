@@ -51,7 +51,8 @@ struct GrammarListView: View {
     private var summary: String { settings.summary(among: availableLevels) ?? "" }
 
     private func matching(in levels: LevelSettings) -> [GrammarPoint] {
-        verbStore.grammarPoints.visible(in: levels).filter { matchesGrammarSearch($0, query: search, furigana: furigana) }
+        // Best match first: title and keyword hits, then summary, usage headings, then examples.
+        verbStore.grammarPoints.visible(in: levels).searched(for: search, furigana: furigana)
     }
 
     /// Pitfalls that match the search, within the visible levels, for the results section.
