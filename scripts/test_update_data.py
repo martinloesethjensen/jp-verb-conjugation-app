@@ -581,6 +581,28 @@ class ValidateGrammarTests(unittest.TestCase):
         del doc["grammar"][0]["jlpt"]
         self.assertTrue(any("jlpt" in e for e in ud.validate_grammar(doc)))
 
+    def test_usage_jlpt_overrides_the_lesson_level(self):
+        doc = valid_grammar()
+        doc["grammar"][0]["usages"][0]["jlpt"] = "N4"
+        self.assertEqual(ud.validate_grammar(doc), [])
+
+    def test_usage_jlpt_is_optional(self):
+        doc = valid_grammar()
+        self.assertNotIn("jlpt", doc["grammar"][0]["usages"][0])
+        self.assertEqual(ud.validate_grammar(doc), [])
+
+    def test_bad_usage_jlpt(self):
+        for bad in ("expert", "n4", None, 4, ""):
+            doc = valid_grammar()
+            doc["grammar"][0]["usages"][0]["jlpt"] = bad
+            self.assertEqual(ud.validate_grammar(doc),
+                             ["n-desu/h: usage jlpt must be one of ['N1', 'N2', 'N3', 'N4', 'N5'] when present"], bad)
+
+    def test_usage_jlpt_equal_to_the_lesson_level_is_redundant(self):
+        doc = valid_grammar()
+        doc["grammar"][0]["usages"][0]["jlpt"] = "N5"
+        self.assertEqual(ud.validate_grammar(doc), ["n-desu/h: usage jlpt N5 equals the lesson's level; omit it"])
+
     def test_bad_word_class(self):
         doc = valid_grammar()
         doc["grammar"][0]["attachment"][0]["word_class"] = "adverb"

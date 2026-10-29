@@ -360,7 +360,8 @@
         },
         {
           "id": "c8szsj",
-          "heading": "わけ: that is how it works out (N3)",
+          "heading": "わけ: that is how it works out",
+          "jlpt": "N3",
           "explanation": "わけ (訳) means a reason or a line of reasoning. 〜わけだ says that something follows naturally from what you already know, like \"no wonder\" or \"so that's why\".",
           "examples": [
             { "id": "n86dv4", "jp": "毎日練習しているから、上手なわけだ。", "en": "He practises every day, so no wonder he's good." },
@@ -369,7 +370,8 @@
         },
         {
           "id": "9mcm2i",
-          "heading": "わけがない and わけではない (N3)",
+          "heading": "わけがない and わけではない",
+          "jlpt": "N3",
           "explanation": "わけがない says that something cannot be so. わけではない does not deny the whole sentence but one conclusion that someone might draw, and so it means \"it's not that...\".",
           "examples": [
             { "id": "ckfbff", "jp": "そんなに早く終わるわけがない。", "en": "There's no way it'll be over that quickly." },
@@ -880,7 +882,8 @@
         },
         {
           "id": "bcf7wy",
-          "heading": "てある: a state someone left (N4)",
+          "heading": "てある: a state someone left",
+          "jlpt": "N4",
           "explanation": "てある says that someone did something on purpose and the result is still there. The thing that was affected is the subject, usually marked with が (or は), and the verb is one that takes an object.",
           "examples": [
             { "id": "8wuudk", "jp": "窓が開けてあります。", "en": "The window has been opened. (someone did it, and it is still open)" },
@@ -890,7 +893,8 @@
         },
         {
           "id": "j4puwe",
-          "heading": "ている or てある? (N4)",
+          "heading": "ている or てある?",
+          "jlpt": "N4",
           "explanation": "ている describes a state without saying who caused it, and てある says that a person did it deliberately, often to be ready for something. Compare an intransitive verb with ている and a transitive verb with てある.",
           "examples": [
             { "id": "k3mzb2", "jp": "ドアが開いている。", "en": "The door is open." },
