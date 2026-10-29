@@ -15,7 +15,9 @@ It does eight things:
      Likewise the eight other conjugations (volitional, passive, causative,
      causative-passive, ば and たら conditionals, imperative, たい).
   3. Validates data/grammar.json (hand-authored) against the schema the
-     app decodes. It never generates lesson text.
+     app decodes. It never generates lesson text. Examples (here and in
+     verbs.json) may mark `particle_blanks` for the particle quiz; each blank's
+     particle must occur at its offset (check_particle_blanks).
   4. Validates data/furigana.json (hand-authored), then checks that every
      kanji in verbs.json and grammar.json has a reading in it, and that each
      verb's `kanji` spells its kana `dict` form. Missing readings fail the
@@ -58,6 +60,7 @@ import sys
 from pathlib import Path
 
 import form_catalogue
+import stable_ids
 from stable_ids import check_stable_ids, loads as loads_without_duplicate_keys
 
 ND_SUFFIX = "んです"
@@ -739,6 +742,66 @@ def check_example_forms(verbs_doc):
             form = example.get("form")
             if not forms.get(form):
                 problems.append(f"{verb.get('dict', '?')}: example uses form '{form}', which the verb does not have")
+    return problems
+
+
+# --- Particle blanks (grammar and verb examples) -----------------------------
+
+# The particles a blank may name. The quiz draws its distractors from the first ten (VerbKit's
+# `ParticleBlank.commonParticles`); the rest may be blanked but are never offered as wrong choices.
+PARTICLES = ("は", "が", "を", "に", "で", "へ", "と", "も", "から", "まで", "の", "や", "より", "か")
+BLANK_KEYS = {"particle", "at", "accept_also"}
+
+
+def _check_blanks(label, example, problems):
+    """Problems with one example's optional `particle_blanks`: each blank names a particle in PARTICLES
+    and the code-point offset `at` where it occurs in `jp`; `accept_also` lists other particles that are
+    also right there (が or を with the potential). Blanks may not overlap."""
+    if "particle_blanks" not in example:
+        return
+    blanks, jp = example["particle_blanks"], example.get("jp") or ""
+    if not isinstance(blanks, list) or not blanks:
+        problems.append(f"{label}: particle_blanks must be a non-empty list when present")
+        return
+    taken = set()
+    for n, blank in enumerate(blanks):
+        where = f"{label} blank {n}"
+        if not isinstance(blank, dict):
+            problems.append(f"{where}: must be an object with particle and at")
+            continue
+        for key in sorted(set(blank) - BLANK_KEYS):
+            problems.append(f"{where}: unknown key '{key}'")
+        particle, at = blank.get("particle"), blank.get("at")
+        if particle not in PARTICLES:
+            problems.append(f"{where}: particle must be one of {' '.join(PARTICLES)}")
+            continue
+        if not isinstance(at, int) or isinstance(at, bool) or at < 0:
+            problems.append(f"{where}: at must be a character offset (0 or more)")
+            continue
+        if jp[at:at + len(particle)] != particle:
+            found = jp[at:at + len(particle)] or "the end of the sentence"
+            problems.append(f"{where}: '{particle}' is not at {at} in '{jp}' (found '{found}')")
+            continue
+        if at == 0:
+            problems.append(f"{where}: a particle cannot start the sentence")
+        span = set(range(at, at + len(particle)))
+        if span & taken:
+            problems.append(f"{where}: overlaps another blank")
+        taken |= span
+        also = blank.get("accept_also", [])
+        if not isinstance(also, list) or any(p not in PARTICLES for p in also):
+            problems.append(f"{where}: accept_also must be a list of particles from {' '.join(PARTICLES)}")
+        elif particle in also or len(set(also)) != len(also):
+            problems.append(f"{where}: accept_also repeats a particle")
+
+
+def check_particle_blanks(dataset, doc):
+    """Problems with the `particle_blanks` on the examples of grammar.json or verbs.json. A blank's
+    id is its example's stable id and its index, "<example id>#<n>" (docs: particle blanks spec)."""
+    problems = []
+    for label, item in stable_ids.id_slots(dataset, doc):
+        if "jp" in item:
+            _check_blanks(f"{label} ({item.get('id', 'no id')})", item, problems)
     return problems
 
 
@@ -1802,7 +1865,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_stable_ids("grammar", grammar_doc)
     if problems:
         return 1, capped("grammar.json has items without a valid stable id:", problems)
-    problems = validate_grammar(grammar_doc) + check_reviews(grammar_doc["grammar"])
+    problems = (validate_grammar(grammar_doc) + check_reviews(grammar_doc["grammar"])
+                + check_particle_blanks("grammar", grammar_doc))
     if problems:
         return 1, ["grammar.json is invalid:"] + [f"  - {p}" for p in problems]
 
@@ -1826,7 +1890,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_stable_ids("verbs", verbs_doc)
     if problems:
         return 1, capped("verbs.json has items without a valid stable id:", problems)
-    problems = check_verb_forms(verbs_doc)
+    problems = check_verb_forms(verbs_doc) + check_particle_blanks("verbs", verbs_doc)
     if problems:
         return 1, capped("verbs.json has invalid forms:", problems)
     apply_nd_forms(verbs_doc)

@@ -854,8 +854,8 @@
           "heading": "In progress",
           "explanation": "After a verb of an action that takes time, ている says that the action is going on now.",
           "examples": [
-            { "id": "ccan6y", "jp": "今、ご飯を食べています。", "en": "I'm eating a meal now." },
-            { "id": "k2rj3x", "jp": "雨が降っています。", "en": "It's raining." }
+            { "id": "ccan6y", "jp": "今、ご飯を食べています。", "en": "I'm eating a meal now.", "particle_blanks": [{ "particle": "を", "at": 4 }] },
+            { "id": "k2rj3x", "jp": "雨が降っています。", "en": "It's raining.", "particle_blanks": [{ "particle": "が", "at": 1 }] }
           ]
         },
         {
@@ -865,7 +865,7 @@
           "examples": [
             { "id": "3nafuz", "jp": "田中さんは結婚しています。", "en": "Mr. Tanaka is married." },
             { "id": "j4t8u9", "jp": "あの人を知っていますか。", "en": "Do you know that person?" },
-            { "id": "85qnnr", "jp": "私は車を持っています。", "en": "I have a car." }
+            { "id": "85qnnr", "jp": "私は車を持っています。", "en": "I have a car.", "particle_blanks": [{ "particle": "を", "at": 3 }] }
           ]
         },
         {
@@ -874,8 +874,8 @@
           "explanation": "ている also describes something you do regularly, or a situation that has been going on for some time.",
           "examples": [
             { "id": "pxtq9z", "jp": "毎朝、走っています。", "en": "I run every morning." },
-            { "id": "3szpan", "jp": "兄は会社で働いています。", "en": "My older brother works at a company." },
-            { "id": "2ihxm5", "jp": "私は京都に住んでいます。", "en": "I live in Kyoto." }
+            { "id": "3szpan", "jp": "兄は会社で働いています。", "en": "My older brother works at a company.", "particle_blanks": [{ "particle": "で", "at": 4 }] },
+            { "id": "2ihxm5", "jp": "私は京都に住んでいます。", "en": "I live in Kyoto.", "particle_blanks": [{ "particle": "に", "at": 4 }] }
           ]
         },
         {
@@ -884,7 +884,7 @@
           "explanation": "てある says that someone did something on purpose and the result is still there. The thing that was affected is the subject, usually marked with が (or は), and the verb is one that takes an object.",
           "examples": [
             { "id": "8wuudk", "jp": "窓が開けてあります。", "en": "The window has been opened. (someone did it, and it is still open)" },
-            { "id": "pthp2w", "jp": "机の上にメモが置いてある。", "en": "A note has been left on the desk." },
+            { "id": "pthp2w", "jp": "机の上にメモが置いてある。", "en": "A note has been left on the desk.", "particle_blanks": [{ "particle": "に", "at": 3 }] },
             { "id": "qrcr8j", "jp": "ホテルはもう予約してあります。", "en": "The hotel has already been booked." }
           ]
         },
@@ -893,7 +893,7 @@
           "heading": "ている or てある? (N4)",
           "explanation": "ている describes a state without saying who caused it, and てある says that a person did it deliberately, often to be ready for something. Compare an intransitive verb with ている and a transitive verb with てある.",
           "examples": [
-            { "id": "k3mzb2", "jp": "ドアが開いている。", "en": "The door is open." },
+            { "id": "k3mzb2", "jp": "ドアが開いている。", "en": "The door is open.", "particle_blanks": [{ "particle": "が", "at": 2 }] },
             { "id": "td2d6v", "jp": "ドアが開けてある。", "en": "The door has been left open. (someone did it on purpose)" }
           ]
         }
@@ -932,7 +932,7 @@
           "heading": "行っている and 来ている",
           "explanation": "With 行く and 来る, ている does not mean that the person is on the way. It describes the state after getting there: gone, or come.",
           "examples": [
-            { "id": "j9c5fi", "jp": "田中さんは今、大阪に行っています。", "en": "Mr. Tanaka has gone to Osaka. (and is there now)" },
+            { "id": "j9c5fi", "jp": "田中さんは今、大阪に行っています。", "en": "Mr. Tanaka has gone to Osaka. (and is there now)", "particle_blanks": [{ "particle": "に", "at": 9, "accept_also": ["へ"] }] },
             { "id": "nu4hi8", "jp": "友達が来ています。", "en": "My friend has come. (and is here)" }
           ]
         },
@@ -961,7 +961,7 @@
           "examples": [
             { "id": "6cwxyw", "jp": "まだ寝ていません。", "en": "I haven't gone to bed yet." },
             { "id": "yxkes5", "jp": "まだ寝ません。", "en": "I won't go to bed yet. (I'm staying up)" },
-            { "id": "fhdwpy", "jp": "宿題をまだしていません。", "en": "I haven't done my homework yet." }
+            { "id": "fhdwpy", "jp": "宿題をまだしていません。", "en": "I haven't done my homework yet.", "particle_blanks": [{ "particle": "を", "at": 2 }] }
           ]
         }
       ],
@@ -1500,8 +1500,8 @@
           "heading": "Wanting to do something",
           "explanation": "Add たい to the ます-stem. The wish is the speaker's own or, in a question, the listener's.",
           "examples": [
-            { "id": "46ekb4", "jp": "水が飲みたいです。", "en": "I want to drink some water." },
-            { "id": "bswuvr", "jp": "日本へ行きたいです。", "en": "I want to go to Japan." },
+            { "id": "46ekb4", "jp": "水が飲みたいです。", "en": "I want to drink some water.", "particle_blanks": [{ "particle": "が", "at": 1, "accept_also": ["を"] }] },
+            { "id": "bswuvr", "jp": "日本へ行きたいです。", "en": "I want to go to Japan.", "particle_blanks": [{ "particle": "へ", "at": 2, "accept_also": ["に"] }] },
             { "id": "x84git", "jp": "何が食べたいですか。", "en": "What do you want to eat?" }
           ]
         },
@@ -1521,7 +1521,7 @@
           "explanation": "The thing you want to do can take を or が, and both are natural.",
           "examples": [
             { "id": "4tsmy8", "jp": "コーヒーを飲みたいです。", "en": "I want to drink coffee." },
-            { "id": "7gadbz", "jp": "コーヒーが飲みたいです。", "en": "I want to drink coffee." },
+            { "id": "7gadbz", "jp": "コーヒーが飲みたいです。", "en": "I want to drink coffee.", "particle_blanks": [{ "particle": "が", "at": 4, "accept_also": ["を"] }] },
             { "id": "29ye3t", "jp": "日本語が話したいです。", "en": "I want to speak Japanese." }
           ]
         },
@@ -1530,8 +1530,8 @@
           "heading": "Other people's wishes",
           "explanation": "〜たい is for your own feelings. To say what someone else wants, use 〜たがっています, or report what they said with と言っていました.",
           "examples": [
-            { "id": "daj7q7", "jp": "妹は日本へ行きたがっています。", "en": "My younger sister wants to go to Japan." },
-            { "id": "fdd7sv", "jp": "田中さんは日本へ行きたいと言っていました。", "en": "Mr. Tanaka said he wanted to go to Japan." }
+            { "id": "daj7q7", "jp": "妹は日本へ行きたがっています。", "en": "My younger sister wants to go to Japan.", "particle_blanks": [{ "particle": "へ", "at": 4, "accept_also": ["に"] }] },
+            { "id": "fdd7sv", "jp": "田中さんは日本へ行きたいと言っていました。", "en": "Mr. Tanaka said he wanted to go to Japan.", "particle_blanks": [{ "particle": "へ", "at": 7, "accept_also": ["に"] }] }
           ]
         }
       ],
@@ -1561,7 +1561,7 @@
           "heading": "A thing you want: ほしい",
           "explanation": "〜たい goes after a verb. To say you want an object, use ほしい.",
           "examples": [
-            { "id": "qvvu33", "jp": "新しいかばんがほしいです。", "en": "I want a new bag." },
+            { "id": "qvvu33", "jp": "新しいかばんがほしいです。", "en": "I want a new bag.", "particle_blanks": [{ "particle": "が", "at": 6 }] },
             { "id": "tz9nwj", "jp": "新しい本を買いたいです。", "en": "I want to buy a new book." }
           ]
         },
@@ -1590,7 +1590,7 @@
           "examples": [
             { "id": "8kzv38", "jp": "いっしょに帰りましょう。", "en": "Let's go home together." },
             { "id": "iqq2hg", "jp": "少し休みましょう。", "en": "Let's take a short break." },
-            { "id": "6jux85", "jp": "駅で会いましょう。", "en": "Let's meet at the station." }
+            { "id": "6jux85", "jp": "駅で会いましょう。", "en": "Let's meet at the station.", "particle_blanks": [{ "particle": "で", "at": 1 }] }
           ]
         },
         {
@@ -1598,8 +1598,8 @@
           "heading": "Shall I…? Shall we…? (〜ましょうか)",
           "explanation": "〜ましょうか offers to do something for the other person, or asks whether to do it together.",
           "examples": [
-            { "id": "z3upb7", "jp": "かばんを持ちましょうか。", "en": "Shall I carry your bag?" },
-            { "id": "cnp7j8", "jp": "窓を開けましょうか。", "en": "Shall I open the window?" },
+            { "id": "z3upb7", "jp": "かばんを持ちましょうか。", "en": "Shall I carry your bag?", "particle_blanks": [{ "particle": "を", "at": 3 }] },
+            { "id": "cnp7j8", "jp": "窓を開けましょうか。", "en": "Shall I open the window?", "particle_blanks": [{ "particle": "を", "at": 1 }] },
             { "id": "rsndb4", "jp": "いっしょに行きましょうか。", "en": "Shall we go together?" }
           ]
         },
@@ -1609,7 +1609,7 @@
           "explanation": "Among friends, ましょう becomes the plain volitional: ru-verbs end in よう and u-verbs in おう. The meaning is the same: let's…",
           "examples": [
             { "id": "42avkr", "jp": "もう帰ろう。", "en": "Let's go home now." },
-            { "id": "w3ejy5", "jp": "週末、京都へ行こう。", "en": "Let's go to Kyoto this weekend." },
+            { "id": "w3ejy5", "jp": "週末、京都へ行こう。", "en": "Let's go to Kyoto this weekend.", "particle_blanks": [{ "particle": "へ", "at": 5, "accept_also": ["に"] }] },
             { "id": "cbrv86", "jp": "少し休もう。", "en": "Let's take a short break." }
           ]
         },
@@ -1618,8 +1618,8 @@
           "heading": "Plans: 〜(よ)うと思う (N4)",
           "explanation": "The plain volitional + と思います says what you are thinking of doing or have decided to do.",
           "examples": [
-            { "id": "gbkyjx", "jp": "来月、日本へ行こうと思っています。", "en": "I'm thinking of going to Japan next month." },
-            { "id": "vzebfc", "jp": "今日は早く寝ようと思います。", "en": "I think I'll go to bed early today." }
+            { "id": "gbkyjx", "jp": "来月、日本へ行こうと思っています。", "en": "I'm thinking of going to Japan next month.", "particle_blanks": [{ "particle": "へ", "at": 5, "accept_also": ["に"] }, { "particle": "と", "at": 9 }] },
+            { "id": "vzebfc", "jp": "今日は早く寝ようと思います。", "en": "I think I'll go to bed early today.", "particle_blanks": [{ "particle": "と", "at": 8 }] }
           ]
         }
       ],
@@ -1666,7 +1666,7 @@
           "heading": "ましょう or ませんか?",
           "explanation": "〜ませんか is softer: \"Won't you…?\" It invites without pushing. 〜ましょう proposes directly.",
           "examples": [
-            { "id": "jq6ri4", "jp": "コーヒーを飲みませんか。", "en": "Would you like to have some coffee?" },
+            { "id": "jq6ri4", "jp": "コーヒーを飲みませんか。", "en": "Would you like to have some coffee?", "particle_blanks": [{ "particle": "を", "at": 4 }] },
             { "id": "x9f2hd", "jp": "コーヒーを飲みましょう。", "en": "Let's have some coffee." }
           ]
         },
@@ -1689,8 +1689,8 @@
           "heading": "Please don't… (〜ないでください)",
           "explanation": "The plain negative + で + ください asks someone not to do something.",
           "examples": [
-            { "id": "hcj5ei", "jp": "ここで写真を撮らないでください。", "en": "Please don't take photos here." },
-            { "id": "ydw2q8", "jp": "窓を開けないでください。", "en": "Please don't open the window." },
+            { "id": "hcj5ei", "jp": "ここで写真を撮らないでください。", "en": "Please don't take photos here.", "particle_blanks": [{ "particle": "を", "at": 5 }] },
+            { "id": "ydw2q8", "jp": "窓を開けないでください。", "en": "Please don't open the window.", "particle_blanks": [{ "particle": "を", "at": 1 }] },
             { "id": "h53ppg", "jp": "遅れないでください。", "en": "Please don't be late." }
           ]
         },
@@ -1699,8 +1699,8 @@
           "heading": "Without doing (〜ないで)",
           "explanation": "〜ないで says how you did something: without doing the other thing.",
           "examples": [
-            { "id": "5xhhef", "jp": "朝ごはんを食べないで学校へ行きました。", "en": "I went to school without eating breakfast." },
-            { "id": "fsxmah", "jp": "かさを持たないで出かけました。", "en": "I went out without taking an umbrella." }
+            { "id": "5xhhef", "jp": "朝ごはんを食べないで学校へ行きました。", "en": "I went to school without eating breakfast.", "particle_blanks": [{ "particle": "を", "at": 4 }, { "particle": "へ", "at": 12, "accept_also": ["に"] }] },
+            { "id": "fsxmah", "jp": "かさを持たないで出かけました。", "en": "I went out without taking an umbrella.", "particle_blanks": [{ "particle": "を", "at": 2 }] }
           ]
         },
         {
@@ -1709,8 +1709,8 @@
           "explanation": "〜なくて gives the reason for a feeling or result, and links negative descriptions.",
           "examples": [
             { "id": "2v55ni", "jp": "友達が来なくて、さびしかったです。", "en": "I was lonely because my friend didn't come." },
-            { "id": "qvve6t", "jp": "お金がなくて、買えませんでした。", "en": "I didn't have any money, so I couldn't buy it." },
-            { "id": "jjrv9m", "jp": "テストが難しくなくて、よかったです。", "en": "I'm glad the test wasn't difficult." }
+            { "id": "qvve6t", "jp": "お金がなくて、買えませんでした。", "en": "I didn't have any money, so I couldn't buy it.", "particle_blanks": [{ "particle": "が", "at": 2 }] },
+            { "id": "jjrv9m", "jp": "テストが難しくなくて、よかったです。", "en": "I'm glad the test wasn't difficult.", "particle_blanks": [{ "particle": "が", "at": 3 }] }
           ]
         },
         {

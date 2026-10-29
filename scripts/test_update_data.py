@@ -2129,3 +2129,118 @@ class ReviewStampTests(unittest.TestCase):
         code, messages = ud.run(d)
         self.assertEqual(code, 1)
         self.assertTrue(any("hon was edited after review" in m for m in messages), messages)
+
+
+class ParticleBlankTests(unittest.TestCase):
+    def grammar(self, example):
+        doc = valid_grammar()
+        doc["grammar"][0]["usages"][0]["examples"] = [example]
+        return doc
+
+    def problems(self, blanks, jp="私は京都に住んでいます。"):
+        example = {"id": "abcdef", "jp": jp, "en": "e", "particle_blanks": blanks}
+        return ud.check_particle_blanks("grammar", self.grammar(example))
+
+    def test_valid_blanks(self):
+        self.assertEqual(self.problems([{"particle": "に", "at": 4}, {"particle": "は", "at": 1}]), [])
+
+    def test_accept_also(self):
+        self.assertEqual(self.problems([{"particle": "が", "at": 1, "accept_also": ["を"]}], jp="水が飲みたいです。"), [])
+
+    def test_multi_character_particle(self):
+        self.assertEqual(self.problems([{"particle": "から", "at": 1}], jp="駅から歩きます。"), [])
+
+    def test_no_blanks_is_fine(self):
+        self.assertEqual(ud.check_particle_blanks("grammar", valid_grammar()), [])
+
+    def test_particle_not_at_position(self):
+        problems = self.problems([{"particle": "に", "at": 3}])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("'に' is not at 3", problems[0])
+        self.assertIn("found '都'", problems[0])
+
+    def test_position_past_the_end(self):
+        self.assertIn("found 'the end of the sentence'", self.problems([{"particle": "に", "at": 40}])[0])
+
+    def test_unknown_particle(self):
+        self.assertIn("particle must be one of", self.problems([{"particle": "ね", "at": 4}])[0])
+
+    def test_bad_offset(self):
+        for at in (-1, "4", True, None):
+            self.assertIn("at must be", self.problems([{"particle": "に", "at": at}])[0], at)
+
+    def test_particle_cannot_start_the_sentence(self):
+        self.assertIn("cannot start", self.problems([{"particle": "が", "at": 0}], jp="がんばります。")[0])
+
+    def test_empty_list(self):
+        self.assertIn("non-empty list", self.problems([])[0])
+
+    def test_unknown_key(self):
+        self.assertIn("unknown key 'also'", self.problems([{"particle": "に", "at": 4, "also": ["へ"]}])[0])
+
+    def test_overlapping_blanks(self):
+        problems = self.problems([{"particle": "から", "at": 1}, {"particle": "か", "at": 1}], jp="駅から歩きます。")
+        self.assertEqual(len(problems), 1)
+        self.assertIn("overlaps", problems[0])
+
+    def test_accept_also_must_be_other_particles(self):
+        self.assertIn("repeats", self.problems([{"particle": "に", "at": 4, "accept_also": ["に"]}])[0])
+        self.assertIn("repeats", self.problems([{"particle": "に", "at": 4, "accept_also": ["へ", "へ"]}])[0])
+        self.assertIn("accept_also must be", self.problems([{"particle": "に", "at": 4, "accept_also": "へ"}])[0])
+        self.assertIn("accept_also must be", self.problems([{"particle": "に", "at": 4, "accept_also": ["ね"]}])[0])
+
+    def test_label_names_the_example_id(self):
+        self.assertIn("(abcdef)", self.problems([{"particle": "に", "at": 3}])[0])
+
+    def test_pitfall_and_contrast_examples_are_checked(self):
+        doc = valid_grammar()
+        bad = {"id": "abcdef", "jp": "駅で", "en": "e", "particle_blanks": [{"particle": "に", "at": 1}]}
+        doc["grammar"][0]["pitfalls"][0]["examples"] = [bad]
+        doc["grammar"][0]["contrasts"] = [{"pattern": "p", "explanation": "x", "examples": [dict(bad, id="bcdefg")]}]
+        self.assertEqual(len(ud.check_particle_blanks("grammar", doc)), 2)
+
+    def test_verb_examples_are_checked(self):
+        doc = {"verbs": [{"dict": "のる", "examples": [
+            {"id": "abcdef", "form": "masu_pos", "jp": "電車に乗ります。", "en": "e",
+             "particle_blanks": [{"particle": "に", "at": 2}]},
+            {"id": "bcdefg", "form": "masu_pos", "jp": "電車に乗ります。", "en": "e",
+             "particle_blanks": [{"particle": "を", "at": 2}]},
+        ]}]}
+        problems = ud.check_particle_blanks("verbs", doc)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("(bcdefg)", problems[0])
+
+
+class ParticleBlankRunTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+    with_example = RunTests.with_example
+
+    def test_a_misplaced_grammar_blank_fails_the_run(self):
+        d = self.make_dir()
+        doc = json.loads((d / "grammar.json").read_text(encoding="utf-8"))
+        doc["grammar"][0]["usages"][0]["examples"][0]["particle_blanks"] = [{"particle": "を", "at": 1}]
+        (d / "grammar.json").write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertEqual(messages[0], "grammar.json is invalid:")
+        self.assertTrue(any("'を' is not at 1" in m for m in messages), messages)
+
+    def test_a_misplaced_verb_blank_fails_the_run(self):
+        d = self.with_example("masu_pos")
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["examples"][0]["particle_blanks"] = [{"particle": "を", "at": 1}]
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("'を' is not at 1" in m for m in messages), messages)
+
+    def test_a_valid_verb_blank_survives_the_run(self):
+        d = self.with_example("masu_pos")
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["examples"][0]["jp"] = "しゅくだいをします。"
+        doc["verbs"][0]["examples"][0]["particle_blanks"] = [{"particle": "を", "at": 5}]
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        code, messages = ud.run(d)
+        self.assertEqual(code, 0, messages)
+        written = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        self.assertEqual(written["verbs"][0]["examples"][0]["particle_blanks"], [{"particle": "を", "at": 5}])
