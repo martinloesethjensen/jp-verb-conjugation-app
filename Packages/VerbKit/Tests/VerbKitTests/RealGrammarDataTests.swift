@@ -220,4 +220,28 @@ final class RealGrammarDataTests: XCTestCase {
             }
         }
     }
+
+    // MARK: search by English intent (#101)
+
+    func testEveryLessonHasAtLeastTwoKeywords() throws {
+        for point in try loadGrammar() {
+            XCTAssertGreaterThanOrEqual(point.keywords.count, 2, "\(point.id) needs at least two keywords")
+            XCTAssertFalse(point.keywords.contains { $0.trimmingCharacters(in: .whitespaces).isEmpty }, point.id)
+        }
+    }
+
+    func testEnglishIntentFindsTheRightLessonFirst() throws {
+        let points = try loadGrammar()
+        let expected = [
+            "because": "node",
+            "while": "temiru",
+            "had better": "hou-ga-ii",
+            "must": "nakereba",
+            "without": "nai-te",
+            "used to": "obligation",
+        ]
+        for (query, id) in expected {
+            XCTAssertEqual(points.searched(for: query).first?.id, id, "search for \"\(query)\"")
+        }
+    }
 }
