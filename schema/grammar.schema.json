@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/martinloesethjensen/jp-verb-conjugation-app/main/schema/grammar.schema.json",
+  "title": "Grammar",
+  "description": "data/grammar.json: hand-authored grammar points and the textbooks they map to.",
+  "type": "object",
+  "required": [
+    "version",
+    "description",
+    "grammar"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "grammar": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/point"
+      },
+      "minItems": 1
+    },
+    "books": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/book"
+      }
+    }
+  },
+  "$defs": {
+    "jlpt": {
+      "enum": [
+        "N5",
+        "N4",
+        "N3",
+        "N2",
+        "N1"
+      ]
+    },
+    "stableId": {
+      "type": "string",
+      "pattern": "^[a-km-np-z2-9]{6}$"
+    },
+    "reviewStamp": {
+      "type": "object",
+      "required": [
+        "by",
+        "on",
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "by": {
+          "enum": [
+            "owner",
+            "teacher"
+          ]
+        },
+        "on": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "example": {
+      "type": "object",
+      "required": [
+        "id",
+        "jp",
+        "en"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "jp": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "book": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "edition",
+        "lessons"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lessons": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "first_lesson": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "required": [
+        "id",
+        "heading",
+        "explanation",
+        "examples"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "heading": {
+          "type": "string",
+          "minLength": 1
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/example"
+          }
+        }
+      }
+    },
+    "pitfall": {
+      "type": "object",
+      "required": [
+        "id",
+        "heading",
+        "explanation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "heading": {
+          "type": "string",
+          "minLength": 1
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "wrong": {
+          "type": "string",
+          "minLength": 1
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/example"
+          }
+        }
+      }
+    },
+    "attachment": {
+      "type": "object",
+      "required": [
+        "word_class",
+        "pattern",
+        "example"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "word_class": {
+          "enum": [
+            "verb",
+            "i-adjective",
+            "na-adjective",
+            "noun"
+          ]
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "example": {
+          "type": "string",
+          "minLength": 1
+        },
+        "condition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "da_to_na": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "then": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "conjugation": {
+      "type": "object",
+      "required": [
+        "form",
+        "register"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "form": {
+          "type": "string",
+          "minLength": 1
+        },
+        "register": {
+          "enum": [
+            "casual",
+            "formal",
+            "polite"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "contrast": {
+      "type": "object",
+      "required": [
+        "pattern",
+        "explanation",
+        "examples"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/example"
+          }
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        }
+      }
+    },
+    "taughtIn": {
+      "type": "object",
+      "required": [
+        "book",
+        "lesson",
+        "reviewed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "book": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "lesson": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reviewed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "point": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "summary",
+        "jlpt",
+        "usages",
+        "attachment",
+        "conjugations",
+        "pitfalls",
+        "related"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "jlpt": {
+          "$ref": "#/$defs/jlpt"
+        },
+        "usages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/usage"
+          }
+        },
+        "attachment": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/attachment"
+          }
+        },
+        "conjugations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/conjugation"
+          }
+        },
+        "pitfalls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pitfall"
+          }
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          }
+        },
+        "taught_in": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/taughtIn"
+          }
+        },
+        "contrasts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contrast"
+          }
+        },
+        "review": {
+          "$ref": "#/$defs/reviewStamp"
+        }
+      }
+    }
+  }
+}
