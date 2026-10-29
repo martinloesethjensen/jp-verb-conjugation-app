@@ -18,11 +18,15 @@ public struct GrammarUsage: Codable, Hashable, Sendable {
     public var heading: String
     public var explanation: String
     public var examples: [GrammarExample]
+    /// This usage's own level, when it differs from the lesson's. Nil means the lesson's level
+    /// applies; read the effective level with `GrammarPoint.level(of:)`.
+    public var jlpt: JLPTLevel?
 
-    public init(heading: String, explanation: String, examples: [GrammarExample]) {
+    public init(heading: String, explanation: String, examples: [GrammarExample], jlpt: JLPTLevel? = nil) {
         self.heading = heading
         self.explanation = explanation
         self.examples = examples
+        self.jlpt = jlpt
     }
 }
 
