@@ -198,6 +198,19 @@ final class ParticleQuestionTests: XCTestCase {
         XCTAssertEqual(buildParticleQuestions(grammar: grammar, verbs: [noru], count: 10).count, 3)
     }
 
+    func testAUsageCountsAtItsOwnLevel() {
+        var lesson = point("a", jlpt: .n5, examples: [example("aaaaaa", "雨が降る。", ParticleBlank(particle: "が", at: 1))],
+                           pitfalls: [example("pppppp", "雨が降る。", ParticleBlank(particle: "が", at: 1))])
+        lesson.usages.append(GrammarUsage(
+            heading: "h2", explanation: "e",
+            examples: [example("bbbbbb", "駅で会う。", ParticleBlank(particle: "で", at: 1))], jlpt: .n3))
+        let n3Hidden = buildParticleQuestions(grammar: [lesson], verbs: [], levels: LevelSettings(hidden: [.n3]), count: 10)
+        XCTAssertEqual(Set(n3Hidden.map(\.blankID)), ["aaaaaa#0", "pppppp#0"])
+        // Only the N3 usage is visible: its blank, but not the N5 lesson's pitfall.
+        let n5Hidden = buildParticleQuestions(grammar: [lesson], verbs: [], levels: LevelSettings(hidden: [.n5]), count: 10)
+        XCTAssertEqual(n5Hidden.map(\.blankID), ["bbbbbb#0"])
+    }
+
     func testCountCapsAndZeroIsEmpty() {
         let examples = (0..<6).map { example("aaaaa\($0 + 2)", "雨が降る。", ParticleBlank(particle: "が", at: 1)) }
         XCTAssertEqual(buildParticleQuestions(grammar: [point(examples: examples)], verbs: [], count: 4).count, 4)

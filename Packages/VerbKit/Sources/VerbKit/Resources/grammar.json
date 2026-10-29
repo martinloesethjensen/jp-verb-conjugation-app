@@ -10,6 +10,7 @@
       "id": "n-desu",
       "title": "んです",
       "summary": "Marks a sentence as explanation, context or reason. Use んです after verbs and い-adjectives, and なんです after nouns and な-adjectives.",
+      "keywords": ["explaining", "the reason is", "the thing is", "how come", "so that's why"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-1", "lesson": 12, "reviewed": false }
@@ -183,6 +184,7 @@
       "id": "potential",
       "title": "可能形",
       "summary": "The potential form says that someone can do something, or that the situation allows it: 食べられる, 飲める, できる. It conjugates as a ru-verb.",
+      "keywords": ["can", "be able to", "possible", "ability", "can't"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-2", "lesson": 13, "reviewed": false }
@@ -324,6 +326,7 @@
       "id": "certainty",
       "title": "はず・かもしれない・わけ",
       "summary": "Three ways to say how things stand: はず (I expect so, because it makes sense), かもしれない (maybe), and わけ (that is how it works out). All three come after a plain form. はず and かもしれない are N4; わけ is N3.",
+      "keywords": ["should be", "supposed to", "expected to", "maybe", "might", "perhaps", "no way", "doesn't mean"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-2", "lesson": 14, "reviewed": false },
@@ -360,7 +363,8 @@
         },
         {
           "id": "c8szsj",
-          "heading": "わけ: that is how it works out (N3)",
+          "heading": "わけ: that is how it works out",
+          "jlpt": "N3",
           "explanation": "わけ (訳) means a reason or a line of reasoning. 〜わけだ says that something follows naturally from what you already know, like \"no wonder\" or \"so that's why\".",
           "examples": [
             { "id": "n86dv4", "jp": "毎日練習しているから、上手なわけだ。", "en": "He practises every day, so no wonder he's good." },
@@ -369,7 +373,8 @@
         },
         {
           "id": "9mcm2i",
-          "heading": "わけがない and わけではない (N3)",
+          "heading": "わけがない and わけではない",
+          "jlpt": "N3",
           "explanation": "わけがない says that something cannot be so. わけではない does not deny the whole sentence but one conclusion that someone might draw, and so it means \"it's not that...\".",
           "examples": [
             { "id": "ckfbff", "jp": "そんなに早く終わるわけがない。", "en": "There's no way it'll be over that quickly." },
@@ -460,6 +465,7 @@
       "id": "obligation",
       "title": "べき・ものだ",
       "summary": "べき says what someone should do, as advice or a moral judgement. ものだ states how things are in general, or remembers how things used to be.",
+      "keywords": ["should", "ought to", "used to", "as a rule", "it's natural to"],
       "jlpt": "N3",
       "usages": [
         {
@@ -598,6 +604,7 @@
       "id": "appearance",
       "title": "よう・みたい・そう・らしい",
       "summary": "Four ways to talk about what you see, hear or infer: ようだ and みたいだ (it seems, like), そうだ (it looks like, or I hear), and らしい (apparently, or typical of).",
+      "keywords": ["seems", "looks like", "apparently", "I hear that", "like", "typical of"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-2", "lesson": 13, "reviewed": false },
@@ -750,6 +757,7 @@
       "id": "ppoi",
       "title": "っぽい",
       "summary": "っぽい adds the feel of something: -ish, like, or prone to. It attaches to nouns, verb stems and い-adjective stems, and the result is an い-adjective.",
+      "keywords": ["-ish", "kind of", "feels like", "prone to", "tends to"],
       "jlpt": "N2",
       "usages": [
         {
@@ -843,6 +851,7 @@
       "id": "teiru",
       "title": "ている・てある",
       "summary": "ている describes an action in progress, or a state that results from an action: 食べている (is eating), 結婚している (is married). てある (N4) describes a state that someone left behind on purpose: 窓が開けてある.",
+      "keywords": ["-ing", "in progress", "is doing", "habit", "resulting state", "has been done"],
       "jlpt": "N5",
       "taught_in": [
         { "book": "genki-1", "lesson": 7, "reviewed": false },
@@ -880,7 +889,8 @@
         },
         {
           "id": "bcf7wy",
-          "heading": "てある: a state someone left (N4)",
+          "heading": "てある: a state someone left",
+          "jlpt": "N4",
           "explanation": "てある says that someone did something on purpose and the result is still there. The thing that was affected is the subject, usually marked with が (or は), and the verb is one that takes an object.",
           "examples": [
             { "id": "8wuudk", "jp": "窓が開けてあります。", "en": "The window has been opened. (someone did it, and it is still open)" },
@@ -890,7 +900,8 @@
         },
         {
           "id": "j4puwe",
-          "heading": "ている or てある? (N4)",
+          "heading": "ている or てある?",
+          "jlpt": "N4",
           "explanation": "ている describes a state without saying who caused it, and てある says that a person did it deliberately, often to be ready for something. Compare an intransitive verb with ている and a transitive verb with てある.",
           "examples": [
             { "id": "k3mzb2", "jp": "ドアが開いている。", "en": "The door is open.", "particle_blanks": [{ "particle": "が", "at": 2 }] },
@@ -971,6 +982,7 @@
       "id": "teshimau",
       "title": "てしまう・ておく",
       "summary": "てしまう says that something is completely done, or that it happened and you regret it. ておく says that you do something in advance, or leave something as it is.",
+      "keywords": ["end up", "regret", "completely", "by accident", "in advance", "get ready", "leave it"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-2", "lesson": 15, "reviewed": false },
@@ -1075,6 +1087,7 @@
       "id": "temiru",
       "title": "てみる・ながら",
       "summary": "てみる means \"try doing it and see\". ながら joins two actions that happen at the same time, and the second one is the main action.",
+      "keywords": ["try", "try and see", "while", "at the same time", "two things at once"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-2", "lesson": 13, "reviewed": false },
@@ -1177,6 +1190,7 @@
       "id": "sugiru",
       "title": "すぎる・やすい・にくい",
       "summary": "All three attach to the ます-stem, and すぎる also attaches to adjectives. すぎる means \"too much\", やすい means \"easy to\", and にくい means \"hard to\". The first becomes a ru-verb, and the other two become い-adjectives.",
+      "keywords": ["too", "too much", "easy to", "hard to", "difficult to"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-1", "lesson": 12, "reviewed": false },
@@ -1298,6 +1312,7 @@
       "id": "node",
       "title": "〜ので",
       "summary": "Gives a reason: \"(reason), so (result)\". Softer and more polite than から.",
+      "keywords": ["because", "since", "so", "the reason"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-1", "lesson": 12, "reviewed": false }
@@ -1393,6 +1408,7 @@
       "id": "hou-ga-ii",
       "title": "〜ほうがいいです",
       "summary": "Advice: \"you had better…\" or \"you had better not…\". After an adjective or a noun, it says which option is better.",
+      "keywords": ["had better", "should", "advice", "had better not", "it's better to"],
       "jlpt": "N4",
       "taught_in": [
         { "book": "genki-1", "lesson": 12, "reviewed": false }
@@ -1493,6 +1509,7 @@
       "id": "tai",
       "title": "〜たい",
       "summary": "〜たい says that you want to do something: 食べたい, 行きたい. It attaches to the ます-stem and then conjugates like an い-adjective.",
+      "keywords": ["want to", "would like to", "wish", "don't want to"],
       "jlpt": "N5",
       "usages": [
         {
@@ -1581,6 +1598,7 @@
       "id": "volitional",
       "title": "〜ましょう・意向形",
       "summary": "〜ましょう means \"let's…\", and 〜ましょうか means \"shall I…?\" or \"shall we…?\". The plain version is the volitional form (食べよう, 飲もう, N4), used among friends and with と思う for plans.",
+      "keywords": ["let's", "shall we", "shall I", "I think I'll", "plan to", "intend to"],
       "jlpt": "N5",
       "usages": [
         {
@@ -1682,6 +1700,7 @@
       "id": "nai-te",
       "title": "〜ないで・〜なくて",
       "summary": "Both are the negative て-form. 〜ないで means \"without doing\" and is used in \"please don't\"; 〜なくて gives a reason, links negative clauses, or says \"not A but B\".",
+      "keywords": ["without", "please don't", "without doing", "not A but B"],
       "jlpt": "N5",
       "usages": [
         {
@@ -1787,6 +1806,7 @@
       "id": "te-mo-ii",
       "title": "〜てもいい・〜てはいけない",
       "summary": "〜てもいい gives or asks for permission: 食べてもいいです, \"you may eat it\". 〜てはいけない forbids: 食べてはいけません, \"you must not eat it\". In speech they shorten to 〜ていい and 〜ちゃだめ.",
+      "keywords": ["may", "may I", "can I", "allowed to", "permission", "must not", "not allowed"],
       "jlpt": "N4",
       "usages": [
         {
@@ -1928,6 +1948,7 @@
       "id": "nakereba",
       "title": "〜なければならない・〜なくてもいい",
       "summary": "〜なければならない and 〜なくてはいけない say that you must do something: 行かなければなりません. In speech they shorten to 〜なきゃ and 〜なくちゃ. 〜なくてもいい says that you don't have to.",
+      "keywords": ["must", "have to", "need to", "don't have to", "don't need to"],
       "jlpt": "N4",
       "usages": [
         {
@@ -2054,6 +2075,7 @@
       "id": "imperative",
       "title": "命令形・〜な・〜なさい",
       "summary": "The imperative (命令形) is a blunt order: 食べろ, 行け. The dictionary form + な is a blunt \"don't\": 行くな. The ます-stem + なさい is firm but kinder, the way parents and teachers speak.",
+      "keywords": ["order", "command", "imperative", "telling someone to", "blunt"],
       "jlpt": "N4",
       "usages": [
         {

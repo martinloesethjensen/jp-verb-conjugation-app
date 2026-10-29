@@ -76,8 +76,9 @@ public enum ParticleQuiz {
 /// Particle questions from the marked blanks (`particle_blanks`) on lesson and verb examples,
 /// one per blank, shuffled and capped at `count`.
 ///
-/// - Only lessons and verbs visible under `levels` are used. Every example of a lesson counts:
-///   usages, pitfalls and contrasts.
+/// - Only lessons, usages and verbs visible under `levels` are used. A usage's examples count at
+///   the usage's level (its own `jlpt`, else the lesson's); pitfall and contrast examples at the
+///   lesson's level.
 /// - An example without a stable id makes no question (history could not name it), and neither
 ///   does a blank whose particle is not where it says (the data check prevents this).
 /// - Each question offers the right particle and three wrong ones (`ParticleQuiz.distractors`).
@@ -104,8 +105,11 @@ public func buildParticleQuestions(
     }
 
     for point in grammar.visible(in: levels) {
-        let examples = point.usages.flatMap(\.examples) + point.pitfalls.flatMap(\.examples)
-            + point.contrasts.flatMap(\.examples)
+        // A usage counts at its own level; pitfalls and contrasts at the lesson's.
+        var examples = point.visibleUsages(in: levels).flatMap(\.examples)
+        if levels.isVisible(point.jlpt) {
+            examples += point.pitfalls.flatMap(\.examples) + point.contrasts.flatMap(\.examples)
+        }
         add(examples.map { ($0.id, $0.jp, $0.en, $0.particleBlanks) }, source: .grammar(point.id), title: point.title)
     }
     for verb in verbs.visible(in: levels) {
