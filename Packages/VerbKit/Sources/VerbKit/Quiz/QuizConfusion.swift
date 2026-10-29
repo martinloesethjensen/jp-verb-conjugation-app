@@ -9,7 +9,8 @@ import Foundation
 /// - The window is the most recent `windowSize` such attempts, ordered by date; equal dates keep
 ///   input order, the later one counting as newer.
 /// - Tags group by category, so `wrong_te_group:tte` and `wrong_te_group:nde` are one mistake
-///   (the wrong て-form ending), as are all `other_form:*` and all `other_verb:*`.
+///   (the wrong て-form ending), as are all `other_form:*`, all `other_verb:*` and all
+///   `wrong_particle:*`.
 /// - The category with the most attempts in the window is dominant when it has at least
 ///   `minimumCount`. A tie goes to the category whose mistake is more recent.
 public struct QuizConfusion: Equatable, Sendable {
@@ -18,7 +19,7 @@ public struct QuizConfusion: Equatable, Sendable {
 
     public enum Category: String, CaseIterable, Sendable {
         case ruUConfusion, wrongTeGroup, aruNegative, passivePotential
-        case causativePassiveLongShort, otherForm, otherVerb
+        case causativePassiveLongShort, otherForm, otherVerb, wrongParticle
 
         init?(_ tag: QuizErrorTag) {
             switch tag {
@@ -29,6 +30,7 @@ public struct QuizConfusion: Equatable, Sendable {
             case .causativePassiveLongShort: self = .causativePassiveLongShort
             case .otherForm: self = .otherForm
             case .otherVerb: self = .otherVerb
+            case .wrongParticle: self = .wrongParticle
             case .generic: return nil
             }
         }
@@ -43,6 +45,7 @@ public struct QuizConfusion: Equatable, Sendable {
             case .causativePassiveLongShort: "You often mix up the long and short causative-passive"
             case .otherForm: "You often pick a different form from the one asked"
             case .otherVerb: "You often pick another verb's conjugation"
+            case .wrongParticle: "You often pick the wrong particle"
             }
         }
 
@@ -56,6 +59,7 @@ public struct QuizConfusion: Equatable, Sendable {
             case .causativePassiveLongShort: "Both are real forms, so check which one is asked."
             case .otherForm: "Take a moment to read which form the question asks for."
             case .otherVerb: "Check that the answer belongs to the verb in the question."
+            case .wrongParticle: "Read to the end of the sentence first: the verb often decides the particle."
             }
         }
 

@@ -23,6 +23,11 @@ public enum QuizQuestionKind: String, CaseIterable, Codable, Sendable {
     /// "counter:hon#0") as the subject. Builds on old kinds' history: an older app build skips an
     /// attempt of this kind. It is neither a verb question nor a counter question.
     case spotMistake
+    /// A particle question: an example sentence with one marked particle blanked (電車＿乗る → に),
+    /// pick the particle. Only recorded in quiz history, with the blank's id ("<example id>#<n>")
+    /// as the subject and the right particle as the form id. Builds on old kinds' history: an
+    /// older app build skips an attempt of this kind. It is neither a verb nor a counter question.
+    case particle
 
     /// A counter question, which verb code (the verb quiz, weak spots, the widget) never handles.
     public var isCounter: Bool { self == .counterChoice || self == .counterReading || self == .counterAsk }
