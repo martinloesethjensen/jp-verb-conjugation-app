@@ -1,6 +1,6 @@
 # The review site's API Worker. It answers only on review.martinloeseth.dev/api/*, behind Cloudflare Access.
 # Account details (team domain, the two AUD tags) are secrets: see review/README.md. Nothing secret goes here.
-name = "verbtable-review-api"
+name = "kotobatable-review-api"
 main = "build/worker/shim.mjs"
 compatibility_date = "2026-10-01"
 workers_dev = false
@@ -15,7 +15,7 @@ SITE_ORIGIN = "https://review.martinloeseth.dev"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "verbtable-review"
-# Fill in from `npx wrangler d1 create verbtable-review` (review/README.md, step 1). Not a secret.
-database_id = "set-by-owner"
+database_name = "kotobatable-review"
+# From `npx wrangler d1 create kotobatable-review` (review/README.md, step 1). Not a secret.
+database_id = "4661d990-be1f-4a6c-9c18-f8336004dc52"
 migrations_dir = "migrations"

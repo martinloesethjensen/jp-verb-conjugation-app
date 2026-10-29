@@ -1,10 +1,10 @@
 {
-  "name": "verbtable-review-api",
+  "name": "kotobatable-review-api",
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
-    "migrate": "wrangler d1 migrations apply verbtable-review --remote",
-    "migrate:local": "wrangler d1 migrations apply verbtable-review --local"
+    "migrate": "wrangler d1 migrations apply kotobatable-review --remote",
+    "migrate:local": "wrangler d1 migrations apply kotobatable-review --local"
   },
   "devDependencies": {
     "wrangler": "4.154.0"
