@@ -1437,6 +1437,25 @@ def check_usage_jlpt(pid, heading, usage, lesson_level):
     return []
 
 
+def check_keywords(pid, point):
+    """Problems with a grammar point's optional `keywords`: English intents and glosses
+    ("because", "had better") that search matches as strongly as the title."""
+    if "keywords" not in point:
+        return []
+    keywords = point["keywords"]
+    if not isinstance(keywords, list) or not keywords:
+        return [f"{pid}: keywords must be a non-empty list of strings when present"]
+    errors, seen = [], set()
+    for keyword in keywords:
+        if not isinstance(keyword, str) or not keyword.strip():
+            errors.append(f"{pid}: keyword {keyword!r} must be a non-empty string")
+        elif keyword.strip().casefold() in seen:
+            errors.append(f"{pid}: keyword '{keyword}' is listed twice")
+        else:
+            seen.add(keyword.strip().casefold())
+    return errors
+
+
 def validate_grammar(doc):
     """Returns a list of human-readable problems (empty when valid)."""
     errors = []
@@ -1458,6 +1477,7 @@ def validate_grammar(doc):
                 errors.append(f"{pid}: {key} missing or empty")
         if p.get("jlpt") not in JLPT_LEVELS:
             errors.append(f"{pid}: jlpt must be one of {sorted(JLPT_LEVELS)}")
+        errors.extend(check_keywords(pid, p))
         for related in p.get("related", []):
             if related not in ids:
                 errors.append(f"{pid}: related id '{related}' does not exist")

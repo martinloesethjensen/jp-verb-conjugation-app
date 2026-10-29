@@ -59,6 +59,8 @@ be added to the app's credits.
 - `id` — slug, e.g. `n-desu`
 - `title` — e.g. `んです`
 - `summary` — one line
+- `keywords` — optional English intents for search (added later; see
+  [2026-10-29-grammar-keywords-design.md](2026-10-29-grammar-keywords-design.md))
 - `level` — beginner / intermediate
 - `usages: [GrammarUsage]` — each has a `heading`, an `explanation`, and
   `examples: [GrammarExample]` (`jp`, `en`). Later addition: an optional `jlpt` per usage
@@ -177,7 +179,8 @@ buttons — use `.glassEffect()` / `.glass` button styles, standard containers
 are left alone, and no accessibility-specific modifiers are added.
 
 **Grammar list.** Rows show title, summary and a level badge. `.searchable`
-matches title, summary and example `jp` text. No filter chips in v1. If
+matches title, summary and example `jp` text. (Since widened and ranked: see
+[2026-10-29-grammar-keywords-design.md](2026-10-29-grammar-keywords-design.md).) No filter chips in v1. If
 grammar has not synced, show the "not downloaded yet" state with Try Again.
 
 **Grammar detail** (single scrolling page, in order):
