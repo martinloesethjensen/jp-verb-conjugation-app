@@ -164,6 +164,9 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     public var id: String
     public var title: String
     public var summary: String
+    /// English intents and glosses ("because", "had better") that search ranks with the title.
+    /// Empty when the JSON has none.
+    public var keywords: [String]
     public var jlpt: JLPTLevel?
     public var usages: [GrammarUsage]
     public var attachment: [AttachmentRule]
@@ -193,6 +196,7 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         id: String,
         title: String,
         summary: String,
+        keywords: [String] = [],
         jlpt: JLPTLevel? = nil,
         usages: [GrammarUsage],
         attachment: [AttachmentRule],
@@ -206,6 +210,7 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
         self.id = id
         self.title = title
         self.summary = summary
+        self.keywords = keywords
         self.jlpt = jlpt
         self.usages = usages
         self.attachment = attachment
@@ -218,16 +223,17 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, title, summary, jlpt, usages, attachment, conjugations, pitfalls, related, contrasts, review
+        case id, title, summary, keywords, jlpt, usages, attachment, conjugations, pitfalls, related, contrasts, review
         case taughtIn = "taught_in"
     }
 
-    /// `contrasts`, `taught_in` and `review` may be omitted from the JSON.
+    /// `keywords`, `contrasts`, `taught_in` and `review` may be omitted from the JSON.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
         title = try c.decode(String.self, forKey: .title)
         summary = try c.decode(String.self, forKey: .summary)
+        keywords = try c.decodeIfPresent([String].self, forKey: .keywords) ?? []
         jlpt = try c.decodeIfPresent(JLPTLevel.self, forKey: .jlpt)
         usages = try c.decode([GrammarUsage].self, forKey: .usages)
         attachment = try c.decode([AttachmentRule].self, forKey: .attachment)

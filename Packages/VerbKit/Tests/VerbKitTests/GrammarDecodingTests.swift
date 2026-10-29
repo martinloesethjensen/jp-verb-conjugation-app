@@ -116,6 +116,28 @@ final class GrammarDecodingTests: XCTestCase {
         XCTAssertEqual(again, pitfall)
     }
 
+    func testKeywordsAreOptional() throws {
+        XCTAssertEqual(try decode().grammar[0].keywords, [])
+    }
+
+    func testKeywordsDecodeAndSurviveARoundTrip() throws {
+        let withKeywords = json.replacingOccurrences(
+            of: #""summary": "Explanatory ending.","#,
+            with: #""summary": "Explanatory ending.", "keywords": ["the reason is", "how come"],"#
+        )
+        let point = try JSONDecoder().decode(GrammarDataFile.self, from: Data(withKeywords.utf8)).grammar[0]
+        XCTAssertEqual(point.keywords, ["the reason is", "how come"])
+        let again = try JSONDecoder().decode(GrammarPoint.self, from: JSONEncoder().encode(point))
+        XCTAssertEqual(again.keywords, ["the reason is", "how come"])
+    }
+
+    func testNonStringKeywordFailsDecoding() {
+        let bad = json.replacingOccurrences(
+            of: #""summary": "Explanatory ending.","#, with: #""summary": "Explanatory ending.", "keywords": [3],"#
+        )
+        XCTAssertThrowsError(try JSONDecoder().decode(GrammarDataFile.self, from: Data(bad.utf8)))
+    }
+
     func testIDIsSlug() throws {
         XCTAssertEqual(try decode().grammar[0].id, GrammarPoint.nDesuID)
     }
