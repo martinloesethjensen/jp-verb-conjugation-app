@@ -110,3 +110,4 @@ pub fn claims_for(email: Option<&str>, aud: &str) -> Value {
     }
     claims
 }
+pub mod sqlite;
