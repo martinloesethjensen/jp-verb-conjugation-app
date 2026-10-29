@@ -38,6 +38,9 @@ public final class VerbEntity {
     // public `forms`/`examples` properties working exactly as before.
     private var formsData: Data
     private var examplesData: Data
+    /// `[VerbCollocation]` as JSON, stored like `examples`. Optional with a default so rows saved
+    /// before collocations existed migrate; nil reads as none.
+    private var collocationsData: Data? = nil
 
     public var forms: VerbForms {
         get {
@@ -65,6 +68,16 @@ public final class VerbEntity {
         }
     }
 
+    public var collocations: [VerbCollocation] {
+        get {
+            guard let collocationsData else { return [] }
+            return (try? JSONDecoder().decode([VerbCollocation].self, from: collocationsData)) ?? []
+        }
+        set {
+            collocationsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
     public init(
         dict: String,
         type: String,
@@ -77,6 +90,7 @@ public final class VerbEntity {
         jlpt: String? = nil,
         forms: VerbForms,
         examples: [VerbExample],
+        collocations: [VerbCollocation] = [],
         sortOrder: Int = 0,
         kana: String? = nil
     ) {
@@ -93,6 +107,7 @@ public final class VerbEntity {
         self.jlpt = jlpt
         self.formsData = (try? JSONEncoder().encode(forms)) ?? Data()
         self.examplesData = (try? JSONEncoder().encode(examples)) ?? Data()
+        self.collocationsData = try? JSONEncoder().encode(collocations)
     }
 }
 
@@ -121,6 +136,7 @@ public extension VerbEntity {
             jlpt: verb.jlpt?.rawValue,
             forms: verb.forms,
             examples: verb.examples,
+            collocations: verb.collocations,
             sortOrder: sortOrder,
             kana: verb.explicitID == nil ? nil : verb.dict
         )
@@ -144,6 +160,7 @@ public extension VerbEntity {
             jlpt: jlpt.flatMap { JLPTLevel(rawValue: $0) },
             forms: forms,
             examples: examples,
+            collocations: collocations,
             id: kana == nil ? nil : dict
         )
     }
