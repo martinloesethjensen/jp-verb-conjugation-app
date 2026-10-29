@@ -17,6 +17,8 @@ sha2 = { version = "0.10", features = ["oid"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 worker = { version = "0.8.7", features = ["d1"] }
+# rsa depends on rand_core even for verification; on wasm32 it needs the Web Crypto backend to compile.
+getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 rand = "0.8"

@@ -4,3 +4,8 @@ pub mod access;
 pub mod app;
 pub mod auth;
 pub mod store;
+
+#[cfg(target_arch = "wasm32")]
+mod d1;
+#[cfg(target_arch = "wasm32")]
+mod worker_glue;
