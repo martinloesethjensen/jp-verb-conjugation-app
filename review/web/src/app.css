@@ -1,0 +1,107 @@
+/* The marking desk: paper, ink, and red only where a reviewer has acted. */
+:root {
+	--paper: #f6f7f4;
+	--card: #ffffff;
+	--ink: #1e2633;
+	--muted: #7c8390;
+	--grid: #b9cbb8;
+	--rule: #dce0d8;
+	--red: #c2372b;
+
+	--sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
+	--mincho: 'Shippori Mincho', 'Hiragino Mincho ProN', serif;
+	--space: 1rem;
+	--radius: 6px;
+	color-scheme: light;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	font-size: 17px;
+}
+
+body {
+	margin: 0;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--sans);
+	line-height: 1.6;
+}
+
+.app {
+	display: contents;
+}
+
+:lang(ja) {
+	font-family: var(--mincho);
+}
+
+a {
+	color: var(--ink);
+	text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}
+
+button,
+input {
+	font: inherit;
+	color: inherit;
+}
+
+button {
+	border: 1px solid var(--ink);
+	background: var(--card);
+	border-radius: var(--radius);
+	padding: 0.35rem 0.9rem;
+	cursor: pointer;
+}
+
+button.primary {
+	background: var(--ink);
+	color: var(--card);
+}
+
+button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+input {
+	width: 100%;
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.45rem 0.6rem;
+	background: var(--card);
+}
+
+input:focus-visible {
+	border-color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+/* SvelteKit's route announcer sets these as an inline style, which the CSP blocks (no 'unsafe-inline'),
+   so the stylesheet hides it the same way. Without this it would show page titles after navigating. */
+#svelte-announcer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	overflow: hidden;
+	white-space: nowrap;
+	width: 1px;
+	height: 1px;
+}
