@@ -4,7 +4,7 @@ import VerbKit
 
 /// A long-press (right-click) menu that acts on one piece of Japanese text:
 /// Copy, Open in Jisho, Look up form (when the text has a verb the matcher finds),
-/// and, for sentences, a Translate submenu with Apple Translate, DeepL and Google
+/// and, for sentences, Find verbs… and a Translate submenu with Apple Translate, DeepL and Google
 /// Translate. The actions always use `text` exactly
 /// as given, so they work the same with furigana on or off. Nothing leaves the
 /// app until an item is chosen.
@@ -35,13 +35,14 @@ private struct TextActions: ViewModifier {
     }
 }
 
-/// The same menu plus the Translate submenu. Only sentences use this, so only
-/// they carry Apple's translation presenter.
+/// The same menu plus "Find verbs…" (the Sentence lens, prefilled) and the Translate
+/// submenu. Only sentences use this, so only they carry Apple's translation presenter.
 private struct TranslatableTextActions: ViewModifier {
     let text: String
     @Environment(\.openURL) private var openURL
     @Environment(FormLookupStore.self) private var formLookup: FormLookupStore?
     @State private var lookup: FormLookupRequest?
+    @State private var lens: SentenceLensRequest?
     @State private var showingAppleTranslation = false
 
     func body(content: Content) -> some View {
@@ -60,6 +61,11 @@ private struct TranslatableTextActions: ViewModifier {
                         lookup = FormLookupRequest(text: text)
                     }
                 }
+                if formLookup?.isReady == true {
+                    Button("Find verbs…", systemImage: "waveform.and.magnifyingglass") {
+                        lens = SentenceLensRequest(text: text)
+                    }
+                }
                 Menu("Translate", systemImage: "translate") {
                     Button("Apple Translate") {
                         showingAppleTranslation = true
@@ -74,6 +80,7 @@ private struct TranslatableTextActions: ViewModifier {
             }
             .translationPresentation(isPresented: $showingAppleTranslation, text: text)
             .formLookupSheet($lookup)
+            .sentenceLensSheet($lens)
     }
 }
 

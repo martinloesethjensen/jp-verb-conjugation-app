@@ -50,6 +50,10 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>The Sentence lens listens while its mic is on, to find the verbs you say. Audio stays on this device and is never stored.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>The Sentence lens turns what you say into text on this device, to highlight its verbs. Nothing is sent or stored.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

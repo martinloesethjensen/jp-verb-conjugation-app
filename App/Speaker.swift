@@ -130,7 +130,7 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegat
     #if os(iOS)
     /// Audio session calls can block while the system reconfigures audio, so they run off the
     /// main thread. One serial queue keeps activations and deactivations in the order they were made.
-    private static let sessionQueue = DispatchQueue(label: "Speaker.audioSession", qos: .userInitiated)
+    nonisolated private static let sessionQueue = DispatchQueue(label: "Speaker.audioSession", qos: .userInitiated)
     nonisolated(unsafe) private static var categoryIsSet = false
     #endif
 
@@ -145,6 +145,25 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate, AVAudioPlayerDelegat
         }
         #endif
     }
+
+    #if os(iOS)
+    /// Runs `change` on the audio session queue, in order with the speaker's own calls, and
+    /// has the next playback set the playback category again. The Sentence lens mic records
+    /// through this, so speech after it is never left on a recording-only session.
+    nonisolated static func changeSession(_ change: @escaping @Sendable (AVAudioSession) throws -> Void) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            sessionQueue.async {
+                categoryIsSet = false
+                do {
+                    try change(AVAudioSession.sharedInstance())
+                    continuation.resume()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    #endif
 
     private func deactivateSessionIfIdle() {
         #if os(iOS)
