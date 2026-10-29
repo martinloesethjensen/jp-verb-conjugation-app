@@ -94,6 +94,7 @@ Run `make` for the full list. Common ones:
 | `TagSuggester`, `RecentSearches`, `DialectCatalogue` | Word Bank tag and search supporting logic |
 | `WordBankDates.day/timestamp` | Fixed, locale-independent date stamps in Word Bank file names and notes |
 | `matchesSearch`, `matchesGrammarSearch`, `searchCounters`, `WordBankSearchIndex` | Search implementations |
+| `ParticleBlank`, `ParticleQuiz`, `buildParticleQuestions` | Marked `particle_blanks` on examples and the particle quiz built from them (spec: `docs/superpowers/specs/2026-10-29-particle-blanks-design.md`) |
 | `DataSyncStatus` | Per-file sync status shown in Settings |
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
 | `SyncVerification` (internal) | The six sync services' rollback rejection, hash verification and JSON decoding |
