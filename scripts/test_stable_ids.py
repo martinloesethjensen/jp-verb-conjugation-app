@@ -16,6 +16,18 @@ class StableIdTests(unittest.TestCase):
         self.assertEqual([label for label, _ in stable_ids.id_slots("verbs", doc)],
                          ["たべる example 1", "たべる example 2"])
 
+    def test_verb_collocations_are_slots_after_the_examples(self):
+        doc = {"verbs": [{"dict": "あびる", "examples": [{"jp": "a"}],
+                          "collocations": [{"jp": "シャワーを浴びる"}, {"jp": "日を浴びる"}]}]}
+        self.assertEqual([label for label, _ in stable_ids.id_slots("verbs", doc)],
+                         ["あびる example 1", "あびる collocation 1", "あびる collocation 2"])
+
+    def test_a_collocation_id_may_not_repeat_an_example_id(self):
+        doc = {"verbs": [{"dict": "あびる", "examples": [{"id": "abcdef", "jp": "a"}],
+                          "collocations": [{"id": "abcdef", "jp": "b"}]}]}
+        self.assertEqual(stable_ids.check_stable_ids("verbs", doc),
+                         ["あびる collocation 1: id 'abcdef' is also used by あびる example 1"])
+
     def test_a_verb_with_an_explicit_id_is_labelled_by_it(self):
         doc = {"verbs": [{"id": "きる:切る", "dict": "きる", "examples": [{"jp": "a"}]}]}
         self.assertEqual([label for label, _ in stable_ids.id_slots("verbs", doc)], ["きる:切る example 1"])

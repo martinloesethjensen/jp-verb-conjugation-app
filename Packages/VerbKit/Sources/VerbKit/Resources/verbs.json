@@ -101,6 +101,12 @@
         { "id": "kyq7bc", "form": "passive", "jp": "授業中に寝ると、先生に注意される。", "en": "If you sleep in class, the teacher tells you off." },
         { "id": "c2gevq", "form": "causative", "jp": "母は私に毎日掃除をさせる。", "en": "My mother makes me clean every day." },
         { "id": "j7ydjp", "form": "imperative", "jp": "静かにしろ！", "en": "Be quiet!" }
+      ],
+      "collocations": [
+        { "id": "hhbk8r", "jp": "宿題をする", "en": "do homework" },
+        { "id": "b6uxpy", "jp": "電話をする", "en": "make a phone call" },
+        { "id": "i8r69e", "jp": "ネクタイをする", "en": "wear a tie" },
+        { "id": "ceymxg", "jp": "時計をする", "en": "wear a watch" }
       ]
     },
     {
@@ -201,6 +207,11 @@
         { "id": "hbb7uy", "form": "pot_masu_pos", "jp": "明日は来られますか。", "en": "Can you come tomorrow?" },
         { "id": "2njkcz", "form": "conditional_tara", "jp": "田中さんが来たら、教えてください。", "en": "Please let me know when Tanaka-san comes." },
         { "id": "nyavcy", "form": "imperative", "jp": "こっちへ来い！", "en": "Come over here!" }
+      ],
+      "collocations": [
+        { "id": "fp2y3z", "jp": "電車が来る", "en": "the train comes" },
+        { "id": "u67iia", "jp": "遊びに来る", "en": "come over (to visit)" },
+        { "id": "5x3ibj", "jp": "日本に来る", "en": "come to Japan" }
       ]
     },
     {
@@ -306,6 +317,11 @@
         { "id": "f68ib3", "form": "passive", "jp": "早く食べないと、弟に食べられる。", "en": "If I don't eat it quickly, my little brother will eat it." },
         { "id": "6nsgds", "form": "causative", "jp": "子供に毎日野菜を食べさせる。", "en": "I make my children eat vegetables every day." },
         { "id": "99g5uv", "form": "te_mo_ii", "jp": "これ、食べてもいい？", "en": "Can I eat this?" }
+      ],
+      "collocations": [
+        { "id": "uhzk9z", "jp": "ご飯を食べる", "en": "have a meal" },
+        { "id": "igy6yr", "jp": "朝ご飯を食べる", "en": "eat breakfast" },
+        { "id": "9ua8b7", "jp": "昼ご飯を食べる", "en": "eat lunch" }
       ]
     },
     {
@@ -405,6 +421,11 @@
         { "id": "srr9ys", "form": "volitional", "jp": "今夜は映画を見よう。", "en": "Let's watch a movie tonight." },
         { "id": "a4e96j", "form": "passive", "jp": "人に見られると、緊張します。", "en": "I get nervous when people watch me." },
         { "id": "suk9xr", "form": "imperative", "jp": "あれを見ろ！", "en": "Look at that!" }
+      ],
+      "collocations": [
+        { "id": "mj4k2r", "jp": "テレビを見る", "en": "watch TV" },
+        { "id": "8dixbg", "jp": "映画を見る", "en": "watch a film" },
+        { "id": "qvs6t5", "jp": "夢を見る", "en": "have a dream" }
       ]
     },
     {
@@ -503,6 +524,10 @@
         { "id": "27vqj3", "form": "tai", "jp": "今日は早く寝たい。", "en": "I want to go to bed early today." },
         { "id": "rxzjin", "form": "conditional_ba", "jp": "早く寝れば、疲れが取れますよ。", "en": "If you go to bed early, you'll get over your tiredness." },
         { "id": "hbrvqw", "form": "imperative", "jp": "もう寝ろ。", "en": "Go to bed already." }
+      ],
+      "collocations": [
+        { "id": "i5h7rw", "jp": "早く寝る", "en": "go to bed early" },
+        { "id": "5p57ym", "jp": "ベッドで寝る", "en": "sleep in a bed" }
       ]
     },
     {
@@ -599,6 +624,10 @@
         { "id": "t2dxvj", "form": "pot_masu_pos", "jp": "明日は六時に起きられます。", "en": "I can get up at six tomorrow." },
         { "id": "kwdap9", "form": "conditional_tara", "jp": "起きたら、もう十時でした。", "en": "When I woke up, it was already ten o'clock." },
         { "id": "zqiw34", "form": "imperative", "jp": "早く起きろ！", "en": "Get up, now!" }
+      ],
+      "collocations": [
+        { "id": "2ax3yi", "jp": "早く起きる", "en": "get up early" },
+        { "id": "2prn36", "jp": "遅く起きる", "en": "get up late" }
       ]
     },
     {
@@ -690,6 +719,10 @@
         { "id": "ysjib3", "form": "te", "jp": "見せてください。", "en": "Please show me." },
         { "id": "y7sb52", "form": "te", "jp": "パスポートを見せてください。", "en": "Please show me your passport." },
         { "id": "vjjaug", "form": "short_pos", "jp": "友達に写真を見せる。", "en": "I'll show the photos to my friend." }
+      ],
+      "collocations": [
+        { "id": "k2ecvi", "jp": "写真を見せる", "en": "show a photo" },
+        { "id": "74wg9h", "jp": "パスポートを見せる", "en": "show one's passport" }
       ]
     },
     {
@@ -782,6 +815,11 @@
         { "id": "ygdway", "form": "te", "jp": "借りてもいいですか。", "en": "May I borrow this?" },
         { "id": "t4c34b", "form": "short_past", "jp": "借りた！ありがとう。", "en": "Borrowed it! Thanks." },
         { "id": "2tv3d5", "form": "te_mo_ii", "jp": "この本を借りてもいいですか。", "en": "May I borrow this book?" }
+      ],
+      "collocations": [
+        { "id": "y8ewar", "jp": "本を借りる", "en": "borrow a book" },
+        { "id": "q3d47a", "jp": "お金を借りる", "en": "borrow money" },
+        { "id": "y5v7u6", "jp": "部屋を借りる", "en": "rent a room" }
       ]
     },
     {
@@ -878,6 +916,11 @@
         { "id": "a667ur", "form": "short_past", "jp": "もう買った。", "en": "I already bought it." },
         { "id": "nnmbgs", "form": "tai", "jp": "新しい靴が買いたいです。", "en": "I want to buy new shoes." },
         { "id": "fvbcw8", "form": "conditional_ba", "jp": "今買えば、安いですよ。", "en": "If you buy it now, it's cheap." }
+      ],
+      "collocations": [
+        { "id": "ytfry7", "jp": "切符を買う", "en": "buy a ticket" },
+        { "id": "3fjsnz", "jp": "おみやげを買う", "en": "buy a souvenir" },
+        { "id": "8gk4hk", "jp": "プレゼントを買う", "en": "buy a present" }
       ]
     },
     {
@@ -973,6 +1016,10 @@
         { "id": "te67ff", "form": "tai", "jp": "また会いたいです。", "en": "I want to see you again." },
         { "id": "3yb32b", "form": "masu_volitional", "jp": "駅の前で会いましょう。", "en": "Let's meet in front of the station." },
         { "id": "vtdky4", "form": "conditional_tara", "jp": "田中さんに会ったら、よろしく伝えてください。", "en": "If you see Tanaka-san, please give him my regards." }
+      ],
+      "collocations": [
+        { "id": "ettv86", "jp": "友達に会う", "en": "meet a friend" },
+        { "id": "wkhs6q", "jp": "ひさしぶりに会う", "en": "meet after a long time" }
       ]
     },
     {
@@ -1067,6 +1114,11 @@
         { "id": "qna9fa", "form": "short_past", "jp": "長く待った。", "en": "I waited a long time." },
         { "id": "6iee8j", "form": "volitional", "jp": "もう少し待とう。", "en": "Let's wait a little longer." },
         { "id": "f6uj49", "form": "causative", "jp": "人を待たせるのはよくない。", "en": "It's not good to keep people waiting." }
+      ],
+      "collocations": [
+        { "id": "4dfj85", "jp": "バスを待つ", "en": "wait for the bus" },
+        { "id": "p6yv6x", "jp": "友達を待つ", "en": "wait for a friend" },
+        { "id": "vjfyp3", "jp": "返事を待つ", "en": "wait for a reply" }
       ]
     },
     {
@@ -1160,6 +1212,11 @@
         { "id": "x9ng3g", "form": "te", "jp": "塩を取ってください。", "en": "Please pass the salt." },
         { "id": "6mesrc", "form": "te", "jp": "これ、一つ取ってもいいですか。", "en": "May I take one of these?" },
         { "id": "485zee", "form": "passive", "jp": "電車で寝ていると、財布を取られるよ。", "en": "If you fall asleep on the train, your wallet will get stolen." }
+      ],
+      "collocations": [
+        { "id": "aqe7xh", "jp": "休みを取る", "en": "take time off" },
+        { "id": "kq27ji", "jp": "ノートを取る", "en": "take notes" },
+        { "id": "i52byg", "jp": "年を取る", "en": "get old" }
       ]
     },
     {
@@ -1223,6 +1280,11 @@
         { "id": "ewsyz6", "form": "short_neg", "jp": "時間がない。", "en": "I don't have time." },
         { "id": "xcpwms", "form": "short_past", "jp": "いいことがあった！", "en": "Something good happened!" },
         { "id": "4kiim9", "form": "conditional_ba", "jp": "お金があれば、旅行したいです。", "en": "If I had the money, I'd like to travel." }
+      ],
+      "collocations": [
+        { "id": "bwgerb", "jp": "時間がある", "en": "have time" },
+        { "id": "fcfb83", "jp": "用事がある", "en": "have something to do" },
+        { "id": "5whef9", "jp": "熱がある", "en": "have a fever" }
       ]
     },
     {
@@ -1315,6 +1377,10 @@
         { "id": "exnx46", "form": "te", "jp": "これ持ってください。", "en": "Please hold this." },
         { "id": "49s5i8", "form": "te", "jp": "傘を持っていってください。", "en": "Please take an umbrella with you." },
         { "id": "a9xkvk", "form": "teiru_past_neg", "jp": "財布を持っていなかった。", "en": "I didn't have my wallet on me." }
+      ],
+      "collocations": [
+        { "id": "yfug9w", "jp": "かばんを持つ", "en": "carry a bag" },
+        { "id": "e32n6v", "jp": "荷物を持つ", "en": "carry luggage" }
       ]
     },
     {
@@ -1412,6 +1478,10 @@
         { "id": "iqvz8s", "form": "pot_masu_pos", "jp": "漢字が少し読めます。", "en": "I can read a little kanji." },
         { "id": "g53mc6", "form": "passive", "jp": "この本は若い人によく読まれる。", "en": "This book is widely read by young people." },
         { "id": "vp34hc", "form": "causative", "jp": "先生は学生に本を読ませる。", "en": "The teacher has the students read books." }
+      ],
+      "collocations": [
+        { "id": "kf4atu", "jp": "本を読む", "en": "read a book" },
+        { "id": "2p3nnz", "jp": "新聞を読む", "en": "read the newspaper" }
       ]
     },
     {
@@ -1511,6 +1581,11 @@
         { "id": "aajrtt", "form": "conditional_ba", "jp": "この薬を飲めば、よくなりますよ。", "en": "If you take this medicine, you'll get better." },
         { "id": "uyj9np", "form": "conditional_tara", "jp": "お酒を飲んだら、運転しないでください。", "en": "If you drink alcohol, please don't drive." },
         { "id": "ye2ate", "form": "causative", "jp": "犬に水を飲ませる。", "en": "I give the dog some water to drink." }
+      ],
+      "collocations": [
+        { "id": "hshfxw", "jp": "薬を飲む", "en": "take medicine" },
+        { "id": "6ca79y", "jp": "お酒を飲む", "en": "drink alcohol" },
+        { "id": "bysnpp", "jp": "コーヒーを飲む", "en": "drink coffee" }
       ]
     },
     {
@@ -1606,6 +1681,10 @@
         { "id": "feh6e2", "form": "tai", "jp": "週末は友達と遊びたい。", "en": "I want to hang out with my friends at the weekend." },
         { "id": "fx4k6m", "form": "volitional", "jp": "公園で遊ぼう！", "en": "Let's play in the park!" },
         { "id": "x5t698", "form": "causative", "jp": "週末は子供を公園で遊ばせる。", "en": "At the weekend, I let the kids play in the park." }
+      ],
+      "collocations": [
+        { "id": "fbgsfu", "jp": "友達と遊ぶ", "en": "hang out with friends" },
+        { "id": "hpyskn", "jp": "公園で遊ぶ", "en": "play in the park" }
       ]
     },
     {
@@ -1694,6 +1773,10 @@
         { "id": "axsu9n", "form": "masu_pos", "jp": "虫は冬に死にます。", "en": "Insects die in winter." },
         { "id": "j4rkb7", "form": "short_pos", "jp": "おなかすいて死ぬ！", "en": "I'm so hungry I could die!" },
         { "id": "6zrs6f", "form": "short_past", "jp": "金魚が死んだ。", "en": "My goldfish died." }
+      ],
+      "collocations": [
+        { "id": "cg6kzi", "jp": "病気で死ぬ", "en": "die of an illness" },
+        { "id": "6fhz87", "jp": "事故で死ぬ", "en": "die in an accident" }
       ]
     },
     {
@@ -1789,6 +1872,11 @@
         { "id": "78br3t", "form": "short_past", "jp": "もう書いた？", "en": "Did you write it already?" },
         { "id": "a28d2d", "form": "teiru_masu_neg", "jp": "レポートはまだ書いていません。", "en": "I haven't written the report yet." },
         { "id": "es2wnh", "form": "pot_masu_pos", "jp": "ひらがなが書けます。", "en": "I can write hiragana." }
+      ],
+      "collocations": [
+        { "id": "5uezuh", "jp": "手紙を書く", "en": "write a letter" },
+        { "id": "mv5s4f", "jp": "名前を書く", "en": "write one's name" },
+        { "id": "pdedvw", "jp": "日記を書く", "en": "keep a diary" }
       ]
     },
     {
@@ -1883,6 +1971,11 @@
         { "id": "ijaf52", "form": "short_past", "jp": "あの歌聞いた？", "en": "Have you heard that song?" },
         { "id": "yq96m5", "form": "conditional_ba", "jp": "先生に聞けば、教えてくれますよ。", "en": "If you ask the teacher, they'll tell you." },
         { "id": "my3vxq", "form": "passive", "jp": "先生に聞かれると、何も言えなくなる。", "en": "When the teacher asks me something, I can't say a thing." }
+      ],
+      "collocations": [
+        { "id": "mpun8z", "jp": "音楽を聞く", "en": "listen to music" },
+        { "id": "8cd986", "jp": "道を聞く", "en": "ask the way" },
+        { "id": "v72x4m", "jp": "話を聞く", "en": "listen to what someone says" }
       ]
     },
     {
@@ -1982,6 +2075,11 @@
         { "id": "77c2rk", "form": "tai", "jp": "夏休みに京都へ行きたいです。", "en": "I want to go to Kyoto over the summer holidays." },
         { "id": "z6qdk8", "form": "volitional", "jp": "一緒に行こう。", "en": "Let's go together." },
         { "id": "fv42qi", "form": "causative", "jp": "子供を一人で行かせるのは心配です。", "en": "I worry about letting my child go alone." }
+      ],
+      "collocations": [
+        { "id": "spxuft", "jp": "学校に行く", "en": "go to school" },
+        { "id": "5ieiwa", "jp": "買い物に行く", "en": "go shopping" },
+        { "id": "hy3ek3", "jp": "旅行に行く", "en": "go on a trip" }
       ]
     },
     {
@@ -2167,6 +2265,10 @@
         { "id": "sm5sbz", "form": "te", "jp": "いっしょに泳いでください！", "en": "Please swim with me!" },
         { "id": "yupx3x", "form": "short_past", "jp": "夏休みに泳いだ。", "en": "I swam during summer vacation." },
         { "id": "ygkvu8", "form": "pot_masu_pos", "jp": "百メートルぐらい泳げます。", "en": "I can swim about 100 metres." }
+      ],
+      "collocations": [
+        { "id": "hs59qm", "jp": "海で泳ぐ", "en": "swim in the sea" },
+        { "id": "favbhz", "jp": "プールで泳ぐ", "en": "swim in a pool" }
       ]
     },
     {
@@ -2261,6 +2363,11 @@
         { "id": "hc3deh", "form": "te", "jp": "先生に話してみます。", "en": "I'll try talking to the teacher." },
         { "id": "5h4vm9", "form": "short_past", "jp": "もう話した？", "en": "Did you talk to them already?" },
         { "id": "33xx5j", "form": "pot_masu_pos", "jp": "日本語が少し話せます。", "en": "I can speak a little Japanese." }
+      ],
+      "collocations": [
+        { "id": "gcegzb", "jp": "日本語を話す", "en": "speak Japanese" },
+        { "id": "xe7dmi", "jp": "電話で話す", "en": "talk on the phone" },
+        { "id": "9wie3r", "jp": "友達と話す", "en": "talk with a friend" }
       ]
     },
     {
@@ -2440,6 +2547,11 @@
       "examples": [
         { "id": "5jfe3z", "form": "masu_pos", "jp": "先生が日本語を教えます。", "en": "The teacher teaches Japanese." },
         { "id": "sqad7c", "form": "te", "jp": "道を教えてください。", "en": "Please tell me the way." }
+      ],
+      "collocations": [
+        { "id": "pmjmhb", "jp": "日本語を教える", "en": "teach Japanese" },
+        { "id": "tq2s48", "jp": "道を教える", "en": "tell someone the way" },
+        { "id": "29id95", "jp": "電話番号を教える", "en": "give someone your phone number" }
       ]
     },
     {
@@ -2528,6 +2640,10 @@
         { "id": "kt7sbd", "form": "masu_pos", "jp": "窓を開けます。", "en": "I open the window." },
         { "id": "pa47si", "form": "short_neg", "jp": "まだドアを開けない。", "en": "I'm not opening the door yet." },
         { "id": "ekk3nz", "form": "masu_volitional", "jp": "窓を開けましょうか。", "en": "Shall I open the window?" }
+      ],
+      "collocations": [
+        { "id": "cykxug", "jp": "窓を開ける", "en": "open a window" },
+        { "id": "nscirv", "jp": "ドアを開ける", "en": "open the door" }
       ]
     },
     {
@@ -2616,6 +2732,10 @@
         { "id": "qh5r9c", "form": "te", "jp": "ドアを閉めてください。", "en": "Please close the door." },
         { "id": "nxv3k4", "form": "masu_past", "jp": "窓を閉めました。", "en": "I closed the window." },
         { "id": "37ds2d", "form": "te_mo_ii", "jp": "ドアを閉めてもいいですか。", "en": "May I close the door?" }
+      ],
+      "collocations": [
+        { "id": "banwyg", "jp": "ドアを閉める", "en": "close the door" },
+        { "id": "7dw83n", "jp": "窓を閉める", "en": "close a window" }
       ]
     },
     {
@@ -2702,6 +2822,11 @@
       "examples": [
         { "id": "9434nd", "form": "masu_pos", "jp": "部屋の電気をつけます。", "en": "I turn on the light in the room." },
         { "id": "jeis4t", "form": "short_past", "jp": "エアコンをつけた。", "en": "I turned on the air conditioner." }
+      ],
+      "collocations": [
+        { "id": "gcguur", "jp": "電気をつける", "en": "turn on the light" },
+        { "id": "bwcdzn", "jp": "テレビをつける", "en": "turn on the TV" },
+        { "id": "e569en", "jp": "ネックレスをつける", "en": "put on a necklace" }
       ]
     },
     {
@@ -2789,6 +2914,11 @@
       "examples": [
         { "id": "4hc4pv", "form": "masu_past", "jp": "傘を忘れました。", "en": "I forgot my umbrella." },
         { "id": "8hh584", "form": "short_neg", "jp": "約束は忘れない。", "en": "I won't forget the promise." }
+      ],
+      "collocations": [
+        { "id": "8aja53", "jp": "傘を忘れる", "en": "leave one's umbrella behind" },
+        { "id": "yvbc9q", "jp": "宿題を忘れる", "en": "forget one's homework" },
+        { "id": "97c3ss", "jp": "名前を忘れる", "en": "forget someone's name" }
       ]
     },
     {
@@ -2876,6 +3006,11 @@
       "examples": [
         { "id": "kszdnp", "form": "masu_pos", "jp": "毎日単語を覚えます。", "en": "I memorize words every day." },
         { "id": "yda9b4", "form": "short_past_neg", "jp": "名前を覚えなかった。", "en": "I didn't memorize the name." }
+      ],
+      "collocations": [
+        { "id": "7xggpg", "jp": "単語を覚える", "en": "memorize vocabulary" },
+        { "id": "nuwv8z", "jp": "漢字を覚える", "en": "learn kanji" },
+        { "id": "zhpabn", "jp": "名前を覚える", "en": "remember someone's name" }
       ]
     },
     {
@@ -2963,6 +3098,10 @@
       "examples": [
         { "id": "3udawm", "form": "masu_pos", "jp": "朝シャワーを浴びます。", "en": "I take a shower in the morning." },
         { "id": "yxajwt", "form": "te", "jp": "シャワーを浴びて、寝ます。", "en": "I take a shower and then go to bed." }
+      ],
+      "collocations": [
+        { "id": "3m84s3", "jp": "シャワーを浴びる", "en": "take a shower" },
+        { "id": "fz6dja", "jp": "日光を浴びる", "en": "get some sun" }
       ]
     },
     {
@@ -3051,6 +3190,11 @@
         { "id": "69dehz", "form": "masu_pos", "jp": "七時に家を出ます。", "en": "I leave the house at seven." },
         { "id": "b6285m", "form": "short_past", "jp": "さっき部屋を出た。", "en": "I left the room a moment ago." },
         { "id": "87j9jr", "form": "conditional_tara", "jp": "家を出たら、雨が降ってきました。", "en": "When I left the house, it started to rain." }
+      ],
+      "collocations": [
+        { "id": "nfqvrx", "jp": "家を出る", "en": "leave the house" },
+        { "id": "mhqkhk", "jp": "電話に出る", "en": "answer the phone" },
+        { "id": "25ray6", "jp": "部屋を出る", "en": "leave the room" }
       ]
     },
     {
@@ -3138,6 +3282,10 @@
       "examples": [
         { "id": "imzhf9", "form": "masu_pos", "jp": "コーヒーにさとうを入れます。", "en": "I put sugar in my coffee." },
         { "id": "kejr7k", "form": "te", "jp": "かばんに入れてください。", "en": "Please put it in the bag." }
+      ],
+      "collocations": [
+        { "id": "uge5pj", "jp": "お茶を入れる", "en": "make tea" },
+        { "id": "vhbj3e", "jp": "かばんに入れる", "en": "put in one's bag" }
       ]
     },
     {
@@ -3489,6 +3637,11 @@
       "examples": [
         { "id": "dsk3er", "form": "masu_pos", "jp": "寒いので、セーターを着ます。", "en": "It's cold, so I'll put on a sweater." },
         { "id": "b3zfnk", "form": "masu_past", "jp": "今日はコートを着ました。", "en": "I wore a coat today." }
+      ],
+      "collocations": [
+        { "id": "54pr7p", "jp": "服を着る", "en": "put on clothes" },
+        { "id": "d7nfam", "jp": "シャツを着る", "en": "wear a shirt" },
+        { "id": "gzkc4j", "jp": "コートを着る", "en": "wear a coat" }
       ]
     },
     {
@@ -3559,6 +3712,10 @@
       "examples": [
         { "id": "7bmddk", "form": "short_past", "jp": "今日は疲れた。", "en": "I'm tired today." },
         { "id": "smgpky", "form": "masu_past", "jp": "走って疲れました。", "en": "I ran and got tired." }
+      ],
+      "collocations": [
+        { "id": "iuz7ef", "jp": "仕事で疲れる", "en": "be tired from work" },
+        { "id": "7b72ww", "jp": "目が疲れる", "en": "one's eyes get tired" }
       ]
     },
     {
@@ -3649,6 +3806,10 @@
         { "id": "mcv7dt", "form": "masu_pos", "jp": "駅まで歩きます。", "en": "I walk to the station." },
         { "id": "wfv4ha", "form": "te", "jp": "歩いて学校に行きます。", "en": "I walk to school." },
         { "id": "54rvg3", "form": "masu_volitional", "jp": "駅まで歩きましょう。", "en": "Let's walk to the station." }
+      ],
+      "collocations": [
+        { "id": "satedj", "jp": "駅まで歩く", "en": "walk to the station" },
+        { "id": "qqhn4z", "jp": "道を歩く", "en": "walk along the street" }
       ]
     },
     {
@@ -3739,6 +3900,10 @@
         { "id": "gcikj3", "form": "masu_pos", "jp": "来月から銀行で働きます。", "en": "I'll start working at a bank next month." },
         { "id": "7vu2e9", "form": "short_neg", "jp": "日曜日は働かない。", "en": "I don't work on Sundays." },
         { "id": "cbqte6", "form": "tai", "jp": "将来、日本で働きたいです。", "en": "In the future, I want to work in Japan." }
+      ],
+      "collocations": [
+        { "id": "uqwubv", "jp": "会社で働く", "en": "work at a company" },
+        { "id": "wuewyi", "jp": "銀行で働く", "en": "work at a bank" }
       ]
     },
     {
@@ -3829,6 +3994,11 @@
         { "id": "ejruqb", "form": "masu_pos", "jp": "部屋に入ります。", "en": "I enter the room." },
         { "id": "77xib3", "form": "te", "jp": "どうぞ入ってください。", "en": "Please come in." },
         { "id": "8ugujw", "form": "te_mo_ii", "jp": "入ってもいいですか。", "en": "May I come in?" }
+      ],
+      "collocations": [
+        { "id": "tgxksr", "jp": "お風呂に入る", "en": "take a bath" },
+        { "id": "mgtvnm", "jp": "部屋に入る", "en": "enter a room" },
+        { "id": "dhrpjh", "jp": "大学に入る", "en": "get into university" }
       ]
     },
     {
@@ -3922,6 +4092,10 @@
         { "id": "nnh8sq", "form": "volitional", "jp": "そろそろ帰ろう。", "en": "Let's head home soon." },
         { "id": "3v6dgy", "form": "conditional_tara", "jp": "家に帰ったら、すぐ寝ます。", "en": "When I get home, I'll go straight to bed." },
         { "id": "66p6rp", "form": "te_mo_ii", "jp": "もう帰ってもいいですよ。", "en": "You can go home now." }
+      ],
+      "collocations": [
+        { "id": "dxjfn5", "jp": "家に帰る", "en": "go home" },
+        { "id": "heh3c3", "jp": "国に帰る", "en": "go back to one's home country" }
       ]
     },
     {
@@ -4012,6 +4186,11 @@
         { "id": "rmggun", "form": "masu_pos", "jp": "毎朝電車に乗ります。", "en": "I take the train every morning." },
         { "id": "ag75i3", "form": "masu_neg", "jp": "バスには乗りません。", "en": "I don't take the bus." },
         { "id": "dchm9z", "form": "pot_masu_pos", "jp": "自転車に乗れます。", "en": "I can ride a bicycle." }
+      ],
+      "collocations": [
+        { "id": "tqbm5f", "jp": "電車に乗る", "en": "take the train" },
+        { "id": "h2uwsx", "jp": "バスに乗る", "en": "get on a bus" },
+        { "id": "d4ytbh", "jp": "自転車に乗る", "en": "ride a bicycle" }
       ]
     },
     {
@@ -4102,6 +4281,10 @@
         { "id": "nct6fm", "form": "masu_pos", "jp": "晩ご飯を作ります。", "en": "I make dinner." },
         { "id": "suqhv4", "form": "te", "jp": "ケーキを作って、食べました。", "en": "I made a cake and ate it." },
         { "id": "enp9zz", "form": "pot_masu_pos", "jp": "カレーが作れます。", "en": "I can make curry." }
+      ],
+      "collocations": [
+        { "id": "epjm3f", "jp": "ご飯を作る", "en": "make a meal" },
+        { "id": "zbsy67", "jp": "ケーキを作る", "en": "make a cake" }
       ]
     },
     {
@@ -4176,6 +4359,10 @@
       "examples": [
         { "id": "dnccbz", "form": "masu_pos", "jp": "日本語がわかります。", "en": "I understand Japanese." },
         { "id": "gqq43m", "form": "masu_neg", "jp": "意味がわかりません。", "en": "I don't understand the meaning." }
+      ],
+      "collocations": [
+        { "id": "rfjkna", "jp": "日本語がわかる", "en": "understand Japanese" },
+        { "id": "88x2hc", "jp": "意味がわかる", "en": "understand the meaning" }
       ]
     },
     {
@@ -4250,6 +4437,10 @@
       "examples": [
         { "id": "iej8z6", "form": "masu_neg", "jp": "そのことは知りません。", "en": "I don't know about that." },
         { "id": "a32ed9", "form": "short_neg", "jp": "全然知らない。", "en": "I don't know at all." }
+      ],
+      "collocations": [
+        { "id": "547zgg", "jp": "ニュースで知る", "en": "learn of something from the news" },
+        { "id": "6yx6uy", "jp": "名前を知る", "en": "find out someone's name" }
       ]
     },
     {
@@ -4341,6 +4532,10 @@
         { "id": "yvy5hr", "form": "masu_pos", "jp": "いすに座ります。", "en": "I sit on the chair." },
         { "id": "wpy7g9", "form": "masu_volitional", "jp": "ここに座りましょう。", "en": "Let's sit here." },
         { "id": "fnd53z", "form": "te_mo_ii", "jp": "ここに座ってもいいですか。", "en": "May I sit here?" }
+      ],
+      "collocations": [
+        { "id": "a2mp7b", "jp": "いすに座る", "en": "sit on a chair" },
+        { "id": "3tgkzz", "jp": "席に座る", "en": "take a seat" }
       ]
     },
     {
@@ -4434,6 +4629,11 @@
         { "id": "s3q73u", "form": "volitional", "jp": "ちょっと休もう。", "en": "Let's take a short break." },
         { "id": "ba6v6p", "form": "conditional_ba", "jp": "ゆっくり休めば、元気になります。", "en": "If you get a good rest, you'll feel better." },
         { "id": "4dxkfd", "form": "causative", "jp": "子供に熱があるので、今日は学校を休ませる。", "en": "My child has a fever, so I'm keeping them home from school today." }
+      ],
+      "collocations": [
+        { "id": "yxxxkz", "jp": "学校を休む", "en": "stay off school" },
+        { "id": "eyz3mn", "jp": "会社を休む", "en": "take a day off work" },
+        { "id": "dvsdkh", "jp": "ゆっくり休む", "en": "have a good rest" }
       ]
     },
     {
@@ -4524,6 +4724,10 @@
         { "id": "4ye74q", "form": "short_pos", "jp": "来年から大阪に住む予定です。", "en": "I'm planning to live in Osaka from next year." },
         { "id": "66vnhj", "form": "teiru_masu_pos", "jp": "今は京都に住んでいます。", "en": "I live in Kyoto now." },
         { "id": "8z2q7n", "form": "tai", "jp": "海の近くに住みたい。", "en": "I want to live near the sea." }
+      ],
+      "collocations": [
+        { "id": "h8pgiw", "jp": "東京に住む", "en": "live in Tokyo" },
+        { "id": "68n9xt", "jp": "アパートに住む", "en": "live in an apartment" }
       ]
     },
     {
@@ -4613,6 +4817,11 @@
       "examples": [
         { "id": "bfak8i", "form": "masu_pos", "jp": "タクシーを呼びます。", "en": "I call a taxi." },
         { "id": "izveg6", "form": "te", "jp": "友達を呼んで、いっしょに食べます。", "en": "I invite a friend and we eat together." }
+      ],
+      "collocations": [
+        { "id": "qp2yb6", "jp": "タクシーを呼ぶ", "en": "call a taxi" },
+        { "id": "ifcp7n", "jp": "名前を呼ぶ", "en": "call someone's name" },
+        { "id": "bgj8m6", "jp": "友達を呼ぶ", "en": "invite friends over" }
       ]
     },
     {
@@ -4702,6 +4911,11 @@
       "examples": [
         { "id": "4jf26a", "form": "masu_pos", "jp": "毎晩手を洗います。", "en": "I wash my hands every night." },
         { "id": "w37g6s", "form": "short_neg", "jp": "車を洗わない。", "en": "I don't wash the car." }
+      ],
+      "collocations": [
+        { "id": "c4i8zh", "jp": "手を洗う", "en": "wash one's hands" },
+        { "id": "e977kj", "jp": "顔を洗う", "en": "wash one's face" },
+        { "id": "7re2s2", "jp": "皿を洗う", "en": "do the dishes" }
       ]
     },
     {
@@ -4796,6 +5010,10 @@
         { "id": "hjrsdv", "form": "conditional_ba", "jp": "辞書を使えば、すぐ分かります。", "en": "If you use a dictionary, you'll understand right away." },
         { "id": "hvq3zr", "form": "passive", "jp": "この言葉は今もよく使われる。", "en": "This word is still often used today." },
         { "id": "ussz3y", "form": "te_mo_ii", "jp": "このペンを使ってもいいですか。", "en": "Can I use this pen?" }
+      ],
+      "collocations": [
+        { "id": "6659wt", "jp": "パソコンを使う", "en": "use a computer" },
+        { "id": "mvyctp", "jp": "辞書を使う", "en": "use a dictionary" }
       ]
     },
     {
@@ -4887,6 +5105,10 @@
         { "id": "6ep7d9", "form": "short_neg", "jp": "人前では歌わない。", "en": "I don't sing in front of people." },
         { "id": "xju9eb", "form": "pot_masu_pos", "jp": "この歌が歌えます。", "en": "I can sing this song." },
         { "id": "qngux2", "form": "masu_volitional", "jp": "みんなで歌いましょう。", "en": "Let's all sing together." }
+      ],
+      "collocations": [
+        { "id": "ghgknv", "jp": "歌を歌う", "en": "sing a song" },
+        { "id": "en9k7e", "jp": "カラオケで歌う", "en": "sing karaoke" }
       ]
     },
     {
@@ -4977,6 +5199,10 @@
         { "id": "7mddiz", "form": "masu_pos", "jp": "先生にピアノを習います。", "en": "I learn piano from a teacher." },
         { "id": "kgzu7c", "form": "short_past", "jp": "子供のときに水泳を習った。", "en": "I learned swimming as a child." },
         { "id": "zncc8y", "form": "tai", "jp": "ピアノを習いたいです。", "en": "I want to learn the piano." }
+      ],
+      "collocations": [
+        { "id": "gw52wj", "jp": "ピアノを習う", "en": "take piano lessons" },
+        { "id": "h77y9t", "jp": "先生に習う", "en": "learn from a teacher" }
       ]
     },
     {
@@ -5067,6 +5293,10 @@
         { "id": "fr4tzz", "form": "masu_pos", "jp": "先生にそう言います。", "en": "I'll tell the teacher that." },
         { "id": "h3fdp9", "form": "te", "jp": "もう一度言ってください。", "en": "Please say it once more." },
         { "id": "wks4tm", "form": "passive", "jp": "よく父に似ていると言われる。", "en": "People often tell me I look like my father." }
+      ],
+      "collocations": [
+        { "id": "dqzw5h", "jp": "お礼を言う", "en": "say thank you" },
+        { "id": "4r6jwt", "jp": "名前を言う", "en": "say one's name" }
       ]
     },
     {
@@ -5156,6 +5386,10 @@
         { "id": "dmk8rj", "form": "masu_pos", "jp": "ボタンを押します。", "en": "I press the button." },
         { "id": "fupu8z", "form": "te", "jp": "ここを押してください。", "en": "Please press here." },
         { "id": "qxrgcu", "form": "conditional_ba", "jp": "このボタンを押せば、ドアが開きます。", "en": "If you press this button, the door opens." }
+      ],
+      "collocations": [
+        { "id": "tg2f72", "jp": "ボタンを押す", "en": "press a button" },
+        { "id": "yxmxt6", "jp": "ドアを押す", "en": "push the door" }
       ]
     },
     {
@@ -5244,6 +5478,11 @@
       "examples": [
         { "id": "aekxrh", "form": "masu_pos", "jp": "手紙を出します。", "en": "I send a letter." },
         { "id": "x6nv83", "form": "short_past", "jp": "ごみを出した。", "en": "I took out the rubbish." }
+      ],
+      "collocations": [
+        { "id": "8hwgut", "jp": "手紙を出す", "en": "send a letter" },
+        { "id": "86batj", "jp": "ごみを出す", "en": "take out the rubbish" },
+        { "id": "64gqvr", "jp": "宿題を出す", "en": "hand in homework" }
       ]
     },
     {
@@ -5333,6 +5572,10 @@
         { "id": "k5hbi8", "form": "te", "jp": "電気を消してください。", "en": "Please turn off the light." },
         { "id": "yt97r2", "form": "masu_pos", "jp": "テレビを消します。", "en": "I turn off the TV." },
         { "id": "f7b79e", "form": "te_mo_ii", "jp": "電気を消してもいいですか。", "en": "May I turn off the light?" }
+      ],
+      "collocations": [
+        { "id": "a3tr6n", "jp": "電気を消す", "en": "turn off the light" },
+        { "id": "u8ubf8", "jp": "テレビを消す", "en": "turn off the TV" }
       ]
     },
     {
@@ -5422,6 +5665,10 @@
       "examples": [
         { "id": "u7nabj", "form": "teiru_masu_pos", "jp": "駅の前に田中さんが立っています。", "en": "Tanaka-san is standing in front of the station." },
         { "id": "gyj4y7", "form": "te", "jp": "ここに立ってください。", "en": "Please stand here." }
+      ],
+      "collocations": [
+        { "id": "abjdth", "jp": "席を立つ", "en": "get up from one's seat" },
+        { "id": "kewugu", "jp": "いすから立つ", "en": "stand up from a chair" }
       ]
     },
     {
@@ -5513,6 +5760,10 @@
         { "id": "xks57p", "form": "short_neg", "jp": "あまり走らない。", "en": "I don't run much." },
         { "id": "ik9ibb", "form": "volitional", "jp": "明日から毎朝走ろうと思う。", "en": "I'm thinking of running every morning, starting tomorrow." },
         { "id": "kvbauh", "form": "imperative", "jp": "走れ！電車が来るぞ。", "en": "Run! The train's coming." }
+      ],
+      "collocations": [
+        { "id": "3kt6iu", "jp": "公園を走る", "en": "run in the park" },
+        { "id": "j2facy", "jp": "駅まで走る", "en": "run to the station" }
       ]
     },
     {
@@ -5601,6 +5852,10 @@
         { "id": "tcp2bz", "form": "short_past", "jp": "仕事が終わった。", "en": "Work's over." },
         { "id": "hn634j", "form": "teiru_masu_neg", "jp": "仕事がまだ終わっていません。", "en": "Work isn't finished yet." },
         { "id": "3j7wcv", "form": "conditional_tara", "jp": "仕事が終わったら、飲みに行きましょう。", "en": "Let's go for a drink when work is over." }
+      ],
+      "collocations": [
+        { "id": "ay3w4z", "jp": "授業が終わる", "en": "class ends" },
+        { "id": "rakvqx", "jp": "仕事が終わる", "en": "work finishes" }
       ]
     },
     {
@@ -5690,6 +5945,11 @@
       "examples": [
         { "id": "qtfmhz", "form": "masu_pos", "jp": "家では靴を脱ぎます。", "en": "I take off my shoes at home." },
         { "id": "s5da55", "form": "te", "jp": "コートを脱いでください。", "en": "Please take off your coat." }
+      ],
+      "collocations": [
+        { "id": "eewfc2", "jp": "靴を脱ぐ", "en": "take off one's shoes" },
+        { "id": "mr6gqp", "jp": "服を脱ぐ", "en": "take off one's clothes" },
+        { "id": "6ngux8", "jp": "コートを脱ぐ", "en": "take off one's coat" }
       ]
     },
     {
@@ -5780,6 +6040,11 @@
         { "id": "m87reh", "form": "masu_pos", "jp": "友達にプレゼントをもらいます。", "en": "I receive a present from a friend." },
         { "id": "kknzwu", "form": "short_past", "jp": "誕生日に花をもらった。", "en": "I got flowers on my birthday." },
         { "id": "kbmtsq", "form": "conditional_tara", "jp": "給料をもらったら、新しいパソコンを買います。", "en": "When I get paid, I'll buy a new computer." }
+      ],
+      "collocations": [
+        { "id": "ewbrwe", "jp": "プレゼントをもらう", "en": "get a present" },
+        { "id": "8g7dcf", "jp": "手紙をもらう", "en": "get a letter" },
+        { "id": "9s9tv8", "jp": "給料をもらう", "en": "get paid" }
       ]
     },
     {
@@ -5870,6 +6135,11 @@
       "examples": [
         { "id": "yrv6ed", "form": "masu_pos", "jp": "はさみで紙を切ります。", "en": "I cut the paper with scissors." },
         { "id": "tgdi77", "form": "te", "jp": "ケーキを切ってください。", "en": "Please cut the cake." }
+      ],
+      "collocations": [
+        { "id": "8qxuqi", "jp": "紙を切る", "en": "cut paper" },
+        { "id": "7vy8k7", "jp": "電話を切る", "en": "hang up the phone" },
+        { "id": "ccm9qz", "jp": "髪を切る", "en": "get a haircut" }
       ]
     },
     {
@@ -5946,6 +6216,10 @@
         { "id": "3h98ne", "form": "te", "jp": "ここにいてください。", "en": "Please stay here." },
         { "id": "z6kipa", "form": "short_neg", "jp": "兄弟はいない。", "en": "I don't have any brothers or sisters." },
         { "id": "hedeb5", "form": "short_past", "jp": "公園に子供がたくさんいた。", "en": "There were lots of children in the park." }
+      ],
+      "collocations": [
+        { "id": "nfb97m", "jp": "家にいる", "en": "be at home" },
+        { "id": "hfw2ns", "jp": "兄弟がいる", "en": "have brothers and sisters" }
       ]
     },
     {
@@ -6035,6 +6309,11 @@
         { "id": "89g83g", "form": "short_neg", "jp": "なかなか上手にならない。", "en": "I'm just not getting any better." },
         { "id": "cs7mjj", "form": "short_past", "jp": "妹は先生になった。", "en": "My younger sister became a teacher." },
         { "id": "d9p97r", "form": "conditional_tara", "jp": "春になったら、花見に行きたいです。", "en": "When spring comes, I want to go and see the cherry blossoms." }
+      ],
+      "collocations": [
+        { "id": "5u49nj", "jp": "先生になる", "en": "become a teacher" },
+        { "id": "xthmxe", "jp": "春になる", "en": "spring comes" },
+        { "id": "c2an5x", "jp": "病気になる", "en": "get ill" }
       ]
     },
     {
@@ -6218,6 +6497,10 @@
         { "id": "di6665", "form": "te", "jp": "猫にえさをあげてください。", "en": "Please feed the cat." },
         { "id": "2guaa2", "form": "short_neg", "jp": "このケーキは誰にもあげない。", "en": "I'm not giving this cake to anyone." },
         { "id": "qmih4f", "form": "short_past", "jp": "道を教えてあげた。", "en": "I showed them the way." }
+      ],
+      "collocations": [
+        { "id": "wux5wf", "jp": "プレゼントをあげる", "en": "give a present" },
+        { "id": "d6t8yh", "jp": "えさをあげる", "en": "feed an animal" }
       ]
     },
     {
@@ -6366,6 +6649,10 @@
         { "id": "3w8xqc", "form": "short_past", "jp": "駅の前に新しい店ができた。", "en": "A new shop has opened in front of the station." },
         { "id": "yhf99z", "form": "masu_past_neg", "jp": "昨日の試験は全然できませんでした。", "en": "Yesterday's exam went really badly." },
         { "id": "wjutw2", "form": "conditional_tara", "jp": "宿題ができたら、遊んでもいいよ。", "en": "When your homework is done, you can play." }
+      ],
+      "collocations": [
+        { "id": "wbsmyi", "jp": "友達ができる", "en": "make a friend" },
+        { "id": "aqxjzn", "jp": "日本語ができる", "en": "can speak Japanese" }
       ]
     },
     {
@@ -6456,6 +6743,10 @@
         { "id": "9pdxym", "form": "masu_neg", "jp": "このノートは誰にも貸しません。", "en": "I don't lend this notebook to anyone." },
         { "id": "2iac88", "form": "te", "jp": "ペンを貸してください。", "en": "Could you lend me a pen?" },
         { "id": "3hb4ai", "form": "short_past", "jp": "兄に車を貸した。", "en": "I lent my car to my older brother." }
+      ],
+      "collocations": [
+        { "id": "b6a5kp", "jp": "お金を貸す", "en": "lend money" },
+        { "id": "qkji92", "jp": "傘を貸す", "en": "lend an umbrella" }
       ]
     },
     {
@@ -6613,6 +6904,10 @@
         { "id": "p8muuj", "form": "short_neg", "jp": "今年はあまり雪が降らない。", "en": "It hasn't snowed much this year." },
         { "id": "3m5wfe", "form": "short_past", "jp": "夜、雪が降った。", "en": "It snowed in the night." },
         { "id": "inienj", "form": "conditional_tara", "jp": "雨が降ったら、家にいます。", "en": "If it rains, I'll stay at home." }
+      ],
+      "collocations": [
+        { "id": "5fa97f", "jp": "雨が降る", "en": "it rains" },
+        { "id": "irnrn5", "jp": "雪が降る", "en": "it snows" }
       ]
     },
     {
@@ -6707,6 +7002,10 @@
         { "id": "wybrjz", "form": "short_past", "jp": "旅行で撮った写真を見せて。", "en": "Show me the photos you took on your trip." },
         { "id": "dmhuie", "form": "neg_te", "jp": "ここでは写真を撮らないでください。", "en": "Please don't take photos here." },
         { "id": "s93te3", "form": "te_mo_ii", "jp": "写真を撮ってもいいですか。", "en": "May I take a photo?" }
+      ],
+      "collocations": [
+        { "id": "2ygqkj", "jp": "写真を撮る", "en": "take a photo" },
+        { "id": "htx6jn", "jp": "ビデオを撮る", "en": "take a video" }
       ]
     },
     {
@@ -6799,6 +7098,10 @@
         { "id": "96sz6j", "form": "teiru_masu_pos", "jp": "この時計は止まっています。", "en": "This clock has stopped." },
         { "id": "cqmaft", "form": "masu_past", "jp": "車が急に止まりました。", "en": "The car stopped suddenly." },
         { "id": "5dwwna", "form": "imperative", "jp": "止まれ！", "en": "Stop!" }
+      ],
+      "collocations": [
+        { "id": "ee383w", "jp": "電車が止まる", "en": "the train stops" },
+        { "id": "rwik7x", "jp": "時計が止まる", "en": "the clock stops" }
       ]
     },
     {
@@ -6942,6 +7245,10 @@
         { "id": "i68dy7", "form": "teiru_masu_pos", "jp": "窓が開いています。", "en": "The window is open." },
         { "id": "682ych", "form": "short_neg", "jp": "ドアが開かない。", "en": "The door won't open." },
         { "id": "8g9fa3", "form": "short_past", "jp": "風でドアが開いた。", "en": "The wind blew the door open." }
+      ],
+      "collocations": [
+        { "id": "9ggt7g", "jp": "店が開く", "en": "a shop opens" },
+        { "id": "2qma4e", "jp": "ドアが開く", "en": "the door opens" }
       ]
     },
     {
@@ -7032,6 +7339,10 @@
         { "id": "azu4vz", "form": "short_past", "jp": "やっと着いた！", "en": "We're finally here!" },
         { "id": "mu2r7g", "form": "teiru_masu_neg", "jp": "荷物がまだ着いていません。", "en": "The package hasn't arrived yet." },
         { "id": "jbfbfn", "form": "conditional_tara", "jp": "駅に着いたら、電話してください。", "en": "Please call me when you get to the station." }
+      ],
+      "collocations": [
+        { "id": "g5gxbe", "jp": "駅に着く", "en": "arrive at the station" },
+        { "id": "2h5xmb", "jp": "空港に着く", "en": "arrive at the airport" }
       ]
     },
     {
@@ -7123,6 +7434,10 @@
         { "id": "cmvg53", "form": "masu_past", "jp": "机の上に本を置きました。", "en": "I put the book on the desk." },
         { "id": "2qq6mh", "form": "te", "jp": "荷物はそこに置いてください。", "en": "Please put your luggage over there." },
         { "id": "9b66fa", "form": "short_past", "jp": "鍵をどこに置いたか忘れた。", "en": "I forgot where I put my keys." }
+      ],
+      "collocations": [
+        { "id": "t7xbc7", "jp": "机の上に置く", "en": "put on the desk" },
+        { "id": "vqcpzu", "jp": "荷物を置く", "en": "put down one's bags" }
       ]
     },
     {
@@ -7212,6 +7527,10 @@
         { "id": "55kwj3", "form": "masu_past", "jp": "母は朝早く出かけました。", "en": "My mother went out early in the morning." },
         { "id": "xngdm7", "form": "short_neg", "jp": "雨なので、今日は出かけない。", "en": "It's raining, so I'm not going out today." },
         { "id": "wvbxsg", "form": "te", "jp": "ちょっと出かけてきます。", "en": "I'm just popping out." }
+      ],
+      "collocations": [
+        { "id": "trpm86", "jp": "買い物に出かける", "en": "go out shopping" },
+        { "id": "spqjy7", "jp": "家族と出かける", "en": "go out with the family" }
       ]
     },
     {
@@ -7392,6 +7711,11 @@
         { "id": "t6q5s8", "form": "short_pos", "jp": "どこで降りるの？", "en": "Where are you getting off?" },
         { "id": "4r4jem", "form": "neg_te", "jp": "まだ降りないで。", "en": "Don't get off yet." },
         { "id": "dsxhgp", "form": "short_past", "jp": "駅前でバスを降りた。", "en": "I got off the bus in front of the station." }
+      ],
+      "collocations": [
+        { "id": "wdh77h", "jp": "電車を降りる", "en": "get off the train" },
+        { "id": "ycs229", "jp": "バスを降りる", "en": "get off the bus" },
+        { "id": "27d7w5", "jp": "階段を降りる", "en": "go down the stairs" }
       ]
     },
     {

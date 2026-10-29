@@ -7,6 +7,11 @@ public func matchesSearch(_ verb: Verb, query: String) -> Bool {
     if verb.dict.contains(trimmed) { return true }
     if let kanji = verb.kanji, kanji.contains(trimmed) { return true }
     if verb.meaning.localizedCaseInsensitiveContains(trimmed) { return true }
+    // "take a shower" finds 浴びる; シャワーを浴びる finds it too.
+    for collocation in verb.collocations
+    where collocation.en.localizedCaseInsensitiveContains(trimmed) || collocation.jp.contains(trimmed) {
+        return true
+    }
     for key in FormKey.allCases where verb.forms[key].contains(trimmed) {
         return true
     }

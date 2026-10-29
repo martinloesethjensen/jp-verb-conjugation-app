@@ -447,6 +447,12 @@ class CoverageTests(unittest.TestCase):
         problems = ud.check_coverage(self.verbs_doc(), grammar, READINGS)
         self.assertTrue(any("犬" in p for p in problems))
 
+    def test_a_missing_reading_in_a_collocation_is_reported_with_its_location(self):
+        doc = self.verbs_doc()
+        doc["verbs"][0]["collocations"] = [{"id": "abcdef", "jp": "寿司を食べる", "en": "eat sushi"}]
+        problems = ud.check_coverage(doc, valid_grammar(), READINGS)
+        self.assertTrue(any("寿" in p and "collocations[0]/jp" in p for p in problems), problems)
+
     def test_each_verbs_kanji_must_spell_its_kana_form(self):
         self.assertEqual(ud.check_verb_kanji(self.verbs_doc(), READINGS), [])
 
@@ -474,6 +480,50 @@ class DumpTests(unittest.TestCase):
     def test_an_example_with_an_id_stays_on_one_line(self):
         doc = {"verbs": [{"examples": [{"id": "abcdef", "form": "te", "jp": "たべて。", "en": "Eat."}]}]}
         self.assertIn('{ "id": "abcdef", "form": "te", "jp": "たべて。", "en": "Eat." }', ud.dump_verbs(doc))
+
+    def test_a_collocation_stays_on_one_line(self):
+        doc = {"verbs": [{"collocations": [{"id": "abcdef", "jp": "ご飯をたべる", "en": "have a meal"}]}]}
+        self.assertIn('{ "id": "abcdef", "jp": "ご飯をたべる", "en": "have a meal" }', ud.dump_verbs(doc))
+
+
+class CollocationTests(unittest.TestCase):
+    def doc(self, collocations, kanji="浴びる", dict_form="あびる"):
+        return {"verbs": [{"dict": dict_form, "kanji": kanji, "collocations": collocations}]}
+
+    def test_collocations_are_optional(self):
+        self.assertEqual(ud.check_verb_collocations({"verbs": [{"dict": "あびる"}]}), [])
+
+    def test_valid_collocations_in_kanji_or_kana_spelling(self):
+        doc = self.doc([{"id": "abcdef", "jp": "シャワーを浴びる", "en": "take a shower"},
+                        {"id": "bcdefg", "jp": "日をあびる", "en": "bask in the sun"}])
+        self.assertEqual(ud.check_verb_collocations(doc), [])
+
+    def test_a_verb_without_kanji_matches_its_kana(self):
+        doc = self.doc([{"id": "abcdef", "jp": "ネクタイをする", "en": "wear a tie"}], kanji=None, dict_form="する")
+        self.assertEqual(ud.check_verb_collocations(doc), [])
+
+    def test_an_empty_list_is_rejected(self):
+        self.assertIn("non-empty list", ud.check_verb_collocations(self.doc([]))[0])
+
+    def test_jp_must_end_with_the_dictionary_form(self):
+        problems = ud.check_verb_collocations(self.doc([{"jp": "シャワーを浴びます", "en": "take a shower"}]))
+        self.assertEqual(len(problems), 1)
+        self.assertIn("must end with the verb's dictionary form (あびる or 浴びる)", problems[0])
+
+    def test_missing_text_unknown_keys_and_duplicates_are_reported(self):
+        problems = ud.check_verb_collocations(self.doc([
+            {"jp": "シャワーを浴びる", "en": "take a shower", "form": "short_pos"},
+            {"jp": "シャワーを浴びる", "en": "shower"},
+            {"jp": "", "en": " "},
+            "シャワー",
+        ]))
+        self.assertEqual(problems, [
+            "あびる collocation 1: unknown keys ['form']",
+            "あびる collocation 2: 'シャワーを浴びる' is listed twice",
+            "あびる collocation 3: jp must be a non-empty string",
+            "あびる collocation 3: en must be a non-empty string",
+            "あびる collocation 4: must be an object with jp and en",
+        ])
 
 
 class BooksTests(unittest.TestCase):
@@ -809,6 +859,34 @@ class RunTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("verbs.json has items without a valid stable id:", messages[0])
         self.assertTrue(any("する example 1 has no id: run scripts/assign_ids.py" in m for m in messages), messages)
+
+    def with_collocations(self, collocations):
+        d = self.make_dir()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["collocations"] = collocations
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        return d
+
+    def test_valid_collocations_pass_the_run(self):
+        d = self.with_collocations([{"id": "abcdef", "jp": "ネクタイをする", "en": "wear a tie"}])
+        code, messages = ud.run(d)
+        self.assertEqual(code, 0, messages)
+        self.assertIn('{ "id": "abcdef", "jp": "ネクタイをする", "en": "wear a tie" }',
+                      (d / "verbs.json").read_text(encoding="utf-8"))
+
+    def test_a_collocation_without_an_id_fails_the_run(self):
+        d = self.with_collocations([{"jp": "ネクタイをする", "en": "wear a tie"}])
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("する collocation 1 has no id" in m for m in messages), messages)
+
+    def test_an_invalid_collocation_fails_the_run_and_writes_nothing(self):
+        d = self.with_collocations([{"id": "abcdef", "jp": "ネクタイ", "en": "tie"}])
+        before = (d / "verbs.json").read_bytes()
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertEqual((d / "verbs.json").read_bytes(), before)
+        self.assertIn("verbs.json has invalid collocations:", messages[0])
 
     def test_a_grammar_usage_without_an_id_fails_the_run(self):
         d = self.make_dir()

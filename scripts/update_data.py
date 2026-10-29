@@ -6,7 +6,7 @@ Run after editing data/verbs.json or data/grammar.json:
     python3 scripts/update_data.py            # rewrite files in place
     python3 scripts/update_data.py --check    # verify only; exit 1 if stale/invalid
 
-It does eight things:
+It does nine things:
   1. Fills the nd_* (んです / んだ) forms on every verb in verbs.json by
      appending to the verb's plain forms. Deterministic; safe to re-run.
   2. Fills the nine potential forms (`potential` and the eight pot_* fields)
@@ -41,6 +41,9 @@ It does eight things:
      where two verbs are spelled the same in kana). Ids must be unique, and no id published on
      origin/main may disappear or change (--published-ref; skipped when that ref is not available).
      See docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md.
+  9. Validates each verb's optional `collocations` ({id, jp, en} chunks such as シャワーを浴びる; see
+     docs/superpowers/specs/2026-10-29-verb-collocations-design.md). Their `jp` is covered by the
+     furigana check like every other string.
 
 Every manifest change must be re-signed (scripts/sign_manifest.py sign): the app
 refuses a manifest whose signature does not match its exact bytes. --ref TAG pins the
@@ -727,6 +730,48 @@ def check_verb_forms(verbs_doc):
     return problems
 
 
+COLLOCATION_KEYS = {"id", "jp", "en"}
+
+
+def check_verb_collocations(verbs_doc):
+    """Problems with a verb's optional `collocations`: common chunks the verb is used in, each
+    `{"id", "jp", "en"}` (シャワーを浴びる, "take a shower"). The list may be left out but not empty;
+    `jp` ends with the verb in its dictionary form (kana or kanji spelling), and no chunk appears
+    twice. Ids are checked by stable_ids and furigana by check_coverage, like examples."""
+    problems = []
+    for verb in verbs_doc["verbs"]:
+        if "collocations" not in verb:
+            continue
+        name = verb_id(verb) or "?"
+        collocations = verb["collocations"]
+        if not isinstance(collocations, list) or not collocations:
+            problems.append(f"{name}: collocations must be a non-empty list (leave it out when there are none)")
+            continue
+        endings = tuple(s for s in (verb.get("dict"), verb.get("kanji")) if s)
+        seen = set()
+        for n, collocation in enumerate(collocations, 1):
+            where = f"{name} collocation {n}"
+            if not isinstance(collocation, dict):
+                problems.append(f"{where}: must be an object with jp and en")
+                continue
+            unknown = sorted(set(collocation) - COLLOCATION_KEYS)
+            if unknown:
+                problems.append(f"{where}: unknown keys {unknown}")
+            jp, en = collocation.get("jp"), collocation.get("en")
+            if not isinstance(jp, str) or not jp.strip():
+                problems.append(f"{where}: jp must be a non-empty string")
+            elif not jp.endswith(endings):
+                problems.append(f"{where}: jp {jp!r} must end with the verb's dictionary form "
+                                f"({' or '.join(endings)})")
+            elif jp in seen:
+                problems.append(f"{where}: {jp!r} is listed twice")
+            else:
+                seen.add(jp)
+            if not isinstance(en, str) or not en.strip():
+                problems.append(f"{where}: en must be a non-empty string")
+    return problems
+
+
 def check_example_forms(verbs_doc):
     """Problems with an example tagged with a form its verb does not have: one the
     generators leave out for that verb (EXTRA_EXCLUDED, PARTIAL_OTHER_FORMS) or that
@@ -1371,10 +1416,10 @@ def dump_forms():
 
 def dump_verbs(doc):
     """Serialize verbs.json in the repo's style: 2-space indent, non-ASCII
-    kept, and each example object on a single line."""
+    kept, and each example and collocation object on a single line."""
     text = json.dumps(doc, ensure_ascii=False, indent=2)
     text = re.sub(
-        r'\{\n(?:\s+("id": [^\n]+),\n)?\s+("form": [^\n]+),\n\s+("jp": [^\n]+),\n\s+("en": [^\n]+)\n\s+\}',
+        r'\{\n(?:\s+("id": [^\n]+),\n)?(?:\s+("form": [^\n]+),\n)?\s+("jp": [^\n]+),\n\s+("en": [^\n]+)\n\s+\}',
         lambda m: "{ " + ", ".join(part for part in m.groups() if part) + " }",
         text,
     )
@@ -1849,6 +1894,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_verb_forms(verbs_doc)
     if problems:
         return 1, capped("verbs.json has invalid forms:", problems)
+    problems = check_verb_collocations(verbs_doc)
+    if problems:
+        return 1, capped("verbs.json has invalid collocations:", problems)
     apply_nd_forms(verbs_doc)
     try:
         apply_potential_forms(verbs_doc)

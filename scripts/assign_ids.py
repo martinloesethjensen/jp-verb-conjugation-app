@@ -3,7 +3,7 @@
 
     python3 scripts/assign_ids.py [--data-dir DIR]
 
-Adds an id to each example sentence, grammar usage, pitfall and counter thing that has none; existing ids are
+Adds an id to each example sentence, verb collocation, grammar usage, pitfall and counter thing that has none; existing ids are
 kept. verbs.json and counters.json are rewritten by their usual dumpers; the hand-formatted grammar.json only
 gains the id text and is otherwise left byte for byte as it was. Afterwards run `make data` and
 `make sign-commit`: every data change is re-signed by the owner.
