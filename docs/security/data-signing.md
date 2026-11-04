@@ -45,12 +45,33 @@ python3 scripts/sign_manifest.py keygen
 - `python3 scripts/sign_manifest.py sign`, then commit `data/manifest.sig` with the key change.
   Push these together, and only ship an app build once `main` has the signed manifest.
 
-## Signing a branch
+## Signing once per batch (#43)
 
-For a pull request that changes `data/`, `make sign-commit` (or `scripts/sign_and_commit.sh`, add
-`--push` to push) checks the data is up to date, signs, verifies and commits `data/manifest.sig`. It
+Data pull requests are **not** signed. Signing each one made every pair of data PRs conflict on
+`manifest.json`, `manifest.sig` and the bundled copies, and cost a fresh signature after every
+merge. Instead:
+
+1. **A feature PR** edits `data/*.json`, runs `make data` and commits everything it regenerates
+   (the manifest, `data/forms.json`, the bundled copies and their `*.manifest.json` sidecars, so the
+   app's tests and offline fallback see the new data). It never touches `data/manifest.sig`. CI checks
+   the data is valid, matches `schema/` and is freshly generated; it does not check the signature.
+2. **When a PR falls behind main**, `make data-merge` (`scripts/data_merge.py`) merges `origin/main`,
+   takes main's side of every conflict in a generated file, reruns `update_data.py` and commits. A
+   conflict in a hand-authored file (two PRs editing the same verb) stops it, mid-merge, for a person
+   to resolve. It needs no key, so agents can run it.
+3. **Merging to main** leaves the manifest unsigned. The `data` check on `main` goes red: that is the
+   "merged but not released" signal. Apps are unaffected; they reject the unsigned manifest and keep
+   their cached data.
+4. **To publish**, the owner runs `make data-release` (`scripts/data_release.sh`) on the machine with
+   the key. It branches `data-release/<date>` from `origin/main`, regenerates the data in case two
+   merges left it stale, signs and verifies with `scripts/sign_and_commit.sh`, pushes, and opens a PR
+   that lists the data commits since the last signature. CI verifies the signature on that PR; merging
+   it publishes the whole batch. It does nothing if main is already signed and up to date.
+
+`make sign-commit` (or `scripts/sign_and_commit.sh`, add `--push` to push) is the signing step
+underneath: it checks the data is up to date, signs, verifies and commits `data/manifest.sig`, and
 stops without changing anything if the data is stale, other files have uncommitted changes, or you are
-on `main`. This is the everyday step; the release steps below add the pinned tag.
+on `main`. The pinned-tag steps below are an optional extra on top of a release.
 
 ## Releasing a data update
 
@@ -82,10 +103,11 @@ immediately: until users update, an attacker holding the old key can still sign.
 
 ## CI
 
-`.github/workflows/data.yml` runs the script tests, `update_data.py --check` and
-`sign_manifest.py verify` when `data/` or `scripts/` change. It fails until the public key is in the app
-and `manifest.sig` is committed (first-time setup above), and again whenever a manifest change is
-pushed unsigned. To block merges on it, make the `data` check required in branch protection.
+`.github/workflows/data.yml` runs the script tests and `update_data.py --check` when `data/`,
+`schema/` or `scripts/` change, on pull requests and on `main`. It adds `sign_manifest.py verify` on
+pushes to `main` and on `data-release/*` pull requests only. So the check on `main` is red between a
+data merge and the next `make data-release`; that is expected. It can be made a required check on
+pull requests, since they no longer need a signature to pass.
 
 ## Related, not done here
 
@@ -95,5 +117,5 @@ pushed unsigned. To block merges on it, make the `data` check required in branch
 
 Counters and grammar points may carry a `review` stamp (`by`, `on`, `sha256`). It is part of the data, so a
 stamp is signed like any other change: `scripts/mark_reviewed.py` writes it, `make data` regenerates the
-manifest, `make sign-commit` signs. The hash covers the entry's own content, so editing a reviewed entry makes
+manifest, and the next `make data-release` signs it. The hash covers the entry's own content, so editing a reviewed entry makes
 `update_data.py` fail until the entry is reviewed again.

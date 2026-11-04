@@ -1,6 +1,10 @@
 name: Data
 
-# Catches an unsigned, stale or tampered data/ before apps see it.
+# Catches stale, invalid or tampered data/ before apps see it.
+# Feature pull requests are not signed: the owner signs once per batch with `make data-release`
+# (docs/security/data-signing.md). So the signature is checked on main, where a red run means
+# "merged but not released yet" (apps keep their cached data meanwhile), and on the
+# data-release/* pull request that publishes the batch.
 on:
   push:
     branches: [main]
@@ -28,4 +32,5 @@ jobs:
       - name: Data is generated and valid
         run: python3 scripts/update_data.py --check
       - name: Manifest is signed by the key the app trusts
+        if: github.event_name == 'push' || startsWith(github.head_ref, 'data-release/')
         run: python3 scripts/sign_manifest.py verify
