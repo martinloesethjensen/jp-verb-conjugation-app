@@ -11,11 +11,19 @@ export function mockApi(): Plugin {
 		name: 'review-mock-api',
 		configureServer(server) {
 			server.middlewares.use('/api', handler());
+			server.middlewares.use('/cdn-cgi/access/logout', signedOut);
 		},
 		configurePreviewServer(server) {
 			server.middlewares.use('/api', handler());
+			server.middlewares.use('/cdn-cgi/access/logout', signedOut);
 		}
 	};
+}
+
+// Stands in for Access's logout page, which only exists behind Cloudflare.
+function signedOut(_req: IncomingMessage, res: ServerResponse) {
+	res.setHeader('content-type', 'text/plain; charset=utf-8');
+	res.end('Signed out (mock). In production Cloudflare Access ends the session here.');
 }
 
 function handler() {

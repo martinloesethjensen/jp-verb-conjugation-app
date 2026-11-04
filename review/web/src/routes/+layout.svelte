@@ -45,6 +45,8 @@
 				<a href="/admin" data-sveltekit-reload>Reviewers</a>
 			{/if}
 			<span class="who">{me.display_name}</span>
+			<!-- Cloudflare Access's own endpoint: ends the sign-in for this hostname (reviewer and admin). -->
+			<a href="/cdn-cgi/access/logout" data-sveltekit-reload>Sign out</a>
 		</nav>
 	{/if}
 </header>
