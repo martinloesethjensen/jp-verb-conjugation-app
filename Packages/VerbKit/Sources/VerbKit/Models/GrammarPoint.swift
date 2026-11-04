@@ -5,12 +5,40 @@ public enum GrammarRegister: String, Codable, Hashable, Sendable {
 }
 
 public struct GrammarExample: Codable, Hashable, Sendable {
+    /// The example's stable id from the data ("ccan6y"); nil in older data and in previews.
+    public var id: String?
     public var jp: String
     public var en: String
+    /// Particles the particle quiz may blank. Empty for most examples.
+    public var particleBlanks: [ParticleBlank]
 
-    public init(jp: String, en: String) {
+    public init(id: String? = nil, jp: String, en: String, particleBlanks: [ParticleBlank] = []) {
+        self.id = id
         self.jp = jp
         self.en = en
+        self.particleBlanks = particleBlanks
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, jp, en
+        case particleBlanks = "particle_blanks"
+    }
+
+    /// `id` and `particle_blanks` may be omitted from the JSON.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(String.self, forKey: .id)
+        jp = try c.decode(String.self, forKey: .jp)
+        en = try c.decode(String.self, forKey: .en)
+        particleBlanks = try c.decodeBlanks(forKey: .particleBlanks)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(id, forKey: .id)
+        try c.encode(jp, forKey: .jp)
+        try c.encode(en, forKey: .en)
+        try c.encodeBlanks(particleBlanks, forKey: .particleBlanks)
     }
 }
 

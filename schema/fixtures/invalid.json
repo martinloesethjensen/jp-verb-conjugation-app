@@ -2107,5 +2107,113 @@
       ]
     },
     "error": "missing required property 'id'"
+  },
+  {
+    "name": "verb example blank with an unknown particle",
+    "dataset": "verbs",
+    "doc": {
+      "version": "1.0.0",
+      "description": "Fixture.",
+      "verbs": [
+        {
+          "type": "ru",
+          "label": "Ru-verb",
+          "dict": "たべる",
+          "kanji": "食べる",
+          "meaning": "to eat",
+          "description": "A fundamental ru-verb. Drop the final る and add your ending.",
+          "notes": "て-form たべて is used in sequences like たべてから (after eating).",
+          "jlpt": "N5",
+          "forms": {
+            "masu_pos": "たべます",
+            "masu_neg": "たべません",
+            "masu_past": "たべました",
+            "masu_past_neg": "たべませんでした",
+            "te": "たべて",
+            "short_pos": "たべる",
+            "short_neg": "たべない",
+            "short_past": "たべた",
+            "short_past_neg": "たべなかった",
+            "nd_pos": "たべるんです",
+            "nd_neg": "たべないんです",
+            "nd_past": "たべたんです",
+            "nd_past_neg": "たべなかったんです",
+            "nd_casual_pos": "たべるんだ",
+            "nd_casual_neg": "たべないんだ",
+            "nd_casual_past": "たべたんだ",
+            "nd_casual_past_neg": "たべなかったんだ",
+            "potential": "たべられる",
+            "pot_masu_pos": "たべられます",
+            "pot_masu_neg": "たべられません",
+            "pot_masu_past": "たべられました",
+            "pot_masu_past_neg": "たべられませんでした",
+            "pot_te": "たべられて",
+            "pot_short_neg": "たべられない",
+            "pot_short_past": "たべられた",
+            "pot_short_past_neg": "たべられなかった",
+            "teiru": "たべている",
+            "teiru_neg": "たべていない",
+            "teiru_past": "たべていた",
+            "teiru_past_neg": "たべていなかった",
+            "teiru_masu_pos": "たべています",
+            "teiru_masu_neg": "たべていません",
+            "teiru_masu_past": "たべていました",
+            "teiru_masu_past_neg": "たべていませんでした",
+            "teiru_te": "たべていて",
+            "teshimau": "たべてしまう",
+            "teshimau_polite": "たべてしまいます",
+            "teoku": "たべておく",
+            "teoku_polite": "たべておきます",
+            "temiru": "たべてみる",
+            "temiru_polite": "たべてみます",
+            "sugiru": "たべすぎる",
+            "sugiru_polite": "たべすぎます",
+            "yasui": "たべやすい",
+            "yasui_polite": "たべやすいです",
+            "nikui": "たべにくい",
+            "nikui_polite": "たべにくいです",
+            "nagara": "たべながら",
+            "volitional": "たべよう",
+            "passive": "たべられる",
+            "causative": "たべさせる",
+            "causative_passive": "たべさせられる",
+            "conditional_ba": "たべれば",
+            "conditional_tara": "たべたら",
+            "imperative": "たべろ",
+            "tai": "たべたい",
+            "masu_volitional": "たべましょう",
+            "neg_te": "たべないで",
+            "nakute": "たべなくて",
+            "te_mo_ii": "たべてもいい",
+            "te_wa_ikenai": "たべてはいけない",
+            "te_cha_dame": "たべちゃだめ",
+            "nakereba_naranai": "たべなければならない",
+            "nakute_wa_ikenai": "たべなくてはいけない",
+            "nakya": "たべなきゃ",
+            "nakucha": "たべなくちゃ",
+            "nakute_mo_ii": "たべなくてもいい",
+            "neg_imperative": "たべるな",
+            "nasai": "たべなさい",
+            "conditional_to": "たべると",
+            "conditional_nara": "たべるなら"
+          },
+          "examples": [
+            {
+              "form": "masu_pos",
+              "jp": "朝ご飯を食べます。",
+              "en": "I eat breakfast.",
+              "id": "abcdef",
+              "particle_blanks": [
+                {
+                  "particle": "ね",
+                  "at": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "error": "'ね' is not one of"
   }
 ]

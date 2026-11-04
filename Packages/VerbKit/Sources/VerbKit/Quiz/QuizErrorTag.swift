@@ -8,6 +8,7 @@
 ///     passive_potential                the passive taken for the potential, or the reverse
 ///     causative_passive_long_short     the long causative-passive taken for the short, or the reverse
 ///     other_verb:<dictionary form>     the same form of another verb
+///     wrong_particle:<particle>        a particle question answered with this particle
 ///     generic                          anything else; also what an unknown raw string reads as
 public enum QuizErrorTag: Hashable, Sendable, Codable {
     case otherForm(String)
@@ -17,6 +18,8 @@ public enum QuizErrorTag: Hashable, Sendable, Codable {
     case passivePotential
     case causativePassiveLongShort
     case otherVerb(String)
+    /// The particle picked in a particle question (`.particle`), which was wrong.
+    case wrongParticle(String)
     case generic
 
     public var rawValue: String {
@@ -28,6 +31,7 @@ public enum QuizErrorTag: Hashable, Sendable, Codable {
         case .passivePotential: "passive_potential"
         case .causativePassiveLongShort: "causative_passive_long_short"
         case .otherVerb(let dict): "other_verb:\(dict)"
+        case .wrongParticle(let particle): "wrong_particle:\(particle)"
         case .generic: "generic"
         }
     }
@@ -45,6 +49,7 @@ public enum QuizErrorTag: Hashable, Sendable, Codable {
         case "passive_potential": self = .passivePotential
         case "causative_passive_long_short": self = .causativePassiveLongShort
         case "other_verb" where !payload.isEmpty: self = .otherVerb(payload)
+        case "wrong_particle" where !payload.isEmpty: self = .wrongParticle(payload)
         default: self = .generic
         }
     }
@@ -114,7 +119,7 @@ public enum QuizErrorTag: Hashable, Sendable, Codable {
             return head + tail
         case .otherVerb(let dict):
             return "\(chosen) is the \(form.label) form of \(dict), not of \(verb.dict)."
-        case .generic:
+        case .wrongParticle, .generic:
             return head + tail
         }
     }

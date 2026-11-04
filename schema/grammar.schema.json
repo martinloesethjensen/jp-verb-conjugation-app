@@ -90,6 +90,68 @@
         "en": {
           "type": "string",
           "minLength": 1
+        },
+        "particle_blanks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/particleBlank"
+          }
+        }
+      }
+    },
+    "particleBlank": {
+      "type": "object",
+      "required": [
+        "particle",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "particle": {
+          "enum": [
+            "は",
+            "が",
+            "を",
+            "に",
+            "で",
+            "へ",
+            "と",
+            "も",
+            "から",
+            "まで",
+            "の",
+            "や",
+            "より",
+            "か"
+          ]
+        },
+        "at": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accept_also": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "は",
+              "が",
+              "を",
+              "に",
+              "で",
+              "へ",
+              "と",
+              "も",
+              "から",
+              "まで",
+              "の",
+              "や",
+              "より",
+              "か"
+            ]
+          }
         }
       }
     },
