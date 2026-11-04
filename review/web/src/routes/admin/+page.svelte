@@ -1,5 +1,16 @@
 <script lang="ts">
-	import { addUser, ApiError, listUsers, setActive, type User } from '#lib/api.ts';
+	import {
+		addUser,
+		ApiError,
+		FILES,
+		getSnapshot,
+		listUsers,
+		loadFile,
+		setActive,
+		type DataFileName,
+		type SnapshotFile,
+		type User
+	} from '#lib/api.ts';
 	import { getSession } from '#lib/session.ts';
 	import { onMount } from 'svelte';
 
@@ -18,7 +29,35 @@
 		return error instanceof ApiError ? error.message : 'Something went wrong. Try again in a minute.';
 	}
 
+	// Published data: what is loaded, and the result of each file in the current load.
+	let files = $state<SnapshotFile[]>([]);
+	let loading = $state(false);
+	let results = $state<Partial<Record<DataFileName, string>>>({});
+
+	const loadedFile = (name: DataFileName) => files.find((f) => f.name === name);
+	const when = (iso: string) => new Date(iso).toLocaleString();
+
+	async function loadAll() {
+		loading = true;
+		results = {};
+		for (const name of FILES) {
+			results[name] = 'Loading…';
+			try {
+				const snapshot = await loadFile(name);
+				files = [...files.filter((f) => f.name !== name), snapshot];
+				results[name] = `Loaded ${snapshot.version}`;
+			} catch (error) {
+				results[name] = text(error);
+				break;
+			}
+		}
+		loading = false;
+	}
+
 	onMount(() => {
+		getSnapshot()
+			.then((list) => (files = list))
+			.catch(() => {});
 		listUsers()
 			.then((list) => {
 				users = list;
@@ -121,6 +160,33 @@
 			</form>
 		</section>
 	</div>
+
+	<section class="data" aria-labelledby="data-heading">
+		<h2 id="data-heading">Published data</h2>
+		<p class="hint">
+			Loads the files on GitHub's main branch, checked against your signature. Do this after a data
+			PR merges.
+		</p>
+		<table>
+			<thead>
+				<tr><th scope="col">File</th><th scope="col">Loaded</th><th scope="col">When</th></tr>
+			</thead>
+			<tbody>
+				{#each FILES as name (name)}
+					{@const file = loadedFile(name)}
+					<tr>
+						<td>{name}.json</td>
+						<td>{file ? file.version : 'Not loaded'}</td>
+						<td class="when">{file ? `${when(file.imported_at)} by ${file.imported_by}` : ''}</td>
+					</tr>
+					{#if results[name]}
+						<tr class="result"><td colspan="3"><span role="status">{results[name]}</span></td></tr>
+					{/if}
+				{/each}
+			</tbody>
+		</table>
+		<button class="primary" type="button" disabled={loading} onclick={loadAll}>Load published data</button>
+	</section>
 {/if}
 
 <style>
@@ -245,5 +311,46 @@
 
 	.error {
 		margin: 0;
+	}
+
+	.data {
+		margin-top: 2.5rem;
+		max-width: 42rem;
+	}
+
+	.hint {
+		color: var(--muted);
+	}
+
+	table {
+		width: 100%;
+		margin-bottom: 1rem;
+		border-collapse: collapse;
+		background: var(--card);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+	}
+
+	th,
+	td {
+		padding: 0.5rem 0.75rem;
+		text-align: left;
+		border-top: 1px solid var(--rule);
+		overflow-wrap: anywhere;
+	}
+
+	th {
+		font-weight: 500;
+	}
+
+	.when,
+	.result td {
+		color: var(--muted);
+		font-size: 0.9rem;
+	}
+
+	.result td {
+		border-top: none;
+		padding-top: 0;
 	}
 </style>

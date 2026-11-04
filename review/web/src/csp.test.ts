@@ -2,7 +2,16 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 
-const pages = ['index.html', 'admin.html', 'account.html'];
+const pages = [
+	'index.html',
+	'admin.html',
+	'account.html',
+	'item.html',
+	'browse/verbs.html',
+	'browse/words.html',
+	'browse/counters.html',
+	'browse/grammar.html'
+];
 
 test('every page carries a hash-based CSP and no inline escape hatch', () => {
 	for (const page of pages) {
