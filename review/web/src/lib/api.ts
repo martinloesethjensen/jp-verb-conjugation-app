@@ -59,3 +59,55 @@ export const setActive = (email: string, active: boolean) =>
 
 export const setMyName = (displayName: string) =>
 	request<Me>('/api/me/name', { display_name: displayName });
+
+// --- Published data ---------------------------------------------------------------------------
+
+/** The datasets reviewers browse. */
+export const DATASETS = ['verbs', 'words', 'counters', 'grammar'] as const;
+export type Dataset = (typeof DATASETS)[number];
+
+/** Every published file, in the order the admin page loads them (reference files first). */
+export const FILES = ['furigana', 'forms', 'words', 'counters', 'grammar', 'verbs'] as const;
+export type DataFileName = (typeof FILES)[number];
+
+export type SnapshotFile = {
+	name: DataFileName;
+	version: string;
+	sha256: string;
+	git_ref: string | null;
+	item_count: number;
+	imported_at: string;
+	imported_by: string;
+};
+
+export type ItemSummary = {
+	item_id: string;
+	title: string;
+	subtitle: string;
+	jlpt: string | null;
+	parts: number;
+};
+
+export type ItemList = { dataset: Dataset; version: string; items: ItemSummary[] };
+
+export type ItemResponse = {
+	dataset: Dataset;
+	version: string;
+	id: string;
+	content_hash: string;
+	item: Record<string, unknown>;
+};
+
+export type Reference = { readings: Record<string, string>; forms: Record<string, string> };
+
+export const getSnapshot = async () => (await request<{ files: SnapshotFile[] }>('/api/snapshot')).files;
+
+export const listItems = (dataset: Dataset) =>
+	request<ItemList>(`/api/items?${new URLSearchParams({ dataset })}`);
+
+export const getItem = (dataset: Dataset, id: string) =>
+	request<ItemResponse>(`/api/item?${new URLSearchParams({ dataset, id })}`);
+
+export const getReference = () => request<Reference>('/api/reference');
+
+export const loadFile = (file: DataFileName) => request<SnapshotFile>('/api/admin/snapshot', { file });

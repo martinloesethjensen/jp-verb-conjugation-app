@@ -1,6 +1,7 @@
 // A stand-in for review/api during `vite dev` and `vite preview` (the built site, with its CSP), so the site
 // can be worked on without Cloudflare. It runs in the local dev server only; nothing here is in the build.
 // `MOCK_ROLE=reviewer npm run dev` signs you in as a reviewer instead of the owner.
+import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 
@@ -26,12 +27,83 @@ function signedOut(_req: IncomingMessage, res: ServerResponse) {
 	res.end('Signed out (mock). In production Cloudflare Access ends the session here.');
 }
 
+// --- Published data, read from the repo's data/ at dev-server start ------------------------------
+
+const DATA = new URL('../../../../data/', import.meta.url);
+const FILES = ['furigana', 'forms', 'words', 'counters', 'grammar', 'verbs'] as const;
+// The mock reads loosely typed JSON.
+type Json = { [key: string]: any };
+
+function readData(name: string): Json {
+	return JSON.parse(readFileSync(new URL(`${name}.json`, DATA), 'utf8'));
+}
+
+const STABLE_ID = /^[a-km-np-z2-9]{6}$/;
+
+/** Objects inside an entry with a stable id: its examples, usages, pitfalls, things. */
+function parts(value: unknown, top = true): number {
+	if (Array.isArray(value)) return value.reduce((n: number, v) => n + parts(v, false), 0);
+	if (value && typeof value === 'object') {
+		const own = !top && typeof (value as Json).id === 'string' && STABLE_ID.test((value as Json).id) ? 1 : 0;
+		return own + Object.values(value).reduce((n: number, v) => n + parts(v, false), 0);
+	}
+	return 0;
+}
+
+/** The same ids and titles as review/api/src/items.rs, enough for the pages. */
+function entries(dataset: string, doc: Json) {
+	const dictTitle = (e: Json) => (e.kanji ? `${e.dict} (${e.kanji})` : e.dict);
+	return (doc[dataset] as Json[]).map((e) => {
+		const [id, title, subtitle] =
+			dataset === 'verbs' ? [e.id ?? e.dict, dictTitle(e), e.meaning]
+			: dataset === 'words' ? [`${e.class}:${e.dict}`, dictTitle(e), e.meaning]
+			: dataset === 'counters' ? [e.id, `${e.counter} (${e.reading})`, e.meaning]
+			: [e.id, e.title, e.summary];
+		return { item_id: id, title, subtitle, jlpt: e.jlpt ?? null, parts: parts(e), json: e };
+	});
+}
+
+function publishedData() {
+	const manifest = readData('manifest');
+	const docs = Object.fromEntries(FILES.map((f) => [f, readData(f)]));
+	const version = (f: string) => (f === 'verbs' ? manifest.version : manifest[f].version) as string;
+	const loaded = new Map<string, { name: string; version: string; sha256: string; git_ref: null; item_count: number; imported_at: string; imported_by: string }>();
+	return {
+		load(file: string) {
+			if (!(FILES as readonly string[]).includes(file)) return undefined;
+			const snapshot = {
+				name: file,
+				version: version(file),
+				sha256: 'mock',
+				git_ref: null,
+				item_count: ['furigana', 'forms'].includes(file) ? 0 : entries(file, docs[file]).length,
+				imported_at: new Date().toISOString(),
+				imported_by: 'owner@example.com'
+			};
+			loaded.set(file, snapshot);
+			return snapshot;
+		},
+		files: () => FILES.filter((f) => loaded.has(f)).map((f) => loaded.get(f)),
+		isLoaded: (f: string) => loaded.has(f),
+		version,
+		entries: (f: string) => entries(f, docs[f]),
+		reference: () => ({
+			readings: loaded.has('furigana') ? docs.furigana.readings : {},
+			forms: loaded.has('forms')
+				? Object.fromEntries((docs.forms.forms as Json[]).map((f) => [f.id, f.label]))
+				: {}
+		})
+	};
+}
+
 function handler() {
 	const users: User[] = [
 		{ email: 'aiko@example.com', display_name: 'Aiko', role: 'reviewer', active: true },
 		{ email: 'owner@example.com', display_name: 'Martin', role: 'admin', active: true }
 	];
 	const me = process.env.MOCK_ROLE === 'reviewer' ? users[0] : users[1];
+	const data = publishedData();
+	if (process.env.MOCK_LOADED) for (const f of FILES) data.load(f);
 
 	return async (req: IncomingMessage, res: ServerResponse) => {
 		const send = (status: number, body: unknown) => {
@@ -39,7 +111,31 @@ function handler() {
 			res.setHeader('content-type', 'application/json');
 			res.end(JSON.stringify(body));
 		};
-		const path = req.url?.split('?')[0];
+		const [path, query = ''] = (req.url ?? '').split('?');
+		const params = new URLSearchParams(query);
+		const browsable = ['verbs', 'words', 'counters', 'grammar'];
+		if (path === '/snapshot' && req.method === 'GET') return send(200, { files: data.files() });
+		if (path === '/reference' && req.method === 'GET') return send(200, data.reference());
+		if ((path === '/items' || path === '/item') && req.method === 'GET') {
+			const dataset = params.get('dataset') ?? '';
+			if (!browsable.includes(dataset)) return send(400, { error: 'unknown dataset' });
+			if (!data.isLoaded(dataset)) return send(404, { error: "Martin hasn't loaded this data yet." });
+			const all = data.entries(dataset);
+			if (path === '/items') {
+				const items = all.map((e) => ({ item_id: e.item_id, title: e.title, subtitle: e.subtitle, jlpt: e.jlpt, parts: e.parts }));
+				return send(200, { dataset, version: data.version(dataset), items });
+			}
+			const id = params.get('id');
+			if (!id) return send(400, { error: 'which item? (id is missing)' });
+			const found = all.find((e) => e.item_id === id);
+			if (!found) return send(404, { error: 'no such item' });
+			return send(200, { dataset, version: data.version(dataset), id, content_hash: 'mock', item: found.json });
+		}
+		if (path === '/admin/snapshot' && req.method === 'POST') {
+			if (me.role !== 'admin') return send(403, { error: "this account can't do that" });
+			const snapshot = data.load(String((await readJson(req)).file ?? ''));
+			return snapshot ? send(200, snapshot) : send(400, { error: 'unknown data file' });
+		}
 		if (path === '/me' && req.method === 'GET') {
 			return send(200, { email: me.email, display_name: me.display_name, role: me.role });
 		}
