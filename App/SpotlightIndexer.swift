@@ -28,6 +28,7 @@ enum SpotlightIndexer {
             let attributes = CSSearchableItemAttributeSet(contentType: .content)
             attributes.title = point.title
             attributes.contentDescription = point.summary
+            attributes.keywords = [point.title] + point.keywords
             items.append(CSSearchableItem(
                 uniqueIdentifier: Route.grammar(point.id).url.absoluteString,
                 domainIdentifier: lessonDomain, attributeSet: attributes
