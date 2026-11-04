@@ -22,18 +22,13 @@ fn respond(api: ApiResponse) -> Result<Response> {
 }
 
 fn config(env: &Env) -> Option<AppConfig> {
-    let secret = |name: &str| {
-        env.secret(name)
-            .ok()
-            .map(|s| s.to_string())
-            .filter(|s| !s.is_empty())
-    };
+    let secret = |name: &str| env.secret(name).map(|s| s.to_string()).unwrap_or_default();
     Some(AppConfig {
-        access: AccessConfig {
-            team_domain: secret("ACCESS_TEAM_DOMAIN")?,
-            aud: secret("ACCESS_AUD")?,
-            admin_aud: secret("ACCESS_ADMIN_AUD")?,
-        },
+        access: AccessConfig::new(
+            &secret("ACCESS_TEAM_DOMAIN"),
+            &secret("ACCESS_AUD"),
+            &secret("ACCESS_ADMIN_AUD"),
+        )?,
         site_origin: env
             .var("SITE_ORIGIN")
             .ok()
@@ -42,10 +37,11 @@ fn config(env: &Env) -> Option<AppConfig> {
     })
 }
 
-/// Refreshes the cached keys when `KeyCache::needs_fetch` says so. A failed fetch keeps the old keys.
+/// Refreshes the cached keys when `KeyCache::begin_fetch` says so. The claim is made before the fetch is
+/// awaited, so concurrent requests don't all fetch; a failed fetch keeps the old keys.
 async fn ensure_keys(cfg: &AccessConfig, jwt: Option<&str>, now: i64) {
     let kid = jwt.and_then(|t| token_kid(t).ok()).unwrap_or_default();
-    if !KEYS.with(|k| k.borrow().needs_fetch(&kid, now)) {
+    if !KEYS.with(|k| k.borrow_mut().begin_fetch(&kid, now)) {
         return;
     }
     let fetched = async {
@@ -57,17 +53,9 @@ async fn ensure_keys(cfg: &AccessConfig, jwt: Option<&str>, now: i64) {
         parse_certs(&response.text().await.ok()?).ok()
     }
     .await;
-    KEYS.with(|k| {
-        let mut cache = k.borrow_mut();
-        match fetched {
-            Some(keys) => cache.store(keys, now),
-            // Count the attempt, so a certs outage doesn't turn every request into a fetch.
-            None => {
-                let keys = std::mem::take(&mut cache.keys);
-                cache.store(keys, now)
-            }
-        }
-    });
+    if let Some(keys) = fetched {
+        KEYS.with(|k| k.borrow_mut().store(keys, now));
+    }
 }
 
 #[event(fetch)]

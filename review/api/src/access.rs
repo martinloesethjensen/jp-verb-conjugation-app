@@ -29,6 +29,20 @@ pub struct AccessConfig {
 }
 
 impl AccessConfig {
+    /// `None` when a value is blank or both applications have the same AUD tag: then an email-PIN sign-in
+    /// would count as the admin (GitHub) application, so the Worker refuses to run instead.
+    pub fn new(team_domain: &str, aud: &str, admin_aud: &str) -> Option<AccessConfig> {
+        let [team_domain, aud, admin_aud] = [team_domain, aud, admin_aud].map(str::trim);
+        if team_domain.is_empty() || aud.is_empty() || admin_aud.is_empty() || aud == admin_aud {
+            return None;
+        }
+        Some(AccessConfig {
+            team_domain: team_domain.into(),
+            aud: aud.into(),
+            admin_aud: admin_aud.into(),
+        })
+    }
+
     pub fn issuer(&self) -> String {
         format!("https://{}", self.team_domain)
     }
@@ -217,6 +231,19 @@ impl KeyCache {
         let age = now - fetched_at;
         age >= KEYS_MAX_AGE_SECONDS
             || (!self.keys.iter().any(|k| k.kid == kid) && age >= UNKNOWN_KID_REFETCH_SECONDS)
+    }
+
+    /// Like `needs_fetch`, but claims the fetch: with keys in hand it stamps `fetched_at` now, before the
+    /// fetch is awaited, so requests arriving meanwhile keep using the current keys instead of fetching
+    /// too. A cold cache (no keys) doesn't claim, since there is nothing to fall back on.
+    pub fn begin_fetch(&mut self, kid: &str, now: i64) -> bool {
+        if !self.needs_fetch(kid, now) {
+            return false;
+        }
+        if !self.keys.is_empty() {
+            self.fetched_at = Some(now);
+        }
+        true
     }
 
     pub fn store(&mut self, keys: Vec<Jwk>, now: i64) {

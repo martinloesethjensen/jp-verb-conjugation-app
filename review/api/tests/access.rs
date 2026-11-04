@@ -147,3 +147,37 @@ fn the_key_cache_refetches_sparingly() {
     assert!(cache.needs_fetch("k1", NOW + 3600));
     assert_eq!(cache.keys, vec![jwk()]);
 }
+
+#[test]
+fn concurrent_requests_with_an_unknown_kid_start_one_fetch() {
+    // The glue claims the fetch before awaiting it, so requests arriving meanwhile use the current keys.
+    let mut cache = KeyCache::default();
+    cache.store(vec![jwk()], NOW);
+    assert!(cache.begin_fetch("k9", NOW + 60));
+    assert!(!cache.begin_fetch("k9", NOW + 60));
+    assert!(!cache.begin_fetch("k8", NOW + 61));
+    assert_eq!(cache.keys, vec![jwk()]);
+}
+
+#[test]
+fn a_cold_cache_lets_every_request_fetch() {
+    // With no keys yet there is nothing to fall back on, so nobody waits on someone else's fetch.
+    let mut cache = KeyCache::default();
+    assert!(cache.begin_fetch("k1", NOW));
+    assert!(cache.begin_fetch("k1", NOW));
+}
+
+#[test]
+fn the_config_refuses_missing_or_identical_audiences() {
+    use review_api::access::AccessConfig;
+    let ok = AccessConfig::new("team.cloudflareaccess.com", "reviewer-aud", "admin-aud");
+    assert_eq!(ok, Some(cfg()));
+    // The same tag for both applications would let an email-PIN sign-in count as the admin application.
+    assert_eq!(
+        AccessConfig::new("team.cloudflareaccess.com", "same", "same"),
+        None
+    );
+    assert_eq!(AccessConfig::new("", "a", "b"), None);
+    assert_eq!(AccessConfig::new("t", " ", "b"), None);
+    assert_eq!(AccessConfig::new("t", "a", ""), None);
+}
