@@ -637,6 +637,21 @@ pub enum Parsed {
     Forms(FormsFile),
 }
 
+/// Checks an already-parsed document against the strict types, without parsing the bytes again.
+pub fn parse_value(file: DataFile, value: &serde_json::Value) -> Result<Parsed, String> {
+    fn strict<'a, T: Deserialize<'a>>(value: &'a serde_json::Value) -> Result<T, String> {
+        T::deserialize(value).map_err(|e| e.to_string())
+    }
+    Ok(match file {
+        DataFile::Verbs => Parsed::Verbs(strict(value)?),
+        DataFile::Words => Parsed::Words(strict(value)?),
+        DataFile::Counters => Parsed::Counters(strict(value)?),
+        DataFile::Grammar => Parsed::Grammar(strict(value)?),
+        DataFile::Furigana => Parsed::Furigana(strict(value)?),
+        DataFile::Forms => Parsed::Forms(strict(value)?),
+    })
+}
+
 /// Parses `bytes` as `file` with the strict types. The error is serde's message.
 pub fn parse(file: DataFile, bytes: &[u8]) -> Result<Parsed, String> {
     fn strict<T: for<'de> Deserialize<'de>>(bytes: &[u8]) -> Result<T, String> {

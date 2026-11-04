@@ -213,7 +213,7 @@ async fn a_bad_signature_is_refused() {
         (r.status, r.body),
         (
             502,
-            json!({"error": "the published manifest isn't signed by Martin's key"})
+            json!({"error": "the published manifest doesn't match Martin's signature. Right after a data PR merges, GitHub can briefly serve an old signature; try again in a few minutes"})
         )
     );
     assert!(

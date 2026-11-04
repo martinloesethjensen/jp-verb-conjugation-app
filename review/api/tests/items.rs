@@ -1,5 +1,5 @@
 use review_api::data::DataFile;
-use review_api::items::{canonical_json, content_hash, extract, Kind};
+use review_api::items::{canonical_json, content_hash, entry_hash, extract, Kind};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 
@@ -214,4 +214,66 @@ fn reference_files_have_no_rows_and_bad_files_fail() {
         .is_empty());
     assert!(extract(DataFile::Verbs, b"{}").is_err());
     assert!(extract(DataFile::Furigana, b"[]").is_err());
+}
+
+#[test]
+fn entry_hashes_match_pythons_review_hash() {
+    // update_data.review_hash(entry, COUNTER_GENERATED) and review_hash(point) on these objects.
+    let counter = json!({"id": "hon", "counter": "本", "meaning": "long things", "readings": {"1": ["いっぽん"]},
+        "changed": ["1"], "distractors": {"5": ["ごぼん"]}, "review": {"by": "owner", "on": "2026-11-01", "sha256": "x"},
+        "things": [{"id": "abcdef", "word": "鉛筆"}]});
+    assert_eq!(
+        entry_hash(DataFile::Counters, &counter),
+        "ba0886a564d3ba1e93d05dc2853fc32780872fbe51a99c6f0e317b037f8cf84a"
+    );
+    let point = json!({"id": "node", "title": "〜ので", "review": {"by": "teacher", "on": "2026-11-01", "sha256": "y"},
+        "usages": [{"id": "bcdefg", "heading": "h"}]});
+    assert_eq!(
+        entry_hash(DataFile::Grammar, &point),
+        "dcdd3cfda031b902c8a427e2f2b62a8a24e387bf3aa092d0dc8999782035f59e"
+    );
+}
+
+#[test]
+fn a_verb_or_word_hash_covers_only_its_authored_fields() {
+    // Generated forms, examples and collocations (which carry their own hashes) don't change it;
+    // the meaning does. A review stamp never does.
+    let verbs = doc(DataFile::Verbs);
+    let verb = &verbs["verbs"][0];
+    let base = entry_hash(DataFile::Verbs, verb);
+    let mut changed = verb.clone();
+    changed["forms"]["te"] = json!("x");
+    changed["examples"] = json!([]);
+    changed["collocations"] = json!([]);
+    changed["review"] = json!({"by": "owner", "on": "2026-11-01", "sha256": "z"});
+    assert_eq!(entry_hash(DataFile::Verbs, &changed), base);
+    changed["meaning"] = json!("something else");
+    assert_ne!(entry_hash(DataFile::Verbs, &changed), base);
+    let words = doc(DataFile::Words);
+    let mut word = words["words"][0].clone();
+    let base = entry_hash(DataFile::Words, &word);
+    word["forms"]["te"] = json!("x");
+    assert_eq!(entry_hash(DataFile::Words, &word), base);
+}
+
+#[test]
+fn entry_rows_carry_the_entry_hash_and_sub_items_their_own() {
+    for file in [DataFile::Verbs, DataFile::Counters, DataFile::Grammar] {
+        let rows = extract(file, &real(file)).unwrap();
+        for row in &rows {
+            let value: Value = serde_json::from_str(&row.json).unwrap();
+            let expected = if row.kind == Kind::Entry {
+                entry_hash(file, &value)
+            } else {
+                content_hash(&value)
+            };
+            assert_eq!(
+                row.content_hash,
+                expected,
+                "{} {}",
+                file.name(),
+                row.item_id
+            );
+        }
+    }
 }

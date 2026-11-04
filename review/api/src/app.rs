@@ -487,7 +487,9 @@ pub async fn import_file_with_keys<S: Store, R: Source>(
     let signature = String::from_utf8_lossy(&signature);
     let manifest = manifest::verify(&manifest_bytes, &signature, keys).map_err(|e| match e {
         manifest::ManifestError::BadSignature => {
-            "the published manifest isn't signed by Martin's key".to_string()
+            // Usually a cache race right after a data PR merges, not tampering: GitHub can serve
+            // the new manifest with the old signature for a few minutes.
+            "the published manifest doesn't match Martin's signature. Right after a data PR merges, GitHub can briefly serve an old signature; try again in a few minutes".to_string()
         }
         _ => "the published manifest is malformed".to_string(),
     })?;

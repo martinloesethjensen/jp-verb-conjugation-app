@@ -1,10 +1,11 @@
 //! Turns a published data file into rows for the `items` table: one per entry (verb, word, counter,
 //! grammar point) and one per object with a stable id (`scripts/stable_ids.py`'s `id_slots`).
 //!
-//! Rows keep the published JSON exactly (walked from the raw value, not re-serialised from the
-//! strict types), and hash it in the canonical form `update_data.review_hash` uses.
+//! Rows keep the published JSON (walked from the raw value, not re-serialised from the strict types)
+//! in the canonical form `update_data.review_hash` uses. A sub-item's hash covers its JSON; an
+//! entry's covers only its authored fields (`entry_hash`), so it is the hash a review stamp records.
 
-use crate::data::{parse, DataFile};
+use crate::data::{parse_value, DataFile};
 use serde::Serialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -55,14 +56,16 @@ pub struct ItemRow {
 /// `json.dumps(v, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`.
 pub fn canonical_json(value: &Value) -> String {
     let mut out = String::new();
-    write_canonical(value, &mut out);
+    write_canonical(value, &[], &mut out);
     out
 }
 
-fn write_canonical(value: &Value, out: &mut String) {
+/// Writes `value` canonically, leaving out the top-level keys in `skip`.
+fn write_canonical(value: &Value, skip: &[&str], out: &mut String) {
     match value {
         Value::Object(map) => {
-            let mut keys: Vec<&String> = map.keys().collect();
+            let mut keys: Vec<&String> =
+                map.keys().filter(|k| !skip.contains(&k.as_str())).collect();
             keys.sort();
             out.push('{');
             for (i, key) in keys.into_iter().enumerate() {
@@ -71,7 +74,7 @@ fn write_canonical(value: &Value, out: &mut String) {
                 }
                 out.push_str(&Value::String(key.clone()).to_string());
                 out.push(':');
-                write_canonical(&map[key], out);
+                write_canonical(&map[key], &[], out);
             }
             out.push('}');
         }
@@ -81,7 +84,7 @@ fn write_canonical(value: &Value, out: &mut String) {
                 if i > 0 {
                     out.push(',');
                 }
-                write_canonical(item, out);
+                write_canonical(item, &[], out);
             }
             out.push(']');
         }
@@ -91,10 +94,35 @@ fn write_canonical(value: &Value, out: &mut String) {
 }
 
 pub fn content_hash(value: &Value) -> String {
-    Sha256::digest(canonical_json(value).as_bytes())
+    sha256_hex(canonical_json(value).as_bytes())
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    Sha256::digest(bytes)
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect()
+}
+
+/// Keys an entry's hash leaves out: the `review` stamp itself, fields `update_data.py` generates, and
+/// sub-items that carry their own hashes. Counters and grammar match `update_data.review_hash`
+/// (with `COUNTER_GENERATED`); verbs and words follow the review-site design (authored fields only,
+/// not their examples).
+fn excluded_from_entry_hash(file: DataFile) -> &'static [&'static str] {
+    match file {
+        DataFile::Counters => &["review", "readings", "changed", "distractors"],
+        DataFile::Grammar => &["review"],
+        DataFile::Verbs => &["review", "forms", "examples", "collocations"],
+        DataFile::Words => &["review", "forms"],
+        DataFile::Furigana | DataFile::Forms => &["review"],
+    }
+}
+
+/// The hash of an entry's authored content: what a review of the entry vouches for.
+pub fn entry_hash(file: DataFile, entry: &Value) -> String {
+    let mut out = String::new();
+    write_canonical(entry, excluded_from_entry_hash(file), &mut out);
+    sha256_hex(out.as_bytes())
 }
 
 fn text(v: &Value, key: &str) -> String {
@@ -121,6 +149,7 @@ fn dict_title(v: &Value) -> String {
 }
 
 struct Rows {
+    file: DataFile,
     rows: Vec<ItemRow>,
 }
 
@@ -137,6 +166,13 @@ impl Rows {
         jlpt: Option<String>,
         value: &Value,
     ) {
+        // The canonical JSON is built once: stored as-is, and hashed for a sub-item.
+        let json = canonical_json(value);
+        let content_hash = if kind == Kind::Entry {
+            entry_hash(self.file, value)
+        } else {
+            sha256_hex(json.as_bytes())
+        };
         self.rows.push(ItemRow {
             kind,
             item_id,
@@ -146,8 +182,8 @@ impl Rows {
             title,
             subtitle,
             jlpt,
-            content_hash: content_hash(value),
-            json: canonical_json(value),
+            content_hash,
+            json,
         });
     }
 
@@ -205,12 +241,15 @@ impl Rows {
 
 /// The rows for `file`, or the strict parser's error. Furigana and forms have no rows.
 pub fn extract(file: DataFile, bytes: &[u8]) -> Result<Vec<ItemRow>, String> {
-    parse(file, bytes)?;
+    let doc: Value = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    parse_value(file, &doc)?;
     if !file.is_browsable() {
         return Ok(Vec::new());
     }
-    let doc: Value = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
-    let mut out = Rows { rows: Vec::new() };
+    let mut out = Rows {
+        file,
+        rows: Vec::new(),
+    };
     for entry in list(&doc, file.name()) {
         match file {
             DataFile::Verbs => {
