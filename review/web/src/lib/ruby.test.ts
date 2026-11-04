@@ -40,6 +40,13 @@ describe('segments', () => {
 	test('kana inside an extra key select its reading, like any key', () =>
 		// As in the app: the reading covers the kanji part only (何); the kana pick the reading.
 		expect(segments('何かありますか', R, { 何か: 'なん' })).toEqual([ruby('何', 'なん'), plain('かありますか')]));
+	test('only hiragana after the kanji select a reading (何か月 keeps its kanji reading on 何)', () =>
+		// A counter example's whole-run key (何か月 → なんかげつ) is for the data check, not display.
+		expect(segments('何か月', { 何: 'なに', 月: 'げつ' }, { 何か月: 'なんかげつ', 何か: 'なん' })).toEqual([
+			ruby('何', 'なん'),
+			plain('か'),
+			ruby('月', 'げつ')
+		]));
 	test('the iteration mark counts as kanji', () =>
 		expect(segments('時々', { 時々: 'ときどき' })).toEqual([ruby('時々', 'ときどき')]));
 });

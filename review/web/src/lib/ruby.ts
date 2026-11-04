@@ -13,9 +13,14 @@ export function isKanji(ch: string): boolean {
 	return (code >= 0x4e00 && code <= 0x9fff) || code === 0x3005;
 }
 
+function isHiragana(ch: string): boolean {
+	const code = ch.codePointAt(0) ?? 0;
+	return code >= 0x3041 && code <= 0x3096;
+}
+
 /**
  * The longest key matching at `start`: its kanji part is any prefix of the kanji run there, and
- * only when it covers the whole run may up to three following characters complete the key. The
+ * only when it covers the whole run may up to three following hiragana complete the key. The
  * reading belongs to the kanji part only.
  */
 function longestMatch(
@@ -28,7 +33,15 @@ function longestMatch(
 	let best: { total: number; kanjiLength: number; reading: string } | undefined;
 	for (let kanjiLength = runEnd - start; kanjiLength >= 1; kanjiLength--) {
 		const kanjiEnd = start + kanjiLength;
-		const maxSuffix = kanjiEnd === runEnd ? Math.min(MAX_OKURIGANA_IN_KEY, chars.length - kanjiEnd) : 0;
+		// Only hiragana select a reading, so a counter example's whole-run key (何か月) never matches.
+		let hiraganaAfter = 0;
+		while (
+			kanjiEnd + hiraganaAfter < chars.length &&
+			hiraganaAfter < MAX_OKURIGANA_IN_KEY &&
+			isHiragana(chars[kanjiEnd + hiraganaAfter])
+		)
+			hiraganaAfter++;
+		const maxSuffix = kanjiEnd === runEnd ? hiraganaAfter : 0;
 		for (let suffix = maxSuffix; suffix >= 0; suffix--) {
 			const key = chars.slice(start, kanjiEnd + suffix).join('');
 			const reading = Object.hasOwn(readings, key) ? readings[key] : undefined;
