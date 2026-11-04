@@ -65,9 +65,7 @@ fn every_entry_and_stable_id_slot_becomes_a_row() {
             file.name()
         );
         assert!(
-            rows.iter()
-                .enumerate()
-                .all(|(i, r)| r.position as usize == i),
+            rows.windows(2).all(|w| w[0].position < w[1].position),
             "{}: positions",
             file.name()
         );

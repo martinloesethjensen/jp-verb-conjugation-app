@@ -652,6 +652,21 @@ pub fn parse_value(file: DataFile, value: &serde_json::Value) -> Result<Parsed, 
     })
 }
 
+/// Checks one entry of a browsable file (a verb, word, counter or grammar point) against the strict
+/// types. Reference files have no entries; for them this is always an error.
+pub fn check_entry(file: DataFile, entry: &serde_json::Value) -> Result<(), String> {
+    fn strict<'a, T: Deserialize<'a>>(value: &'a serde_json::Value) -> Result<(), String> {
+        T::deserialize(value).map(drop).map_err(|e| e.to_string())
+    }
+    match file {
+        DataFile::Verbs => strict::<Verb>(entry),
+        DataFile::Words => strict::<Word>(entry),
+        DataFile::Counters => strict::<Counter>(entry),
+        DataFile::Grammar => strict::<GrammarPoint>(entry),
+        DataFile::Furigana | DataFile::Forms => Err(format!("{} has no entries", file.file_name())),
+    }
+}
+
 /// Parses `bytes` as `file` with the strict types. The error is serde's message.
 pub fn parse(file: DataFile, bytes: &[u8]) -> Result<Parsed, String> {
     fn strict<T: for<'de> Deserialize<'de>>(bytes: &[u8]) -> Result<T, String> {
