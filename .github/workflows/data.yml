@@ -4,9 +4,9 @@ name: Data
 on:
   push:
     branches: [main]
-    paths: ["data/**", "scripts/**", "Packages/VerbKit/Sources/VerbKit/Data/ManifestSignatureVerifier.swift"]
+    paths: ["data/**", "schema/**", "scripts/**", "Packages/VerbKit/Sources/VerbKit/Data/ManifestSignatureVerifier.swift"]
   pull_request:
-    paths: ["data/**", "scripts/**", "Packages/VerbKit/Sources/VerbKit/Data/ManifestSignatureVerifier.swift"]
+    paths: ["data/**", "schema/**", "scripts/**", "Packages/VerbKit/Sources/VerbKit/Data/ManifestSignatureVerifier.swift"]
 
 permissions:
   contents: read

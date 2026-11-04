@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/martinloesethjensen/jp-verb-conjugation-app/main/schema/furigana.schema.json",
+  "title": "Furigana",
+  "description": "data/furigana.json: readings for kanji runs. A key is a run of kanji, optionally followed by up to three hiragana that select the reading; the value reads the kanji part only.",
+  "type": "object",
+  "required": [
+    "version",
+    "description",
+    "readings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "readings": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[㐀-鿿々〆ヶ]+[ぁ-ゖ]{0,3}$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[ぁ-ゖー]+$"
+      }
+    }
+  },
+  "$defs": {}
+}

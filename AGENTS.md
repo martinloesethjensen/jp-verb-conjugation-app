@@ -12,6 +12,8 @@ must **not** be "cleaned up" casually.
 | `Widgets/` | Widget extension: WidgetKit views and intents |
 | `Packages/VerbKit/` | Shared Swift package: models, data sync, SwiftData persistence, quiz logic, search, routing. Tests run with `swift test` |
 | `data/` | Published JSON data and the signed `manifest.json` |
+| `schema/` | A JSON Schema per `data/` file, checked by `update_data.py`; the contract other clients read |
+| `review/` | The teacher/native-speaker review site: `api` (Rust Cloudflare Worker), `web` (Svelte). See `review/README.md` |
 | `scripts/` | Python data generation/signing/audio tools and shell helpers |
 | `docs/` | Specs, plans, signing docs |
 
@@ -73,6 +75,7 @@ Run `make` for the full list. Common ones:
 | `make project` | Regenerate the Xcode project |
 | `make data` / `make data-check` | Regenerate / verify published data |
 | `make sign-commit` | Sign the manifest and commit only `manifest.sig` |
+| `make review-test` / `make review-build` | Test / build the review site |
 
 ## Use these first — do not reinvent
 

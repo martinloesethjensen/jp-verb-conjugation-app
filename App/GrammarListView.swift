@@ -9,7 +9,7 @@ struct GrammarRow: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 JapaneseText(point.title)
                     .font(.title3.weight(.bold))
-                LevelBadge(level: point.jlpt)
+                LevelBadge(range: point.levelRange)
             }
             JapaneseText(point.summary)
                 .font(.caption)
