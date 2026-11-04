@@ -8,6 +8,8 @@ from pathlib import Path
 import stable_ids
 import update_data as ud
 
+REAL_DATA = Path(__file__).resolve().parent.parent / "data"
+
 
 def verb(dict_form, short_pos, short_neg, short_past, short_past_neg, vtype="ru"):
     return {
@@ -789,6 +791,9 @@ class RunTests(unittest.TestCase):
             "verbs": [verb("する", "する", "しない", "した", "しなかった", vtype="irr.")],
         }
         verbs["verbs"][0]["forms"].update({"te": "して", "masu_pos": "します"})
+        # The authored fields every published verb has, so the run passes schema/verbs.schema.json.
+        verbs["verbs"][0].update({"label": "Irregular", "meaning": "to do", "description": "d", "notes": "n",
+                                  "jlpt": "N5", "examples": []})
         (d / "verbs.json").write_text(ud.dump_verbs(verbs), encoding="utf-8")
         (d / "grammar.json").write_text(json.dumps(valid_grammar(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (d / "furigana.json").write_text(json.dumps(valid_furigana(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -850,6 +855,16 @@ class RunTests(unittest.TestCase):
         code, messages = ud.run(d, check=True)
         self.assertEqual(code, 1)
         self.assertTrue(any("'id'" in m for m in messages), messages)
+
+    def test_run_fails_when_data_does_not_match_its_schema(self):
+        d = self.with_example("tai")
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        doc["verbs"][0]["romaji"] = "suru"
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("verbs.json does not match schema/verbs.schema.json:", messages[0])
+        self.assertTrue(any("$.verbs[0]: unexpected property 'romaji'" in m for m in messages), messages)
 
     def test_an_example_may_use_a_generated_form(self):
         code, messages = ud.run(self.with_example("tai"))
@@ -1091,6 +1106,23 @@ class PublishedFormsTests(unittest.TestCase):
         code, messages = ud.run(d, check=True)
         self.assertEqual(code, 1)
         self.assertIn("data/forms.json", messages[0])
+
+
+class CheckSchemasTests(unittest.TestCase):
+    NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms")
+
+    def test_the_real_data_has_no_schema_problems(self):
+        docs = {name: json.loads((REAL_DATA / f"{name}.json").read_text(encoding="utf-8")) for name in self.NAMES}
+        self.assertEqual(ud.check_schemas(docs), [])
+
+    def test_check_schemas_names_the_file_and_path(self):
+        docs = {name: json.loads((REAL_DATA / f"{name}.json").read_text(encoding="utf-8")) for name in self.NAMES}
+        docs["words"]["words"][0]["class"] = "adverb"
+        self.assertEqual(ud.check_schemas(docs),
+                         ["words.json: $.words[0].class: 'adverb' is not one of ['i-adjective', 'na-adjective', 'noun']"])
+
+    def test_a_missing_file_is_skipped(self):
+        self.assertEqual(ud.check_schemas({"words": None}), [])
 
 
 class BundledDataTests(unittest.TestCase):

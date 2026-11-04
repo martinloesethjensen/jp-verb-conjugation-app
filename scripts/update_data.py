@@ -60,6 +60,7 @@ import sys
 from pathlib import Path
 
 import form_catalogue
+import json_schema
 import stable_ids
 from stable_ids import check_stable_ids, loads as loads_without_duplicate_keys
 
@@ -1871,9 +1872,27 @@ def bundled_forms_manifest_path(bundled_forms_path):
     return Path(bundled_forms_path).with_name("forms.manifest.json")
 
 
+# One JSON Schema per published file (schema/README.md). They are checked against the files as they will be
+# written, so a generated field the schema doesn't know fails here rather than in a client.
+SCHEMA_DIR = Path(__file__).resolve().parent.parent / "schema"
+SCHEMA_NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms")
+
+
+def schema_problems(name, doc, schema_dir=SCHEMA_DIR):
+    """Problems with `doc` against schema/<name>.schema.json, each "<json path>: <message>"."""
+    schema = json.loads((Path(schema_dir) / f"{name}.schema.json").read_text(encoding="utf-8"))
+    return json_schema.validate(doc, schema)
+
+
+def check_schemas(docs, schema_dir=SCHEMA_DIR):
+    """Problems with each document in `docs` (name -> doc, None skipped), each "<name>.json: <problem>"."""
+    return [f"{name}.json: {problem}" for name in SCHEMA_NAMES if docs.get(name) is not None
+            for problem in schema_problems(name, docs[name], schema_dir)]
+
+
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
         bundled_forms_path=None, ref=None, words_version=None, counters_version=None, published_verbs=None,
-        forms_version=None, bundled_counters_path=None, bundled_data_dir=None):
+        forms_version=None, bundled_counters_path=None, bundled_data_dir=None, schema_dir=SCHEMA_DIR):
     """Returns (exit_code, messages). data/forms.json is always written and checked;
     `bundled_forms_path` is where the app's bundled copy (and forms.manifest.json beside it) is
     written and checked, and None leaves them alone; `bundled_counters_path` does the same for
@@ -1990,6 +2009,14 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
 
     forms_path = data_dir / "forms.json"
     forms_bytes = dump_forms().encode("utf-8")
+
+    written = {"verbs": verbs_bytes, "words": words_bytes, "counters": counters_bytes, "grammar": grammar_bytes,
+               "furigana": furigana_bytes, "forms": forms_bytes}
+    for name in SCHEMA_NAMES:
+        if written[name] is not None:
+            problems = schema_problems(name, json.loads(written[name]), schema_dir)
+            if problems:
+                return 1, capped(f"{name}.json does not match schema/{name}.schema.json:", problems)
 
     existing = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest = build_manifest(

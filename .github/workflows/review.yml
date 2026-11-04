@@ -1,0 +1,63 @@
+name: Review site
+
+# Builds and tests the review site: the Rust Worker (review/api) and the Svelte pages (review/web).
+# Deployment is manual (review/README.md); CI never holds Cloudflare credentials.
+on:
+  pull_request:
+    paths: ["review/**", "schema/**", ".github/workflows/review.yml"]
+  push:
+    branches: [main]
+    paths: ["review/**", "schema/**", ".github/workflows/review.yml"]
+
+concurrency:
+  group: review-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: Worker (Rust)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: review/api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup target add wasm32-unknown-unknown && rustup component add clippy rustfmt
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/worker-build
+            review/api/target
+          key: review-api-${{ runner.os }}-${{ hashFiles('review/api/Cargo.lock') }}
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      - run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
+      - run: command -v worker-build || cargo install worker-build@0.8.7 --locked
+      - run: worker-build --release
+
+  web:
+    name: Pages (Svelte)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: review/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: review/web/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test -- --exclude src/csp.test.ts
+      - run: npm run build
+      - run: npm run test:csp
