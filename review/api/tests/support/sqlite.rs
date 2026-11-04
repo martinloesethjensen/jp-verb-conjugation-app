@@ -2,7 +2,7 @@
 
 use review_api::store::{
     NewUser, Role, Store, StoreError, User, INSERT_AUDIT, INSERT_USER, SELECT_USER, SELECT_USERS,
-    UPDATE_ACTIVE,
+    UPDATE_ACTIVE, UPDATE_DISPLAY_NAME,
 };
 use rusqlite::{params, Connection, ErrorCode};
 use std::cell::RefCell;
@@ -122,6 +122,35 @@ impl Store for SqliteStore {
                 "user.active",
                 email,
                 format!("active={}", active as i64)
+            ],
+        )
+        .map_err(backend)?;
+        tx.commit().map_err(backend)
+    }
+
+    async fn set_display_name(
+        &self,
+        email: &str,
+        display_name: &str,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let changed = tx
+            .execute(UPDATE_DISPLAY_NAME, params![display_name, email])
+            .map_err(backend)?;
+        if changed == 0 {
+            return Err(StoreError::NotFound);
+        }
+        tx.execute(
+            INSERT_AUDIT,
+            params![
+                now,
+                actor,
+                "user.name",
+                email,
+                format!("name={display_name}")
             ],
         )
         .map_err(backend)?;

@@ -7,6 +7,9 @@
 	--grid: #b9cbb8;
 	--rule: #dce0d8;
 	--red: #c2372b;
+	--red-soft: #fbeceb;
+	--green: #2e6b45;
+	--green-soft: #e2f0e6;
 
 	--sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
 	--mincho: 'Shippori Mincho', 'Hiragino Mincho ProN', serif;
@@ -65,6 +68,17 @@ button {
 
 button.primary {
 	background: var(--ink);
+	color: var(--card);
+}
+
+/* Destructive actions: red outline, filled on hover. */
+button.danger {
+	border-color: var(--red);
+	color: var(--red);
+}
+
+button.danger:hover:not(:disabled) {
+	background: var(--red);
 	color: var(--card);
 }
 

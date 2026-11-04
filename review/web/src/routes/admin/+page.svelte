@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { addUser, ApiError, listUsers, setActive, type User } from '#lib/api.ts';
-	import { getMe } from '#lib/session.ts';
+	import { getSession } from '#lib/session.ts';
 	import { onMount } from 'svelte';
 
-	const me = getMe();
+	const { me } = getSession();
 
 	let users = $state<User[]>([]);
 	let loaded = $state(false);
@@ -80,9 +80,16 @@
 								<p class="email">{user.email}</p>
 							</div>
 							<div class="state">
-								<span>{user.active ? 'Active' : 'Inactive'}</span>
+								<span class={['pill', user.active ? 'active' : 'inactive']}>
+									{user.active ? 'Active' : 'Inactive'}
+								</span>
 								{#if user.email !== me().email}
-									<button type="button" disabled={busy} onclick={() => toggle(user)}>
+									<button
+										type="button"
+										class={{ danger: user.active }}
+										disabled={busy}
+										onclick={() => toggle(user)}
+									>
 										{user.active ? 'Deactivate' : 'Reactivate'}
 									</button>
 								{/if}
@@ -175,13 +182,29 @@
 	}
 
 	.email,
-	.state span,
 	.quiet {
 		color: var(--muted);
 		overflow-wrap: anywhere;
 	}
 
 	.inactive .person {
+		color: var(--muted);
+	}
+
+	.pill {
+		padding: 0.1rem 0.65rem;
+		border-radius: 999px;
+		font-size: 0.85rem;
+		font-weight: 500;
+	}
+
+	.pill.active {
+		background: var(--green-soft);
+		color: var(--green);
+	}
+
+	.pill.inactive {
+		background: var(--rule);
 		color: var(--muted);
 	}
 

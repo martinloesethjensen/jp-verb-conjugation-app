@@ -34,6 +34,7 @@ pub struct AppConfig {
 #[derive(Clone, Copy)]
 enum Handler {
     Me,
+    Rename,
     ListUsers,
     AddUser,
     SetActive,
@@ -53,6 +54,12 @@ const ROUTES: &[Route] = &[
         path: "/api/me",
         need: Need::Reviewer,
         handler: Handler::Me,
+    },
+    Route {
+        method: "POST",
+        path: "/api/me/name",
+        need: Need::Reviewer,
+        handler: Handler::Rename,
     },
     Route {
         method: "GET",
@@ -121,14 +128,8 @@ pub async fn handle<S: Store>(
         return error(403, "cross-site request refused");
     }
     match route.handler {
-        Handler::Me => ApiResponse {
-            status: 200,
-            body: json!({
-                "email": principal.email,
-                "display_name": principal.display_name,
-                "role": principal.role,
-            }),
-        },
+        Handler::Me => me_response(&principal.email, &principal.display_name, principal.role),
+        Handler::Rename => rename(&req.body, &principal, store, today).await,
         Handler::ListUsers => match store.users().await {
             Ok(users) => ApiResponse {
                 status: 200,
@@ -139,6 +140,19 @@ pub async fn handle<S: Store>(
         Handler::AddUser => add_user(&req.body, &principal, store, today).await,
         Handler::SetActive => set_active(&req.body, &principal, store, today).await,
     }
+}
+
+fn me_response(email: &str, display_name: &str, role: Role) -> ApiResponse {
+    ApiResponse {
+        status: 200,
+        body: json!({ "email": email, "display_name": display_name, "role": role }),
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RenameBody {
+    display_name: String,
 }
 
 #[derive(Deserialize)]
@@ -174,6 +188,35 @@ async fn user_response<S: Store>(store: &S, email: &str, status: u16) -> ApiResp
     }
 }
 
+/// Trimmed, 1 to 40 characters.
+fn display_name_field(raw: &str) -> Result<String, ApiResponse> {
+    let name = raw.trim().to_string();
+    let length = name.chars().count();
+    if length == 0 || length > MAX_DISPLAY_NAME {
+        return Err(error(400, "the display name must be 1 to 40 characters"));
+    }
+    Ok(name)
+}
+
+/// Changes the caller's own site name; the request can't name anyone else.
+async fn rename<S: Store>(body: &[u8], by: &Principal, store: &S, today: &str) -> ApiResponse {
+    let body: RenameBody = match parse(body) {
+        Ok(body) => body,
+        Err(response) => return response,
+    };
+    let name = match display_name_field(&body.display_name) {
+        Ok(name) => name,
+        Err(response) => return response,
+    };
+    match store
+        .set_display_name(&by.email, &name, &by.email, today)
+        .await
+    {
+        Ok(()) => me_response(&by.email, &name, by.role),
+        Err(e) => store_error(e),
+    }
+}
+
 async fn add_user<S: Store>(body: &[u8], by: &Principal, store: &S, today: &str) -> ApiResponse {
     let body: AddUserBody = match parse(body) {
         Ok(body) => body,
@@ -183,11 +226,10 @@ async fn add_user<S: Store>(body: &[u8], by: &Principal, store: &S, today: &str)
         Ok(email) => email,
         Err(response) => return response,
     };
-    let display_name = body.display_name.trim().to_string();
-    let length = display_name.chars().count();
-    if length == 0 || length > MAX_DISPLAY_NAME {
-        return error(400, "the display name must be 1 to 40 characters");
-    }
+    let display_name = match display_name_field(&body.display_name) {
+        Ok(name) => name,
+        Err(response) => return response,
+    };
     let user = NewUser {
         email: email.clone(),
         display_name,

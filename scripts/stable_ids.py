@@ -1,5 +1,5 @@
-"""Stable ids for the reviewable items inside entries: example sentences, grammar usages, pitfalls and counter
-things. The review site points suggestions at these ids, so they must survive items being added, removed or
+"""Stable ids for the reviewable items inside entries: example sentences, verb collocations, grammar usages,
+pitfalls and counter things. The review site points suggestions at these ids, so they must survive items being added, removed or
 reordered. Verbs, words, counters and grammar points already have their own ids.
 
 An id is 6 characters from ALPHABET (no l, o, 0 or 1), unique within its file, and the first key of its object.
@@ -55,7 +55,10 @@ def id_slots(dataset, doc):
     slots = []
     if dataset == "verbs":
         for verb in doc.get("verbs") or []:
-            slots.extend(_examples(verb, verb.get("id") or verb.get("dict")))
+            name = verb.get("id") or verb.get("dict")
+            slots.extend(_examples(verb, name))
+            slots.extend((f"{name} collocation {n}", collocation)
+                         for n, collocation in enumerate(verb.get("collocations") or [], 1))
     elif dataset == "counters":
         for counter in doc.get("counters") or []:
             name = counter.get("id")

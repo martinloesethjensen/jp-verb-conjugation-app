@@ -56,3 +56,6 @@ export const addUser = (email: string, displayName: string) =>
 
 export const setActive = (email: string, active: boolean) =>
 	request<User>('/api/admin/users/active', { email, active });
+
+export const setMyName = (displayName: string) =>
+	request<Me>('/api/me/name', { display_name: displayName });

@@ -3,7 +3,7 @@
 
 use crate::store::{
     NewUser, Role, Store, StoreError, User, INSERT_AUDIT, INSERT_USER, SELECT_USER, SELECT_USERS,
-    UPDATE_ACTIVE,
+    UPDATE_ACTIVE, UPDATE_DISPLAY_NAME,
 };
 use serde::Deserialize;
 use worker::wasm_bindgen::JsValue;
@@ -123,6 +123,28 @@ impl Store for D1Store {
             email,
             &format!("active={flag}"),
         )?;
+        self.db.batch(vec![update, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn set_display_name(
+        &self,
+        email: &str,
+        display_name: &str,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        // As in set_active: look the user up first, since the batch always writes its audit row.
+        if self.user(email).await?.is_none() {
+            return Err(StoreError::NotFound);
+        }
+        let update = self
+            .db
+            .prepare(UPDATE_DISPLAY_NAME)
+            .bind(&[display_name.into(), email.into()])
+            .map_err(backend)?;
+        let detail = format!("name={display_name}");
+        let log = audit(&self.db, now, actor, "user.name", email, &detail)?;
         self.db.batch(vec![update, log]).await.map_err(backend)?;
         Ok(())
     }

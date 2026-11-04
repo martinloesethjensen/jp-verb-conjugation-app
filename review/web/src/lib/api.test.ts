@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { addUser, ApiError, getMe, listUsers, setActive } from './api.ts';
+import { addUser, ApiError, getMe, listUsers, setActive, setMyName } from './api.ts';
 
 function respond(status: number, body?: unknown) {
 	const fetch = vi.fn(async () =>
@@ -87,6 +87,18 @@ describe('api', () => {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: '{"email":"ken@example.com","display_name":"Ken"}',
+			credentials: 'same-origin',
+			redirect: 'manual'
+		});
+	});
+
+	test('setMyName posts to /api/me/name and returns the updated user', async () => {
+		const fetch = respond(200, { email: 'a@x.com', display_name: 'Aiko S.', role: 'reviewer' });
+		expect((await setMyName('Aiko S.')).display_name).toBe('Aiko S.');
+		expect(fetch).toHaveBeenCalledWith('/api/me/name', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: '{"display_name":"Aiko S."}',
 			credentials: 'same-origin',
 			redirect: 'manual'
 		});
