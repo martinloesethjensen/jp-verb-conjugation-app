@@ -1,9 +1,7 @@
 //! A `Store` over an in-memory SQLite database, running the same migrations and SQL as the D1 store.
 
-use review_api::store::{
-    NewUser, Role, Store, StoreError, User, INSERT_AUDIT, INSERT_USER, SELECT_USER, SELECT_USERS,
-    UPDATE_ACTIVE, UPDATE_DISPLAY_NAME,
-};
+use review_api::items::ItemRow;
+use review_api::store::*;
 use rusqlite::{params, Connection, ErrorCode};
 use std::cell::RefCell;
 use std::path::Path;
@@ -50,6 +48,18 @@ fn row_to_user(row: &rusqlite::Row) -> rusqlite::Result<User> {
         display_name: row.get(1)?,
         role: role(row.get(2)?),
         active: row.get::<_, i64>(3)? == 1,
+    })
+}
+
+fn row_to_snapshot(row: &rusqlite::Row) -> rusqlite::Result<SnapshotFile> {
+    Ok(SnapshotFile {
+        name: row.get(0)?,
+        version: row.get(1)?,
+        sha256: row.get(2)?,
+        git_ref: row.get(3)?,
+        item_count: row.get(4)?,
+        imported_at: row.get(5)?,
+        imported_by: row.get(6)?,
     })
 }
 
@@ -155,5 +165,102 @@ impl Store for SqliteStore {
         )
         .map_err(backend)?;
         tx.commit().map_err(backend)
+    }
+
+    async fn replace_snapshot(
+        &self,
+        file: &SnapshotFile,
+        json: Option<&str>,
+        rows: &[ItemRow],
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let rows_json = serde_json::to_string(rows).unwrap();
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        tx.execute(DELETE_ITEMS, params![file.name])
+            .map_err(backend)?;
+        tx.execute(INSERT_ITEMS, params![file.name, rows_json])
+            .map_err(backend)?;
+        tx.execute(
+            UPSERT_SNAPSHOT_FILE,
+            params![
+                file.name,
+                file.version,
+                file.sha256,
+                file.git_ref,
+                file.item_count,
+                file.imported_at,
+                file.imported_by,
+                json
+            ],
+        )
+        .map_err(backend)?;
+        let target = format!("{}.json", file.name);
+        tx.execute(
+            INSERT_AUDIT,
+            params![
+                now,
+                actor,
+                "snapshot.import",
+                target,
+                format!("version={}", file.version)
+            ],
+        )
+        .map_err(backend)?;
+        tx.commit().map_err(backend)
+    }
+
+    async fn snapshot_files(&self) -> Result<Vec<SnapshotFile>, StoreError> {
+        let conn = self.conn.borrow();
+        let mut st = conn.prepare(SELECT_SNAPSHOT_FILES).map_err(backend)?;
+        let rows = st.query_map([], row_to_snapshot).map_err(backend)?;
+        rows.collect::<Result<_, _>>().map_err(backend)
+    }
+
+    async fn snapshot_file(&self, name: &str) -> Result<Option<SnapshotFile>, StoreError> {
+        let conn = self.conn.borrow();
+        let mut st = conn.prepare(SELECT_SNAPSHOT_FILE).map_err(backend)?;
+        let mut rows = st
+            .query_map(params![name], row_to_snapshot)
+            .map_err(backend)?;
+        rows.next().transpose().map_err(backend)
+    }
+
+    async fn snapshot_json(&self, name: &str) -> Result<Option<String>, StoreError> {
+        let conn = self.conn.borrow();
+        let mut st = conn.prepare(SELECT_SNAPSHOT_JSON).map_err(backend)?;
+        let mut rows = st.query_map(params![name], |r| r.get(0)).map_err(backend)?;
+        rows.next().transpose().map_err(backend)
+    }
+
+    async fn entries(&self, dataset: &str) -> Result<Vec<ItemSummary>, StoreError> {
+        let conn = self.conn.borrow();
+        let mut st = conn.prepare(SELECT_ENTRIES).map_err(backend)?;
+        let rows = st
+            .query_map(params![dataset], |r| {
+                Ok(ItemSummary {
+                    item_id: r.get(0)?,
+                    title: r.get(1)?,
+                    subtitle: r.get(2)?,
+                    jlpt: r.get(3)?,
+                    parts: r.get(4)?,
+                })
+            })
+            .map_err(backend)?;
+        rows.collect::<Result<_, _>>().map_err(backend)
+    }
+
+    async fn entry(
+        &self,
+        dataset: &str,
+        item_id: &str,
+    ) -> Result<Option<(String, String)>, StoreError> {
+        let conn = self.conn.borrow();
+        let mut st = conn.prepare(SELECT_ENTRY).map_err(backend)?;
+        let mut rows = st
+            .query_map(params![dataset, item_id], |r| Ok((r.get(0)?, r.get(1)?)))
+            .map_err(backend)?;
+        rows.next().transpose().map_err(backend)
     }
 }

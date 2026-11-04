@@ -77,9 +77,18 @@ fn every_entry_and_stable_id_slot_becomes_a_row() {
 #[test]
 fn sub_item_counts_match_pythons_id_slots() {
     // len(stable_ids.id_slots(name, doc)) on today's data, so a missed or extra slot kind shows up.
-    for (file, slots) in [(DataFile::Verbs, 620), (DataFile::Counters, 325), (DataFile::Grammar, 412)] {
+    for (file, slots) in [
+        (DataFile::Verbs, 620),
+        (DataFile::Counters, 325),
+        (DataFile::Grammar, 412),
+    ] {
         let rows = extract(file, &real(file)).unwrap();
-        assert_eq!(rows.iter().filter(|r| r.kind != Kind::Entry).count(), slots, "{}", file.name());
+        assert_eq!(
+            rows.iter().filter(|r| r.kind != Kind::Entry).count(),
+            slots,
+            "{}",
+            file.name()
+        );
     }
 }
 

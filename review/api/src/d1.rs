@@ -1,10 +1,8 @@
 //! The `Store` over D1, with the SQL from `store.rs`. Each change and its audit row go in one batch, which
 //! D1 runs as a transaction.
 
-use crate::store::{
-    NewUser, Role, Store, StoreError, User, INSERT_AUDIT, INSERT_USER, SELECT_USER, SELECT_USERS,
-    UPDATE_ACTIVE, UPDATE_DISPLAY_NAME,
-};
+use crate::items::ItemRow;
+use crate::store::*;
 use serde::Deserialize;
 use worker::wasm_bindgen::JsValue;
 use worker::D1Database;
@@ -147,5 +145,111 @@ impl Store for D1Store {
         let log = audit(&self.db, now, actor, "user.name", email, &detail)?;
         self.db.batch(vec![update, log]).await.map_err(backend)?;
         Ok(())
+    }
+
+    async fn replace_snapshot(
+        &self,
+        file: &SnapshotFile,
+        json: Option<&str>,
+        rows: &[ItemRow],
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let rows_json =
+            serde_json::to_string(rows).map_err(|e| StoreError::Backend(e.to_string()))?;
+        let name: JsValue = file.name.as_str().into();
+        let delete = self
+            .db
+            .prepare(DELETE_ITEMS)
+            .bind(std::slice::from_ref(&name))
+            .map_err(backend)?;
+        let insert = self
+            .db
+            .prepare(INSERT_ITEMS)
+            .bind(&[name.clone(), rows_json.into()])
+            .map_err(backend)?;
+        let optional = |v: Option<&str>| v.map(JsValue::from).unwrap_or(JsValue::NULL);
+        let upsert = self
+            .db
+            .prepare(UPSERT_SNAPSHOT_FILE)
+            .bind(&[
+                name,
+                file.version.as_str().into(),
+                file.sha256.as_str().into(),
+                optional(file.git_ref.as_deref()),
+                JsValue::from(file.item_count),
+                file.imported_at.as_str().into(),
+                file.imported_by.as_str().into(),
+                optional(json),
+            ])
+            .map_err(backend)?;
+        let target = format!("{}.json", file.name);
+        let detail = format!("version={}", file.version);
+        let log = audit(&self.db, now, actor, "snapshot.import", &target, &detail)?;
+        self.db
+            .batch(vec![delete, insert, upsert, log])
+            .await
+            .map_err(backend)?;
+        Ok(())
+    }
+
+    async fn snapshot_files(&self) -> Result<Vec<SnapshotFile>, StoreError> {
+        let result = self
+            .db
+            .prepare(SELECT_SNAPSHOT_FILES)
+            .all()
+            .await
+            .map_err(backend)?;
+        result.results().map_err(backend)
+    }
+
+    async fn snapshot_file(&self, name: &str) -> Result<Option<SnapshotFile>, StoreError> {
+        let statement = self
+            .db
+            .prepare(SELECT_SNAPSHOT_FILE)
+            .bind(&[name.into()])
+            .map_err(backend)?;
+        statement.first::<SnapshotFile>(None).await.map_err(backend)
+    }
+
+    async fn snapshot_json(&self, name: &str) -> Result<Option<String>, StoreError> {
+        let statement = self
+            .db
+            .prepare(SELECT_SNAPSHOT_JSON)
+            .bind(&[name.into()])
+            .map_err(backend)?;
+        statement
+            .first::<String>(Some("json"))
+            .await
+            .map_err(backend)
+    }
+
+    async fn entries(&self, dataset: &str) -> Result<Vec<ItemSummary>, StoreError> {
+        let statement = self
+            .db
+            .prepare(SELECT_ENTRIES)
+            .bind(&[dataset.into()])
+            .map_err(backend)?;
+        let result = statement.all().await.map_err(backend)?;
+        result.results().map_err(backend)
+    }
+
+    async fn entry(
+        &self,
+        dataset: &str,
+        item_id: &str,
+    ) -> Result<Option<(String, String)>, StoreError> {
+        #[derive(serde::Deserialize)]
+        struct EntryRow {
+            json: String,
+            content_hash: String,
+        }
+        let statement = self
+            .db
+            .prepare(SELECT_ENTRY)
+            .bind(&[dataset.into(), item_id.into()])
+            .map_err(backend)?;
+        let row = statement.first::<EntryRow>(None).await.map_err(backend)?;
+        Ok(row.map(|r| (r.json, r.content_hash)))
     }
 }
