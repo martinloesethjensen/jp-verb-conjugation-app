@@ -4,9 +4,37 @@
 use crate::access::{parse_certs, token_kid, AccessConfig, KeyCache};
 use crate::app::{handle, ApiRequest, ApiResponse, AppConfig};
 use crate::d1::D1Store;
+use crate::source::Source;
 use serde_json::json;
 use std::cell::RefCell;
-use worker::{event, js_sys, Context, Env, Fetch, Method, Request, Response, Result, Url};
+use worker::{
+    event, js_sys, Context, Env, Fetch, Headers, Method, Request, RequestInit, Response, Result,
+    Url,
+};
+
+/// Published files from raw.githubusercontent.com. Only the URLs `manifest.rs` builds are fetched.
+struct FetchSource;
+
+impl Source for FetchSource {
+    async fn get(&self, url: &str) -> std::result::Result<Vec<u8>, String> {
+        let fetch = async {
+            let headers = Headers::new();
+            headers.set("User-Agent", "kotobatable-review")?;
+            let mut init = RequestInit::new();
+            init.with_headers(headers);
+            let request = Request::new_with_init(url, &init)?;
+            let mut response = Fetch::Request(request).send().await?;
+            if response.status_code() != 200 {
+                return Err(worker::Error::RustError(format!(
+                    "{} {url}",
+                    response.status_code()
+                )));
+            }
+            response.bytes().await
+        };
+        fetch.await.map_err(|e| e.to_string())
+    }
+}
 
 thread_local! {
     static KEYS: RefCell<KeyCache> = RefCell::new(KeyCache::default());
@@ -83,9 +111,10 @@ async fn fetch(mut req: Request, env: Env, _ctx: Context) -> Result<Response> {
         method: method.to_string(),
         path: req.path(),
         origin,
+        query: req.url()?.query().unwrap_or_default().to_string(),
         jwt,
         body,
     };
     let store = D1Store { db: env.d1("DB")? };
-    respond(handle(api, &cfg, &keys, &store, now, &today).await)
+    respond(handle(api, &cfg, &keys, &store, &FetchSource, now, &today).await)
 }
