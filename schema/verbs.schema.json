@@ -67,6 +67,28 @@
         }
       }
     },
+    "collocation": {
+      "type": "object",
+      "required": [
+        "id",
+        "jp",
+        "en"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableId"
+        },
+        "jp": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "verb": {
       "type": "object",
       "required": [
@@ -127,6 +149,13 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/example"
+          }
+        },
+        "collocations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/collocation"
           }
         },
         "id": {

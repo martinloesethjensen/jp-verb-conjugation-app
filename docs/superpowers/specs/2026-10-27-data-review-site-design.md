@@ -130,7 +130,8 @@ Example sentences (in verbs, counters and grammar usages) and pitfalls are ident
 a list today, so a suggestion on "example 3 of 食べる" would point at the wrong sentence after an insert. Before
 the site: a data PR gives each of them a short stable `id`, `update_data.py` checks they are present and unique
 within their parent, and the app ignores the field. Verbs (`Verb.id`), counters, grammar points and words
-already have ids or a unique `dict`. Signed by the owner like any data change.
+already have ids or a unique `dict`. Signed by the owner like any data change. Verb collocations
+(`2026-10-29-verb-collocations-design.md`) carry the same kind of id from the start.
 
 ### D1 tables (*my call* on the details)
 

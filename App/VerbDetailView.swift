@@ -34,6 +34,7 @@ struct VerbDetailView: View {
                     JapaneseText(verb.description)
                         .font(.body)
                     formGroups
+                    CommonPhrasesCard(collocations: verb.collocations)
                     if let notes = verb.notes {
                         notesBox(notes)
                     }
