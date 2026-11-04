@@ -19,9 +19,27 @@ make review-test     # Worker tests (native), page type checks and tests, build,
 make review-build    # Worker bundle (review/api/build) and pages (review/web/build)
 ```
 
-For the pages, `npm run dev` in `review/web` serves them with a mock API (you're signed in as the owner;
-`MOCK_ROLE=reviewer npm run dev` signs you in as a reviewer). `npm run build && npm run preview` serves the
-built site, with its content security policy, against the same mock.
+For the pages, `npm run dev` in `review/web` serves them with a mock API that reads the repo's own `data/`
+(you're signed in as the owner; `MOCK_ROLE=reviewer npm run dev` signs you in as a reviewer, and
+`MOCK_LOADED=1` starts with the data already loaded). `npm run build && npm run preview` serves the built site,
+with its content security policy, against the same mock.
+
+## Deploying
+
+Both halves deploy themselves when main changes; CI never holds Cloudflare credentials.
+
+- **Pages** (`review/web`) is connected to the repo: Cloudflare builds and deploys pushes that touch
+  `review/web/`.
+- **Worker** (`review/api`) uses Workers Builds: Cloudflare builds and deploys pushes that touch `review/api/`.
+- **Database migrations** are manual. When a PR adds a file under `review/api/migrations/`, run
+  `npm run migrate` in `review/api` after it merges.
+
+## Loading data
+
+The site shows the published data, not the repo's working copy. After a data PR merges (and is signed), open
+**Reviewers → Published data → Load published data**. The Worker fetches each file from GitHub's main branch,
+checks your signature and each file's hash, and refuses a file that is older than the one already loaded. A
+refused file keeps its previous version, and the page shows why.
 
 Never do these:
 
@@ -50,8 +68,9 @@ Each step says what to do and what you should see.
    with the paths `admin` and `api/admin`. Session 24 hours. Login method: **GitHub only**. Policy "Owner":
    Allow, Include → Emails → the email on your GitHub account, and Require → Login Methods → GitHub. Copy its
    AUD tag as `ACCESS_ADMIN_AUD`. Access uses the most specific path, so `/admin` and `/api/admin/*` get this
-   application and everything else gets step 3's.
-5. **Worker secrets and deploy**, in `review/api`:
+   application and everything else gets step 3's. GitHub reports your **primary** email: use that one address
+   in both policies and in step 7, or the admin pages say "That account does not have access".
+5. **Worker secrets and first deploy**, in `review/api` (later deploys are automatic, see Deploying):
    ```bash
    npx wrangler secret put ACCESS_TEAM_DOMAIN   # yourteam.cloudflareaccess.com
    npx wrangler secret put ACCESS_AUD
@@ -60,7 +79,7 @@ Each step says what to do and what you should see.
    ```
    In the dashboard, Workers → `kotobatable-review-api` → Settings → Domains & Routes: the route
    `review.martinloeseth.dev/api/*` is there, and `workers.dev` and preview URLs are off.
-6. **Pages**, in `review/web`: `npm run build`, then
+6. **Pages** (first deploy; later ones are automatic once the project is connected to the repo), in `review/web`: `npm run build`, then
    `npx wrangler pages project create kotobatable-review --production-branch main` (once) and
    `npx wrangler pages deploy build --project-name kotobatable-review`. In the dashboard, add the custom
    domain `review.martinloeseth.dev` to the project, and turn preview deployments off (or put
