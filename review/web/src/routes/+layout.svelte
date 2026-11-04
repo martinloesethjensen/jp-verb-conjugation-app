@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import favicon from '#lib/assets/favicon.svg';
 	import { ApiError, getMe, type Me } from '#lib/api.ts';
-	import { setMe } from '#lib/session.ts';
+	import { setSession } from '#lib/session.ts';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
@@ -13,7 +13,7 @@
 	// Show "Loading…" only if sign-in takes a moment, so a fast load doesn't flash it.
 	let slow = $state(false);
 
-	setMe(() => me!);
+	setSession({ me: () => me!, update: (user) => (me = user) });
 
 	onMount(() => {
 		const timer = setTimeout(() => (slow = true), 300);
@@ -44,7 +44,7 @@
 			{#if me.role === 'admin'}
 				<a href="/admin" data-sveltekit-reload>Reviewers</a>
 			{/if}
-			<span class="who">{me.display_name}</span>
+			<a class="who" href="/account" title="Change your name">{me.display_name}</a>
 			<!-- Cloudflare Access's own endpoint: ends the sign-in for this hostname (reviewer and admin). -->
 			<a href="/cdn-cgi/access/logout" data-sveltekit-reload>Sign out</a>
 		</nav>
@@ -96,6 +96,12 @@
 
 	.who {
 		color: var(--muted);
+		text-decoration: none;
+	}
+
+	.who:hover {
+		color: var(--ink);
+		text-decoration: underline;
 	}
 
 	main {

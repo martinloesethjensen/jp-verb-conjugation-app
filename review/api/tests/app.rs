@@ -14,8 +14,9 @@ const ADMIN_ROUTES: [(&str, &str); 3] = [
     ("POST", "/api/admin/users"),
     ("POST", "/api/admin/users/active"),
 ];
-const ALL_ROUTES: [(&str, &str); 4] = [
+const ALL_ROUTES: [(&str, &str); 5] = [
     ("GET", "/api/me"),
+    ("POST", "/api/me/name"),
     ("GET", "/api/admin/users"),
     ("POST", "/api/admin/users"),
     ("POST", "/api/admin/users/active"),
@@ -401,4 +402,123 @@ async fn deactivating_and_reactivating() {
         .status,
         404
     );
+}
+
+async fn rename(
+    store: &SqliteStore,
+    jwt: String,
+    origin: Option<&str>,
+    body: Value,
+) -> ApiResponse {
+    call(
+        store,
+        req("POST", "/api/me/name", Some(jwt), origin, &body.to_string()),
+    )
+    .await
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_reviewer_can_change_their_own_name() {
+    let s = seeded().await;
+    let response = rename(
+        &s,
+        reviewer_token("aiko@example.com"),
+        Some(SITE),
+        json!({"display_name": "  Aiko S.  "}),
+    )
+    .await;
+    assert_eq!(response.status, 200);
+    assert_eq!(
+        response.body,
+        json!({"email": "aiko@example.com", "display_name": "Aiko S.", "role": "reviewer"})
+    );
+    let me = call(
+        &s,
+        req(
+            "GET",
+            "/api/me",
+            Some(reviewer_token("aiko@example.com")),
+            None,
+            "",
+        ),
+    )
+    .await;
+    assert_eq!(me.body["display_name"], json!("Aiko S."));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_owner_can_rename_from_either_application() {
+    let s = seeded().await;
+    assert_eq!(
+        rename(
+            &s,
+            reviewer_token(OWNER),
+            Some(SITE),
+            json!({"display_name": "Martin J."})
+        )
+        .await
+        .status,
+        200
+    );
+    assert_eq!(
+        rename(
+            &s,
+            admin_token(OWNER),
+            Some(SITE),
+            json!({"display_name": "Martin"})
+        )
+        .await
+        .status,
+        200
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn renaming_follows_the_usual_rules() {
+    let s = seeded().await;
+    let jwt = || reviewer_token("aiko@example.com");
+    let body = json!({"display_name": "Aiko"});
+    assert_eq!(rename(&s, jwt(), None, body.clone()).await.status, 403);
+    assert_eq!(
+        rename(&s, jwt(), Some("https://evil.example"), body.clone())
+            .await
+            .status,
+        403
+    );
+    for bad in [
+        json!({"display_name": ""}),
+        json!({"display_name": "   "}),
+        json!({"display_name": "x".repeat(41)}),
+        json!({"display_name": "Aiko", "email": "owner@example.com"}),
+        json!({}),
+    ] {
+        assert_eq!(
+            rename(&s, jwt(), Some(SITE), bad.clone()).await.status,
+            400,
+            "{bad}"
+        );
+    }
+    // Only ever your own name: the request names no one else, and the owner's name is unchanged.
+    let users = call(
+        &s,
+        req(
+            "GET",
+            "/api/admin/users",
+            Some(admin_token(OWNER)),
+            None,
+            "",
+        ),
+    )
+    .await;
+    assert!(users.body["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|u| u["display_name"] == "Martin"));
+    let no_token = call(
+        &s,
+        req("POST", "/api/me/name", None, Some(SITE), &body.to_string()),
+    )
+    .await;
+    assert_eq!(no_token.status, 401);
 }

@@ -43,6 +43,14 @@ function handler() {
 		if (path === '/me' && req.method === 'GET') {
 			return send(200, { email: me.email, display_name: me.display_name, role: me.role });
 		}
+		if (path === '/me/name' && req.method === 'POST') {
+			const name = String((await readJson(req)).display_name ?? '').trim();
+			if (!name || name.length > 40) {
+				return send(400, { error: 'the display name must be 1 to 40 characters' });
+			}
+			me.display_name = name;
+			return send(200, { email: me.email, display_name: me.display_name, role: me.role });
+		}
 		if (path?.startsWith('/admin/')) {
 			if (me.role !== 'admin') return send(403, { error: "this account can't do that" });
 			if (path === '/admin/users' && req.method === 'GET') return send(200, { users });

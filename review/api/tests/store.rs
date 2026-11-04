@@ -258,3 +258,34 @@ async fn admin_routes_need_the_admin_audience_and_role() {
         .await
         .is_ok());
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn renaming_writes_an_audit_row() {
+    let s = seeded().await;
+    s.set_display_name("aiko@example.com", "Aiko S.", "aiko@example.com", T0)
+        .await
+        .unwrap();
+    assert_eq!(
+        s.user("aiko@example.com")
+            .await
+            .unwrap()
+            .unwrap()
+            .display_name,
+        "Aiko S."
+    );
+    let last = audit_rows(&s).pop().unwrap();
+    assert_eq!(
+        last,
+        (
+            "aiko@example.com".into(),
+            "user.name".into(),
+            "aiko@example.com".into(),
+            "name=Aiko S.".into()
+        )
+    );
+    assert_eq!(
+        s.set_display_name("nobody@example.com", "X", OWNER, T0)
+            .await,
+        Err(StoreError::NotFound)
+    );
+}
