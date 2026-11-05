@@ -116,3 +116,4 @@ pub fn q(pairs: &[(&str, &str)]) -> String {
         .extend_pairs(pairs)
         .finish()
 }
+pub type Response = review_api::app::ApiResponse;

@@ -6,7 +6,7 @@ use crate::auth::Principal;
 use crate::data::DataFile;
 use crate::items::Kind;
 use crate::proposal::{build_change, check_furigana, MAX_TEXT};
-use crate::review_store::{NewSuggestion, QueueFilter, QueueItem, ReviewStore, Target};
+use crate::review_store::{NewSuggestion, QueueFilter, QueueItem, ReviewStore, Suggestion, Target};
 use crate::store::{Role, Store, StoreError};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
@@ -590,4 +590,169 @@ pub async fn queue_item<S: ReviewStore>(
         Err(StoreError::NotFound) => error(404, "that isn't in this queue"),
         Err(e) => unavailable(e),
     }
+}
+
+// --- The owner's inbox ---------------------------------------------------------------------------
+
+pub const ACCEPT_STALE: &str = "the data changed since this was suggested; use Edit then accept";
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DecideBody {
+    id: i64,
+    decision: String,
+    #[serde(default)]
+    edits: Option<Map<String, Value>>,
+    #[serde(default)]
+    furigana: Option<BTreeMap<String, String>>,
+    #[serde(default)]
+    reply: Option<String>,
+    #[serde(default)]
+    confirm: bool,
+}
+
+/// The target's current JSON, from its entry: null when it left the data.
+async fn current_json<S: Store>(
+    store: &S,
+    entries: &mut BTreeMap<(String, String), Option<Value>>,
+    s: &Suggestion,
+) -> Value {
+    let key = (s.dataset.clone(), s.entry_id.clone());
+    if !entries.contains_key(&key) {
+        let entry = store
+            .entry(&s.dataset, &s.entry_id)
+            .await
+            .ok()
+            .flatten()
+            .and_then(|(json, _)| serde_json::from_str::<Value>(&json).ok());
+        entries.insert(key.clone(), entry);
+    }
+    let Some(entry) = entries[&key].as_ref() else {
+        return Value::Null;
+    };
+    match Kind::parse(&s.kind) {
+        Some(Kind::Entry) => entry.clone(),
+        Some(kind) => crate::proposal::find_part(entry, kind, &s.item_id)
+            .cloned()
+            .unwrap_or(Value::Null),
+        None => Value::Null,
+    }
+}
+
+pub async fn inbox<S: Store + ReviewStore>(
+    status: Option<String>,
+    by: &Principal,
+    store: &S,
+) -> ApiResponse {
+    let status = status.unwrap_or_else(|| "open".into());
+    if !matches!(status.as_str(), "open" | "accepted" | "declined") {
+        return error(400, "status is open, accepted or declined");
+    }
+    let suggestions = tri!(store.inbox(&status, &by.email).await.map_err(unavailable));
+    let mut entries = BTreeMap::new();
+    let mut out = Vec::with_capacity(suggestions.len());
+    for s in suggestions {
+        let current = current_json(store, &mut entries, &s).await;
+        let mut value = json!(s);
+        value["current"] = current;
+        out.push(value);
+    }
+    ok(200, json!({ "suggestions": out }))
+}
+
+/// The warning for accepting the removal of a whole verb or word, which app data points at.
+fn removal_warning(s: &Suggestion) -> Option<String> {
+    let whole = s.action == "delete"
+        && s.kind == "entry"
+        && matches!(s.dataset.as_str(), "verbs" | "words");
+    whole.then(|| {
+        format!(
+            "Saved favourites, quiz history and widgets that point at {} will be dropped when this is exported.",
+            s.item_title
+        )
+    })
+}
+
+pub async fn decide<S: Store + ReviewStore>(
+    body: &[u8],
+    by: &Principal,
+    store: &S,
+    now: &str,
+) -> ApiResponse {
+    let body: DecideBody = tri!(parse(body));
+    let accept = match body.decision.as_str() {
+        "accept" => true,
+        "decline" => false,
+        _ => return error(400, "decision is accept or decline"),
+    };
+    let reply = tri!(text_field(body.reply.as_deref().unwrap_or(""), "reply"));
+    let s = match store.suggestion(body.id, &by.email).await {
+        Ok(Some(s)) => s,
+        Ok(None) => return error(404, "no such suggestion"),
+        Err(e) => return unavailable(e),
+    };
+    if s.status != "open" {
+        return error(409, DECIDED);
+    }
+    let edits = body.edits.filter(|e| !e.is_empty());
+    let mut warning = None;
+    let (mut admin_edit, mut furigana) = (None, None);
+    if accept {
+        if let Some(edits) = &edits {
+            let (file, kind, t) = tri!(target(&s.dataset, &s.kind, &s.item_id));
+            let (_, entry_id, _) = tri!(loaded_target(store, &t).await);
+            let (p, f, _) = tri!(
+                proposed_change(
+                    store,
+                    file,
+                    kind,
+                    &t,
+                    &entry_id,
+                    edits,
+                    body.furigana.as_ref()
+                )
+                .await
+            );
+            (admin_edit, furigana) = (Some(p), f);
+        } else if s.action == "change" && s.gone {
+            return error(404, NOT_LOADED_ITEM);
+        } else if s.action == "change" && s.stale {
+            return error(409, ACCEPT_STALE);
+        }
+        warning = removal_warning(&s);
+        if let Some(text) = &warning {
+            if !body.confirm {
+                return error(400, text);
+            }
+        }
+    } else if edits.is_some() || body.furigana.is_some() {
+        return error(400, "only an accept carries edits or readings");
+    }
+    match store
+        .decide(
+            s.id,
+            accept,
+            admin_edit.as_deref(),
+            furigana.as_deref(),
+            &by.email,
+            now,
+        )
+        .await
+    {
+        Ok(()) => {}
+        Err(StoreError::Conflict) => return error(409, DECIDED),
+        Err(StoreError::NotFound) => return error(404, "no such suggestion"),
+        Err(e) => return unavailable(e),
+    }
+    if !reply.is_empty() {
+        tri!(store
+            .add_comment(s.id, &reply, &by.email, now)
+            .await
+            .map_err(unavailable));
+    }
+    let mut response = suggestion_response(store, s.id, &by.email, 200).await;
+    if let Some(text) = warning {
+        response.body["warning"] = json!(text);
+    }
+    response
 }

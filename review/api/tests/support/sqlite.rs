@@ -603,6 +603,7 @@ impl ReviewStore for SqliteStore {
         id: i64,
         accept: bool,
         admin_edit_json: Option<&str>,
+        furigana_json: Option<&str>,
         by: &str,
         now: &str,
     ) -> Result<(), StoreError> {
@@ -620,7 +621,10 @@ impl ReviewStore for SqliteStore {
         };
         let tx = conn.transaction().map_err(backend)?;
         if tx
-            .execute(DECIDE, params![id, status, admin_edit_json, by, now])
+            .execute(
+                DECIDE,
+                params![id, status, admin_edit_json, by, now, furigana_json],
+            )
             .map_err(backend)?
             == 0
         {

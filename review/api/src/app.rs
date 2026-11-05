@@ -68,6 +68,8 @@ enum Handler {
     UpdateQueue,
     QueueNote,
     RemoveQueueItem,
+    Inbox,
+    Decide,
 }
 
 struct Route {
@@ -241,6 +243,18 @@ const ROUTES: &[Route] = &[
         need: Need::Admin,
         handler: Handler::RemoveQueueItem,
     },
+    Route {
+        method: "GET",
+        path: "/api/admin/inbox",
+        need: Need::Admin,
+        handler: Handler::Inbox,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/decide",
+        need: Need::Admin,
+        handler: Handler::Decide,
+    },
 ];
 
 pub const MAX_DISPLAY_NAME: usize = 40;
@@ -346,6 +360,10 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
             review_routes::queue_item(QueueItemAction::Remove, &req.body, &principal, store, today)
                 .await
         }
+        Handler::Inbox => {
+            review_routes::inbox(param(&req.query, "status"), &principal, store).await
+        }
+        Handler::Decide => review_routes::decide(&req.body, &principal, store, today).await,
     }
 }
 

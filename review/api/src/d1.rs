@@ -647,6 +647,7 @@ impl ReviewStore for D1Store {
         id: i64,
         accept: bool,
         admin_edit_json: Option<&str>,
+        furigana_json: Option<&str>,
         by: &str,
         now: &str,
     ) -> Result<(), StoreError> {
@@ -668,6 +669,7 @@ impl ReviewStore for D1Store {
                 maybe(admin_edit_json),
                 text(by),
                 text(now),
+                maybe(furigana_json),
             ],
         )?;
         let detail = if admin_edit_json.is_some() {

@@ -353,10 +353,11 @@ pub const SELECT_STATUS: &str = "SELECT status, author FROM suggestions WHERE id
 pub const WITHDRAW: &str =
     "UPDATE suggestions SET status = 'withdrawn', decided_at = ?3, decided_by = ?2 \
      WHERE id = ?1 AND author = ?2 AND status = 'open'";
-/// ?1 id, ?2 status, ?3 admin edit, ?4 by, ?5 now.
+/// ?1 id, ?2 status, ?3 admin edit, ?4 by, ?5 now, ?6 the owner's furigana (replaces the reviewer's
+/// when set).
 pub const DECIDE: &str =
-    "UPDATE suggestions SET status = ?2, admin_edit_json = ?3, decided_by = ?4, decided_at = ?5 \
-     WHERE id = ?1 AND status = 'open'";
+    "UPDATE suggestions SET status = ?2, admin_edit_json = ?3, decided_by = ?4, \
+     decided_at = ?5, furigana_json = IFNULL(?6, furigana_json) WHERE id = ?1 AND status = 'open'";
 /// ?1 suggestion, ?2 author, ?3 body, ?4 now.
 pub const INSERT_COMMENT: &str = "INSERT INTO comments (suggestion_id, author, body, created_at) \
      SELECT ?1, ?2, ?3, ?4 WHERE EXISTS (SELECT 1 FROM suggestions WHERE id = ?1)";
@@ -560,12 +561,14 @@ pub trait ReviewStore {
     async fn suggestion(&self, id: i64, viewer: &str) -> Result<Option<Suggestion>, StoreError>;
     /// `NotFound` unless the suggestion is open; `Conflict` if it isn't the author's.
     async fn withdraw(&self, id: i64, author: &str, now: &str) -> Result<(), StoreError>;
-    /// `NotFound` for an unknown id; `Conflict` unless it is open.
+    /// `NotFound` for an unknown id; `Conflict` unless it is open. `furigana_json`, when given, replaces
+    /// the readings the reviewer proposed.
     async fn decide(
         &self,
         id: i64,
         accept: bool,
         admin_edit_json: Option<&str>,
+        furigana_json: Option<&str>,
         by: &str,
         now: &str,
     ) -> Result<(), StoreError>;

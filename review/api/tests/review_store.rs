@@ -205,7 +205,7 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
         .unwrap()
         .0;
     assert_eq!(s.withdraw(a, BEN, T0).await, Err(StoreError::Conflict));
-    s.decide(a, true, Some(r#"{"a":2}"#), MARTIN, T0)
+    s.decide(a, true, Some(r#"{"a":2}"#), None, MARTIN, T0)
         .await
         .unwrap();
     let got = s.suggestion(a, MARTIN).await.unwrap().unwrap();
@@ -213,7 +213,7 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
     assert_eq!(got.admin_edit, Some(serde_json::json!({"a": 2})));
     assert_eq!(got.decided_at.as_deref(), Some(T0));
     assert_eq!(
-        s.decide(a, false, None, MARTIN, T0).await,
+        s.decide(a, false, None, None, MARTIN, T0).await,
         Err(StoreError::Conflict)
     );
 
@@ -222,11 +222,11 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
         .await
         .unwrap()
         .0;
-    s.decide(b, false, None, MARTIN, T0).await.unwrap();
+    s.decide(b, false, None, None, MARTIN, T0).await.unwrap();
     assert_eq!(s.withdraw(b, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(s.withdraw(9999, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(
-        s.decide(9999, true, None, MARTIN, T0).await,
+        s.decide(9999, true, None, None, MARTIN, T0).await,
         Err(StoreError::NotFound)
     );
 }
@@ -439,13 +439,13 @@ async fn every_write_is_audited() {
         .await
         .unwrap()
         .0;
-    s.decide(b, true, None, MARTIN, T0).await.unwrap();
+    s.decide(b, true, None, None, MARTIN, T0).await.unwrap();
     let c = s
         .add_suggestion(&change(&t, &h, r#"{"c":1}"#), AIKO, T0)
         .await
         .unwrap()
         .0;
-    s.decide(c, false, None, MARTIN, T0).await.unwrap();
+    s.decide(c, false, None, None, MARTIN, T0).await.unwrap();
     s.add_comment(c, "ok", MARTIN, T0).await.unwrap();
     let (q, ids) = four_word_queue(&s).await;
     s.update_queue(q, "x", "", false, MARTIN, T0).await.unwrap();
