@@ -6,8 +6,8 @@ use crate::auth::Principal;
 use crate::data::DataFile;
 use crate::items::Kind;
 use crate::proposal::{build_change, check_furigana, MAX_TEXT};
-use crate::review_store::{NewSuggestion, ReviewStore, Target};
-use crate::store::{Store, StoreError};
+use crate::review_store::{NewSuggestion, QueueFilter, QueueItem, ReviewStore, Target};
+use crate::store::{Role, Store, StoreError};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -371,6 +371,223 @@ pub async fn comment<S: ReviewStore>(
     {
         Ok(()) => suggestion_response(store, body.suggestion_id, &by.email, 201).await,
         Err(StoreError::NotFound) => error(404, "no such suggestion"),
+        Err(e) => unavailable(e),
+    }
+}
+
+// --- Queues --------------------------------------------------------------------------------------
+
+/// The most items in one queue, and the most pasted ids.
+pub const MAX_QUEUE: usize = 500;
+pub const MAX_QUEUE_TITLE: usize = 80;
+/// How many items a preview lists.
+const PREVIEW_ITEMS: usize = 50;
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct QueueRequest {
+    #[serde(default)]
+    title: String,
+    #[serde(default)]
+    description: String,
+    filter: QueueFilter,
+    #[serde(default)]
+    ids_text: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct QueueTargetBody {
+    queue_id: i64,
+    dataset: String,
+    kind: String,
+    id: String,
+    #[serde(default)]
+    note: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct QueueUpdateBody {
+    id: i64,
+    title: String,
+    description: String,
+    archived: bool,
+}
+
+/// The queue and its items as the viewer sees them; 404 when unknown, or archived for a reviewer.
+pub(crate) async fn queue_response<S: ReviewStore>(
+    store: &S,
+    id: i64,
+    by: &Principal,
+    status: u16,
+) -> ApiResponse {
+    match store.queue(id, &by.email).await {
+        Ok(Some((queue, _))) if queue.archived && by.role != Role::Admin => {
+            error(404, "no such queue")
+        }
+        Ok(Some((queue, items))) => ok(status, json!({ "queue": queue, "items": items })),
+        Ok(None) => error(404, "no such queue"),
+        Err(e) => unavailable(e),
+    }
+}
+
+pub async fn list_queues<S: ReviewStore>(
+    by: &Principal,
+    store: &S,
+    include_archived: bool,
+) -> ApiResponse {
+    match store.queues(&by.email, include_archived).await {
+        Ok(queues) => ok(200, json!({ "queues": queues })),
+        Err(e) => unavailable(e),
+    }
+}
+
+pub async fn get_queue<S: ReviewStore>(
+    id: Option<String>,
+    by: &Principal,
+    store: &S,
+) -> ApiResponse {
+    let Some(id) = id.and_then(|id| id.parse::<i64>().ok()) else {
+        return error(400, "which queue? (id is missing)");
+    };
+    queue_response(store, id, by, 200).await
+}
+
+/// The filter with the pasted ids added, and the pasted lines. The dataset must be browsable.
+fn queue_filter(
+    mut filter: QueueFilter,
+    ids_text: &str,
+) -> Result<(QueueFilter, Vec<String>), ApiResponse> {
+    target(&filter.dataset, "entry", "")?;
+    if filter.kinds.iter().any(|k| Kind::parse(k).is_none()) {
+        return Err(error(400, "unknown kind"));
+    }
+    let lines: Vec<String> = ids_text
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect();
+    if lines.len() > MAX_QUEUE {
+        return Err(error(400, "paste at most 500 ids"));
+    }
+    filter.ids.extend(lines.iter().cloned());
+    Ok((filter, lines))
+}
+
+/// The items a request picks, and the pasted lines that matched nothing.
+async fn picked<S: ReviewStore>(
+    store: &S,
+    request: QueueRequest,
+) -> Result<(QueueFilter, Vec<QueueItem>, Vec<String>, String, String), ApiResponse> {
+    let (filter, lines) = queue_filter(request.filter, &request.ids_text)?;
+    let items = store.preview_queue(&filter).await.map_err(unavailable)?;
+    let unmatched = lines
+        .into_iter()
+        .filter(|line| !items.iter().any(|i| &i.item_id == line))
+        .collect();
+    Ok((filter, items, unmatched, request.title, request.description))
+}
+
+pub async fn preview_queue<S: ReviewStore>(body: &[u8], store: &S) -> ApiResponse {
+    let request: QueueRequest = tri!(parse(body));
+    let (_, items, unmatched, _, _) = tri!(picked(store, request).await);
+    let first: Vec<&QueueItem> = items.iter().take(PREVIEW_ITEMS).collect();
+    ok(
+        200,
+        json!({ "count": items.len(), "items": first, "unmatched": unmatched }),
+    )
+}
+
+pub async fn create_queue<S: ReviewStore>(
+    body: &[u8],
+    by: &Principal,
+    store: &S,
+    now: &str,
+) -> ApiResponse {
+    let request: QueueRequest = tri!(parse(body));
+    let (filter, items, _, title, description) = tri!(picked(store, request).await);
+    let title = tri!(queue_title(&title));
+    let description = tri!(text_field(&description, "description"));
+    if items.is_empty() {
+        return error(400, "nothing matches");
+    }
+    if items.len() > MAX_QUEUE {
+        return error(400, "a queue holds at most 500 items; narrow the filter");
+    }
+    match store
+        .add_queue(&title, &description, &filter, &by.email, now)
+        .await
+    {
+        Ok(id) => queue_response(store, id, by, 201).await,
+        Err(e) => unavailable(e),
+    }
+}
+
+fn queue_title(raw: &str) -> Result<String, ApiResponse> {
+    let title = raw.trim();
+    if title.is_empty() {
+        return Err(error(400, "a queue needs a title"));
+    }
+    if title.chars().count() > MAX_QUEUE_TITLE {
+        return Err(error(400, "a queue title is at most 80 characters"));
+    }
+    Ok(title.to_string())
+}
+
+pub async fn update_queue<S: ReviewStore>(
+    body: &[u8],
+    by: &Principal,
+    store: &S,
+    now: &str,
+) -> ApiResponse {
+    let body: QueueUpdateBody = tri!(parse(body));
+    let title = tri!(queue_title(&body.title));
+    let description = tri!(text_field(&body.description, "description"));
+    match store
+        .update_queue(body.id, &title, &description, body.archived, &by.email, now)
+        .await
+    {
+        Ok(()) => queue_response(store, body.id, by, 200).await,
+        Err(StoreError::NotFound) => error(404, "no such queue"),
+        Err(e) => unavailable(e),
+    }
+}
+
+/// What a queue-item route does with its target.
+pub enum QueueItemAction {
+    Skip,
+    Note,
+    Remove,
+}
+
+pub async fn queue_item<S: ReviewStore>(
+    action: QueueItemAction,
+    body: &[u8],
+    by: &Principal,
+    store: &S,
+    now: &str,
+) -> ApiResponse {
+    let body: QueueTargetBody = tri!(parse(body));
+    let (_, _, t) = tri!(target(&body.dataset, &body.kind, &body.id));
+    let result = match action {
+        QueueItemAction::Skip => store.skip(body.queue_id, &t, &by.email, now).await,
+        QueueItemAction::Note => {
+            let note = tri!(text_field(body.note.as_deref().unwrap_or(""), "note"));
+            store
+                .set_queue_note(body.queue_id, &t, &note, &by.email, now)
+                .await
+        }
+        QueueItemAction::Remove => {
+            store
+                .remove_queue_item(body.queue_id, &t, &by.email, now)
+                .await
+        }
+    };
+    match result {
+        Ok(()) => queue_response(store, body.queue_id, by, 200).await,
+        Err(StoreError::NotFound) => error(404, "that isn't in this queue"),
         Err(e) => unavailable(e),
     }
 }

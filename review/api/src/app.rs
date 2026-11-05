@@ -9,7 +9,7 @@ use crate::auth::{authorize, normalize_email, Need, Principal};
 use crate::data::DataFile;
 use crate::items::{extract_slice, slices};
 use crate::manifest::{self, TRUSTED_KEYS};
-use crate::review_routes;
+use crate::review_routes::{self, QueueItemAction};
 use crate::review_store::ReviewStore;
 use crate::source::Source;
 use crate::store::{NewUser, Role, SnapshotFile, SnapshotLoad, Store, StoreError};
@@ -59,6 +59,15 @@ enum Handler {
     Suggest,
     WithdrawSuggestion,
     Comment,
+    Queues,
+    Queue,
+    Skip,
+    AdminQueues,
+    PreviewQueue,
+    CreateQueue,
+    UpdateQueue,
+    QueueNote,
+    RemoveQueueItem,
 }
 
 struct Route {
@@ -178,6 +187,60 @@ const ROUTES: &[Route] = &[
         need: Need::Reviewer,
         handler: Handler::Comment,
     },
+    Route {
+        method: "GET",
+        path: "/api/queues",
+        need: Need::Reviewer,
+        handler: Handler::Queues,
+    },
+    Route {
+        method: "GET",
+        path: "/api/queue",
+        need: Need::Reviewer,
+        handler: Handler::Queue,
+    },
+    Route {
+        method: "POST",
+        path: "/api/queue/skip",
+        need: Need::Reviewer,
+        handler: Handler::Skip,
+    },
+    Route {
+        method: "GET",
+        path: "/api/admin/queues",
+        need: Need::Admin,
+        handler: Handler::AdminQueues,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/queues/preview",
+        need: Need::Admin,
+        handler: Handler::PreviewQueue,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/queues",
+        need: Need::Admin,
+        handler: Handler::CreateQueue,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/queues/update",
+        need: Need::Admin,
+        handler: Handler::UpdateQueue,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/queues/note",
+        need: Need::Admin,
+        handler: Handler::QueueNote,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/queues/remove",
+        need: Need::Admin,
+        handler: Handler::RemoveQueueItem,
+    },
 ];
 
 pub const MAX_DISPLAY_NAME: usize = 40;
@@ -259,6 +322,30 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
             review_routes::withdraw_suggestion(&req.body, &principal, store, today).await
         }
         Handler::Comment => review_routes::comment(&req.body, &principal, store, today).await,
+        Handler::Queues => review_routes::list_queues(&principal, store, false).await,
+        Handler::Queue => {
+            review_routes::get_queue(param(&req.query, "id"), &principal, store).await
+        }
+        Handler::Skip => {
+            review_routes::queue_item(QueueItemAction::Skip, &req.body, &principal, store, today)
+                .await
+        }
+        Handler::AdminQueues => review_routes::list_queues(&principal, store, true).await,
+        Handler::PreviewQueue => review_routes::preview_queue(&req.body, store).await,
+        Handler::CreateQueue => {
+            review_routes::create_queue(&req.body, &principal, store, today).await
+        }
+        Handler::UpdateQueue => {
+            review_routes::update_queue(&req.body, &principal, store, today).await
+        }
+        Handler::QueueNote => {
+            review_routes::queue_item(QueueItemAction::Note, &req.body, &principal, store, today)
+                .await
+        }
+        Handler::RemoveQueueItem => {
+            review_routes::queue_item(QueueItemAction::Remove, &req.body, &principal, store, today)
+                .await
+        }
     }
 }
 
