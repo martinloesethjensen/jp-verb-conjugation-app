@@ -65,4 +65,54 @@ final class RouteTests: XCTestCase {
         XCTAssertNotEqual(Route.counter("x"), Route.counterGroup("x"))
         XCTAssertNotEqual(Route.verb("x"), Route.grammar("x"))
     }
+
+    // MARK: Pitfall anchor
+
+    private var pointWithPitfalls: GrammarPoint {
+        var point = GrammarFixture.points[0]
+        point.pitfalls = [
+            GrammarPitfall(heading: "First", explanation: "e"),
+            GrammarPitfall(heading: "Second", explanation: "e"),
+        ]
+        return point
+    }
+
+    func testAnchoredGrammarRouteResolvesToTheSameLesson() {
+        let points = [pointWithPitfalls]
+        XCTAssertEqual(
+            Route.grammar(GrammarPoint.nDesuID, pitfall: 1).resolve(verbs: [], grammarPoints: points),
+            .grammar(points[0])
+        )
+    }
+
+    func testPitfallAnchorIsTheIndexWhenTheLessonHasIt() {
+        let point = pointWithPitfalls
+        XCTAssertEqual(Route.grammar(point.id, pitfall: 0).pitfallAnchor(in: point), 0)
+        XCTAssertEqual(Route.grammar(point.id, pitfall: 1).pitfallAnchor(in: point), 1)
+    }
+
+    func testRoutesWithoutAnAnchorOpenAtTheTop() {
+        let point = pointWithPitfalls
+        XCTAssertNil(Route.grammar(point.id).pitfallAnchor(in: point))
+        XCTAssertNil(Route.verb(point.id).pitfallAnchor(in: point))
+    }
+
+    func testOutOfRangeOrForeignAnchorsAreIgnored() {
+        let point = pointWithPitfalls
+        XCTAssertNil(Route.grammar(point.id, pitfall: 2).pitfallAnchor(in: point))
+        XCTAssertNil(Route.grammar(point.id, pitfall: -1).pitfallAnchor(in: point))
+        XCTAssertNil(Route.grammar("wake-desu", pitfall: 0).pitfallAnchor(in: point))
+    }
+
+    func testWithoutAnchorDropsOnlyThePitfall() {
+        XCTAssertEqual(Route.grammar("x", pitfall: 3).withoutAnchor, .grammar("x"))
+        XCTAssertEqual(Route.grammar("x").withoutAnchor, .grammar("x"))
+        XCTAssertEqual(Route.counter("x").withoutAnchor, .counter("x"))
+    }
+
+    func testAnchoredAndPlainGrammarRoutesAreDistinct() {
+        XCTAssertEqual(Route.grammar("x"), Route.grammar("x", pitfall: nil))
+        XCTAssertNotEqual(Route.grammar("x"), Route.grammar("x", pitfall: 0))
+        XCTAssertNotEqual(Route.grammar("x", pitfall: 0), Route.grammar("x", pitfall: 1))
+    }
 }

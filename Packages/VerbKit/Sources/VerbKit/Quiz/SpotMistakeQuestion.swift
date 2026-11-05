@@ -56,7 +56,7 @@ public func buildSpotMistakeQuestions(
     let visible = mistakes.visible(in: levels)
     let countersByID = Dictionary(counters.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
     // Every mistake of a lesson counts as a source of correct sentences, whether or not it has a wrong form.
-    let examplesBySource = Dictionary(grouping: mistakes, by: \.source)
+    let examplesBySource = Dictionary(grouping: mistakes, by: \.source.withoutAnchor)
         .mapValues { $0.flatMap { $0.examples.map(\.jp) } }
 
     var questions: [SpotMistakeQuestion] = []
@@ -72,7 +72,7 @@ public func buildSpotMistakeQuestions(
             isReading = false
             let own = mistake.examples.map(\.jp)
             pool = sentenceChoices(own, excluding: wrong)
-            if pool.isEmpty { pool = sentenceChoices(examplesBySource[mistake.source] ?? [], excluding: wrong) }
+            if pool.isEmpty { pool = sentenceChoices(examplesBySource[mistake.source.withoutAnchor] ?? [], excluding: wrong) }
         }
         var seen: Set<String> = [wrong]
         let corrects = Array(pool.shuffled().filter { seen.insert($0).inserted }.prefix(2))

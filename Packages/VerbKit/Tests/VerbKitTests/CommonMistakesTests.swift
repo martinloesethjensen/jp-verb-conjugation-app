@@ -52,6 +52,21 @@ final class CommonMistakesTests: XCTestCase {
         }
     }
 
+    /// Every lesson pitfall routes to its own index, so the lesson opens at it; this covers
+    /// the particle pitfall (imperative#2) that is folded into Joining too.
+    func testLessonMistakesAnchorToTheirPitfall() throws {
+        let (grammar, counters) = try load()
+        for m in CommonMistakes.build(grammar: grammar, counters: counters) where !m.id.hasPrefix("counter:") {
+            let parts = m.id.split(separator: "#")
+            let point = try XCTUnwrap(grammar.first { $0.id == String(parts[0]) }, m.id)
+            XCTAssertEqual(m.source, .grammar(point.id, pitfall: Int(parts[1])), m.id)
+            XCTAssertEqual(m.source.pitfallAnchor(in: point), Int(parts[1]), m.id)
+        }
+        let particle = try XCTUnwrap(CommonMistakes.build(grammar: grammar, counters: counters).first { $0.id == "imperative#2" })
+        XCTAssertEqual(particle.theme, .joining)
+        XCTAssertEqual(particle.source, .grammar("imperative", pitfall: 2))
+    }
+
     func testCountersDefaultToReadingsWithExceptions() throws {
         let (grammar, counters) = try load()
         let all = CommonMistakes.build(grammar: grammar, counters: counters)
