@@ -35,6 +35,7 @@ struct ReviewStatusPill: View {
             .sheet(isPresented: $showingSheet) {
                 ReviewStatusSheet(item: item, review: review, checked: checked, unchecked: unchecked)
             }
+            .dismissOnLink { showingSheet = false }
         }
     }
 }
