@@ -1,7 +1,8 @@
 name: Review site
 
 # Builds and tests the review site: the Rust Worker (review/api) and the Svelte pages (review/web).
-# Deployment is manual (review/README.md); CI never holds Cloudflare credentials.
+# Deploys happen in Cloudflare (Pages and Workers Builds, see review/README.md); CI never holds
+# Cloudflare credentials.
 on:
   pull_request:
     paths: ["review/**", "schema/**", ".github/workflows/review.yml"]

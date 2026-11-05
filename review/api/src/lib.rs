@@ -3,6 +3,10 @@
 pub mod access;
 pub mod app;
 pub mod auth;
+pub mod data;
+pub mod items;
+pub mod manifest;
+pub mod source;
 pub mod store;
 
 #[cfg(target_arch = "wasm32")]

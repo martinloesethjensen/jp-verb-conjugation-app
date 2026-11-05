@@ -1,5 +1,21 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { addUser, ApiError, getMe, listUsers, setActive, setMyName } from './api.ts';
+import {
+	addUser,
+	ApiError,
+	DATASETS,
+	FILES,
+	getItem,
+	getMe,
+	getReference,
+	getSnapshot,
+	listItems,
+	listUsers,
+	beginLoad,
+	finishLoad,
+	loadSlice,
+	setActive,
+	setMyName
+} from './api.ts';
 
 function respond(status: number, body?: unknown) {
 	const fetch = vi.fn(async () =>
@@ -15,6 +31,9 @@ function respond(status: number, body?: unknown) {
 }
 
 afterEach(() => vi.unstubAllGlobals());
+
+/** The arguments `fetch` was called with (the stub declares none). */
+const calls = (fetch: ReturnType<typeof respond>) => fetch.mock.calls as unknown as unknown[][];
 
 describe('api', () => {
 	test('getMe returns the user', async () => {
@@ -114,5 +133,37 @@ describe('api', () => {
 			credentials: 'same-origin',
 			redirect: 'manual'
 		});
+	});
+
+	test('getItem encodes the dataset and id', async () => {
+		const fetch = respond(200, { dataset: 'verbs', version: '1.0.0', id: 'きる:切る', content_hash: 'x', item: {} });
+		await getItem('verbs', 'きる:切る');
+		expect(calls(fetch)[0][0]).toBe('/api/item?dataset=verbs&id=%E3%81%8D%E3%82%8B%3A%E5%88%87%E3%82%8B');
+	});
+
+	test('listItems, getSnapshot and getReference read their routes', async () => {
+		const fetch = respond(200, { dataset: 'words', version: '1.0.0', items: [], files: [], readings: {}, forms: {} });
+		await listItems('words');
+		await getSnapshot();
+		await getReference();
+		expect(calls(fetch).map((c) => c[0])).toEqual(['/api/items?dataset=words', '/api/snapshot', '/api/reference']);
+	});
+
+	test('a load is begin, each slice, then finish', async () => {
+		const fetch = respond(200, { load_id: 'verbs-1', file: 'verbs', version: '1.18.0', slices: 2 });
+		await beginLoad('verbs');
+		await loadSlice('verbs-1', 1);
+		await finishLoad('verbs-1');
+		const posts = calls(fetch).map((c) => [c[0], (c[1] as RequestInit).body]);
+		expect(posts).toEqual([
+			['/api/admin/snapshot/begin', '{"file":"verbs"}'],
+			['/api/admin/snapshot/slice', '{"load_id":"verbs-1","slice":1}'],
+			['/api/admin/snapshot/finish', '{"load_id":"verbs-1"}']
+		]);
+	});
+
+	test('datasets and files', () => {
+		expect(DATASETS).toEqual(['verbs', 'words', 'counters', 'grammar']);
+		expect(FILES).toEqual(['furigana', 'forms', 'words', 'counters', 'grammar', 'verbs']);
 	});
 });

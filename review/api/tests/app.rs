@@ -3,6 +3,7 @@ mod support;
 use review_api::app::{handle, ApiRequest, ApiResponse, AppConfig};
 use review_api::store::{NewUser, Role, Store};
 use serde_json::{json, Value};
+use support::source::FakeSource;
 use support::sqlite::SqliteStore;
 use support::*;
 
@@ -66,13 +67,23 @@ fn req(
         method: method.into(),
         path: path.into(),
         origin: origin.map(str::to_string),
+        query: String::new(),
         jwt,
         body: body.as_bytes().to_vec(),
     }
 }
 
 async fn call(store: &SqliteStore, request: ApiRequest) -> ApiResponse {
-    handle(request, &app_cfg(), &[jwk()], store, NOW, T0).await
+    handle(
+        request,
+        &app_cfg(),
+        &[jwk()],
+        store,
+        &FakeSource::empty(),
+        NOW,
+        T0,
+    )
+    .await
 }
 
 async fn post_admin(store: &SqliteStore, path: &str, body: Value) -> ApiResponse {
