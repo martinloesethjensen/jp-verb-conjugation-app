@@ -386,15 +386,15 @@ impl Store for D1Store {
         let optional = |v: Option<&str>| v.map(JsValue::from).unwrap_or(JsValue::NULL);
         let mut statements = vec![
             self.db
-                .prepare(DELETE_ITEMS)
-                .bind(std::slice::from_ref(&name))
+                .prepare(DELETE_ITEMS_FOR_LOAD)
+                .bind(&[name.clone(), id.clone()])
                 .map_err(backend)?,
             self.db
                 .prepare(INSERT_ITEMS_FROM_STAGING)
                 .bind(std::slice::from_ref(&id))
                 .map_err(backend)?,
             self.db
-                .prepare(UPSERT_SNAPSHOT_FILE)
+                .prepare(UPSERT_SNAPSHOT_FILE_FOR_LOAD)
                 .bind(&[
                     name,
                     file.version.as_str().into(),
@@ -404,17 +404,22 @@ impl Store for D1Store {
                     file.imported_at.as_str().into(),
                     file.imported_by.as_str().into(),
                     optional(json),
+                    id.clone(),
                 ])
                 .map_err(backend)?,
-            audit(
-                &self.db,
-                now,
-                actor,
-                "snapshot.import",
-                &format!("{}.json", file.name),
-                &format!("version={}", file.version),
-            )?,
+            self.db
+                .prepare(INSERT_AUDIT_FOR_LOAD)
+                .bind(&[
+                    now.into(),
+                    actor.into(),
+                    "snapshot.import".into(),
+                    format!("{}.json", file.name).into(),
+                    format!("version={}", file.version).into(),
+                    id.clone(),
+                ])
+                .map_err(backend)?,
         ];
+        // The load row goes last: while it exists every statement above applies, and afterwards none.
         for sql in [DELETE_STAGING, DELETE_SLICES, DELETE_LOAD] {
             statements.push(
                 self.db
@@ -423,7 +428,15 @@ impl Store for D1Store {
                     .map_err(backend)?,
             );
         }
-        self.db.batch(statements).await.map_err(backend)?;
+        let results = self.db.batch(statements).await.map_err(backend)?;
+        let deleted = results
+            .last()
+            .and_then(|r| r.meta().ok().flatten())
+            .and_then(|m| m.changes)
+            .unwrap_or(0);
+        if deleted == 0 {
+            return Err(StoreError::NotFound); // the load was gone: every statement was a no-op
+        }
         Ok(())
     }
 }

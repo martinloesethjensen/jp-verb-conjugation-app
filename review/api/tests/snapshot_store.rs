@@ -156,3 +156,89 @@ async fn imports_are_audited() {
         )
     );
 }
+
+fn load_of(file: DataFile, id: &str, bytes: &[u8]) -> review_api::store::SnapshotLoad {
+    review_api::store::SnapshotLoad {
+        load_id: id.into(),
+        name: file.name().into(),
+        version: version_of(file),
+        sha256: "abc".into(),
+        git_ref: None,
+        slices: review_api::items::slices(file, bytes).unwrap(),
+        started_by: OWNER.into(),
+        started_at: T0.into(),
+    }
+}
+
+async fn stage_all(
+    store: &SqliteStore,
+    load: &review_api::store::SnapshotLoad,
+    file: DataFile,
+    bytes: &[u8],
+) {
+    for (i, slice) in load.slices.iter().enumerate() {
+        let rows = review_api::items::extract_slice(file, bytes, slice).unwrap();
+        store.stage_slice(load, i as u32, &rows).await.unwrap();
+    }
+}
+
+fn count(store: &SqliteStore, table: &str) -> i64 {
+    store
+        .conn
+        .borrow()
+        .query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0))
+        .unwrap()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_finish_overtaken_by_a_newer_begin_changes_nothing() {
+    // finish A passed its checks; then begin B discarded A before A's batch ran.
+    let s = SqliteStore::new();
+    let bytes = real(DataFile::Words);
+    load(&s, DataFile::Words, &bytes).await;
+    let a = load_of(DataFile::Words, "words-a", &bytes);
+    s.begin_load(&a).await.unwrap();
+    stage_all(&s, &a, DataFile::Words, &bytes).await;
+    s.begin_load(&load_of(DataFile::Words, "words-b", &bytes))
+        .await
+        .unwrap();
+    let mut file = snapshot(DataFile::Words, &[]);
+    file.version = "99.0.0".into();
+    assert!(s.finish_load(&a, &file, None, OWNER, T0).await.is_err());
+    assert_eq!(
+        s.entries("words").await.unwrap().len(),
+        32,
+        "the loaded rows are untouched"
+    );
+    assert_eq!(
+        s.snapshot_file("words").await.unwrap().unwrap().version,
+        version_of(DataFile::Words)
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn finishing_the_same_load_twice_keeps_the_data() {
+    let s = SqliteStore::new();
+    let bytes = real(DataFile::Words);
+    let a = load_of(DataFile::Words, "words-a", &bytes);
+    s.begin_load(&a).await.unwrap();
+    stage_all(&s, &a, DataFile::Words, &bytes).await;
+    let file = snapshot(DataFile::Words, &[]);
+    s.finish_load(&a, &file, None, OWNER, T0).await.unwrap();
+    assert!(s.finish_load(&a, &file, None, OWNER, T0).await.is_err());
+    assert_eq!(s.entries("words").await.unwrap().len(), 32);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_slice_for_a_discarded_load_leaves_nothing_behind() {
+    let s = SqliteStore::new();
+    let bytes = real(DataFile::Words);
+    let a = load_of(DataFile::Words, "words-a", &bytes);
+    s.begin_load(&a).await.unwrap();
+    s.begin_load(&load_of(DataFile::Words, "words-b", &bytes))
+        .await
+        .unwrap(); // discards A
+    stage_all(&s, &a, DataFile::Words, &bytes).await;
+    assert_eq!(count(&s, "items_staging"), 0);
+    assert_eq!(count(&s, "snapshot_load_slices"), 0);
+}

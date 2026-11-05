@@ -350,12 +350,12 @@ impl Store for SqliteStore {
     ) -> Result<(), StoreError> {
         let mut conn = self.conn.borrow_mut();
         let tx = conn.transaction().map_err(backend)?;
-        tx.execute(DELETE_ITEMS, params![file.name])
+        tx.execute(DELETE_ITEMS_FOR_LOAD, params![file.name, load.load_id])
             .map_err(backend)?;
         tx.execute(INSERT_ITEMS_FROM_STAGING, params![load.load_id])
             .map_err(backend)?;
         tx.execute(
-            UPSERT_SNAPSHOT_FILE,
+            UPSERT_SNAPSHOT_FILE_FOR_LOAD,
             params![
                 file.name,
                 file.version,
@@ -364,24 +364,28 @@ impl Store for SqliteStore {
                 file.item_count,
                 file.imported_at,
                 file.imported_by,
-                json
+                json,
+                load.load_id
             ],
         )
         .map_err(backend)?;
         let target = format!("{}.json", file.name);
+        let detail = format!("version={}", file.version);
         tx.execute(
-            INSERT_AUDIT,
-            params![
-                now,
-                actor,
-                "snapshot.import",
-                target,
-                format!("version={}", file.version)
-            ],
+            INSERT_AUDIT_FOR_LOAD,
+            params![now, actor, "snapshot.import", target, detail, load.load_id],
         )
         .map_err(backend)?;
-        for sql in [DELETE_STAGING, DELETE_SLICES, DELETE_LOAD] {
-            tx.execute(sql, params![load.load_id]).map_err(backend)?;
+        tx.execute(DELETE_STAGING, params![load.load_id])
+            .map_err(backend)?;
+        tx.execute(DELETE_SLICES, params![load.load_id])
+            .map_err(backend)?;
+        if tx
+            .execute(DELETE_LOAD, params![load.load_id])
+            .map_err(backend)?
+            == 0
+        {
+            return Err(StoreError::NotFound); // every statement above was a no-op
         }
         tx.commit().map_err(backend)
     }

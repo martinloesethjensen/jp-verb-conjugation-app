@@ -679,11 +679,12 @@ pub async fn finish_load_with_keys<S: Store, R: Source>(
     store
         .finish_load(&load, &snapshot, json.as_deref(), actor, now)
         .await
-        .map_err(|_| {
-            (
+        .map_err(|e| match e {
+            StoreError::NotFound => (409, NOT_RUNNING.to_string()),
+            _ => (
                 500,
                 "couldn't save the data; the previous version is still loaded".to_string(),
-            )
+            ),
         })?;
     Ok(snapshot)
 }

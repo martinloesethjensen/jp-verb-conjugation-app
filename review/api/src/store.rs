@@ -128,13 +128,24 @@ pub const INSERT_STAGED: &str = "INSERT INTO items_staging (load_id, slice, data
      SELECT ?1, ?2, ?3, json_extract(value, '$.kind'), json_extract(value, '$.item_id'), json_extract(value, '$.parent_id'), \
      json_extract(value, '$.entry_id'), json_extract(value, '$.position'), json_extract(value, '$.title'), \
      json_extract(value, '$.subtitle'), json_extract(value, '$.jlpt'), json_extract(value, '$.content_hash'), \
-     json_extract(value, '$.json') FROM json_each(?4)";
-pub const INSERT_SLICE_DONE: &str =
-    "INSERT OR IGNORE INTO snapshot_load_slices (load_id, slice) VALUES (?1, ?2)";
+     json_extract(value, '$.json') FROM json_each(?4) WHERE EXISTS (SELECT 1 FROM snapshot_loads WHERE load_id = ?1)";
+pub const INSERT_SLICE_DONE: &str = "INSERT OR IGNORE INTO snapshot_load_slices (load_id, slice) \
+     SELECT ?1, ?2 WHERE EXISTS (SELECT 1 FROM snapshot_loads WHERE load_id = ?1)";
 pub const COUNT_SLICES_DONE: &str =
     "SELECT COUNT(*) AS done FROM snapshot_load_slices WHERE load_id = ?1";
+// finish's batch: every statement runs only while the load still exists, and the load row is deleted
+// last, so a finish overtaken by a newer begin (or run twice) changes nothing.
+pub const DELETE_ITEMS_FOR_LOAD: &str =
+    "DELETE FROM items WHERE dataset = ?1 AND EXISTS (SELECT 1 FROM snapshot_loads WHERE load_id = ?2)";
 pub const INSERT_ITEMS_FROM_STAGING: &str = "INSERT INTO items (dataset, kind, item_id, parent_id, entry_id, position, title, subtitle, jlpt, content_hash, json) \
-     SELECT dataset, kind, item_id, parent_id, entry_id, position, title, subtitle, jlpt, content_hash, json FROM items_staging WHERE load_id = ?1";
+     SELECT dataset, kind, item_id, parent_id, entry_id, position, title, subtitle, jlpt, content_hash, json FROM items_staging \
+     WHERE load_id = ?1 AND EXISTS (SELECT 1 FROM snapshot_loads WHERE load_id = ?1)";
+pub const UPSERT_SNAPSHOT_FILE_FOR_LOAD: &str = "INSERT OR REPLACE INTO snapshot_files \
+     (name, version, sha256, git_ref, item_count, imported_at, imported_by, json) \
+     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8 WHERE EXISTS (SELECT 1 FROM snapshot_loads WHERE load_id = ?9)";
+pub const INSERT_AUDIT_FOR_LOAD: &str =
+    "INSERT INTO audit_log (at, actor, action, target, detail) \
+     SELECT ?1, ?2, ?3, ?4, ?5 WHERE EXISTS (SELECT 1 FROM snapshot_loads WHERE load_id = ?6)";
 pub const DELETE_STAGING: &str = "DELETE FROM items_staging WHERE load_id = ?1";
 pub const DELETE_SLICES: &str = "DELETE FROM snapshot_load_slices WHERE load_id = ?1";
 pub const DELETE_LOAD: &str = "DELETE FROM snapshot_loads WHERE load_id = ?1";
@@ -191,7 +202,8 @@ pub trait Store {
     ) -> Result<(), StoreError>;
     async fn slices_done(&self, load_id: &str) -> Result<u32, StoreError>;
     /// In one batch: the staged rows replace the dataset's items, `snapshot_files` and the audit log
-    /// are updated, and the load and its staging are removed. On error nothing changes.
+    /// are updated, and the load and its staging are removed. `NotFound` (and no change at all) when
+    /// the load no longer exists, e.g. a newer begin discarded it or it was already finished.
     async fn finish_load(
         &self,
         load: &SnapshotLoad,
