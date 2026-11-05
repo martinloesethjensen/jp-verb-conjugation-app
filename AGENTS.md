@@ -135,6 +135,7 @@ Run `make` for the full list. Common ones:
 | `inlineSearch(...)` | Platform-correct search field placement |
 | `speakOnTap(_:)`, `SpeakButton` | Pronunciation UI |
 | `openRoute` environment action | Navigate to a `Route` from any view |
+| `dismissOnLink(_:)` | Close a read-only sheet or popover when a `verbtable://` link opens a page (not for editors or quizzes) |
 
 ## Duplication: intentional vs. backlog
 
