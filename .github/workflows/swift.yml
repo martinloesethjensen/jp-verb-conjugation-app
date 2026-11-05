@@ -1,18 +1,22 @@
 name: Swift
 
 # Builds VerbKit and runs its tests on macOS. VerbKit uses SwiftData and CryptoKit, so
-# it only builds on Apple platforms. The Real* tests read data/, so data changes run it too.
+# it only builds on Apple platforms. The Real* tests read data/, so data changes run it too,
+# except data/manifest.sig: no test reads it (the fetcher tests stub it), so a data-release
+# pull request, which only adds the signature, skips this workflow.
 on:
   pull_request:
     paths:
       - "Packages/**"
       - "data/**"
+      - "!data/manifest.sig"
       - ".github/workflows/swift.yml"
   push:
     branches: [main]
     paths:
       - "Packages/**"
       - "data/**"
+      - "!data/manifest.sig"
       - ".github/workflows/swift.yml"
 
 concurrency:
