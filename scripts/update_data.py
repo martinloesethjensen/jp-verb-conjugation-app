@@ -102,8 +102,12 @@ IRREGULAR_POTENTIAL = {"する": "できる", "くる": "こられる"}
 # and しれる is mostly heard in しれない / かもしれない. できる already means "can"
 # (×できられる). みえる, きこえる, あく (開く) and ふる (降る) happen by themselves, so
 # "can be seen" and the like make no sense (あける would also read as 開ける). くれる has
-# no potential (×くれられる); people say もらえる instead.
-NO_POTENTIAL = {"ある", "わかる", "しる", "つかれる", "できる", "みえる", "きこえる", "あく", "ふる", "くれる"}
+# no potential (×くれられる); people say もらえる instead. しまる, きえる, はじまる and つく (点く,
+# of lights) happen by themselves too, and 要る (いる:要る) is a need, not an action.
+# This table and the others below are keyed by verb id (verb_id), so a homophone such as
+# いる:要る gets its own entry instead of sharing いる's.
+NO_POTENTIAL = {"ある", "わかる", "しる", "つかれる", "できる", "みえる", "きこえる", "あく", "ふる", "くれる",
+                "しまる", "きえる", "はじまる", "つく:点く", "いる:要る"}
 
 # A potential verb is itself an ichidan verb, so its other forms are the
 # standard ichidan endings on its stem (the base form minus る), in JSON order.
@@ -164,6 +168,9 @@ IRREGULAR_OTHER_FORMS = {
 # - ふる (降る): no volitional, imperative or たい. The passive stays (雨に降られた, "caught in
 #   the rain") and so does the causative (雨を降らせる); the causative-passive does not.
 # - つく (着く): no passive or causative (つかせる reads as 付かせる / 落ち着かせる).
+# - しまる, きえる, はじまる, つく:点く (of lights) and いる:要る: not volitional, so like あく only
+#   the ば and たら conditionals (閉まれば, 要ったら). The harsh 消えろ ("get lost") is slang,
+#   left to the verb's note.
 PARTIAL_OTHER_FORMS = {
     "ある": {"volitional", "conditional_ba", "conditional_tara", "tai"},
     "わかる": {"causative", "causative_passive", "conditional_ba", "conditional_tara", "tai"},
@@ -180,6 +187,11 @@ PARTIAL_OTHER_FORMS = {
     "おくれる": {"causative", "conditional_ba", "conditional_tara"},
     "ふる": {"passive", "causative", "conditional_ba", "conditional_tara"},
     "つく": {"volitional", "conditional_ba", "conditional_tara", "imperative", "tai"},
+    "しまる": {"conditional_ba", "conditional_tara"},
+    "きえる": {"conditional_ba", "conditional_tara"},
+    "はじまる": {"conditional_ba", "conditional_tara"},
+    "つく:点く": {"conditional_ba", "conditional_tara"},
+    "いる:要る": {"conditional_ba", "conditional_tara"},
 }
 
 # Verbs whose imperative breaks the rule for their class. くれる is a ru-verb, but its imperative
@@ -222,9 +234,10 @@ def other_forms(verb):
             values["volitional"] = "あろう"
     else:
         raise ValueError(f"{dict_form}: unknown verb type '{kind}'")
-    if dict_form in IRREGULAR_IMPERATIVE:
-        values["imperative"] = IRREGULAR_IMPERATIVE[dict_form]
-    keep = PARTIAL_OTHER_FORMS.get(dict_form)
+    key = verb_id(verb)
+    if key in IRREGULAR_IMPERATIVE:
+        values["imperative"] = IRREGULAR_IMPERATIVE[key]
+    keep = PARTIAL_OTHER_FORMS.get(key)
     return {name: value for name, value in values.items() if keep is None or name in keep}
 
 
@@ -249,11 +262,15 @@ EXTRA_NEEDS = {
 # - くれる: ×くれなさい is not said, and くれるな ("don't give me") is literary at best. The
 #   imperative くれ stays.
 # - ふる (降る): the short causative-passive ふらされる is not said.
+# - いる:要る: the て-form patterns (×要ってもいい, ×要ってはいけない) are not said, and neither
+#   are the obligations (×要らなければならない). 要らなくてもいい and 要るなら stay.
 EXTRA_EXCLUDED = {
     "しぬ": {"nasai", "causative_passive_short"},
     "おわる": {"nasai", "neg_imperative"},
     "くれる": {"nasai", "neg_imperative"},
     "ふる": {"causative_passive_short"},
+    "いる:要る": {"neg_te", "te_mo_ii", "te_wa_ikenai", "te_cha_dame", "nakereba_naranai",
+                 "nakute_wa_ikenai", "nakya", "nakucha"},
 }
 
 
@@ -296,7 +313,7 @@ def extra_forms(verb, kept):
     # はなさせられる, never ×はなさされる. Ichidan verbs, する and くる have no short form.
     if verb["type"] == "u" and dict_form[-1] in A_ROW and dict_form[-1] != "す":
         values["causative_passive_short"] = dict_form[:-1] + A_ROW[dict_form[-1]] + "される"
-    excluded = EXTRA_EXCLUDED.get(dict_form, ())
+    excluded = EXTRA_EXCLUDED.get(verb_id(verb), ())
     return {
         name: value for name, value in values.items()
         if name not in excluded and (EXTRA_NEEDS.get(name) is None or EXTRA_NEEDS[name] in kept)
@@ -346,8 +363,8 @@ def in_catalogue_order(forms):
 # てみる): they get no such fields, and any stale ones are removed. They keep
 # the stem-based forms. This is the only hand-maintained part of the step;
 # extend it as verbs are added. いる takes none of them (×いている, ×いてしまう); its
-# stem-based forms (いすぎる, いながら) stay.
-NO_TE_AUXILIARIES = {"ある", "いる"}
+# stem-based forms (いすぎる, いながら) stay. Nor does 要る (×要っている, ×要ってしまう).
+NO_TE_AUXILIARIES = {"ある", "いる", "いる:要る"}
 
 # ている is the one auxiliary conjugated in full: the verb's て-form plus いる
 # conjugated as an ichidan verb, in JSON order.
@@ -425,7 +442,7 @@ def potential_base(verb):
     if the verb has no potential. Raises ValueError for a class or ending the
     rules don't cover, so bad data fails loudly instead of producing a guess."""
     dict_form = verb["dict"]
-    if dict_form in NO_POTENTIAL:
+    if verb_id(verb) in NO_POTENTIAL:
         return None
     kind = verb["type"]
     if kind == "ru":
@@ -488,7 +505,7 @@ def auxiliary_forms(verb):
     verb without the form it needs, so bad data fails loudly."""
     stem = masu_stem(verb)
     forms = {}
-    if verb["dict"] not in NO_TE_AUXILIARIES:
+    if verb_id(verb) not in NO_TE_AUXILIARIES:
         te = verb["forms"].get("te")
         if not isinstance(te, str) or not te:
             raise ValueError(f"{verb['dict']}: no te form to build the auxiliaries from")

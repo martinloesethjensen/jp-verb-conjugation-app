@@ -26,7 +26,7 @@ final class RealFormTransformTests: XCTestCase {
     }
 
     func testEveryStepGivesTheStoredSurface() throws {
-        XCTAssertEqual(Self.verbs.count, 84)
+        XCTAssertEqual(Self.verbs.count, 97)
         var rewrites = 0
         for verb in Self.verbs {
             let forms = Word(verb).forms
@@ -59,11 +59,12 @@ final class RealFormTransformTests: XCTestCase {
             }
         }
         // 108 steps for a verb with all four grids and the six register pairs (4 × 8 × 3 + 6 × 2);
-        // 84 without the potential grid (分かる, 知る, 疲れる, 出来る, 見える, 聞こえる, 開く, 降る).
-        // 76 verbs are written in kana and kanji; する, つける, もらう, なる and あげる in kana only,
-        // and くれる too, without the potential grid. ある has the basic and んです grids and three
-        // of the pairs: 54 steps; いる has no ている grid: 3 × 24 + 3 × 2 = 78 steps.
-        XCTAssertEqual(rewrites, 2 * (68 * 108 + 8 * 84) + 5 * 108 + 84 + 54 + 78)
+        // 84 without the potential grid (分かる, 知る, 疲れる, 出来る, 見える, 聞こえる, 開く, 降る,
+        // 閉まる, 消える, 始まる). 87 verbs are written in kana and kanji; する, つける, もらう, なる,
+        // あげる and かぶる in kana only, and くれる and つく (点く) too, without the potential grid.
+        // ある has the basic and んです grids and three of the pairs: 54 steps, and so does 要る, in
+        // both scripts; いる has no ている grid: 3 × 24 + 3 × 2 = 78 steps.
+        XCTAssertEqual(rewrites, 2 * (75 * 108 + 11 * 84) + 6 * 108 + 2 * 84 + 54 + 78 + 2 * 54)
     }
 
     // MARK: The golden sentences
@@ -138,9 +139,9 @@ final class RealFormTransformTests: XCTestCase {
         // The lessons teach many derived forms and chains, so fewer spans have chips.
         let tally = try tally("lens-lesson-sentences")
         XCTAssertEqual(tally, Tally(
-            spans: 267, withChips: 139, unavailable: [.noOneStepTransform: 120, .notInApp: 8],
-            rewrites: 315, disabled: [
-                .midSentence: 46, .explanatory: 3, .fixedBy(marker: "前に"): 3,
+            spans: 269, withChips: 142, unavailable: [.noOneStepTransform: 120, .notInApp: 7],
+            rewrites: 321, disabled: [
+                .midSentence: 47, .explanatory: 3, .fixedBy(marker: "前に"): 3,
                 .fixedBy(marker: "べき"): 18, .fixedBy(marker: "ほうがいい"): 18,
             ]
         ))

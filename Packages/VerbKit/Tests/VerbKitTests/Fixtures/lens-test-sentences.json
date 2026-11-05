@@ -218,7 +218,7 @@
     {
       "text": "電車の中で電話をかけないでください。", "set": "heldout",
       "verbs": [
-        {"surface": "かけないでください", "match": "notInApp"}
+        {"surface": "かけないでください", "verb": "かける", "match": "rule"}
       ]
     },
     {
