@@ -3,7 +3,7 @@
 /// Matching scans left to right. At each kanji it takes the longest key that
 /// matches the text from there: the key's kanji part can be any prefix of the
 /// kanji run (so 毎日学校 splits into 毎日 and 学校), and it may be followed by
-/// up to `maxOkuriganaInKey` kana that disambiguate the reading. The reading
+/// up to `maxOkuriganaInKey` hiragana that disambiguate the reading. The reading
 /// covers the kanji part only; the kana stay plain text, but the piece of kana
 /// right after a read kanji is glued to it (the okurigana), so a line never
 /// breaks between 食 and べる.
@@ -147,8 +147,15 @@ public struct FuriganaDictionary: Equatable, Sendable {
         var best: (total: Int, kanjiLength: Int, reading: String)?
         for kanjiLength in stride(from: runEnd - start, through: 1, by: -1) {
             let kanjiEnd = start + kanjiLength
-            // Kana can only follow the kanji part when it ends the whole run.
-            let maxSuffix = kanjiEnd == runEnd ? min(Self.maxOkuriganaInKey, chars.count - kanjiEnd) : 0
+            // Kana can only follow the kanji part when it ends the whole run, and only hiragana select a
+            // reading (as furigana.json keys allow). A counter example's whole-run key such as 何か月
+            // therefore never matches here, so its reading isn't drawn over 何 alone.
+            var hiraganaAfter = 0
+            while kanjiEnd + hiraganaAfter < chars.count, hiraganaAfter < Self.maxOkuriganaInKey,
+                  Self.isHiragana(chars[kanjiEnd + hiraganaAfter]) {
+                hiraganaAfter += 1
+            }
+            let maxSuffix = kanjiEnd == runEnd ? hiraganaAfter : 0
             for suffix in stride(from: maxSuffix, through: 0, by: -1) {
                 let key = String(chars[start..<(kanjiEnd + suffix)])
                 guard let reading = readings[key] else { continue }

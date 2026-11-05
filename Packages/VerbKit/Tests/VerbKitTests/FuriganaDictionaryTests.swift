@@ -48,6 +48,18 @@ final class FuriganaDictionaryTests: XCTestCase {
         XCTAssertEqual(dictionary.units(for: "来た"), [ruby("来", "き"), plain("た", glue: true)])
     }
 
+    func testOnlyHiraganaAfterTheKanjiSelectAReading() {
+        // A counter example's own readings key a whole counted run (何か月 → なんかげつ) for the data
+        // check; for display that key must not match, since か月 isn't a kana selector. The reading
+        // then comes from 何か (the か selects なん), and 月 is read on its own.
+        let dictionary = FuriganaDictionary(readings: ["何": "なに", "月": "げつ"])
+            .merging(["何か月": "なんかげつ", "何か": "なん"])
+        XCTAssertEqual(
+            dictionary.units(for: "何か月"),
+            [ruby("何", "なん"), plain("か", glue: true), ruby("月", "げつ")]
+        )
+    }
+
     func testTheLongestKeyWins() {
         XCTAssertEqual(dictionary.units(for: "遅れた"), [ruby("遅", "おく"), plain("れた", glue: true)])
         XCTAssertEqual(dictionary.units(for: "遅い"), [ruby("遅", "おそ"), plain("い", glue: true)])
