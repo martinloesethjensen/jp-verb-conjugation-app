@@ -3,7 +3,9 @@
 	// see the query, so it is read once the page is in the browser.
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { ApiError, DATASETS, getItem, type Dataset, type ItemResponse } from '#lib/api.ts';
+	import { ApiError, DATASETS, getItem, problem, type Dataset, type Field, type ItemResponse } from '#lib/api.ts';
+	import ReviewBar from '#lib/ReviewBar.svelte';
+	import { EntryReview } from '#lib/review.svelte.ts';
 	import Japanese from '#lib/Japanese.svelte';
 	import LevelPill from '#lib/LevelPill.svelte';
 	import Sentence from '#lib/Sentence.svelte';
@@ -18,6 +20,9 @@
 	let readings = $state<Record<string, string>>({});
 	let forms = $state<Record<string, string>>({});
 	let failure = $state<string | null>(null);
+	let fieldTable = $state<Record<string, Field[]>>({});
+	let review = $state<EntryReview | null>(null);
+	let reviewFailure = $state<string | null>(null);
 
 	const item = $derived((response?.item ?? {}) as Json);
 
@@ -30,6 +35,11 @@
 			return;
 		}
 		dataset = name as Dataset;
+		const entryReview = new EntryReview(dataset, id);
+		entryReview
+			.load()
+			.then(() => (review = entryReview))
+			.catch((error) => (reviewFailure = problem(error)));
 		getItem(dataset, id)
 			.then((r) => (response = r))
 			.catch((error) => {
@@ -38,6 +48,7 @@
 		loadReference().then((reference) => {
 			readings = reference.readings;
 			forms = reference.forms;
+			fieldTable = reference.fields;
 		});
 	});
 
@@ -53,13 +64,22 @@
 	<title>{title ?? 'Item'} · Kotoba Table review</title>
 </svelte:head>
 
+{#snippet bar(kind: string, id: string, value: Json, extra: Record<string, string> = {})}
+	{#if review && dataset}
+		<ReviewBar {review} {kind} {id} {value} fields={fieldTable[`${dataset}/${kind}`] ?? []} {readings} {forms} {extra} />
+	{/if}
+{/snippet}
+
 {#snippet examples(owner: Json, extraOf: (ex: Json) => Record<string, string> = (ex) => ex.readings ?? {})}
 	{#each list(owner.examples) as ex (ex.id)}
-		<Sentence id={ex.id} jp={ex.jp} en={ex.en} {readings} extra={extraOf(ex)} label={ex.form ? (forms[ex.form] ?? ex.form) : undefined} />
+		<div class="reviewable" id={ex.id}>
+			<Sentence jp={ex.jp} en={ex.en} {readings} extra={extraOf(ex)} label={ex.form ? (forms[ex.form] ?? ex.form) : undefined} />
+			{@render bar('example', ex.id, ex, extraOf(ex))}
+		</div>
 	{/each}
 {/snippet}
 
-{#snippet sections(heading: string, owner: Json, key: string)}
+{#snippet sections(heading: string, owner: Json, key: string, kind: string)}
 	{#if list(owner[key]).length}
 		<section class="card">
 			<h2>{heading}</h2>
@@ -71,6 +91,7 @@
 					</div>
 					<p><Japanese text={section.explanation} {readings} prose /></p>
 					{#if section.wrong}<p class="wrong">Not: <s lang="ja">{section.wrong}</s></p>{/if}
+					{@render bar(kind, section.id, section)}
 					{@render examples(section)}
 				</article>
 			{/each}
@@ -88,6 +109,7 @@
 		<h1><Japanese text={title} {readings} /></h1>
 		<LevelPill level={item.jlpt} />
 	</header>
+	{#if reviewFailure}<p class="notice" role="alert">Reviews couldn't be loaded: {reviewFailure}</p>{/if}
 
 	{#if dataset === 'verbs'}
 		<section class="card fields">
@@ -95,23 +117,33 @@
 			<p class="quiet">{item.label}</p>
 			{#if item.description}<p><Japanese text={item.description} {readings} prose /></p>{/if}
 			{#if item.notes}<p><Japanese text={item.notes} {readings} prose /></p>{/if}
+			{@render bar('entry', response.id, item)}
 		</section>
 		{#if list(item.examples).length}
 			<section class="card"><h2>Examples</h2>{@render examples(item)}</section>
 		{/if}
 		{#if list(item.collocations).length}
 			<section class="card">
-				<h2>Collocations</h2>
-				{#each list(item.collocations) as c (c.id)}<Sentence id={c.id} jp={c.jp} en={c.en} {readings} />{/each}
+				<h2>Common phrases</h2>
+				{#each list(item.collocations) as c (c.id)}
+					<div class="reviewable" id={c.id}>
+						<Sentence jp={c.jp} en={c.en} {readings} />
+						{@render bar('collocation', c.id, c)}
+					</div>
+				{/each}
 			</section>
 		{/if}
 	{:else if dataset === 'words'}
 		<section class="card fields">
 			<p class="subtitle">{item.meaning}</p>
 			<p class="quiet">{WORD_CLASSES[item.class] ?? item.class}</p>
+			{@render bar('entry', response.id, item)}
 		</section>
 	{:else if dataset === 'counters'}
-		<section class="card fields"><p class="subtitle">{item.meaning}</p></section>
+		<section class="card fields">
+			<p class="subtitle">{item.meaning}</p>
+			{@render bar('entry', response.id, item)}
+		</section>
 		{#if list(item.things).length}
 			<section class="card">
 				<h2>Things it counts</h2>
@@ -122,6 +154,7 @@
 							<span class="quiet" lang="ja">{thing.kana}</span>
 							<span>{thing.meaning}</span>
 							<span class="quiet">{FITS[thing.fit] ?? thing.fit}</span>
+							<div class="thing-review">{@render bar('thing', thing.id, thing)}</div>
 						</li>
 					{/each}
 				</ul>
@@ -130,7 +163,7 @@
 		{#if list(item.examples).length}
 			<section class="card"><h2>Examples</h2>{@render examples(item)}</section>
 		{/if}
-		{@render sections('Pitfalls', item, 'pitfalls')}
+		{@render sections('Pitfalls', item, 'pitfalls', 'pitfall')}
 		{#if list(item.questions).length}
 			<section class="card">
 				<h2>Questions</h2>
@@ -138,9 +171,12 @@
 			</section>
 		{/if}
 	{:else}
-		<section class="card fields"><p><Japanese text={item.summary} {readings} prose /></p></section>
-		{@render sections('Usages', item, 'usages')}
-		{@render sections('Pitfalls', item, 'pitfalls')}
+		<section class="card fields">
+			<p><Japanese text={item.summary} {readings} prose /></p>
+			{@render bar('entry', response.id, item)}
+		</section>
+		{@render sections('Usages', item, 'usages', 'usage')}
+		{@render sections('Pitfalls', item, 'pitfalls', 'pitfall')}
 		{#if list(item.contrasts).length}
 			<section class="card">
 				<h2>Compared with</h2>
@@ -256,6 +292,18 @@
 	}
 
 	.things li + li {
+		border-top: 1px solid var(--rule);
+	}
+
+	.thing-review {
+		flex-basis: 100%;
+	}
+
+	.reviewable {
+		padding-bottom: 0.5rem;
+	}
+
+	.reviewable + .reviewable {
 		border-top: 1px solid var(--rule);
 	}
 

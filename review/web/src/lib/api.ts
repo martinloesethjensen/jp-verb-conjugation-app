@@ -294,3 +294,13 @@ export const decide = (
 	decision: 'accept' | 'decline',
 	extra: Edits & { reply?: string; confirm?: boolean } = {}
 ) => request<Suggestion & { warning?: string }>('/api/admin/decide', { id, decision, ...extra });
+
+/** The message to show for a failed request. */
+export function problem(error: unknown): string {
+	return error instanceof ApiError ? error.message : FALLBACK;
+}
+
+/** Whether a failed request means the item changed since the page loaded. */
+export function isStale(error: unknown): boolean {
+	return error instanceof ApiError && error.status === 409;
+}

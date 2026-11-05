@@ -129,3 +129,65 @@ input:focus-visible {
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
+
+/* The 確認 seal's press: a stamp coming down onto the paper (Seal.svelte). */
+@keyframes seal-press {
+	0% {
+		opacity: 0;
+		transform: rotate(-4deg) scale(1.8);
+	}
+	60% {
+		opacity: 1;
+		transform: rotate(-4deg) scale(0.92);
+	}
+	100% {
+		transform: rotate(-4deg) scale(1);
+	}
+}
+
+/* The next queue card arriving (queue page). */
+@keyframes card-in {
+	from {
+		opacity: 0;
+		transform: translateX(1.5rem);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+textarea,
+select {
+	font: inherit;
+	color: inherit;
+	width: 100%;
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.45rem 0.6rem;
+	background: var(--card);
+}
+
+textarea:focus-visible,
+select:focus-visible {
+	border-color: var(--ink);
+}
+
+/* A link-looking button for quieter actions. */
+button.link {
+	border: none;
+	background: none;
+	padding: 0.35rem 0.25rem;
+	color: var(--muted);
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
+
+button.link:hover:not(:disabled) {
+	color: var(--ink);
+}
+
+button.small {
+	padding: 0.2rem 0.65rem;
+	font-size: 0.9rem;
+}

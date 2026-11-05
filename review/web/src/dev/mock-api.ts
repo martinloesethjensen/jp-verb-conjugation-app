@@ -126,6 +126,8 @@ function handler() {
 		};
 		const [path, query = ''] = (req.url ?? '').split('?');
 		const params = new URLSearchParams(query);
+		// Read once: a request body can only be consumed one time.
+		const body = req.method === 'POST' ? await readJson(req) : {};
 		const browsable = ['verbs', 'words', 'counters', 'grammar'];
 		if (path === '/snapshot' && req.method === 'GET') return send(200, { files: data.files() });
 		if (path === '/reference' && req.method === 'GET') return send(200, data.reference());
@@ -148,11 +150,10 @@ function handler() {
 			const contentHash = review.counts(dataset, id).hash;
 			return send(200, { dataset, version: data.version(dataset), id, content_hash: contentHash, item: found.json });
 		}
-		const reviewed = review.handle(path ?? '', req.method ?? 'GET', params, req.method === 'POST' ? await readJson(req) : {});
+		const reviewed = review.handle(path ?? '', req.method ?? 'GET', params, body);
 		if (reviewed) return send(reviewed[0], reviewed[1]);
 		if (path?.startsWith('/admin/snapshot/') && req.method === 'POST') {
 			if (me.role !== 'admin') return send(403, { error: "this account can't do that" });
-			const body = await readJson(req);
 			if (path === '/admin/snapshot/begin') {
 				const file = String(body.file ?? '');
 				if (!(FILES as readonly string[]).includes(file)) return send(400, { error: 'unknown data file' });
@@ -170,7 +171,7 @@ function handler() {
 			return send(200, { email: me.email, display_name: me.display_name, role: me.role });
 		}
 		if (path === '/me/name' && req.method === 'POST') {
-			const name = String((await readJson(req)).display_name ?? '').trim();
+			const name = String(body.display_name ?? '').trim();
 			if (!name || name.length > 40) {
 				return send(400, { error: 'the display name must be 1 to 40 characters' });
 			}
@@ -180,7 +181,6 @@ function handler() {
 		if (path?.startsWith('/admin/')) {
 			if (me.role !== 'admin') return send(403, { error: "this account can't do that" });
 			if (path === '/admin/users' && req.method === 'GET') return send(200, { users });
-			const body = await readJson(req);
 			if (path === '/admin/users' && req.method === 'POST') {
 				const email = String(body.email ?? '').trim().toLowerCase();
 				if (users.some((u) => u.email === email)) {
