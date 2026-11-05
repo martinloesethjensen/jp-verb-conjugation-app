@@ -268,7 +268,7 @@
     {
       "text": "会議は三時からのはずでしたが、まだ始まっていません。",
       "verbs": [
-        {"surface": "始まっていませ", "match": "notInApp"}
+        {"surface": "始まっていません", "verb": "はじまる", "match": "exact", "forms": ["teiru_masu_neg"]}
       ]
     },
     {
@@ -451,7 +451,7 @@
     {
       "text": "夜遅くに電話をかけるものではない。",
       "verbs": [
-        {"surface": "かける", "match": "homograph"},
+        {"surface": "かける", "verb": "かける", "match": "exact", "forms": ["short_pos"]},
         {"surface": "ない", "match": "notAVerb"}
       ]
     },
@@ -526,7 +526,7 @@
     {
       "text": "山田さんは風邪をひいたらしい。",
       "verbs": [
-        {"surface": "ひいた", "match": "notInApp"}
+        {"surface": "ひいた", "verb": "ひく:引く", "match": "exact", "forms": ["short_past"]}
       ]
     },
     {
@@ -923,7 +923,7 @@
     {
       "text": "私は風邪をひきやすいです。",
       "verbs": [
-        {"surface": "ひきやすいです", "match": "notInApp"}
+        {"surface": "ひきやすいです", "verb": "ひく:引く", "match": "exact", "forms": ["yasui_polite"]}
       ]
     },
     {

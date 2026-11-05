@@ -1322,8 +1322,9 @@ class OtherFormsTests(unittest.TestCase):
     def test_partial_forms_name_real_verbs_and_forms(self):
         data = json.loads((Path(__file__).resolve().parent.parent / "data" / "verbs.json")
                           .read_text(encoding="utf-8"))
-        self.assertTrue(set(ud.PARTIAL_OTHER_FORMS) <= {v["dict"] for v in data["verbs"]})
-        self.assertTrue(set(ud.NO_POTENTIAL) <= {v["dict"] for v in data["verbs"]})
+        ids = {ud.verb_id(v) for v in data["verbs"]}
+        for table in (ud.PARTIAL_OTHER_FORMS, ud.NO_POTENTIAL, ud.NO_TE_AUXILIARIES, ud.IRREGULAR_IMPERATIVE):
+            self.assertTrue(set(table) <= ids, set(table) - ids)
         for names in ud.PARTIAL_OTHER_FORMS.values():
             self.assertTrue(names <= set(ud.BASE_OTHER_FIELDS), names)
 
@@ -1421,7 +1422,13 @@ class ExtraFormsTests(unittest.TestCase):
             self.assertTrue(names <= extras, dict_form)
         data = json.loads((Path(__file__).resolve().parent.parent / "data" / "verbs.json")
                           .read_text(encoding="utf-8"))
-        self.assertTrue(set(ud.EXTRA_EXCLUDED) <= {v["dict"] for v in data["verbs"]})
+        self.assertTrue(set(ud.EXTRA_EXCLUDED) <= {ud.verb_id(v) for v in data["verbs"]})
+
+    def test_exception_tables_are_keyed_by_verb_id(self):
+        # 要る (いる:要る) is a u-verb with no potential; いる (to exist) is a ru-verb that has one.
+        iru_need = dict(potential_verb("いる", "u"), id="いる:要る")
+        self.assertIsNone(ud.potential_base(iru_need))
+        self.assertEqual(ud.potential_base(potential_verb("いる", "ru")), "いられる")
 
     def test_shinu_keeps_the_natural_forms_only(self):
         verb = everyday_verb("しぬ", "u", masu_pos="しにます", te="しんで",

@@ -28,6 +28,8 @@ enum LensStoplist {
     /// - みたい is 見る's たい, but not after an adjective or a noun (寒いみたい, 夢みたい).
     /// - Kana み… right after て is the auxiliary てみる of a verb the app lacks
     ///   (やってみます), not 見る.
+    /// - Kana しま… right after て or で is the auxiliary てしまう of a verb the app lacks
+    ///   (やってしまった), not 閉まる.
     static func excludes(verbID: String, surface: String, after before: Substring) -> Bool {
         switch verbID {
         case "ある":
@@ -40,6 +42,8 @@ enum LensStoplist {
                 return true
             }
             return last == "て"
+        case "しまる" where surface.hasPrefix("しま"):
+            return before.hasSuffix("て") || before.hasSuffix("で")
         default:
             return false
         }

@@ -36,10 +36,12 @@ public struct TeFormRule: Hashable, Sendable {
 }
 
 /// U-verbs in the data that end in -iru or -eru, so look like ru-verbs, as (kana, kanji).
-/// The kanji tells 切る (to cut, a u-verb) from 着る (to wear, a ru-verb).
+/// The kanji tells 切る (to cut, a u-verb) from 着る (to wear, a ru-verb), and 要る (to need,
+/// a u-verb) from いる (to be, a ru-verb).
 /// A test checks this list against the data.
 public enum RuLookalike {
     public static let all: [(kana: String, kanji: String)] = [
         ("はいる", "入る"), ("かえる", "帰る"), ("しる", "知る"), ("はしる", "走る"), ("きる", "切る"),
+        ("いる", "要る"),
     ]
 }

@@ -40,6 +40,6 @@ final class KanjiSpellingTests: XCTestCase {
                 spelled += 1
             }
         }
-        XCTAssertEqual(spelled, 5_286)
+        XCTAssertEqual(spelled, 5_978)
     }
 }

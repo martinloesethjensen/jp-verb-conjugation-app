@@ -32,37 +32,39 @@ final class RealFormIndexTests: XCTestCase {
                 XCTAssertTrue(index.hits(for: kanji).contains(FormHit(verbID: verb.id, formID: spec.id, script: .kanji)), "\(verb.id) \(spec.id) \(kanji)")
             }
         }
-        XCTAssertEqual(forms, 5_790)
-        XCTAssertEqual(index.statistics.forms, 5_790)
+        XCTAssertEqual(forms, 6_607)
+        XCTAssertEqual(index.statistics.forms, 6_607)
         XCTAssertEqual(index.statistics.spellingFailures, 0)
         // Kana only: 付ける and 貰う won't match until the data has their kanji. いる, なる, あげる
-        // and くれる are written in kana (居る, 成る, 上げる and 呉れる are rare or mean something else).
-        XCTAssertEqual(withoutKanji, ["する", "ある", "つける", "もらう", "いる", "なる", "あげる", "くれる"])
+        // and くれる are written in kana (居る, 成る, 上げる and 呉れる are rare or mean something else),
+        // and so are つく (点く, of lights) and かぶる (被る).
+        XCTAssertEqual(withoutKanji, ["する", "ある", "つける", "もらう", "いる", "なる", "あげる", "くれる",
+                                      "つく:点く", "かぶる"])
     }
 
     // MARK: Pinned counts
 
     func testSurfaceCountsArePinned() {
         let stats = index.statistics
-        XCTAssertEqual(Self.verbs.count, 84)
-        XCTAssertEqual(stats.surfaces, 10_805)
-        XCTAssertEqual(stats.kanaSurfaces, 5_562)
-        XCTAssertEqual(stats.kanjiSurfaces, 5_243)
-        XCTAssertEqual(stats.stems, 1_034)
+        XCTAssertEqual(Self.verbs.count, 97)
+        XCTAssertEqual(stats.surfaces, 12_158)
+        XCTAssertEqual(stats.kanaSurfaces, 6_224)
+        XCTAssertEqual(stats.kanjiSurfaces, 5_934)
+        XCTAssertEqual(stats.stems, 1_148)
         let surfaces = index.surfaces
         XCTAssertEqual(surfaces.map(\.count).min(), 2)
         XCTAssertEqual(surfaces.map(\.count).max(), 12)
         // 食べ… is a proper prefix of 食べた, 食べたい…: longest match has to choose.
         let prefixes = Set(surfaces.flatMap { surface in (1..<surface.count).map { String(surface.prefix($0)) } })
-        XCTAssertEqual(surfaces.filter(prefixes.contains).count, 1_936)
+        XCTAssertEqual(surfaces.filter(prefixes.contains).count, 2_188)
     }
 
     func testAmbiguityCountsArePinned() {
-        XCTAssertEqual(index.statistics.ambiguous, 270)
-        XCTAssertEqual(index.statistics.sameVerbAmbiguous, 44)
-        XCTAssertEqual(index.statistics.crossVerbAmbiguous, 226)
-        XCTAssertEqual(index.ambiguousSurfaces(.sameVerb).count, 44)
-        XCTAssertEqual(index.ambiguousSurfaces(.crossVerb).count, 226)
+        XCTAssertEqual(index.statistics.ambiguous, 421)
+        XCTAssertEqual(index.statistics.sameVerbAmbiguous, 46)
+        XCTAssertEqual(index.statistics.crossVerbAmbiguous, 375)
+        XCTAssertEqual(index.ambiguousSurfaces(.sameVerb).count, 46)
+        XCTAssertEqual(index.ambiguousSurfaces(.crossVerb).count, 375)
     }
 
     func testEverySameVerbAmbiguityIsPassiveEqualsPotential() {
@@ -80,7 +82,7 @@ final class RealFormIndexTests: XCTestCase {
         }
         XCTAssertEqual(families, [
             ["あう", "ある"]: 8,
-            ["いう", "いく"]: 23,
+            ["いう", "いく"]: 18,
             ["きる", "くる"]: 37,
             ["きる", "きる:切る"]: 8,
             ["よぶ", "よむ"]: 23,
@@ -95,6 +97,15 @@ final class RealFormIndexTests: XCTestCase {
             ["おく", "おきる"]: 14,
             ["する", "できる"]: 9,
             ["ふる", "おりる"]: 11,
+            // From #4's second batch. 引く and 弾く, and 点く and 着く, share every kana form;
+            // 要る shares いって, いった… with 言う and 行く, and いれば… with いる; 送る's potential
+            // おくれる is 遅れる, and 書く's potential かける is the verb かける.
+            ["ひく", "ひく:引く"]: 72,
+            ["つく", "つく:点く"]: 53,
+            ["いう", "いく", "いる:要る"]: 5,
+            ["いる", "いる:要る"]: 6,
+            ["おくる", "おくれる"]: 9,
+            ["かく", "かける"]: 9,
         ])
     }
 
@@ -111,7 +122,8 @@ final class RealFormIndexTests: XCTestCase {
         XCTAssertEqual(index.hits(for: "言った"), [FormHit(verbID: "いう", formID: "short_past", script: .kanji)])
         XCTAssertEqual(index.hits(for: "行った"), [FormHit(verbID: "いく", formID: "short_past", script: .kanji)])
         let kana = index.hits(for: "いった")
-        XCTAssertEqual(Set(kana.verbIDs), ["いう", "いく"])
+        // Kana いった is also 要る (いる:要る).
+        XCTAssertEqual(Set(kana.verbIDs), ["いう", "いく", "いる:要る"])
         XCTAssertEqual(kana.ambiguity, .crossVerb)
     }
 
