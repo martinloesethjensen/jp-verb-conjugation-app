@@ -144,6 +144,14 @@ pub struct HashRow {
     pub title: String,
 }
 
+/// One target of an entry, as `GET /api/review` lists it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Part {
+    pub kind: String,
+    pub item_id: String,
+    pub content_hash: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct IdRow {
     pub id: i64,
@@ -314,6 +322,9 @@ pub fn assemble(rows: Vec<SuggestionRow>, comments: Vec<CommentRow>) -> Vec<Sugg
 }
 
 // --- SQL ------------------------------------------------------------------------------------------
+
+/// ?1 dataset, ?2 entry id: the entry and its parts in file order.
+pub const SELECT_PARTS: &str = "SELECT kind, item_id, content_hash FROM items WHERE dataset = ?1 AND entry_id = ?2 ORDER BY position";
 
 pub const SELECT_HASH: &str = "SELECT content_hash, entry_id, title FROM items WHERE dataset = ?1 AND kind = ?2 AND item_id = ?3";
 
@@ -536,13 +547,16 @@ pub trait ReviewStore {
         now: &str,
     ) -> Result<(), StoreError>;
     async fn unapprove(&self, t: &Target, reviewer: &str, now: &str) -> Result<(), StoreError>;
-    /// Stores a suggestion, or returns the id of an identical open one by the same author.
+    /// The entry and its parts, in file order; empty when the entry isn't loaded.
+    async fn parts(&self, dataset: &str, entry_id: &str) -> Result<Vec<Part>, StoreError>;
+    /// Stores a suggestion and returns `(id, true)`, or `(id, false)` for an identical open one by the
+    /// same author.
     async fn add_suggestion(
         &self,
         s: &NewSuggestion,
         author: &str,
         now: &str,
-    ) -> Result<i64, StoreError>;
+    ) -> Result<(i64, bool), StoreError>;
     async fn suggestion(&self, id: i64, viewer: &str) -> Result<Option<Suggestion>, StoreError>;
     /// `NotFound` unless the suggestion is open; `Conflict` if it isn't the author's.
     async fn withdraw(&self, id: i64, author: &str, now: &str) -> Result<(), StoreError>;

@@ -553,12 +553,17 @@ impl ReviewStore for D1Store {
         Ok(())
     }
 
+    async fn parts(&self, dataset: &str, entry_id: &str) -> Result<Vec<Part>, StoreError> {
+        self.rows(SELECT_PARTS, &[text(dataset), text(entry_id)])
+            .await
+    }
+
     async fn add_suggestion(
         &self,
         s: &NewSuggestion,
         author: &str,
         now: &str,
-    ) -> Result<i64, StoreError> {
+    ) -> Result<(i64, bool), StoreError> {
         let t = &s.target;
         let existing: Vec<IdRow> = self
             .rows(
@@ -576,7 +581,7 @@ impl ReviewStore for D1Store {
             )
             .await?;
         if let Some(row) = existing.into_iter().next() {
-            return Ok(row.id);
+            return Ok((row.id, false));
         }
         let insert = self.statement(
             INSERT_SUGGESTION,
@@ -608,7 +613,7 @@ impl ReviewStore for D1Store {
             .results()
             .map_err(backend)?;
         ids.first()
-            .map(|r| r.id)
+            .map(|r| (r.id, true))
             .ok_or_else(|| StoreError::Backend("no id returned".into()))
     }
 

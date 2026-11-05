@@ -9,6 +9,8 @@ use crate::auth::{authorize, normalize_email, Need, Principal};
 use crate::data::DataFile;
 use crate::items::{extract_slice, slices};
 use crate::manifest::{self, TRUSTED_KEYS};
+use crate::review_routes;
+use crate::review_store::ReviewStore;
 use crate::source::Source;
 use crate::store::{NewUser, Role, SnapshotFile, SnapshotLoad, Store, StoreError};
 use serde::{Deserialize, Serialize};
@@ -51,6 +53,12 @@ enum Handler {
     ListUsers,
     AddUser,
     SetActive,
+    Review,
+    Approve,
+    WithdrawApproval,
+    Suggest,
+    WithdrawSuggestion,
+    Comment,
 }
 
 struct Route {
@@ -134,11 +142,47 @@ const ROUTES: &[Route] = &[
         need: Need::Admin,
         handler: Handler::SetActive,
     },
+    Route {
+        method: "GET",
+        path: "/api/review",
+        need: Need::Reviewer,
+        handler: Handler::Review,
+    },
+    Route {
+        method: "POST",
+        path: "/api/approve",
+        need: Need::Reviewer,
+        handler: Handler::Approve,
+    },
+    Route {
+        method: "POST",
+        path: "/api/approve/withdraw",
+        need: Need::Reviewer,
+        handler: Handler::WithdrawApproval,
+    },
+    Route {
+        method: "POST",
+        path: "/api/suggest",
+        need: Need::Reviewer,
+        handler: Handler::Suggest,
+    },
+    Route {
+        method: "POST",
+        path: "/api/suggest/withdraw",
+        need: Need::Reviewer,
+        handler: Handler::WithdrawSuggestion,
+    },
+    Route {
+        method: "POST",
+        path: "/api/comment",
+        need: Need::Reviewer,
+        handler: Handler::Comment,
+    },
 ];
 
 pub const MAX_DISPLAY_NAME: usize = 40;
 
-fn error(status: u16, message: &str) -> ApiResponse {
+pub(crate) fn error(status: u16, message: &str) -> ApiResponse {
     ApiResponse {
         status,
         body: json!({ "error": message }),
@@ -153,7 +197,7 @@ fn store_error(e: StoreError) -> ApiResponse {
     }
 }
 
-pub async fn handle<S: Store, R: Source>(
+pub async fn handle<S: Store + ReviewStore, R: Source>(
     req: ApiRequest,
     cfg: &AppConfig,
     keys: &[Jwk],
@@ -202,6 +246,19 @@ pub async fn handle<S: Store, R: Source>(
         },
         Handler::AddUser => add_user(&req.body, &principal, store, today).await,
         Handler::SetActive => set_active(&req.body, &principal, store, today).await,
+        Handler::Review => {
+            let (dataset, id) = (param(&req.query, "dataset"), param(&req.query, "id"));
+            review_routes::review(dataset, id, &principal, store).await
+        }
+        Handler::Approve => review_routes::approve(&req.body, &principal, store, today).await,
+        Handler::WithdrawApproval => {
+            review_routes::withdraw_approval(&req.body, &principal, store, today).await
+        }
+        Handler::Suggest => review_routes::suggest(&req.body, &principal, store, today).await,
+        Handler::WithdrawSuggestion => {
+            review_routes::withdraw_suggestion(&req.body, &principal, store, today).await
+        }
+        Handler::Comment => review_routes::comment(&req.body, &principal, store, today).await,
     }
 }
 
@@ -232,7 +289,7 @@ struct SetActiveBody {
     active: bool,
 }
 
-fn parse<T: for<'de> Deserialize<'de>>(body: &[u8]) -> Result<T, ApiResponse> {
+pub(crate) fn parse<T: for<'de> Deserialize<'de>>(body: &[u8]) -> Result<T, ApiResponse> {
     serde_json::from_slice(body).map_err(|_| error(400, "the request body is not valid"))
 }
 
@@ -364,7 +421,7 @@ async fn snapshot<S: Store>(store: &S) -> ApiResponse {
     }
 }
 
-async fn items<S: Store>(query: &str, store: &S) -> ApiResponse {
+async fn items<S: Store + ReviewStore>(query: &str, store: &S) -> ApiResponse {
     let file = match browsable(query) {
         Ok(file) => file,
         Err(response) => return response,
@@ -373,12 +430,32 @@ async fn items<S: Store>(query: &str, store: &S) -> ApiResponse {
         Ok(snapshot) => snapshot,
         Err(response) => return response,
     };
-    match store.entries(file.name()).await {
-        Ok(items) => ApiResponse {
-            status: 200,
-            body: json!({ "dataset": file.name(), "version": snapshot.version, "items": items }),
-        },
-        Err(e) => store_error(e),
+    let (entries, counts) = match (
+        store.entries(file.name()).await,
+        store.review_counts(file.name()).await,
+    ) {
+        (Ok(entries), Ok(counts)) => (entries, counts),
+        (Err(e), _) | (_, Err(e)) => return store_error(e),
+    };
+    let counts: std::collections::HashMap<String, (u32, u32)> = counts
+        .into_iter()
+        .map(|(id, approved, open)| (id, (approved, open)))
+        .collect();
+    let items: Vec<Value> = entries
+        .into_iter()
+        .map(|item| {
+            let (approved, open) = counts.get(&item.item_id).copied().unwrap_or((0, 0));
+            let targets = item.parts + 1;
+            let mut value = json!(item);
+            value["approved"] = json!(approved);
+            value["open"] = json!(open);
+            value["targets"] = json!(targets);
+            value
+        })
+        .collect();
+    ApiResponse {
+        status: 200,
+        body: json!({ "dataset": file.name(), "version": snapshot.version, "items": items }),
     }
 }
 
@@ -434,9 +511,13 @@ async fn reference<S: Store>(store: &S) -> ApiResponse {
             }
         }
     }
+    let fields: serde_json::Map<String, Value> = crate::proposal::editable_targets()
+        .into_iter()
+        .map(|(name, fields)| (name, json!(fields)))
+        .collect();
     ApiResponse {
         status: 200,
-        body: json!({ "readings": readings, "forms": forms }),
+        body: json!({ "readings": readings, "forms": forms, "fields": fields }),
     }
 }
 

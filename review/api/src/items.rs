@@ -35,6 +35,19 @@ impl Kind {
             Kind::Thing => "thing",
         }
     }
+
+    pub fn parse(text: &str) -> Option<Kind> {
+        [
+            Kind::Entry,
+            Kind::Example,
+            Kind::Collocation,
+            Kind::Usage,
+            Kind::Pitfall,
+            Kind::Thing,
+        ]
+        .into_iter()
+        .find(|k| k.as_str() == text)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

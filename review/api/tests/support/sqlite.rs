@@ -499,12 +499,17 @@ impl ReviewStore for SqliteStore {
         tx.commit().map_err(backend)
     }
 
+    async fn parts(&self, dataset: &str, entry_id: &str) -> Result<Vec<Part>, StoreError> {
+        let conn = self.conn.borrow();
+        query(&conn, SELECT_PARTS, params![dataset, entry_id])
+    }
+
     async fn add_suggestion(
         &self,
         s: &NewSuggestion,
         author: &str,
         now: &str,
-    ) -> Result<i64, StoreError> {
+    ) -> Result<(i64, bool), StoreError> {
         let t = &s.target;
         let mut conn = self.conn.borrow_mut();
         let existing: Vec<IdRow> = query(
@@ -522,7 +527,7 @@ impl ReviewStore for SqliteStore {
             ],
         )?;
         if let Some(row) = existing.into_iter().next() {
-            return Ok(row.id);
+            return Ok((row.id, false));
         }
         let tx = conn.transaction().map_err(backend)?;
         let id: i64 = tx
@@ -556,7 +561,7 @@ impl ReviewStore for SqliteStore {
         )
         .map_err(backend)?;
         tx.commit().map_err(backend)?;
-        Ok(id)
+        Ok((id, true))
     }
 
     async fn suggestion(&self, id: i64, viewer: &str) -> Result<Option<Suggestion>, StoreError> {

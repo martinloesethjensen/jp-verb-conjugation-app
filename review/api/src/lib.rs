@@ -7,6 +7,7 @@ pub mod data;
 pub mod items;
 pub mod manifest;
 pub mod proposal;
+pub mod review_routes;
 pub mod review_store;
 pub mod source;
 pub mod store;

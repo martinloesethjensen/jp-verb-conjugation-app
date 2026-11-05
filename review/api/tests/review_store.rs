@@ -147,16 +147,17 @@ async fn an_identical_open_suggestion_is_not_duplicated() {
     let t = target("words", "entry", II);
     let h = hash(&s, &t).await;
     let new = change(&t, &h, r#"{"meaning":"good"}"#);
-    let first = s.add_suggestion(&new, AIKO, T0).await.unwrap();
-    let second = s.add_suggestion(&new, AIKO, T0).await.unwrap();
+    let first = s.add_suggestion(&new, AIKO, T0).await.unwrap().0;
+    let second = s.add_suggestion(&new, AIKO, T0).await.unwrap().0;
     assert_eq!(first, second);
     let other = s
         .add_suggestion(&change(&t, &h, r#"{"meaning":"nice"}"#), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     assert_ne!(first, other);
     s.withdraw(first, AIKO, T0).await.unwrap();
-    let third = s.add_suggestion(&new, AIKO, T0).await.unwrap();
+    let third = s.add_suggestion(&new, AIKO, T0).await.unwrap().0;
     assert_ne!(first, third);
     let got = s.suggestion(third, AIKO).await.unwrap().unwrap();
     assert_eq!(got.author_name, "Aiko");
@@ -172,11 +173,13 @@ async fn stale_and_gone_are_computed_on_read() {
     let stale = s
         .add_suggestion(&change(&t, "old-hash", "{}"), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     let fresh = s
         .add_suggestion(&change(&t, &h, r#"{"a":1}"#), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     let got = s.suggestion(stale, BEN).await.unwrap().unwrap();
     assert!(got.stale && !got.gone);
     let got = s.suggestion(fresh, BEN).await.unwrap().unwrap();
@@ -199,7 +202,8 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
     let a = s
         .add_suggestion(&change(&t, &h, r#"{"a":1}"#), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     assert_eq!(s.withdraw(a, BEN, T0).await, Err(StoreError::Conflict));
     s.decide(a, true, Some(r#"{"a":2}"#), MARTIN, T0)
         .await
@@ -216,7 +220,8 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
     let b = s
         .add_suggestion(&change(&t, &h, r#"{"b":1}"#), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     s.decide(b, false, None, MARTIN, T0).await.unwrap();
     assert_eq!(s.withdraw(b, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(s.withdraw(9999, AIKO, T0).await, Err(StoreError::NotFound));
@@ -234,7 +239,8 @@ async fn comments_are_listed_in_order_with_names() {
     let a = s
         .add_suggestion(&change(&t, &h, r#"{"a":1}"#), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     s.add_comment(a, "Why?", MARTIN, T0).await.unwrap();
     s.add_comment(a, "Because.", AIKO, T0).await.unwrap();
     let got = s.suggestion(a, BEN).await.unwrap().unwrap();
@@ -425,17 +431,20 @@ async fn every_write_is_audited() {
     let a = s
         .add_suggestion(&change(&t, &h, "{}"), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     s.withdraw(a, AIKO, T0).await.unwrap();
     let b = s
         .add_suggestion(&change(&t, &h, "{}"), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     s.decide(b, true, None, MARTIN, T0).await.unwrap();
     let c = s
         .add_suggestion(&change(&t, &h, r#"{"c":1}"#), AIKO, T0)
         .await
-        .unwrap();
+        .unwrap()
+        .0;
     s.decide(c, false, None, MARTIN, T0).await.unwrap();
     s.add_comment(c, "ok", MARTIN, T0).await.unwrap();
     let (q, ids) = four_word_queue(&s).await;
