@@ -8,8 +8,8 @@ use crate::source::Source;
 use serde_json::json;
 use std::cell::RefCell;
 use worker::{
-    event, js_sys, Context, Env, Fetch, Headers, Method, Request, RequestInit, Response, Result,
-    Url,
+    event, js_sys, wasm_bindgen, wasm_bindgen_futures, Context, Env, Fetch, Headers, Method,
+    Request, RequestInit, Response, Result, Url,
 };
 
 /// Published files from raw.githubusercontent.com. Only the URLs `manifest.rs` builds are fetched.
@@ -34,6 +34,32 @@ impl Source for FetchSource {
         };
         fetch.await.map_err(|e| e.to_string())
     }
+
+    /// Web Crypto's SHA-256 runs as native code, so hashing a 370 KB file costs almost no request
+    /// CPU. Falls back to the wasm implementation if Web Crypto is somehow unavailable.
+    async fn sha256(&self, bytes: &[u8]) -> String {
+        match web_crypto_sha256(bytes).await {
+            Ok(hex) => hex,
+            Err(_) => crate::manifest::sha256_hex(bytes),
+        }
+    }
+}
+
+async fn web_crypto_sha256(bytes: &[u8]) -> std::result::Result<String, wasm_bindgen::JsValue> {
+    use js_sys::{Function, Promise, Reflect, Uint8Array};
+    use wasm_bindgen::JsCast;
+    let crypto = Reflect::get(&js_sys::global(), &"crypto".into())?;
+    let subtle = Reflect::get(&crypto, &"subtle".into())?;
+    let digest: Function = Reflect::get(&subtle, &"digest".into())?.dyn_into()?;
+    let promise: Promise = digest
+        .call2(&subtle, &"SHA-256".into(), &Uint8Array::from(bytes))?
+        .dyn_into()?;
+    let buffer = wasm_bindgen_futures::JsFuture::from(promise).await?;
+    Ok(Uint8Array::new(&buffer)
+        .to_vec()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect())
 }
 
 thread_local! {

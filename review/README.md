@@ -41,6 +41,11 @@ The site shows the published data, not the repo's working copy. After a data PR 
 checks your signature and each file's hash, and refuses a file that is older than the one already loaded. A
 refused file keeps its previous version, and the page shows why.
 
+Workers Free allows about 10 ms of CPU per request, so a big file loads in several requests: one to begin,
+one per slice of about 24 KB (verbs.json takes about 18), and one to finish, which swaps the new data in at
+once. Reviewers never see a half-loaded file. Closing the page mid-load leaves the previous version; press
+the button again.
+
 Never do these:
 
 - Add a sign-in bypass to the Worker, even for local development. Use the mock.

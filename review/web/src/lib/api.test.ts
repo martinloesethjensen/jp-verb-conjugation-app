@@ -10,7 +10,9 @@ import {
 	getSnapshot,
 	listItems,
 	listUsers,
-	loadFile,
+	beginLoad,
+	finishLoad,
+	loadSlice,
 	setActive,
 	setMyName
 } from './api.ts';
@@ -147,16 +149,17 @@ describe('api', () => {
 		expect(calls(fetch).map((c) => c[0])).toEqual(['/api/items?dataset=words', '/api/snapshot', '/api/reference']);
 	});
 
-	test('loadFile posts the file name to /api/admin/snapshot', async () => {
-		const fetch = respond(200, { name: 'verbs', version: '1.17.0' });
-		await loadFile('verbs');
-		expect(fetch).toHaveBeenCalledWith('/api/admin/snapshot', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: '{"file":"verbs"}',
-			credentials: 'same-origin',
-			redirect: 'manual'
-		});
+	test('a load is begin, each slice, then finish', async () => {
+		const fetch = respond(200, { load_id: 'verbs-1', file: 'verbs', version: '1.18.0', slices: 2 });
+		await beginLoad('verbs');
+		await loadSlice('verbs-1', 1);
+		await finishLoad('verbs-1');
+		const posts = calls(fetch).map((c) => [c[0], (c[1] as RequestInit).body]);
+		expect(posts).toEqual([
+			['/api/admin/snapshot/begin', '{"file":"verbs"}'],
+			['/api/admin/snapshot/slice', '{"load_id":"verbs-1","slice":1}'],
+			['/api/admin/snapshot/finish', '{"load_id":"verbs-1"}']
+		]);
 	});
 
 	test('datasets and files', () => {

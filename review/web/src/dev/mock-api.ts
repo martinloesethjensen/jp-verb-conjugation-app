@@ -131,10 +131,21 @@ function handler() {
 			if (!found) return send(404, { error: 'no such item' });
 			return send(200, { dataset, version: data.version(dataset), id, content_hash: 'mock', item: found.json });
 		}
-		if (path === '/admin/snapshot' && req.method === 'POST') {
+		if (path?.startsWith('/admin/snapshot/') && req.method === 'POST') {
 			if (me.role !== 'admin') return send(403, { error: "this account can't do that" });
-			const snapshot = data.load(String((await readJson(req)).file ?? ''));
-			return snapshot ? send(200, snapshot) : send(400, { error: 'unknown data file' });
+			const body = await readJson(req);
+			if (path === '/admin/snapshot/begin') {
+				const file = String(body.file ?? '');
+				if (!(FILES as readonly string[]).includes(file)) return send(400, { error: 'unknown data file' });
+				const slices = ['furigana', 'forms'].includes(file) ? 0 : Math.ceil(data.entries(file).length / 10);
+				return send(200, { load_id: `${file}-mock`, file, version: data.version(file), slices });
+			}
+			const file = String(body.load_id ?? '').replace(/-mock$/, '');
+			if (!(FILES as readonly string[]).includes(file)) {
+				return send(409, { error: 'this load is no longer running; start again' });
+			}
+			if (path === '/admin/snapshot/slice') return send(200, { load_id: body.load_id, slice: body.slice, rows: 10 });
+			if (path === '/admin/snapshot/finish') return send(200, data.load(file));
 		}
 		if (path === '/me' && req.method === 'GET') {
 			return send(200, { email: me.email, display_name: me.display_name, role: me.role });

@@ -110,4 +110,18 @@ export const getItem = (dataset: Dataset, id: string) =>
 
 export const getReference = () => request<Reference>('/api/reference');
 
-export const loadFile = (file: DataFileName) => request<SnapshotFile>('/api/admin/snapshot', { file });
+// Loading a file takes several requests (Workers Free allows ~10 ms of CPU each): begin, then each
+// slice, then finish, which swaps the new data in at once.
+export type LoadStarted = { load_id: string; file: DataFileName; version: string; slices: number };
+
+export const beginLoad = (file: DataFileName) =>
+	request<LoadStarted>('/api/admin/snapshot/begin', { file });
+
+export const loadSlice = (loadId: string, slice: number) =>
+	request<{ load_id: string; slice: number; rows: number }>('/api/admin/snapshot/slice', {
+		load_id: loadId,
+		slice
+	});
+
+export const finishLoad = (loadId: string) =>
+	request<SnapshotFile>('/api/admin/snapshot/finish', { load_id: loadId });

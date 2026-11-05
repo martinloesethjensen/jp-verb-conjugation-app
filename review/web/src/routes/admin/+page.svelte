@@ -5,7 +5,9 @@
 		FILES,
 		getSnapshot,
 		listUsers,
-		loadFile,
+		beginLoad,
+		finishLoad,
+		loadSlice,
 		setActive,
 		type DataFileName,
 		type SnapshotFile,
@@ -41,9 +43,14 @@
 		loading = true;
 		results = {};
 		for (const name of FILES) {
-			results[name] = 'Loading…';
+			results[name] = `Loading ${name}.json…`;
 			try {
-				const snapshot = await loadFile(name);
+				const started = await beginLoad(name);
+				for (let slice = 0; slice < started.slices; slice++) {
+					results[name] = `Loading ${name}.json: ${slice + 1} of ${started.slices}`;
+					await loadSlice(started.load_id, slice);
+				}
+				const snapshot = await finishLoad(started.load_id);
 				files = [...files.filter((f) => f.name !== name), snapshot];
 				results[name] = `Loaded ${snapshot.version}`;
 			} catch (error) {
