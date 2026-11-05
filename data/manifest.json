@@ -1,13 +1,13 @@
 {
-  "version": "1.19.0",
-  "sha256": "3b8498c0c4f1a8c46354ddc30eb1f1522ecac63865738ea9fa5b7e61407057e0",
+  "version": "1.20.0",
+  "sha256": "c67fe25469e381c7a96a3962647d6fc5882978bb25cdd7e7df59e5fc5a9ba80b",
   "grammar": {
     "version": "1.17.0",
     "sha256": "c8992cefac6944817ed32ef121531b43647a8808a7fc009dde5e1ed61855fc08"
   },
   "furigana": {
-    "version": "1.23.0",
-    "sha256": "e797b26770e4b009d5ff7d3aac93af82d5c5dd0d47e4e3aca1d05c72173b021b"
+    "version": "1.24.0",
+    "sha256": "2888d62ef44884afe1684bd1891752e0a3fb771ba5a405dabf90546d171343b3"
   },
   "words": {
     "version": "1.0.0",

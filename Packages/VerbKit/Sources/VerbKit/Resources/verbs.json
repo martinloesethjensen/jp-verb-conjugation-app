@@ -2644,7 +2644,13 @@
       "collocations": [
         { "id": "cykxug", "jp": "窓を開ける", "en": "open a window" },
         { "id": "nscirv", "jp": "ドアを開ける", "en": "open the door" }
-      ]
+      ],
+      "pair": {
+        "verb": "あく",
+        "transitivity": "transitive",
+        "jp": "ドアを開ける",
+        "en": "open the door"
+      }
     },
     {
       "type": "ru",
@@ -2736,7 +2742,13 @@
       "collocations": [
         { "id": "banwyg", "jp": "ドアを閉める", "en": "close the door" },
         { "id": "7dw83n", "jp": "窓を閉める", "en": "close a window" }
-      ]
+      ],
+      "pair": {
+        "verb": "しまる",
+        "transitivity": "transitive",
+        "jp": "窓を閉める",
+        "en": "close the window"
+      }
     },
     {
       "type": "ru",
@@ -2827,7 +2839,13 @@
         { "id": "gcguur", "jp": "電気をつける", "en": "turn on the light" },
         { "id": "bwcdzn", "jp": "テレビをつける", "en": "turn on the TV" },
         { "id": "e569en", "jp": "ネックレスをつける", "en": "put on a necklace" }
-      ]
+      ],
+      "pair": {
+        "verb": "つく:点く",
+        "transitivity": "transitive",
+        "jp": "電気をつける",
+        "en": "turn the light on"
+      }
     },
     {
       "type": "ru",
@@ -3195,7 +3213,13 @@
         { "id": "nfqvrx", "jp": "家を出る", "en": "leave the house" },
         { "id": "mhqkhk", "jp": "電話に出る", "en": "answer the phone" },
         { "id": "25ray6", "jp": "部屋を出る", "en": "leave the room" }
-      ]
+      ],
+      "pair": {
+        "verb": "だす",
+        "transitivity": "intransitive",
+        "jp": "声が出る",
+        "en": "a voice comes out"
+      }
     },
     {
       "type": "ru",
@@ -3286,7 +3310,13 @@
       "collocations": [
         { "id": "uge5pj", "jp": "お茶を入れる", "en": "make tea" },
         { "id": "vhbj3e", "jp": "かばんに入れる", "en": "put in one's bag" }
-      ]
+      ],
+      "pair": {
+        "verb": "はいる",
+        "transitivity": "transitive",
+        "jp": "箱に本を入れる",
+        "en": "put books in the box"
+      }
     },
     {
       "type": "ru",
@@ -3375,7 +3405,13 @@
         { "id": "awqntp", "form": "short_past", "jp": "勉強を始めた。", "en": "I started studying." },
         { "id": "7hr3br", "form": "teiru_masu_neg", "jp": "試験の勉強をまだ始めていません。", "en": "I haven't started studying for the exam yet." },
         { "id": "vkx7mr", "form": "volitional", "jp": "じゃあ、始めよう。", "en": "OK, let's start." }
-      ]
+      ],
+      "pair": {
+        "verb": "はじまる",
+        "transitivity": "transitive",
+        "jp": "会議を始める",
+        "en": "start the meeting"
+      }
     },
     {
       "type": "ru",
@@ -3999,7 +4035,13 @@
         { "id": "tgxksr", "jp": "お風呂に入る", "en": "take a bath" },
         { "id": "mgtvnm", "jp": "部屋に入る", "en": "enter a room" },
         { "id": "dhrpjh", "jp": "大学に入る", "en": "get into university" }
-      ]
+      ],
+      "pair": {
+        "verb": "いれる",
+        "transitivity": "intransitive",
+        "jp": "箱に本が入る",
+        "en": "the books go in the box"
+      }
     },
     {
       "type": "u",
@@ -5483,7 +5525,13 @@
         { "id": "8hwgut", "jp": "手紙を出す", "en": "send a letter" },
         { "id": "86batj", "jp": "ごみを出す", "en": "take out the rubbish" },
         { "id": "64gqvr", "jp": "宿題を出す", "en": "hand in homework" }
-      ]
+      ],
+      "pair": {
+        "verb": "でる",
+        "transitivity": "transitive",
+        "jp": "声を出す",
+        "en": "raise one's voice, speak up"
+      }
     },
     {
       "type": "u",
@@ -5576,7 +5624,13 @@
       "collocations": [
         { "id": "a3tr6n", "jp": "電気を消す", "en": "turn off the light" },
         { "id": "u8ubf8", "jp": "テレビを消す", "en": "turn off the TV" }
-      ]
+      ],
+      "pair": {
+        "verb": "きえる",
+        "transitivity": "transitive",
+        "jp": "電気を消す",
+        "en": "turn the light off"
+      }
     },
     {
       "type": "u",
@@ -7249,7 +7303,13 @@
       "collocations": [
         { "id": "9ggt7g", "jp": "店が開く", "en": "a shop opens" },
         { "id": "2qma4e", "jp": "ドアが開く", "en": "the door opens" }
-      ]
+      ],
+      "pair": {
+        "verb": "あける",
+        "transitivity": "intransitive",
+        "jp": "ドアが開く",
+        "en": "the door opens"
+      }
     },
     {
       "type": "u",
@@ -8239,7 +8299,13 @@
       "collocations": [
         { "id": "tx7y57", "jp": "ドアが閉まる", "en": "the door closes" },
         { "id": "vkf3mm", "jp": "店が閉まる", "en": "the shop closes" }
-      ]
+      ],
+      "pair": {
+        "verb": "しめる",
+        "transitivity": "intransitive",
+        "jp": "窓が閉まる",
+        "en": "the window closes"
+      }
     },
     {
       "type": "ru",
@@ -8313,7 +8379,13 @@
       "collocations": [
         { "id": "mvaic4", "jp": "電気が消える", "en": "the light goes out" },
         { "id": "dshh24", "jp": "火が消える", "en": "a fire goes out" }
-      ]
+      ],
+      "pair": {
+        "verb": "けす",
+        "transitivity": "intransitive",
+        "jp": "電気が消える",
+        "en": "the light goes off"
+      }
     },
     {
       "type": "u",
@@ -8388,7 +8460,13 @@
       "collocations": [
         { "id": "xrkxr6", "jp": "授業が始まる", "en": "class begins" },
         { "id": "biwf4c", "jp": "夏休みが始まる", "en": "the summer holidays begin" }
-      ]
+      ],
+      "pair": {
+        "verb": "はじめる",
+        "transitivity": "intransitive",
+        "jp": "会議が始まる",
+        "en": "the meeting starts"
+      }
     },
     {
       "type": "u",
@@ -8464,7 +8542,13 @@
       "collocations": [
         { "id": "wzuq24", "jp": "電気がつく", "en": "the light comes on" },
         { "id": "ty9n7g", "jp": "テレビがつく", "en": "the TV comes on" }
-      ]
+      ],
+      "pair": {
+        "verb": "つける",
+        "transitivity": "intransitive",
+        "jp": "電気がつく",
+        "en": "the light comes on"
+      }
     },
     {
       "type": "u",
