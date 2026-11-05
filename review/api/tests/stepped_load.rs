@@ -101,7 +101,7 @@ async fn verbs_load_in_several_steps_and_appear_only_at_finish() {
     let done = finish(&s, &src, &load_id).await;
     assert_eq!(done.status, 200, "{}", done.body);
     assert_eq!(done.body["name"], "verbs");
-    assert_eq!(s.entries("verbs").await.unwrap().len(), 84);
+    assert_eq!(s.entries("verbs").await.unwrap().len(), 97);
     assert_eq!(staged(&s), 0, "staging is cleared");
 }
 

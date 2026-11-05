@@ -105,6 +105,14 @@
 				{#each list(item.collocations) as c (c.id)}<Sentence id={c.id} jp={c.jp} en={c.en} {readings} />{/each}
 			</section>
 		{/if}
+		{#if item.pair}
+			<section class="card">
+				<h2>Transitive / intransitive pair</h2>
+				<p class="quiet">{item.pair.transitivity}, paired with {item.pair.verb}</p>
+				<p><Japanese text={item.pair.jp} {readings} /></p>
+				<p class="quiet">{item.pair.en}</p>
+			</section>
+		{/if}
 	{:else if dataset === 'words'}
 		<section class="card fields">
 			<p class="subtitle">{item.meaning}</p>

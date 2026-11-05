@@ -168,7 +168,7 @@ async fn the_owner_loads_every_file_and_reviewers_browse() {
         verbs.body["version"],
         json!(manifest_version(DataFile::Verbs))
     );
-    assert_eq!(verbs.body["items"].as_array().unwrap().len(), 84);
+    assert_eq!(verbs.body["items"].as_array().unwrap().len(), 97);
     assert_eq!(verbs.body["items"][0]["title"], "する");
 
     let taberu = get(
