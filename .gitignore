@@ -14,3 +14,6 @@ __pycache__/
 
 # Brainstorming mockups
 .superpowers/
+
+# Wrangler (Cloudflare) local cache, wherever wrangler runs
+.wrangler/
