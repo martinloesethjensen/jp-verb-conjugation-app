@@ -68,12 +68,14 @@ function publishedData() {
 	const manifest = readData('manifest');
 	const docs = Object.fromEntries(FILES.map((f) => [f, readData(f)]));
 	const version = (f: string) => (f === 'verbs' ? manifest.version : manifest[f].version) as string;
+	let generation = 0;
 	const loaded = new Map<string, { name: string; version: string; sha256: string; git_ref: null; item_count: number; imported_at: string; imported_by: string }>();
 	return {
 		load(file: string) {
 			if (!(FILES as readonly string[]).includes(file)) return undefined;
 			// Re-read, so editing a data file and reloading it makes earlier reviews stale.
 			docs[file] = readData(file);
+			generation++;
 			const snapshot = {
 				name: file,
 				version: version(file),
@@ -90,6 +92,7 @@ function publishedData() {
 		isLoaded: (f: string) => loaded.has(f),
 		version,
 		entries: (f: string) => entries(f, docs[f]),
+		generation: () => generation,
 		reference: () => ({
 			readings: loaded.has('furigana') ? docs.furigana.readings : {},
 			forms: loaded.has('forms')
@@ -114,6 +117,7 @@ function handler() {
 		isLoaded: data.isLoaded,
 		readings: () => data.reference().readings,
 		formIds: data.formIds,
+		generation: data.generation,
 		users,
 		me
 	});

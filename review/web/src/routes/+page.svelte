@@ -1,24 +1,38 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { DATASETS, getSnapshot, type SnapshotFile } from '#lib/api.ts';
+	import { DATASETS, getSnapshot, listQueues, type QueueSummary, type SnapshotFile } from '#lib/api.ts';
 	import { DATASET_TITLES } from '#lib/labels.ts';
+	import QueueStack from '#lib/QueueStack.svelte';
 
 	let files = $state<SnapshotFile[] | null>(null);
+	let queues = $state<QueueSummary[]>([]);
 
 	onMount(() => {
 		getSnapshot()
 			.then((list) => (files = list))
 			.catch(() => (files = []));
+		listQueues()
+			.then((list) => (queues = list))
+			.catch(() => (queues = []));
 	});
 
 	const versionOf = (dataset: string) => files?.find((f) => f.name === dataset)?.version;
 </script>
 
-<section class="empty" aria-labelledby="waiting-heading">
-	<h1 id="waiting-heading">Waiting for you</h1>
-	<p class="lead">Nothing is waiting for you yet.</p>
-	<p>Martin will add things to review here.</p>
-</section>
+{#if queues.length}
+	<section class="waiting" aria-labelledby="waiting-heading">
+		<h1 id="waiting-heading">Waiting for you</h1>
+		<ul class="queues">
+			{#each queues as queue (queue.id)}<li><QueueStack {queue} /></li>{/each}
+		</ul>
+	</section>
+{:else}
+	<section class="empty" aria-labelledby="waiting-heading">
+		<h1 id="waiting-heading">Waiting for you</h1>
+		<p class="lead">Nothing is waiting for you yet.</p>
+		<p>Martin will add things to review here.</p>
+	</section>
+{/if}
 
 <section aria-labelledby="browse-heading">
 	<h2 id="browse-heading">Browse</h2>
@@ -51,6 +65,19 @@
 		background: var(--card);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
+	}
+
+	.waiting {
+		margin-bottom: 2.5rem;
+	}
+
+	.queues {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+		gap: 1.25rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 
 	.lead {

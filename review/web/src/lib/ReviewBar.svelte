@@ -19,7 +19,8 @@
 		readings,
 		forms,
 		extra = {},
-		onaction
+		onaction,
+		onskip
 	}: {
 		review: EntryReview;
 		kind: string;
@@ -32,6 +33,8 @@
 		extra?: Record<string, string>;
 		/** Called after the viewer approves or suggests (the queue moves on). */
 		onaction?: () => void;
+		/** Offers "Not sure, skip" (queues only). */
+		onskip?: () => Promise<void>;
 	} = $props();
 
 	const uid = $props.id();
@@ -108,6 +111,9 @@
 				<button type="button" class="small" aria-expanded={mode === 'change'} onclick={() => open('change')}
 					>Suggest a change</button
 				>
+			{/if}
+			{#if onskip}
+				<button type="button" class="link" disabled={busy} onclick={() => run(onskip)}>Not sure, skip</button>
 			{/if}
 			<button type="button" class="link" aria-expanded={mode === 'delete'} onclick={() => open('delete')}
 				>Suggest removing it</button

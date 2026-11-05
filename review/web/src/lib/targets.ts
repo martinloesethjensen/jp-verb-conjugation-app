@@ -81,3 +81,10 @@ export function unknownKanjiRuns(text: string, readings: Record<string, string>)
 	}
 	return runs;
 }
+
+/** The entry's title as the site shows it: `dict (kanji)`, `counter (reading)` or the grammar title. */
+export function entryTitle(dataset: string, entry: Json): string {
+	if (dataset === 'verbs' || dataset === 'words') return entry.kanji ? `${entry.dict} (${entry.kanji})` : entry.dict;
+	if (dataset === 'counters') return `${entry.counter} (${entry.reading})`;
+	return entry.title;
+}

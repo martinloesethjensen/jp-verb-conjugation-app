@@ -17,6 +17,8 @@ export type ReviewContext = {
 	isLoaded: (dataset: string) => boolean;
 	readings: () => Record<string, string>;
 	formIds: () => string[];
+	/** Changes whenever a file is (re)loaded. */
+	generation: () => number;
 	users: User[];
 	me: User;
 };
@@ -83,10 +85,21 @@ export function reviewMock(ctx: ReviewContext) {
 	const same = (a: { dataset: string; kind: string; item_id: string }, b: { dataset: string; kind: string; item_id: string }) =>
 		a.dataset === b.dataset && a.kind === b.kind && a.item_id === b.item_id;
 
-	/** Every loaded target, with its entry, title, position and hash. */
+	// Hashing every part is slow; keep the list until the dataset's entries change (a reload).
+	const cache = new Map<string, { source: unknown; list: ReturnType<typeof build> }>();
 	function targets(dataset: string) {
 		if (!ctx.isLoaded(dataset)) return [];
-		return ctx.entries(dataset).flatMap((entry, index) =>
+		const key = ctx.generation();
+		const hit = cache.get(dataset);
+		if (hit && hit.source === key) return hit.list;
+		const list = build(dataset, ctx.entries(dataset));
+		cache.set(dataset, { source: key, list });
+		return list;
+	}
+
+	/** Every loaded target, with its entry, title, position and hash. */
+	function build(dataset: string, entries: Entry[]) {
+		return entries.flatMap((entry, index) =>
 			partsOf(dataset as Dataset, entry.json).map((part, n) => ({
 				dataset,
 				kind: part.kind as string,

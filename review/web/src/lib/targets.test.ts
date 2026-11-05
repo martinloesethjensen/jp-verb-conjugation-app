@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { entryId, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
+import { entryId, entryTitle, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
 
 const point = {
 	id: 'te-iru',
@@ -45,5 +45,14 @@ describe('targets', () => {
 		expect(unknownKanjiRuns('猫が毎日来る', { 毎日: 'まいにち', 来: 'く' })).toEqual(['猫']);
 		expect(unknownKanjiRuns('猫と犬猫と猫', {})).toEqual(['猫', '犬猫']);
 		expect(unknownKanjiRuns('ねこ', {})).toEqual([]);
+	});
+});
+
+describe('entryTitle', () => {
+	test('per dataset', () => {
+		expect(entryTitle('verbs', { dict: 'たべる', kanji: '食べる' })).toBe('たべる (食べる)');
+		expect(entryTitle('words', { dict: 'いい' })).toBe('いい');
+		expect(entryTitle('counters', { counter: '本', reading: 'ほん' })).toBe('本 (ほん)');
+		expect(entryTitle('grammar', { title: 'ている' })).toBe('ている');
 	});
 });

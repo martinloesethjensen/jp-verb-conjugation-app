@@ -6,6 +6,7 @@
 	import { ApiError, DATASETS, getItem, problem, type Dataset, type Field, type ItemResponse } from '#lib/api.ts';
 	import ReviewBar from '#lib/ReviewBar.svelte';
 	import { EntryReview } from '#lib/review.svelte.ts';
+	import { entryTitle } from '#lib/targets.ts';
 	import Japanese from '#lib/Japanese.svelte';
 	import LevelPill from '#lib/LevelPill.svelte';
 	import Sentence from '#lib/Sentence.svelte';
@@ -52,16 +53,12 @@
 		});
 	});
 
-	const title = $derived.by(() => {
-		if (dataset === 'verbs' || dataset === 'words') return item.kanji ? `${item.dict} (${item.kanji})` : item.dict;
-		if (dataset === 'counters') return `${item.counter} (${item.reading})`;
-		return item.title;
-	});
+	const title = $derived(dataset ? entryTitle(dataset, item) : '');
 	const list = (value: unknown): Json[] => (Array.isArray(value) ? value : []);
 </script>
 
 <svelte:head>
-	<title>{title ?? 'Item'} · Kotoba Table review</title>
+	<title>{title || 'Item'} · Kotoba Table review</title>
 </svelte:head>
 
 {#snippet bar(kind: string, id: string, value: Json, extra: Record<string, string> = {})}

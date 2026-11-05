@@ -7,6 +7,7 @@ const pages = [
 	'admin.html',
 	'account.html',
 	'item.html',
+	'queue.html',
 	'browse/verbs.html',
 	'browse/words.html',
 	'browse/counters.html',
