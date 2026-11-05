@@ -16,6 +16,7 @@ struct VerbListView: View {
     @State private var teFilter: TeGroup?
     @State private var favouritesOnly = false
     @State private var formLookupRequest: FormLookupRequest?
+    @State private var sentenceLensRequest: SentenceLensRequest?
     @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
     /// True once the filters block has scrolled off screen, which is when the
     /// back-to-top button appears.
@@ -195,7 +196,7 @@ struct VerbListView: View {
         .navigationSubtitle(filterSummary)
         .sheet(isPresented: $showGuide) { VerbGuideSheet() }
         .formLookupSheet($formLookupRequest)
-        .toolbar {
+        .sentenceLensSheet($sentenceLensRequest)        .toolbar {
             #if os(iOS)
             if scrolledAwayFromTop {
                 ToolbarItem(placement: .primaryAction) {
@@ -206,6 +207,14 @@ struct VerbListView: View {
                 }
             }
             #endif
+            if formLookup?.isReady == true {
+                ToolbarItem(placement: .primaryAction) {
+                    // A tool, not a fifth tab: it opens over the list.
+                    Button("Sentence lens", systemImage: "waveform.and.magnifyingglass") {
+                        sentenceLensRequest = SentenceLensRequest()
+                    }
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 // The toolbar drops a Label's title, so the text is spelled out to keep "Quiz" visible.
                 Button(action: onRandomQuiz) {

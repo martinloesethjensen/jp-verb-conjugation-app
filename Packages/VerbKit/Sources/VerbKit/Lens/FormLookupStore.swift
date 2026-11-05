@@ -18,6 +18,8 @@ public final class FormLookupStore {
     // Observed, so a view that looked text up redraws when the data changes.
     private var matcher: VerbMatcher?
     private var lookup: FormLookup?
+    /// The Sentence lens's one-step transforms (#146), built with the matcher.
+    private var transformer: FormTransformer?
     @ObservationIgnored private let tokenizer: any Tokenizing
     /// How many times the index was built; for tests.
     @ObservationIgnored private(set) var builds = 0
@@ -43,7 +45,20 @@ public final class FormLookupStore {
         builds += 1
         matcher = VerbMatcher(index: index, verbs: verbs, tokenizer: tokenizer)
         lookup = FormLookup(verbs: verbs, catalogue: catalogue)
+        transformer = FormTransformer(verbs: verbs, catalogue: catalogue)
         isReady = true
+    }
+
+    /// The transform chips for `item` read as `reading`, in `text`: the text `items(in:)`
+    /// was given, already trimmed, since the span's range points into it.
+    public func transforms(for item: FormLookup.Item, reading: FormLookup.Reading?, in text: String) -> SpanTransforms {
+        guard let transformer else { return .unavailable(.notInData) }
+        return transformer.transforms(for: item.span, in: text, candidate: reading?.candidate)
+    }
+
+    /// The catalogue label of `form`, for a transform chip: "Polite · past".
+    public func label(for form: FormID) -> String {
+        lookup?.label(for: form) ?? form.rawValue
     }
 
     /// The verbs in `text`, labelled for display; empty until the store is ready.

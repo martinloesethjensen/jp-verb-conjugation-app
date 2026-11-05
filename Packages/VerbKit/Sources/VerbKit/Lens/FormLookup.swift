@@ -15,9 +15,21 @@ public struct FormLookup: Sendable {
         public let isRuleBuilt: Bool
     }
 
+    /// How the Sentence lens underlines a span, so the kind of form never relies on colour
+    /// alone: solid for a basic form, double for an auxiliary chain, dashed for potential,
+    /// passive and causative, and dotted grey for a verb the app doesn't have.
+    public enum Highlight: Hashable, Sendable {
+        case basic
+        case chain
+        case voice
+        case notInApp
+    }
+
     /// One way to read a span: this verb, in this form, built from these parts.
     public struct Reading: Hashable, Sendable, Identifiable {
         public let verb: Verb
+        /// The matcher's candidate this reading labels; `FormTransformer` takes it.
+        public let candidate: VerbCandidate
         /// The catalogue form when the span is exactly one generated form; nil for a chain.
         public let formID: FormID?
         /// "Polite · past", or the part labels joined for a chain: "Causative-passive +
@@ -26,6 +38,8 @@ public struct FormLookup: Sendable {
         public let parts: [Part]
         /// The lessons of the parts' forms, without repeats, in chain order.
         public let lessonIDs: [String]
+        /// Never `.notInApp`.
+        public let highlight: Highlight
 
         public var id: String { verb.id + "|" + parts.map { $0.surface + "/" + $0.label }.joined(separator: "+") }
         public var isRuleBuilt: Bool { parts.contains(where: \.isRuleBuilt) }
@@ -50,6 +64,31 @@ public struct FormLookup: Sendable {
         public var verbs: [Verb] {
             var seen = Set<String>()
             return readings.map(\.verb).filter { seen.insert($0.id).inserted }
+        }
+
+        /// The underline: the first reading's, or dotted grey for a verb the app lacks.
+        public var highlight: Highlight {
+            status == .notInApp ? .notInApp : readings.first?.highlight ?? .basic
+        }
+
+        /// What VoiceOver reads for the span: "食べさせられなかった, verb 食べる, ru-verb,
+        /// causative-passive, plain past negative". Every reading of an ambiguous span, so
+        /// the choice is heard before the sheet opens.
+        public var accessibilityDescription: String {
+            switch status {
+            case .notInApp:
+                return "\(surface), verb not in the app yet"
+            case .known, .ambiguous:
+                let readings = readings.map { reading in
+                    let verb = reading.verb
+                    let form = reading.parts
+                        .map { $0.label.replacingOccurrences(of: " · ", with: " ").lowercased() }
+                        .joined(separator: ", ")
+                    return "verb \(verb.kanji ?? verb.dict), \(verb.label.lowercased()), \(form)"
+                }
+                if readings.count == 1 { return "\(surface), \(readings[0])" }
+                return "\(surface), \(readings.count) possible readings: " + readings.joined(separator: "; or ")
+            }
         }
     }
 
@@ -80,6 +119,23 @@ public struct FormLookup: Sendable {
         }
     }
 
+    /// The catalogue label of `form`: "Polite · past".
+    public func label(for form: FormID) -> String {
+        catalogue.spec(for: form)?.label ?? form.rawValue
+    }
+
+    /// Forms that change who acts or what is possible: underlined dashed.
+    private static let voiceForms: Set<FormID> = ["passive", "causative", "causative_passive", "causative_passive_short"]
+
+    /// The underline of a candidate, from its first part: the form the stem was built as.
+    private func highlight(for candidate: VerbCandidate) -> Highlight {
+        guard let first = candidate.chain.first, case .form(let id) = first.kind else { return .chain }
+        let family = catalogue.spec(for: id)?.family
+        if family == "potential" || Self.voiceForms.contains(id) { return .voice }
+        if candidate.chain.count > 1 || family == "auxiliary" || family == "nd" { return .chain }
+        return .basic
+    }
+
     /// The lesson of a part's form. An auxiliary the catalogue has no form id for
     /// ("てしまう · polite past") takes the lesson of the catalogue form it names (てしまう).
     private func lessonID(for part: ChainPart) -> String? {
@@ -102,9 +158,9 @@ public struct FormLookup: Sendable {
         var seen = Set<String>()
         let lessons = parts.compactMap(\.lessonID).filter { seen.insert($0).inserted }
         return Reading(
-            verb: verb, formID: candidate.formID,
+            verb: verb, candidate: candidate, formID: candidate.formID,
             label: parts.map(\.label).joined(separator: " + "),
-            parts: parts, lessonIDs: lessons
+            parts: parts, lessonIDs: lessons, highlight: highlight(for: candidate)
         )
     }
 

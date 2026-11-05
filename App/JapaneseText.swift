@@ -34,7 +34,7 @@ struct JapaneseText: View {
         if units.contains(where: { $0.reading != nil }) {
             let flow = RubyFlowLayout(glue: units.map(\.glueToPrevious), alignment: alignment, maxLines: lineLimit) {
                 ForEach(units.indices, id: \.self) { index in
-                    UnitView(unit: units[index])
+                    RubyUnitView(unit: units[index])
                 }
             }
             if lineLimit != nil {
@@ -46,19 +46,21 @@ struct JapaneseText: View {
             Text(text)
         }
     }
+}
 
-    private struct UnitView: View {
-        let unit: TextUnit
+/// One unit of a `RubyFlowLayout`: the text, with its reading above when it has one.
+/// The Sentence lens builds its transcript from these too.
+struct RubyUnitView: View {
+    let unit: TextUnit
 
-        var body: some View {
-            if let reading = unit.reading {
-                RubyPairLayout {
-                    Text(reading).lineLimit(1).fixedSize().scaleEffect(RubyPairLayout.scale)
-                    Text(unit.text).lineLimit(1).fixedSize()
-                }
-            } else {
+    var body: some View {
+        if let reading = unit.reading {
+            RubyPairLayout {
+                Text(reading).lineLimit(1).fixedSize().scaleEffect(RubyPairLayout.scale)
                 Text(unit.text).lineLimit(1).fixedSize()
             }
+        } else {
+            Text(unit.text).lineLimit(1).fixedSize()
         }
     }
 }
