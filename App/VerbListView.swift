@@ -195,6 +195,10 @@ struct VerbListView: View {
         .navigationSubtitle(filterSummary)
         .sheet(isPresented: $showGuide) { VerbGuideSheet() }
         .formLookupSheet($formLookupRequest)
+        .dismissOnLink {
+            showGuide = false
+            formLookupRequest = nil
+        }
         .toolbar {
             #if os(iOS)
             if scrolledAwayFromTop {

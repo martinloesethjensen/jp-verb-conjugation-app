@@ -180,6 +180,10 @@ struct GrammarListView: View {
         .navigationTitle("Grammar")
         .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }
         .sheet(isPresented: $showingMistakes) { CommonMistakesSheet() }
+        .dismissOnLink {
+            showingBlocks = false
+            showingMistakes = false
+        }
         .sheet(isPresented: $showingCourse) {
             NavigationStack {
                 MyCourseView()

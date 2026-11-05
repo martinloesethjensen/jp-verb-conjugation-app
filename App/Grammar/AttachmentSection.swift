@@ -83,6 +83,7 @@ struct AttachmentSection: View {
             }
         }
         .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }
+        .dismissOnLink { showingBlocks = false }
     }
 
     private func chips(_ rule: AttachmentRule) -> some View {
