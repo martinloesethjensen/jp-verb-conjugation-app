@@ -27,3 +27,16 @@ describe('diffFields', () => {
 			{ name: 'kanji', pieces: [{ added: '猫' }] }
 		]));
 });
+
+describe('word diffs for English', () => {
+	test('whole words change', () =>
+		expect(diffText('I drink coffee every morning.', 'I drink a lot of water.', 'word')).toEqual([
+			{ same: 'I drink ' },
+			{ removed: 'coffee every morning.' },
+			{ added: 'a lot of water.' }
+		]));
+	test('diffFields picks the unit per field', () =>
+		expect(
+			diffFields({ en: 'big dog' }, { en: 'big cat' }, ['en'], (name) => (name === 'en' ? 'word' : 'char'))
+		).toEqual([{ name: 'en', pieces: [{ same: 'big ' }, { removed: 'dog' }, { added: 'cat' }] }]));
+});

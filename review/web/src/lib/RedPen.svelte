@@ -10,7 +10,9 @@
 		names
 	}: { before: Record<string, unknown>; after: Record<string, unknown>; names: string[] } = $props();
 
-	const changed = $derived(diffFields(before, after, names));
+	const changed = $derived(
+		diffFields(before, after, names, (name) => (JAPANESE_FIELDS.has(name) ? 'char' : 'word'))
+	);
 
 	/** Pieces with each removal and the addition right after it paired up, so the fix sits above. */
 	type Run = { same?: string; removed?: string; added?: string };
@@ -70,7 +72,7 @@
 	/* The correction is written above what it replaces. */
 	.fix:has(del) {
 		display: inline-flex;
-		flex-direction: column-reverse;
+		flex-direction: column;
 		vertical-align: bottom;
 		line-height: 1.3;
 	}

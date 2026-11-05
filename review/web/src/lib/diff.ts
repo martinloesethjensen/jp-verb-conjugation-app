@@ -1,9 +1,17 @@
-// The red pen: what changed between two texts, character by character (code points, so a kanji outside
-// the BMP is one character). A longest-common-subsequence diff; fields are at most 2000 characters.
+// The red pen: what changed between two texts. Japanese compares character by character (code points, so
+// a kanji outside the BMP is one character); English compares whole words, which reads far better. A
+// longest-common-subsequence diff; fields are at most 2000 characters.
 
 export type Piece = { same?: string; removed?: string; added?: string };
 
 type Kind = keyof Piece;
+
+/** What a diff compares: characters (Japanese) or words with their trailing space (English). */
+export type Unit = 'char' | 'word';
+
+function tokens(text: string, unit: Unit): string[] {
+	return unit === 'word' ? text.split(/(?<=\s)(?=\S)/).filter(Boolean) : Array.from(text);
+}
 
 function push(out: Piece[], kind: Kind, ch: string) {
 	const last = out.at(-1);
@@ -12,9 +20,9 @@ function push(out: Piece[], kind: Kind, ch: string) {
 }
 
 /** `before` → `after` as runs of unchanged, removed and added text; removals come before additions. */
-export function diffText(before: string, after: string): Piece[] {
-	const a = Array.from(before);
-	const b = Array.from(after);
+export function diffText(before: string, after: string, unit: Unit = 'char'): Piece[] {
+	const a = tokens(before, unit);
+	const b = tokens(after, unit);
 	const width = b.length + 1;
 	// lcs[i * width + j]: the common subsequence length of a[i..] and b[j..].
 	const lcs = new Uint16Array((a.length + 1) * width);
@@ -49,9 +57,10 @@ const text = (value: unknown): string => (value === undefined || value === null 
 export function diffFields(
 	before: Record<string, unknown>,
 	after: Record<string, unknown>,
-	names: string[]
+	names: string[],
+	unitOf: (name: string) => Unit = () => 'char'
 ): { name: string; pieces: Piece[] }[] {
 	return names
 		.filter((name) => text(before[name]) !== text(after[name]))
-		.map((name) => ({ name, pieces: diffText(text(before[name]), text(after[name])) }));
+		.map((name) => ({ name, pieces: diffText(text(before[name]), text(after[name]), unitOf(name)) }));
 }

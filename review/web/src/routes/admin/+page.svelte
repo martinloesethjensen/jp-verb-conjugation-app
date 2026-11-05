@@ -2,6 +2,7 @@
 	import {
 		addUser,
 		ApiError,
+		getInbox,
 		FILES,
 		getSnapshot,
 		listUsers,
@@ -61,7 +62,12 @@
 		loading = false;
 	}
 
+	let openSuggestions = $state<number | null>(null);
+
 	onMount(() => {
+		getInbox('open')
+			.then((list) => (openSuggestions = list.length))
+			.catch(() => {});
 		getSnapshot()
 			.then((list) => (files = list))
 			.catch(() => {});
@@ -112,6 +118,10 @@
 {#if failure}
 	<p class="notice" role="alert">{failure}</p>
 {:else}
+	<nav class="review-links" aria-label="Reviews">
+		<a href="/admin/inbox">Suggestions{openSuggestions === null ? '' : ` (${openSuggestions} open)`}</a>
+		<a href="/admin/queues">Queues</a>
+	</nav>
 	<div class="columns">
 		<section aria-labelledby="reviewers-heading">
 			<h1 id="reviewers-heading">Reviewers</h1>
@@ -197,6 +207,25 @@
 {/if}
 
 <style>
+	.review-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.review-links a {
+		padding: 0.6rem 1rem;
+		background: var(--card);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		text-decoration: none;
+	}
+
+	.review-links a:hover {
+		border-color: var(--ink);
+	}
+
 	h1,
 	h2 {
 		margin-top: 0;

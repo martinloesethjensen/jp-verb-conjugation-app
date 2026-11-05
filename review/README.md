@@ -106,3 +106,41 @@ Each step says what to do and what you should see.
   needed: Access lets them reach the site, the Reviewers page lets them use it.
 - **Remove:** Deactivate them on the Reviewers page, remove them from the policy, and revoke their session
   under Zero Trust → Users. Deactivating takes effect immediately, even before the session ends.
+
+## Reviewing
+
+Reviewers work on any item they open, and on the queues you build for them. On every entry and every part of
+one (each example, common phrase, usage, pitfall and thing counted) they can:
+
+- **Looks right**: stamps their red 確認 seal. An approval counts only while the item is unchanged; after you
+  load new data that changes it, it shows as "<name> approved an earlier version". Approving a usage or pitfall
+  covers the examples inside it, so editing one of those examples also makes it an earlier version.
+- **Suggest a change**: a form with only the fields that can change. Ids, and the spellings ids are built from
+  (a verb's dictionary form and kanji, a word's class and dictionary form), never change here. Kanji with no
+  furigana ask for a reading. Editing a sentence keeps the particle blanks that still line up and drops the
+  others; the suggestion says how many to mark again at export.
+- **Suggest removing it** (with an optional reason) or **Leave a note for Martin** (for anything the form
+  can't change).
+- **Not sure, skip** (in a queue only).
+
+Everyone sees everyone's seals and suggestions, by display name. A suggestion made against data that has since
+changed shows "Changed since"; one whose item left the data shows "No longer in the data".
+
+**Your inbox** (Reviewers → Suggestions) shows each change as a red-pen correction, grouped by item so
+counter-suggestions sit side by side. For each one: **Accept**, **Edit then accept** (fix it before accepting;
+this is the only way to accept a change made against older data), **Reply**, or **Decline**. Accepting the
+removal of a whole verb or word asks you to confirm, because saved favourites, quiz history and widgets that
+point at it are dropped when it is exported. Accepting only marks a suggestion accepted: nothing reaches
+`data/` until the export step (plan 6), and then only through your normal signed data PRs.
+
+## Queues
+
+Reviewers → Queues builds a queue from a dataset, the kinds of item, JLPT levels, "Never approved", or pasted
+ids (one per line; the preview lists the lines that matched nothing). A queue holds at most 500 items. Each item
+can carry your question for reviewers ("Is this natural?"), and you can remove items, rename a queue, or archive
+it (it leaves reviewers' home page). Reviewers see every open queue on their home page with their own progress:
+an item is done for them once they approved it, suggested something, or skipped it, and an item that left the
+data counts as done for everyone.
+
+After the PR that adds the review tables merges, run `npm run migrate` in `review/api` once (migration
+`0004_review.sql`), then wait for Workers Builds and Pages to deploy.
