@@ -72,16 +72,60 @@ async fn get(
     handle(req, &cfg(), &[jwk()], store, source, NOW, T0).await
 }
 
-async fn load(store: &SqliteStore, source: &FakeSource, file: &str, jwt: String) -> ApiResponse {
+async fn post(
+    store: &SqliteStore,
+    source: &FakeSource,
+    path: &str,
+    body: Value,
+    jwt: String,
+) -> ApiResponse {
     let req = ApiRequest {
         method: "POST".into(),
-        path: "/api/admin/snapshot".into(),
+        path: path.into(),
         query: String::new(),
         origin: Some(SITE.into()),
         jwt: Some(jwt),
-        body: json!({ "file": file }).to_string().into_bytes(),
+        body: body.to_string().into_bytes(),
     };
     handle(req, &cfg(), &[jwk()], store, source, NOW, T0).await
+}
+
+/// A whole load, the way the Admin page does it: begin, every slice, finish. Returns the first
+/// response that isn't a 200, or finish's.
+async fn load(store: &SqliteStore, source: &FakeSource, file: &str, jwt: String) -> ApiResponse {
+    let begin = post(
+        store,
+        source,
+        "/api/admin/snapshot/begin",
+        json!({ "file": file }),
+        jwt.clone(),
+    )
+    .await;
+    if begin.status != 200 {
+        return begin;
+    }
+    let load_id = begin.body["load_id"].as_str().unwrap().to_string();
+    for slice in 0..begin.body["slices"].as_u64().unwrap() {
+        let r = post(
+            store,
+            source,
+            "/api/admin/snapshot/slice",
+            json!({ "load_id": load_id, "slice": slice }),
+            jwt.clone(),
+        )
+        .await;
+        if r.status != 200 {
+            return r;
+        }
+    }
+    post(
+        store,
+        source,
+        "/api/admin/snapshot/finish",
+        json!({ "load_id": load_id }),
+        jwt,
+    )
+    .await
 }
 
 fn manifest_version(file: DataFile) -> String {
@@ -285,7 +329,7 @@ async fn a_bad_ref_is_refused_before_fetching() {
     );
     src.set("manifest.json", bytes);
     let s = seeded().await;
-    let err = review_api::app::import_file_with_keys(
+    let err = review_api::app::begin_load_with_keys(
         DataFile::Words,
         &s,
         &src,

@@ -252,4 +252,178 @@ impl Store for D1Store {
         let row = statement.first::<EntryRow>(None).await.map_err(backend)?;
         Ok(row.map(|r| (r.json, r.content_hash)))
     }
+
+    async fn begin_load(&self, load: &SnapshotLoad) -> Result<(), StoreError> {
+        let slices =
+            serde_json::to_string(&load.slices).map_err(|e| StoreError::Backend(e.to_string()))?;
+        let name: JsValue = load.name.as_str().into();
+        let mut statements = Vec::new();
+        for sql in [
+            DELETE_STAGING_FOR_NAME,
+            DELETE_SLICES_FOR_NAME,
+            DELETE_LOADS_FOR_NAME,
+        ] {
+            statements.push(
+                self.db
+                    .prepare(sql)
+                    .bind(std::slice::from_ref(&name))
+                    .map_err(backend)?,
+            );
+        }
+        let optional = |v: Option<&str>| v.map(JsValue::from).unwrap_or(JsValue::NULL);
+        statements.push(
+            self.db
+                .prepare(INSERT_LOAD)
+                .bind(&[
+                    load.load_id.as_str().into(),
+                    name,
+                    load.version.as_str().into(),
+                    load.sha256.as_str().into(),
+                    optional(load.git_ref.as_deref()),
+                    slices.into(),
+                    load.started_by.as_str().into(),
+                    load.started_at.as_str().into(),
+                ])
+                .map_err(backend)?,
+        );
+        self.db.batch(statements).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn load(&self, load_id: &str) -> Result<Option<SnapshotLoad>, StoreError> {
+        #[derive(serde::Deserialize)]
+        struct LoadRow {
+            load_id: String,
+            name: String,
+            version: String,
+            sha256: String,
+            git_ref: Option<String>,
+            slices: String,
+            started_by: String,
+            started_at: String,
+        }
+        let statement = self
+            .db
+            .prepare(SELECT_LOAD)
+            .bind(&[load_id.into()])
+            .map_err(backend)?;
+        let Some(row) = statement.first::<LoadRow>(None).await.map_err(backend)? else {
+            return Ok(None);
+        };
+        let slices =
+            serde_json::from_str(&row.slices).map_err(|e| StoreError::Backend(e.to_string()))?;
+        Ok(Some(SnapshotLoad {
+            load_id: row.load_id,
+            name: row.name,
+            version: row.version,
+            sha256: row.sha256,
+            git_ref: row.git_ref,
+            slices,
+            started_by: row.started_by,
+            started_at: row.started_at,
+        }))
+    }
+
+    async fn stage_slice(
+        &self,
+        load: &SnapshotLoad,
+        slice: u32,
+        rows: &[ItemRow],
+    ) -> Result<(), StoreError> {
+        let rows_json =
+            serde_json::to_string(rows).map_err(|e| StoreError::Backend(e.to_string()))?;
+        let (id, n): (JsValue, JsValue) = (load.load_id.as_str().into(), JsValue::from(slice));
+        let delete = self
+            .db
+            .prepare(DELETE_STAGED_SLICE)
+            .bind(&[id.clone(), n.clone()])
+            .map_err(backend)?;
+        let insert = self
+            .db
+            .prepare(INSERT_STAGED)
+            .bind(&[
+                id.clone(),
+                n.clone(),
+                load.name.as_str().into(),
+                rows_json.into(),
+            ])
+            .map_err(backend)?;
+        let done = self
+            .db
+            .prepare(INSERT_SLICE_DONE)
+            .bind(&[id, n])
+            .map_err(backend)?;
+        self.db
+            .batch(vec![delete, insert, done])
+            .await
+            .map_err(backend)?;
+        Ok(())
+    }
+
+    async fn slices_done(&self, load_id: &str) -> Result<u32, StoreError> {
+        let statement = self
+            .db
+            .prepare(COUNT_SLICES_DONE)
+            .bind(&[load_id.into()])
+            .map_err(backend)?;
+        Ok(statement
+            .first::<u32>(Some("done"))
+            .await
+            .map_err(backend)?
+            .unwrap_or(0))
+    }
+
+    async fn finish_load(
+        &self,
+        load: &SnapshotLoad,
+        file: &SnapshotFile,
+        json: Option<&str>,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let id: JsValue = load.load_id.as_str().into();
+        let name: JsValue = file.name.as_str().into();
+        let optional = |v: Option<&str>| v.map(JsValue::from).unwrap_or(JsValue::NULL);
+        let mut statements = vec![
+            self.db
+                .prepare(DELETE_ITEMS)
+                .bind(std::slice::from_ref(&name))
+                .map_err(backend)?,
+            self.db
+                .prepare(INSERT_ITEMS_FROM_STAGING)
+                .bind(std::slice::from_ref(&id))
+                .map_err(backend)?,
+            self.db
+                .prepare(UPSERT_SNAPSHOT_FILE)
+                .bind(&[
+                    name,
+                    file.version.as_str().into(),
+                    file.sha256.as_str().into(),
+                    optional(file.git_ref.as_deref()),
+                    JsValue::from(file.item_count),
+                    file.imported_at.as_str().into(),
+                    file.imported_by.as_str().into(),
+                    optional(json),
+                ])
+                .map_err(backend)?,
+            audit(
+                &self.db,
+                now,
+                actor,
+                "snapshot.import",
+                &format!("{}.json", file.name),
+                &format!("version={}", file.version),
+            )?,
+        ];
+        for sql in [DELETE_STAGING, DELETE_SLICES, DELETE_LOAD] {
+            statements.push(
+                self.db
+                    .prepare(sql)
+                    .bind(std::slice::from_ref(&id))
+                    .map_err(backend)?,
+            );
+        }
+        self.db.batch(statements).await.map_err(backend)?;
+        Ok(())
+    }
 }

@@ -1,7 +1,7 @@
 //! Users and the audit log. The SQL is written once here and run by both the D1 store (the Worker) and the
 //! SQLite store the tests use, so the two can't drift.
 
-use crate::items::ItemRow;
+use crate::items::{ItemRow, Slice};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,7 +43,7 @@ pub struct NewUser {
     pub role: Role,
 }
 
-/// A loaded data file. `name` is the dataset name (`"verbs"`).
+/// A loaded data file. `name` is the dataset name (`"verbs"`); `item_count` counts its entries.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SnapshotFile {
     pub name: String,
@@ -53,6 +53,19 @@ pub struct SnapshotFile {
     pub item_count: u32,
     pub imported_at: String,
     pub imported_by: String,
+}
+
+/// A load in progress: what `begin` verified, and the slices the following requests handle.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SnapshotLoad {
+    pub load_id: String,
+    pub name: String,
+    pub version: String,
+    pub sha256: String,
+    pub git_ref: Option<String>,
+    pub slices: Vec<Slice>,
+    pub started_by: String,
+    pub started_at: String,
 }
 
 /// An entry in a browse list. `parts` counts its sub-items (examples, usages, pitfalls, things).
@@ -99,6 +112,33 @@ pub const SELECT_ENTRIES: &str = "SELECT e.item_id, e.title, e.subtitle, e.jlpt,
 pub const SELECT_ENTRY: &str =
     "SELECT json, content_hash FROM items WHERE dataset = ?1 AND kind = 'entry' AND item_id = ?2";
 
+/// Starting a load of a file discards that file's unfinished loads (and their staged rows).
+pub const DELETE_STAGING_FOR_NAME: &str =
+    "DELETE FROM items_staging WHERE load_id IN (SELECT load_id FROM snapshot_loads WHERE name = ?1)";
+pub const DELETE_SLICES_FOR_NAME: &str =
+    "DELETE FROM snapshot_load_slices WHERE load_id IN (SELECT load_id FROM snapshot_loads WHERE name = ?1)";
+pub const DELETE_LOADS_FOR_NAME: &str = "DELETE FROM snapshot_loads WHERE name = ?1";
+pub const INSERT_LOAD: &str = "INSERT INTO snapshot_loads \
+     (load_id, name, version, sha256, git_ref, slices, started_by, started_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)";
+pub const SELECT_LOAD: &str =
+    "SELECT load_id, name, version, sha256, git_ref, slices, started_by, started_at FROM snapshot_loads WHERE load_id = ?1";
+pub const DELETE_STAGED_SLICE: &str = "DELETE FROM items_staging WHERE load_id = ?1 AND slice = ?2";
+/// One slice's rows in one statement: ?4 is a JSON array of `ItemRow`s.
+pub const INSERT_STAGED: &str = "INSERT INTO items_staging (load_id, slice, dataset, kind, item_id, parent_id, entry_id, position, title, subtitle, jlpt, content_hash, json) \
+     SELECT ?1, ?2, ?3, json_extract(value, '$.kind'), json_extract(value, '$.item_id'), json_extract(value, '$.parent_id'), \
+     json_extract(value, '$.entry_id'), json_extract(value, '$.position'), json_extract(value, '$.title'), \
+     json_extract(value, '$.subtitle'), json_extract(value, '$.jlpt'), json_extract(value, '$.content_hash'), \
+     json_extract(value, '$.json') FROM json_each(?4)";
+pub const INSERT_SLICE_DONE: &str =
+    "INSERT OR IGNORE INTO snapshot_load_slices (load_id, slice) VALUES (?1, ?2)";
+pub const COUNT_SLICES_DONE: &str =
+    "SELECT COUNT(*) AS done FROM snapshot_load_slices WHERE load_id = ?1";
+pub const INSERT_ITEMS_FROM_STAGING: &str = "INSERT INTO items (dataset, kind, item_id, parent_id, entry_id, position, title, subtitle, jlpt, content_hash, json) \
+     SELECT dataset, kind, item_id, parent_id, entry_id, position, title, subtitle, jlpt, content_hash, json FROM items_staging WHERE load_id = ?1";
+pub const DELETE_STAGING: &str = "DELETE FROM items_staging WHERE load_id = ?1";
+pub const DELETE_SLICES: &str = "DELETE FROM snapshot_load_slices WHERE load_id = ?1";
+pub const DELETE_LOAD: &str = "DELETE FROM snapshot_loads WHERE load_id = ?1";
+
 pub const INSERT_AUDIT: &str =
     "INSERT INTO audit_log (at, actor, action, target, detail) VALUES (?1, ?2, ?3, ?4, ?5)";
 
@@ -139,6 +179,28 @@ pub trait Store {
     async fn snapshot_files(&self) -> Result<Vec<SnapshotFile>, StoreError>;
     async fn snapshot_file(&self, name: &str) -> Result<Option<SnapshotFile>, StoreError>;
     async fn snapshot_json(&self, name: &str) -> Result<Option<String>, StoreError>;
+    /// Records a new load of a file, discarding that file's unfinished loads.
+    async fn begin_load(&self, load: &SnapshotLoad) -> Result<(), StoreError>;
+    async fn load(&self, load_id: &str) -> Result<Option<SnapshotLoad>, StoreError>;
+    /// Writes one slice's rows to staging, replacing any earlier copy of that slice.
+    async fn stage_slice(
+        &self,
+        load: &SnapshotLoad,
+        slice: u32,
+        rows: &[ItemRow],
+    ) -> Result<(), StoreError>;
+    async fn slices_done(&self, load_id: &str) -> Result<u32, StoreError>;
+    /// In one batch: the staged rows replace the dataset's items, `snapshot_files` and the audit log
+    /// are updated, and the load and its staging are removed. On error nothing changes.
+    async fn finish_load(
+        &self,
+        load: &SnapshotLoad,
+        file: &SnapshotFile,
+        json: Option<&str>,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError>;
+
     /// A dataset's entries in file order.
     async fn entries(&self, dataset: &str) -> Result<Vec<ItemSummary>, StoreError>;
     /// An entry's JSON and content hash.

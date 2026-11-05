@@ -263,4 +263,126 @@ impl Store for SqliteStore {
             .map_err(backend)?;
         rows.next().transpose().map_err(backend)
     }
+
+    async fn begin_load(&self, load: &SnapshotLoad) -> Result<(), StoreError> {
+        let slices = serde_json::to_string(&load.slices).unwrap();
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        for sql in [
+            DELETE_STAGING_FOR_NAME,
+            DELETE_SLICES_FOR_NAME,
+            DELETE_LOADS_FOR_NAME,
+        ] {
+            tx.execute(sql, params![load.name]).map_err(backend)?;
+        }
+        tx.execute(
+            INSERT_LOAD,
+            params![
+                load.load_id,
+                load.name,
+                load.version,
+                load.sha256,
+                load.git_ref,
+                slices,
+                load.started_by,
+                load.started_at
+            ],
+        )
+        .map_err(backend)?;
+        tx.commit().map_err(backend)
+    }
+
+    async fn load(&self, load_id: &str) -> Result<Option<SnapshotLoad>, StoreError> {
+        let conn = self.conn.borrow();
+        let mut st = conn.prepare(SELECT_LOAD).map_err(backend)?;
+        let mut rows = st
+            .query_map(params![load_id], |r| {
+                let slices: String = r.get(5)?;
+                Ok(SnapshotLoad {
+                    load_id: r.get(0)?,
+                    name: r.get(1)?,
+                    version: r.get(2)?,
+                    sha256: r.get(3)?,
+                    git_ref: r.get(4)?,
+                    slices: serde_json::from_str(&slices).unwrap(),
+                    started_by: r.get(6)?,
+                    started_at: r.get(7)?,
+                })
+            })
+            .map_err(backend)?;
+        rows.next().transpose().map_err(backend)
+    }
+
+    async fn stage_slice(
+        &self,
+        load: &SnapshotLoad,
+        slice: u32,
+        rows: &[ItemRow],
+    ) -> Result<(), StoreError> {
+        let rows_json = serde_json::to_string(rows).unwrap();
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        tx.execute(DELETE_STAGED_SLICE, params![load.load_id, slice])
+            .map_err(backend)?;
+        tx.execute(
+            INSERT_STAGED,
+            params![load.load_id, slice, load.name, rows_json],
+        )
+        .map_err(backend)?;
+        tx.execute(INSERT_SLICE_DONE, params![load.load_id, slice])
+            .map_err(backend)?;
+        tx.commit().map_err(backend)
+    }
+
+    async fn slices_done(&self, load_id: &str) -> Result<u32, StoreError> {
+        let conn = self.conn.borrow();
+        conn.query_row(COUNT_SLICES_DONE, params![load_id], |r| r.get(0))
+            .map_err(backend)
+    }
+
+    async fn finish_load(
+        &self,
+        load: &SnapshotLoad,
+        file: &SnapshotFile,
+        json: Option<&str>,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        tx.execute(DELETE_ITEMS, params![file.name])
+            .map_err(backend)?;
+        tx.execute(INSERT_ITEMS_FROM_STAGING, params![load.load_id])
+            .map_err(backend)?;
+        tx.execute(
+            UPSERT_SNAPSHOT_FILE,
+            params![
+                file.name,
+                file.version,
+                file.sha256,
+                file.git_ref,
+                file.item_count,
+                file.imported_at,
+                file.imported_by,
+                json
+            ],
+        )
+        .map_err(backend)?;
+        let target = format!("{}.json", file.name);
+        tx.execute(
+            INSERT_AUDIT,
+            params![
+                now,
+                actor,
+                "snapshot.import",
+                target,
+                format!("version={}", file.version)
+            ],
+        )
+        .map_err(backend)?;
+        for sql in [DELETE_STAGING, DELETE_SLICES, DELETE_LOAD] {
+            tx.execute(sql, params![load.load_id]).map_err(backend)?;
+        }
+        tx.commit().map_err(backend)
+    }
 }
