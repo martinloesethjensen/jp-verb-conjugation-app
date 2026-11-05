@@ -6,7 +6,7 @@ PYTHON ?= python3
 PUSH   ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help install-deps data data-check sign verify sign-commit keygen \
+.PHONY: help install-deps data data-check data-merge data-release sign verify sign-commit keygen \
         test test-py test-swift project check-project check audio-dry clean \
         review-test review-build
 
@@ -23,6 +23,12 @@ data: ## Regenerate the generated forms, data/forms.json (+ bundled copy) and th
 
 data-check: ## Verify the data is generated, valid and up to date (no writes)
 	$(PYTHON) scripts/update_data.py --check
+
+data-merge: ## Merge origin/main into a data branch, regenerating the generated files (no key needed)
+	$(PYTHON) scripts/data_merge.py
+
+data-release: ## Sign everything merged since the last release on a data-release/<date> PR (owner only)
+	scripts/data_release.sh
 
 sign: ## Sign data/manifest.json with your private key
 	$(PYTHON) scripts/sign_manifest.py sign
@@ -49,7 +55,7 @@ test-swift: ## Run VerbKit's Swift tests (macOS only)
 check-project: ## Check project.yml is consistent
 	$(PYTHON) scripts/check_project.py
 
-check: data-check test-py verify check-project ## Run the checks CI runs, except Swift
+check: data-check test-py check-project ## Run the checks CI runs on a pull request, except Swift
 
 # --- Review site (review/) ----------------------------------------------------
 

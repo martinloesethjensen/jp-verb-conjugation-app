@@ -27,6 +27,8 @@ Run `make` to list them. Needs Python 3; `make test-swift` and `make project` ne
 | `make data-check` | Verify the data is generated, valid and up to date, without writing |
 | `make sign` | Sign `data/manifest.json` with your private key |
 | `make verify` | Check `data/manifest.sig` against the key the app trusts |
+| `make data-merge` | Merge `origin/main` into a data branch, taking main's generated files and regenerating them |
+| `make data-release` | Sign every data change merged since the last release, on a `data-release/<date>` pull request |
 | `make sign-commit` | Check, sign, verify and commit `data/manifest.sig` (`make sign-commit PUSH=1` also pushes) |
 | `make keygen` | Create the signing key (once) |
 | `make test` | Run the Python and Swift tests |
@@ -42,19 +44,23 @@ Run `make` to list them. Needs Python 3; `make test-swift` and `make project` ne
 
 ## Changing the data
 
-The app only trusts a manifest signed with the maintainer's key, so every change under `data/` ends
-with a signature. The CI `data` check fails until that is done.
+The app only trusts a manifest signed with the maintainer's key. Data pull requests are not signed;
+the maintainer signs once per batch of merged changes.
 
 1. Edit `data/verbs.json`, `data/grammar.json`, `data/furigana.json` or `data/words.json`.
-2. `make data` regenerates the derived forms and the manifest. Commit the result.
-3. On a machine that has the private key, run `make sign-commit` (or `scripts/sign_and_commit.sh`).
+2. `make data` regenerates the derived forms, the bundled copies and the manifest. Commit the result
+   and open a pull request. CI checks it is valid and generated.
+3. If it falls behind `main`, run `make data-merge`.
+4. After merging, the `data` check on `main` stays red until a release. On a machine that has the
+   private key, `make data-release` opens a `data-release/<date>` pull request that signs everything
+   merged since the last one; merge it to publish.
 
 Each data file also ships inside the app (`Packages/VerbKit/Sources/VerbKit/Resources/`, written by `make data`,
 checked by `make data-check`). On launch a store installs its bundled copy into the persisted data when it is
 newer than anything the device has accepted, so a first launch with no network still has every file; a sync
 replaces it as usual, and Settings > Data shows "Bundled" until then.
 
-`scripts/sign_and_commit.sh` does the signing step safely:
+`make data-release` signs with `scripts/sign_and_commit.sh`, which does the signing step safely:
 
 - It runs `update_data.py --check` first and stops if the data is stale, so it never signs an
   out-of-date manifest.
@@ -72,6 +78,7 @@ Every verb has a stable id that favourites, quiz history, widgets and links stor
 on `origin/main` disappears (fetch `main` first). See
 [`docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md`](docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md).
 
-If two branches both change the data, merge one, then on the other run `make data`, commit, and
-sign again: the manifest's version and hash change every time. Key setup, data releases and key
-rotation are in [`docs/security/data-signing.md`](docs/security/data-signing.md).
+If two branches both change the data, merge one, then run `make data-merge` on the other: it takes
+main's manifest and bundled copies, regenerates them and commits, and stops only if both branches
+edited the same hand-authored entry. Key setup, data releases and key rotation are in
+[`docs/security/data-signing.md`](docs/security/data-signing.md).

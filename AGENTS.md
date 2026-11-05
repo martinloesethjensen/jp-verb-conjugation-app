@@ -39,8 +39,12 @@ committed**. Never edit it; edit `project.yml` and run `make project`.
    is retried on the next launch. Do not simplify this ordering.
 7. **Wording is a UI concern.** User-facing strings belong in `App/` (see `GrammarDisplay.swift`).
    `DataSyncStatus` in VerbKit is a known existing exception, not a pattern to copy.
-8. **Data is signed.** Changes under `data/` must be regenerated with `make data` and signed with
-   `make sign-commit`. CI rejects unsigned, stale or tampered data.
+8. **Data is signed once per batch.** Changes under `data/` must be regenerated with `make data`
+   and committed with everything it writes, but feature PRs are **not** signed and never touch
+   `data/manifest.sig`. If a data PR conflicts with main, run `make data-merge`, which resolves the
+   generated files and stops only on real conflicts in hand-authored files. The owner publishes merged
+   changes with `make data-release`; never run it or `make sign-commit` yourself. CI rejects stale
+   or invalid data on PRs, and checks the signature on `main` (red there means "not released yet").
 
 ## Future Android client
 
@@ -74,7 +78,9 @@ Run `make` for the full list. Common ones:
 | `make check-project` | Validate `project.yml` paths and version consistency |
 | `make project` | Regenerate the Xcode project |
 | `make data` / `make data-check` | Regenerate / verify published data |
-| `make sign-commit` | Sign the manifest and commit only `manifest.sig` |
+| `make data-merge` | Merge `origin/main` into a data branch, regenerating the generated files |
+| `make data-release` | Owner only: sign everything merged since the last release on a `data-release/<date>` PR |
+| `make sign-commit` | Sign the manifest and commit only `manifest.sig` (used by `make data-release`) |
 | `make review-test` / `make review-build` | Test / build the review site |
 
 ## Use these first — do not reinvent
@@ -167,7 +173,8 @@ formatter, App Group defaults helper, date formatter or widget theme.
 - `project.yml` repeats `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` per target; change both
   together and run `make check-project`.
 - Do not commit `.xcodeproj`, `DerivedData`, `.build`, signing keys or `__pycache__`.
-- Data edits without a fresh signature fail CI even when the JSON is valid.
+- Data edits that were not regenerated with `make data` fail CI even when the JSON is valid. A merged
+  data change leaves the `data` check on `main` red until the owner runs `make data-release`.
 - `UserDefaults.appGroup` is an App-only alias of VerbKit's `UserDefaults.verbKitAppGroup`; use
   `userDefaults.verbKitAppGroup` (not a new `UserDefaults(suiteName:)`) inside VerbKit.
 - VerbKit deliberately has no SwiftUI dependency. Shared SwiftUI components live in `App/UI/` and
