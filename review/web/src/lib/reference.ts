@@ -5,6 +5,6 @@ let pending: Promise<Reference> | undefined;
 
 /** The reference data, or empty maps when it isn't loaded or can't be fetched (text shows without ruby). */
 export function loadReference(): Promise<Reference> {
-	pending ??= getReference().catch(() => ({ readings: {}, forms: {} }));
+	pending ??= getReference().catch(() => ({ readings: {}, forms: {}, fields: {} }));
 	return pending;
 }

@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
+import { FIELDS, reviewMock } from './mock-review.ts';
 
 type User = { email: string; display_name: string; role: 'admin' | 'reviewer'; active: boolean };
 
@@ -71,6 +72,8 @@ function publishedData() {
 	return {
 		load(file: string) {
 			if (!(FILES as readonly string[]).includes(file)) return undefined;
+			// Re-read, so editing a data file and reloading it makes earlier reviews stale.
+			docs[file] = readData(file);
 			const snapshot = {
 				name: file,
 				version: version(file),
@@ -91,8 +94,10 @@ function publishedData() {
 			readings: loaded.has('furigana') ? docs.furigana.readings : {},
 			forms: loaded.has('forms')
 				? Object.fromEntries((docs.forms.forms as Json[]).map((f) => [f.id, f.label]))
-				: {}
-		})
+				: {},
+			fields: FIELDS
+		}),
+		formIds: () => (loaded.has('forms') ? (docs.forms.forms as Json[]).map((f) => f.id as string) : [])
 	};
 }
 
@@ -104,6 +109,14 @@ function handler() {
 	const me = process.env.MOCK_ROLE === 'reviewer' ? users[0] : users[1];
 	const data = publishedData();
 	if (process.env.MOCK_LOADED) for (const f of FILES) data.load(f);
+	const review = reviewMock({
+		entries: data.entries,
+		isLoaded: data.isLoaded,
+		readings: () => data.reference().readings,
+		formIds: data.formIds,
+		users,
+		me
+	});
 
 	return async (req: IncomingMessage, res: ServerResponse) => {
 		const send = (status: number, body: unknown) => {
@@ -122,15 +135,21 @@ function handler() {
 			if (!data.isLoaded(dataset)) return send(404, { error: "Martin hasn't loaded this data yet." });
 			const all = data.entries(dataset);
 			if (path === '/items') {
-				const items = all.map((e) => ({ item_id: e.item_id, title: e.title, subtitle: e.subtitle, jlpt: e.jlpt, parts: e.parts }));
+				const items = all.map((e) => {
+					const { approved, open } = review.counts(dataset, e.item_id);
+					return { item_id: e.item_id, title: e.title, subtitle: e.subtitle, jlpt: e.jlpt, parts: e.parts, approved, open, targets: e.parts + 1 };
+				});
 				return send(200, { dataset, version: data.version(dataset), items });
 			}
 			const id = params.get('id');
 			if (!id) return send(400, { error: 'which item? (id is missing)' });
 			const found = all.find((e) => e.item_id === id);
 			if (!found) return send(404, { error: 'no such item' });
-			return send(200, { dataset, version: data.version(dataset), id, content_hash: 'mock', item: found.json });
+			const contentHash = review.counts(dataset, id).hash;
+			return send(200, { dataset, version: data.version(dataset), id, content_hash: contentHash, item: found.json });
 		}
+		const reviewed = review.handle(path ?? '', req.method ?? 'GET', params, req.method === 'POST' ? await readJson(req) : {});
+		if (reviewed) return send(reviewed[0], reviewed[1]);
 		if (path?.startsWith('/admin/snapshot/') && req.method === 'POST') {
 			if (me.role !== 'admin') return send(403, { error: "this account can't do that" });
 			const body = await readJson(req);
