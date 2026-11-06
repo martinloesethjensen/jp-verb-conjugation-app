@@ -67,6 +67,7 @@ struct CounterOfTheDayWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: CounterProvider()) { entry in
             CounterWidgetView(entry: entry)
+                .widgetThemed(date: entry.date)
         }
         .configurationDisplayName("Counter of the Day")
         .description("A counter and all its readings, from Verb Table.")
