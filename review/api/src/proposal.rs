@@ -14,6 +14,8 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
+pub use crate::addition::*;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Input {
@@ -27,6 +29,10 @@ pub enum Input {
     Choice,
     /// A form id from `forms.json`.
     Form,
+    /// Hiragana or katakana (and ー).
+    Kana,
+    /// Lowercase letters, digits and single hyphens: a new counter's or grammar point's id.
+    Slug,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -35,6 +41,8 @@ pub struct Field {
     pub input: Input,
     pub optional: bool,
     pub choices: &'static [&'static str],
+    /// What an add form starts with (only a new counter's `symbol` has one).
+    pub default: Option<&'static str>,
 }
 
 /// The most characters in one field, comment or reply.
@@ -42,17 +50,18 @@ pub const MAX_TEXT: usize = 2000;
 /// The most furigana readings one suggestion may add.
 pub const MAX_READINGS: usize = 20;
 
-const JLPT: &[&str] = &["N5", "N4", "N3", "N2", "N1"];
-const VERB_TYPES: &[&str] = &["ru", "u", "irr."];
+pub(crate) const JLPT: &[&str] = &["N5", "N4", "N3", "N2", "N1"];
+pub(crate) const VERB_TYPES: &[&str] = &["ru", "u", "irr."];
 const VERB_LABELS: &[&str] = &["Ru-verb", "U-verb", "Irregular"];
-const TE_GROUPS: &[&str] = &["ide", "ite", "nde", "shite", "tte"];
-const FITS: &[&str] = &["primary", "casual", "acceptable"];
+pub(crate) const TE_GROUPS: &[&str] = &["ide", "ite", "nde", "shite", "tte"];
+pub(crate) const FITS: &[&str] = &["primary", "casual", "acceptable"];
 
-const fn field(name: &'static str, input: Input) -> Field {
+pub(crate) const fn field(name: &'static str, input: Input) -> Field {
     Field {
         name,
         input,
         optional: false,
+        default: None,
         choices: match input {
             Input::Jlpt => JLPT,
             _ => &[],
@@ -60,24 +69,25 @@ const fn field(name: &'static str, input: Input) -> Field {
     }
 }
 
-const fn optional(f: Field) -> Field {
+pub(crate) const fn optional(f: Field) -> Field {
     Field {
         optional: true,
         ..f
     }
 }
 
-const fn choice(name: &'static str, choices: &'static [&'static str]) -> Field {
+pub(crate) const fn choice(name: &'static str, choices: &'static [&'static str]) -> Field {
     Field {
         name,
         input: Input::Choice,
         optional: false,
         choices,
+        default: None,
     }
 }
 
-const JP_EN: &[Field] = &[field("jp", Input::Text), field("en", Input::Text)];
-const PITFALL: &[Field] = &[
+pub(crate) const JP_EN: &[Field] = &[field("jp", Input::Text), field("en", Input::Text)];
+pub(crate) const PITFALL: &[Field] = &[
     field("heading", Input::Text),
     field("explanation", Input::Long),
     optional(field("wrong", Input::Text)),
@@ -93,7 +103,7 @@ const VERB_ENTRY: &[Field] = &[
     field("jlpt", Input::Jlpt),
     optional(choice("teGroup", TE_GROUPS)),
 ];
-const VERB_EXAMPLE: &[Field] = &[
+pub(crate) const VERB_EXAMPLE: &[Field] = &[
     field("form", Input::Form),
     field("jp", Input::Text),
     field("en", Input::Text),
@@ -109,7 +119,7 @@ const COUNTER_ENTRY: &[Field] = &[
     field("meaning", Input::Text),
     field("jlpt", Input::Jlpt),
 ];
-const COUNTER_THING: &[Field] = &[
+pub(crate) const COUNTER_THING: &[Field] = &[
     field("word", Input::Text),
     field("kana", Input::Text),
     field("meaning", Input::Text),
@@ -120,7 +130,7 @@ const GRAMMAR_ENTRY: &[Field] = &[
     field("summary", Input::Long),
     field("jlpt", Input::Jlpt),
 ];
-const GRAMMAR_USAGE: &[Field] = &[
+pub(crate) const GRAMMAR_USAGE: &[Field] = &[
     field("heading", Input::Text),
     field("explanation", Input::Long),
     optional(field("jlpt", Input::Jlpt)),
@@ -223,6 +233,73 @@ pub struct Change {
     pub dropped_blanks: u32,
 }
 
+/// One field's value under the text rules: trimmed, at most `MAX_TEXT` characters, one of its choices,
+/// kana or a slug where its input says so. `None` is an optional field left empty (the key is removed);
+/// a required one left empty is an error. The error is the message a reviewer sees.
+pub(crate) fn field_value(
+    field: &Field,
+    key: &str,
+    value: &Value,
+) -> Result<Option<String>, String> {
+    let text = match value {
+        Value::String(text) => text.trim(),
+        Value::Null => "",
+        _ => return Err(format!("{key} must be text")),
+    };
+    if text.chars().count() > MAX_TEXT {
+        return Err(format!("{key} is too long"));
+    }
+    if text.is_empty() {
+        return if field.optional {
+            Ok(None)
+        } else {
+            Err(format!("{key} can't be empty"))
+        };
+    }
+    match field.input {
+        Input::Choice | Input::Jlpt if !field.choices.contains(&text) => Err(format!(
+            "{key} must be one of: {}",
+            field.choices.join(", ")
+        )),
+        Input::Kana if !text.chars().all(is_kana) => Err(format!("{key} must be written in kana")),
+        Input::Slug if !is_slug(text) => Err(format!(
+            "{key} must be lowercase letters, digits and hyphens"
+        )),
+        _ => Ok(Some(text.to_string())),
+    }
+}
+
+fn is_kana(c: char) -> bool {
+    matches!(c, '\u{3041}'..='\u{309F}' | '\u{30A0}'..='\u{30FF}')
+}
+
+/// `^[a-z0-9]+(-[a-z0-9]+)*$`, at most 40 characters.
+fn is_slug(text: &str) -> bool {
+    text.len() <= 40
+        && text.split('-').all(|part| {
+            !part.is_empty()
+                && part
+                    .chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
+        })
+}
+
+/// A verb example's form must be in the catalogue and one the verb has (as `check_example_forms`).
+pub(crate) fn check_verb_form(
+    dict: &str,
+    forms: &Value,
+    form: &str,
+    form_ids: &BTreeSet<String>,
+) -> Result<(), String> {
+    if !form_ids.contains(form) {
+        return Err(format!("there is no form called {form}"));
+    }
+    if !forms[form].as_str().is_some_and(|value| !value.is_empty()) {
+        return Err(format!("{dict} has no {form} form"));
+    }
+    Ok(())
+}
+
 pub fn locked_message(key: &str) -> String {
     format!("{key} can't be changed here; leave a note for Martin instead")
 }
@@ -253,45 +330,23 @@ pub fn build_change(
             .find(|f| f.name == key)
             .filter(|_| !locked(file, kind).contains(&key.as_str()))
             .ok_or_else(|| locked_message(key))?;
-        let text = match value {
-            Value::String(text) => text.trim(),
-            Value::Null => "",
-            _ => return Err(format!("{key} must be text")),
-        };
-        if text.chars().count() > MAX_TEXT {
-            return Err(format!("{key} is too long"));
-        }
-        if text.is_empty() {
-            if !field.optional {
-                return Err(format!("{key} can't be empty"));
+        match field_value(field, key, value)? {
+            Some(text) => {
+                proposed.insert(key.clone(), Value::String(text));
             }
-            proposed.remove(key);
-            continue;
+            None => {
+                proposed.remove(key);
+            }
         }
-        if matches!(field.input, Input::Choice | Input::Jlpt) && !field.choices.contains(&text) {
-            return Err(format!(
-                "{key} must be one of: {}",
-                field.choices.join(", ")
-            ));
-        }
-        proposed.insert(key.clone(), Value::String(text.to_string()));
     }
     let mut proposed = Value::Object(proposed);
     if &proposed == current {
         return Err("nothing changed".into());
     }
     if file == DataFile::Verbs && kind == Kind::Example && proposed["form"] != current["form"] {
+        let dict = entry["dict"].as_str().unwrap_or_default();
         let form = proposed["form"].as_str().unwrap_or_default();
-        if !form_ids.contains(form) {
-            return Err(format!("there is no form called {form}"));
-        }
-        let has = entry["forms"][form]
-            .as_str()
-            .is_some_and(|value| !value.is_empty());
-        if !has {
-            let dict = entry["dict"].as_str().unwrap_or_default();
-            return Err(format!("{dict} has no {form} form"));
-        }
+        check_verb_form(dict, &entry["forms"], form, form_ids)?;
     }
     let dropped_blanks = keep_matching_blanks(&mut proposed, current);
     let schema = |e: String| format!("doesn't fit the data schema: {e}");
@@ -342,7 +397,7 @@ fn keep_matching_blanks(proposed: &mut Value, current: &Value) -> u32 {
     dropped
 }
 
-fn check_part(file: DataFile, kind: Kind, part: &Value) -> Result<(), String> {
+pub(crate) fn check_part(file: DataFile, kind: Kind, part: &Value) -> Result<(), String> {
     fn strict<'a, T: serde::Deserialize<'a>>(value: &'a Value) -> Result<(), String> {
         T::deserialize(value).map(drop).map_err(|e| e.to_string())
     }
@@ -359,7 +414,7 @@ fn check_part(file: DataFile, kind: Kind, part: &Value) -> Result<(), String> {
     }
 }
 
-fn is_kanji(c: char) -> bool {
+pub(crate) fn is_kanji(c: char) -> bool {
     matches!(c,
         '々' | '\u{3400}'..='\u{4DBF}' | '\u{4E00}'..='\u{9FFF}' | '\u{F900}'..='\u{FAFF}'
         | '\u{20000}'..='\u{2FA1F}')
