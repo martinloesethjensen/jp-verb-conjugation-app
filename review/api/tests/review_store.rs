@@ -82,6 +82,47 @@ fn change(t: &Target, base_hash: &str, proposed: &str) -> NewSuggestion {
         furigana_json: None,
         dropped_blanks: 0,
         comment: String::new(),
+        parent_kind: None,
+        parent_id: None,
+        fingerprint: None,
+    }
+}
+
+/// A suggested new verb example on `parent` (a verb id), with its new stable id.
+fn addition(parent: &str, new_id: &str, jp: &str) -> NewSuggestion {
+    NewSuggestion {
+        action: "add".into(),
+        target: target("verbs", "example", new_id),
+        entry_id: parent.into(),
+        item_title: jp.into(),
+        base_hash: String::new(),
+        proposed_json: Some(format!(
+            r#"{{"id":"{new_id}","form":"te","jp":"{jp}","en":"x"}}"#
+        )),
+        furigana_json: None,
+        dropped_blanks: 0,
+        comment: String::new(),
+        parent_kind: Some("entry".into()),
+        parent_id: Some(parent.into()),
+        fingerprint: Some(format!(r#"{{"form":"te","jp":"{jp}","en":"x"}}"#)),
+    }
+}
+
+/// A suggested new word (an entry addition).
+fn new_word(id: &str) -> NewSuggestion {
+    NewSuggestion {
+        action: "add".into(),
+        target: target("words", "entry", id),
+        entry_id: id.into(),
+        item_title: id.into(),
+        base_hash: String::new(),
+        proposed_json: Some("{}".into()),
+        furigana_json: None,
+        dropped_blanks: 0,
+        comment: String::new(),
+        parent_kind: None,
+        parent_id: None,
+        fingerprint: Some(format!(r#"{{"id":"{id}"}}"#)),
     }
 }
 
@@ -512,4 +553,135 @@ async fn a_decision_that_loses_a_race_writes_no_audit_row() {
     drop(conn);
     assert_eq!((logged, changed, withdrawn_log, withdrawn), (0, 0, 0, 0));
     assert_eq!(audit_actions(&s).len(), before);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_addition_is_stored_with_its_parent() {
+    let s = setup().await;
+    let (id, created) = s
+        .add_suggestion(
+            &addition("たべる", "new001", "食べてから寝ます。"),
+            AIKO,
+            T0,
+        )
+        .await
+        .unwrap();
+    assert!(created);
+    let got = s.suggestion(id, BEN).await.unwrap().unwrap();
+    assert_eq!(got.action, "add");
+    assert_eq!(got.parent_kind.as_deref(), Some("entry"));
+    assert_eq!(got.parent_id.as_deref(), Some("たべる"));
+    assert!(!got.stale && !got.gone && !got.landed);
+    let (_, listed) = s.entry_review("verbs", "たべる", BEN).await.unwrap();
+    assert_eq!(listed.iter().filter(|x| x.id == id).count(), 1);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_same_addition_twice_is_one_row() {
+    let s = setup().await;
+    let (first, _) = s
+        .add_suggestion(&addition("たべる", "new001", "同じ。"), AIKO, T0)
+        .await
+        .unwrap();
+    let (second, created) = s
+        .add_suggestion(&addition("たべる", "new002", "同じ。"), AIKO, T0)
+        .await
+        .unwrap();
+    assert_eq!(first, second);
+    assert!(!created);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_part_addition_goes_when_its_parent_goes() {
+    let s = setup().await;
+    let (id, _) = s
+        .add_suggestion(&addition("たべる", "new001", "あ。"), AIKO, T0)
+        .await
+        .unwrap();
+    let mut d = doc(DataFile::Verbs);
+    d["verbs"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|v| v["dict"] != "たべる");
+    load(&s, DataFile::Verbs, d.to_string().as_bytes()).await;
+    assert!(s.suggestion(id, AIKO).await.unwrap().unwrap().gone);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_addition_lands_after_export() {
+    let s = setup().await;
+    let (id, _) = s
+        .add_suggestion(&new_word("noun:ねこ"), AIKO, T0)
+        .await
+        .unwrap();
+    assert!(!s.suggestion(id, AIKO).await.unwrap().unwrap().gone);
+    let mut d = doc(DataFile::Words);
+    d["words"].as_array_mut().unwrap().push(serde_json::json!(
+        {"class": "noun", "dict": "ねこ", "meaning": "cat", "jlpt": "N5", "forms": {}}
+    ));
+    load(&s, DataFile::Words, d.to_string().as_bytes()).await;
+    assert!(s.suggestion(id, AIKO).await.unwrap().unwrap().landed);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn ids_in_use_cover_items_and_pending_additions() {
+    let s = setup().await;
+    let verbs = doc(DataFile::Verbs);
+    let loaded = verbs["verbs"][0]["examples"][0]["id"].as_str().unwrap();
+    assert!(s.id_in_use("verbs", loaded).await.unwrap());
+    let (open, _) = s
+        .add_suggestion(&addition("たべる", "open01", "あ。"), AIKO, T0)
+        .await
+        .unwrap();
+    assert!(s.id_in_use("verbs", "open01").await.unwrap());
+    let _ = open;
+    let (gone, _) = s
+        .add_suggestion(&addition("たべる", "gone01", "い。"), AIKO, T0)
+        .await
+        .unwrap();
+    s.withdraw(gone, AIKO, T0).await.unwrap();
+    assert!(!s.id_in_use("verbs", "gone01").await.unwrap());
+    assert!(!s.id_in_use("verbs", "zzzzzz").await.unwrap());
+    assert_eq!(
+        s.open_add_for("verbs", "example", "open01").await.unwrap(),
+        Some(open)
+    );
+    assert_eq!(
+        s.open_add_for("verbs", "example", "gone01").await.unwrap(),
+        None
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn additions_lists_new_entries_only() {
+    let s = setup().await;
+    let (word, _) = s
+        .add_suggestion(&new_word("noun:ねこ"), AIKO, T0)
+        .await
+        .unwrap();
+    s.add_suggestion(&addition("たべる", "new001", "あ。"), AIKO, T0)
+        .await
+        .unwrap();
+    let words = s.additions("words", BEN).await.unwrap();
+    assert_eq!(words.iter().map(|x| x.id).collect::<Vec<_>>(), [word]);
+    assert!(s.additions("verbs", BEN).await.unwrap().is_empty());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_migration_keeps_existing_suggestions() {
+    let s = SqliteStore::with_migrations_before("0005");
+    {
+        let conn = s.conn.borrow();
+        conn.execute_batch(
+            "INSERT INTO suggestions (action, dataset, kind, item_id, entry_id, item_title, base_hash, author, created_at)
+             VALUES ('change', 'words', 'entry', 'noun:x', 'noun:x', 'x', 'h', 'aiko@example.com', 't');
+             INSERT INTO comments (suggestion_id, author, body, created_at) VALUES (1, 'aiko@example.com', 'hi', 't');",
+        )
+        .unwrap();
+    }
+    s.apply_migrations_from("0005");
+    let got = s.suggestion(1, AIKO).await.unwrap().unwrap();
+    assert_eq!(got.action, "change");
+    assert_eq!(got.parent_kind, None);
+    assert_eq!(got.comments.len(), 1);
 }

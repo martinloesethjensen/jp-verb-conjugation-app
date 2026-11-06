@@ -558,6 +558,32 @@ impl ReviewStore for D1Store {
             .await
     }
 
+    async fn id_in_use(&self, dataset: &str, id: &str) -> Result<bool, StoreError> {
+        let rows: Vec<IdRow> = self
+            .rows(SELECT_ID_IN_USE, &[text(dataset), text(id)])
+            .await?;
+        Ok(!rows.is_empty())
+    }
+
+    async fn open_add_for(
+        &self,
+        dataset: &str,
+        kind: &str,
+        item_id: &str,
+    ) -> Result<Option<i64>, StoreError> {
+        let rows: Vec<IdRow> = self
+            .rows(SELECT_OPEN_ADD, &[text(dataset), text(kind), text(item_id)])
+            .await?;
+        Ok(rows.first().map(|r| r.id))
+    }
+
+    async fn additions(&self, dataset: &str, viewer: &str) -> Result<Vec<Suggestion>, StoreError> {
+        let binds = [text(viewer), text(dataset)];
+        let rows = self.rows(SELECT_ADDITIONS, &binds).await?;
+        let comments = self.rows(SELECT_ADDITIONS_COMMENTS, &binds).await?;
+        Ok(assemble(rows, comments))
+    }
+
     async fn add_suggestion(
         &self,
         s: &NewSuggestion,
@@ -565,8 +591,22 @@ impl ReviewStore for D1Store {
         now: &str,
     ) -> Result<(i64, bool), StoreError> {
         let t = &s.target;
-        let existing: Vec<IdRow> = self
-            .rows(
+        let existing: Vec<IdRow> = if s.action == "add" {
+            self.rows(
+                SELECT_IDENTICAL_ADD,
+                &[
+                    text(&t.dataset),
+                    text(&t.kind),
+                    maybe(s.parent_id.as_deref()),
+                    text(author),
+                    maybe(s.fingerprint.as_deref()),
+                    maybe(s.furigana_json.as_deref()),
+                    text(&s.comment),
+                ],
+            )
+            .await?
+        } else {
+            self.rows(
                 SELECT_IDENTICAL_OPEN,
                 &[
                     text(&s.action),
@@ -579,7 +619,8 @@ impl ReviewStore for D1Store {
                     text(&s.comment),
                 ],
             )
-            .await?;
+            .await?
+        };
         if let Some(row) = existing.into_iter().next() {
             return Ok((row.id, false));
         }
@@ -599,6 +640,9 @@ impl ReviewStore for D1Store {
                 text(&s.comment),
                 text(author),
                 text(now),
+                maybe(s.parent_kind.as_deref()),
+                maybe(s.parent_id.as_deref()),
+                maybe(s.fingerprint.as_deref()),
             ],
         )?;
         let detail = format!("action={} target={}", s.action, t.audit_name());

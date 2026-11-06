@@ -66,8 +66,13 @@ pub struct Suggestion {
     pub decided_at: Option<String>,
     /// The item changed since the suggestion was made.
     pub stale: bool,
-    /// The item is no longer in the loaded data.
+    /// The item (an addition: its parent) is no longer in the loaded data.
     pub gone: bool,
+    /// An addition's parent; `None` otherwise and for a new entry.
+    pub parent_kind: Option<String>,
+    pub parent_id: Option<String>,
+    /// An addition whose new item is now among the loaded items (after export and reload).
+    pub landed: bool,
     pub comments: Vec<Comment>,
 }
 
@@ -108,6 +113,11 @@ pub struct NewSuggestion {
     pub furigana_json: Option<String>,
     pub dropped_blanks: u32,
     pub comment: String,
+    /// An addition's parent: `None` for a change, removal, note or new entry.
+    pub parent_kind: Option<String>,
+    pub parent_id: Option<String>,
+    /// An addition's item without its ids, so a double tap finds the first one.
+    pub fingerprint: Option<String>,
 }
 
 /// Which items a queue holds. Empty lists mean "any"; `ids` match `item_id` exactly within the dataset.
@@ -203,6 +213,9 @@ pub struct SuggestionRow {
     pub decided_at: Option<String>,
     pub stale: i64,
     pub gone: i64,
+    pub parent_kind: Option<String>,
+    pub parent_id: Option<String>,
+    pub landed: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -317,6 +330,9 @@ pub fn assemble(rows: Vec<SuggestionRow>, comments: Vec<CommentRow>) -> Vec<Sugg
             decided_at: r.decided_at,
             stale: r.stale != 0,
             gone: r.gone != 0,
+            parent_kind: r.parent_kind,
+            parent_id: r.parent_id,
+            landed: r.landed != 0,
         })
         .collect()
 }
@@ -340,10 +356,23 @@ pub const DELETE_APPROVAL: &str =
 pub const SELECT_IDENTICAL_OPEN: &str = "SELECT id FROM suggestions WHERE action = ?1 AND dataset = ?2 AND kind = ?3 \
      AND item_id = ?4 AND author = ?5 AND status = 'open' AND IFNULL(proposed_json, '') = IFNULL(?6, '') \
      AND IFNULL(furigana_json, '') = IFNULL(?7, '') AND comment = ?8 ORDER BY id LIMIT 1";
+/// An identical open addition: same author, dataset, kind, parent and item (ids aside). ?1 dataset,
+/// ?2 kind, ?3 parent id, ?4 author, ?5 fingerprint, ?6 furigana, ?7 comment.
+pub const SELECT_IDENTICAL_ADD: &str = "SELECT id FROM suggestions WHERE action = 'add' AND dataset = ?1 AND kind = ?2 \
+     AND IFNULL(parent_id, '') = IFNULL(?3, '') AND author = ?4 AND status = 'open' AND fingerprint = ?5 \
+     AND IFNULL(furigana_json, '') = IFNULL(?6, '') AND comment = ?7 ORDER BY id LIMIT 1";
+/// ?1 dataset, ?2 id: a loaded item, or an open or accepted addition, already uses it.
+pub const SELECT_ID_IN_USE: &str = "SELECT 1 AS id FROM items WHERE dataset = ?1 AND item_id = ?2 \
+     UNION ALL SELECT 1 AS id FROM suggestions WHERE dataset = ?1 AND item_id = ?2 AND action = 'add' \
+     AND status IN ('open', 'accepted') LIMIT 1";
+/// ?1 dataset, ?2 kind, ?3 item id.
+pub const SELECT_OPEN_ADD: &str =
+    "SELECT id FROM suggestions WHERE action = 'add' AND dataset = ?1 AND kind = ?2 \
+     AND item_id = ?3 AND status = 'open' ORDER BY id LIMIT 1";
 pub const INSERT_SUGGESTION: &str =
     "INSERT INTO suggestions (action, dataset, kind, item_id, entry_id, item_title, base_hash, \
-     proposed_json, furigana_json, dropped_blanks, comment, author, created_at) \
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13) RETURNING id";
+     proposed_json, furigana_json, dropped_blanks, comment, author, created_at, parent_kind, parent_id, fingerprint) \
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16) RETURNING id";
 /// The audit row for the suggestion just inserted by ?2 in this batch: ?1 now, ?2 author, ?3 detail.
 pub const INSERT_SUGGESTION_AUDIT: &str = "INSERT INTO audit_log (at, actor, action, target, detail) \
      SELECT ?1, ?2, 'suggestion.add', 'suggestion/' || MAX(id), ?3 FROM suggestions WHERE author = ?2";
@@ -378,9 +407,13 @@ macro_rules! suggestions_where {
             "SELECT s.id, s.action, s.dataset, s.kind, s.item_id, s.entry_id, s.item_title, s.author, ",
             "IFNULL(u.display_name, '') AS author_name, (s.author = ?1) AS mine, s.status, s.base_hash, s.proposed_json, ",
             "s.furigana_json, s.dropped_blanks, s.comment, s.admin_edit_json, s.created_at, s.decided_at, ",
-            "(i.content_hash IS NOT NULL AND i.content_hash <> s.base_hash) AS stale, (i.content_hash IS NULL) AS gone ",
+            // An addition is never stale; it is gone when its parent left, and landed once its item is loaded.
+            "CASE WHEN s.action = 'add' THEN 0 ELSE (i.content_hash IS NOT NULL AND i.content_hash <> s.base_hash) END AS stale, ",
+            "CASE WHEN s.action = 'add' THEN (s.parent_id IS NOT NULL AND p.item_id IS NULL) ELSE (i.content_hash IS NULL) END AS gone, ",
+            "s.parent_kind, s.parent_id, (s.action = 'add' AND i.content_hash IS NOT NULL) AS landed ",
             "FROM suggestions s LEFT JOIN users u ON u.email = s.author ",
             "LEFT JOIN items i ON i.dataset = s.dataset AND i.kind = s.kind AND i.item_id = s.item_id ",
+            "LEFT JOIN items p ON p.dataset = s.dataset AND p.kind = s.parent_kind AND p.item_id = s.parent_id ",
             $where,
             " ",
             $order
@@ -409,6 +442,14 @@ pub const SELECT_ENTRY_SUGGESTIONS: &str = suggestions_where!(
 );
 pub const SELECT_ENTRY_COMMENTS: &str =
     comments_where!("WHERE s.dataset = ?2 AND s.entry_id = ?3 AND ?1 IS NOT NULL");
+/// ?1 viewer, ?2 dataset. Suggested new entries, not withdrawn, newest first.
+pub const SELECT_ADDITIONS: &str = suggestions_where!(
+    "WHERE s.dataset = ?2 AND s.action = 'add' AND s.kind = 'entry' AND s.status <> 'withdrawn'",
+    "ORDER BY s.id DESC"
+);
+pub const SELECT_ADDITIONS_COMMENTS: &str = comments_where!(
+    "WHERE s.dataset = ?2 AND s.action = 'add' AND s.kind = 'entry' AND ?1 IS NOT NULL"
+);
 /// ?1 viewer, ?2 status. Oldest first.
 pub const SELECT_INBOX: &str = suggestions_where!("WHERE s.status = ?2", "ORDER BY s.id");
 pub const SELECT_INBOX_COMMENTS: &str = comments_where!("WHERE s.status = ?2 AND ?1 IS NOT NULL");
@@ -569,6 +610,17 @@ pub trait ReviewStore {
         now: &str,
     ) -> Result<(i64, bool), StoreError>;
     async fn suggestion(&self, id: i64, viewer: &str) -> Result<Option<Suggestion>, StoreError>;
+    /// Whether a loaded item, or an open or accepted addition, in the dataset uses `id`.
+    async fn id_in_use(&self, dataset: &str, id: &str) -> Result<bool, StoreError>;
+    /// The open addition of `(dataset, kind, item_id)`, if any.
+    async fn open_add_for(
+        &self,
+        dataset: &str,
+        kind: &str,
+        item_id: &str,
+    ) -> Result<Option<i64>, StoreError>;
+    /// Suggested new entries in a dataset, not withdrawn, newest first.
+    async fn additions(&self, dataset: &str, viewer: &str) -> Result<Vec<Suggestion>, StoreError>;
     /// `NotFound` unless the suggestion is open; `Conflict` if it isn't the author's.
     async fn withdraw(&self, id: i64, author: &str, now: &str) -> Result<(), StoreError>;
     /// `NotFound` for an unknown id; `Conflict` unless it is open. `furigana_json`, when given, replaces

@@ -318,6 +318,9 @@ pub async fn suggest<S: Store + ReviewStore>(
         furigana_json,
         dropped_blanks,
         comment,
+        parent_kind: None,
+        parent_id: None,
+        fingerprint: None,
     };
     let (id, created) = tri!(store
         .add_suggestion(&new, &by.email, now)

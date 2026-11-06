@@ -16,21 +16,47 @@ impl Default for SqliteStore {
     }
 }
 
+/// One migration in one transaction, as D1 applies it (so `PRAGMA defer_foreign_keys` holds).
+fn run_migration(conn: &Connection, file: &Path) {
+    let sql = std::fs::read_to_string(file).unwrap();
+    conn.execute_batch(&format!("BEGIN;\n{sql}\nCOMMIT;"))
+        .unwrap_or_else(|e| panic!("{}: {e}", file.display()));
+}
+
 impl SqliteStore {
     pub fn new() -> Self {
-        let conn = Connection::open_in_memory().unwrap();
+        // "~" sorts after every migration file name, so this applies them all.
+        Self::with_migrations_before("~")
+    }
+
+    /// The migration files whose names sort before (or, `from`, at and after) `name`.
+    fn migrations(keep: impl Fn(&str) -> bool) -> Vec<std::path::PathBuf> {
         let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
         let mut files: Vec<_> = std::fs::read_dir(dir)
             .unwrap()
             .map(|e| e.unwrap().path())
+            .filter(|p| keep(&p.file_name().unwrap().to_string_lossy()))
             .collect();
         files.sort();
-        for file in files {
-            conn.execute_batch(&std::fs::read_to_string(file).unwrap())
-                .unwrap();
+        files
+    }
+
+    /// A store with only the migrations whose file names sort before `name` (e.g. `"0005"`).
+    pub fn with_migrations_before(name: &str) -> Self {
+        let conn = Connection::open_in_memory().unwrap();
+        for file in Self::migrations(|f| f < name) {
+            run_migration(&conn, &file);
         }
         SqliteStore {
             conn: RefCell::new(conn),
+        }
+    }
+
+    /// Applies the migrations whose file names sort at or after `name`.
+    pub fn apply_migrations_from(&self, name: &str) {
+        let conn = self.conn.borrow();
+        for file in Self::migrations(|f| f >= name) {
+            run_migration(&conn, &file);
         }
     }
 }
@@ -504,6 +530,29 @@ impl ReviewStore for SqliteStore {
         query(&conn, SELECT_PARTS, params![dataset, entry_id])
     }
 
+    async fn id_in_use(&self, dataset: &str, id: &str) -> Result<bool, StoreError> {
+        let conn = self.conn.borrow();
+        Ok(!query::<IdRow>(&conn, SELECT_ID_IN_USE, params![dataset, id])?.is_empty())
+    }
+
+    async fn open_add_for(
+        &self,
+        dataset: &str,
+        kind: &str,
+        item_id: &str,
+    ) -> Result<Option<i64>, StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<IdRow> = query(&conn, SELECT_OPEN_ADD, params![dataset, kind, item_id])?;
+        Ok(rows.first().map(|r| r.id))
+    }
+
+    async fn additions(&self, dataset: &str, viewer: &str) -> Result<Vec<Suggestion>, StoreError> {
+        let conn = self.conn.borrow();
+        let rows = query(&conn, SELECT_ADDITIONS, params![viewer, dataset])?;
+        let comments = query(&conn, SELECT_ADDITIONS_COMMENTS, params![viewer, dataset])?;
+        Ok(assemble(rows, comments))
+    }
+
     async fn add_suggestion(
         &self,
         s: &NewSuggestion,
@@ -512,20 +561,36 @@ impl ReviewStore for SqliteStore {
     ) -> Result<(i64, bool), StoreError> {
         let t = &s.target;
         let mut conn = self.conn.borrow_mut();
-        let existing: Vec<IdRow> = query(
-            &conn,
-            SELECT_IDENTICAL_OPEN,
-            params![
-                s.action,
-                t.dataset,
-                t.kind,
-                t.item_id,
-                author,
-                s.proposed_json,
-                s.furigana_json,
-                s.comment
-            ],
-        )?;
+        let existing: Vec<IdRow> = if s.action == "add" {
+            query(
+                &conn,
+                SELECT_IDENTICAL_ADD,
+                params![
+                    t.dataset,
+                    t.kind,
+                    s.parent_id,
+                    author,
+                    s.fingerprint,
+                    s.furigana_json,
+                    s.comment
+                ],
+            )?
+        } else {
+            query(
+                &conn,
+                SELECT_IDENTICAL_OPEN,
+                params![
+                    s.action,
+                    t.dataset,
+                    t.kind,
+                    t.item_id,
+                    author,
+                    s.proposed_json,
+                    s.furigana_json,
+                    s.comment
+                ],
+            )?
+        };
         if let Some(row) = existing.into_iter().next() {
             return Ok((row.id, false));
         }
@@ -546,7 +611,10 @@ impl ReviewStore for SqliteStore {
                     s.dropped_blanks,
                     s.comment,
                     author,
-                    now
+                    now,
+                    s.parent_kind,
+                    s.parent_id,
+                    s.fingerprint
                 ],
                 |r| r.get(0),
             )
