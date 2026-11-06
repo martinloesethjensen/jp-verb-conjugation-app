@@ -20,6 +20,7 @@
 		forms,
 		extra = {},
 		submitLabel = 'Send suggestion',
+		hint = "Spelling and ids can't change here. Leave a note for Martin if they're wrong.",
 		onsubmit,
 		oncancel
 	}: {
@@ -33,6 +34,8 @@
 		/** The example's own readings, for the preview. */
 		extra?: Record<string, string>;
 		submitLabel?: string;
+		/** The quiet line under the fields. */
+		hint?: string;
 		onsubmit: (edits: Record<string, string>, furigana: Record<string, string>) => Promise<void>;
 		oncancel: () => void;
 	} = $props();
@@ -90,19 +93,23 @@
 			<textarea id="{uid}-{field.name}" rows="4" maxlength="2000" bind:value={values[field.name]}></textarea>
 		{:else if field.input === 'form'}
 			<select id="{uid}-{field.name}" bind:value={values[field.name]}>
+				{#if !values[field.name]}<option value="" disabled>Choose…</option>{/if}
 				{#each Object.entries(forms) as [id, label] (id)}<option value={id}>{label}</option>{/each}
-				{#if !(values[field.name] in forms)}<option value={values[field.name]}>{values[field.name]}</option>{/if}
+				{#if values[field.name] && !(values[field.name] in forms)}<option value={values[field.name]}>{values[field.name]}</option>{/if}
 			</select>
 		{:else if field.input === 'choice' || field.input === 'jlpt'}
 			<select id="{uid}-{field.name}" bind:value={values[field.name]}>
-				{#if field.optional}<option value="">None</option>{/if}
+				{#if field.optional}<option value="">None</option>
+				{:else if !values[field.name]}<option value="" disabled>Choose…</option>{/if}
 				{#each field.choices as choice (choice)}<option value={choice}>{choiceLabel(field.name, choice)}</option>{/each}
 			</select>
 		{:else}
 			<input
 				id="{uid}-{field.name}"
-				maxlength="2000"
-				lang={JAPANESE_FIELDS.has(field.name) ? 'ja' : undefined}
+				maxlength={field.input === 'slug' ? 40 : 2000}
+				lang={JAPANESE_FIELDS.has(field.name) || field.input === 'kana' ? 'ja' : undefined}
+				placeholder={field.input === 'kana' ? 'in kana' : field.input === 'slug' ? 'like te-iru' : undefined}
+				autocapitalize={field.input === 'slug' ? 'none' : undefined}
 				bind:value={values[field.name]}
 			/>
 		{/if}
@@ -113,7 +120,7 @@
 		<input id="{uid}-reading-{run}" lang="ja" placeholder="in hiragana" bind:value={answers[run]} />
 	{/each}
 
-	<p class="quiet">Spelling and ids can't change here. Leave a note for Martin if they're wrong.</p>
+	<p class="quiet">{hint}</p>
 
 	<div class="preview" aria-label="Preview">
 		{#if isSentence}

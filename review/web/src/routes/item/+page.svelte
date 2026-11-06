@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { ApiError, DATASETS, getItem, problem, type Dataset, type Field, type ItemResponse } from '#lib/api.ts';
+	import AddPart from '#lib/AddPart.svelte';
 	import ReviewBar from '#lib/ReviewBar.svelte';
 	import { EntryReview } from '#lib/review.svelte.ts';
 	import { entryTitle, leftBehind } from '#lib/targets.ts';
@@ -24,6 +25,8 @@
 	let forms = $state<Record<string, string>>({});
 	let failure = $state<string | null>(null);
 	let fieldTable = $state<Record<string, Field[]>>({});
+	let addFields = $state<Record<string, Field[]>>({});
+	let addParents = $state<Record<string, string[]>>({});
 	let review = $state<EntryReview | null>(null);
 	let reviewFailure = $state<string | null>(null);
 	/** The entry isn't in the loaded data (any more); its reviews still show. */
@@ -55,12 +58,19 @@
 			readings = reference.readings;
 			forms = reference.forms;
 			fieldTable = reference.fields;
+			addFields = reference.add_fields;
+			addParents = reference.add_parents;
 		});
 	});
 
 	const title = $derived(dataset && response ? entryTitle(dataset, item) : '');
 	const earlier = $derived(review ? leftBehind(review.parts, review.approvals, review.suggestions) : []);
 	const list = (value: unknown): Json[] => (Array.isArray(value) ? value : []);
+	/** Whether a new `kind` can be added under a parent of `parentKind` (the entry, a usage, a pitfall). */
+	const canAdd = (kind: string, parentKind: string) =>
+		!!dataset && (addParents[`${dataset}/${kind}`] ?? []).includes(parentKind);
+	/** A list's card shows when it has items or something can be added to it. */
+	const shows = (key: string, kind: string) => list(item[key]).length > 0 || canAdd(kind, 'entry');
 </script>
 
 <svelte:head>
@@ -70,6 +80,20 @@
 {#snippet bar(kind: string, id: string, value: Json, extra: Record<string, string> = {})}
 	{#if review && dataset}
 		<ReviewBar {review} {kind} {id} {value} fields={fieldTable[`${dataset}/${kind}`] ?? []} {readings} {forms} {extra} />
+	{/if}
+{/snippet}
+
+{#snippet adder(kind: string, parentKind: string, parentId: string)}
+	{#if review && dataset && canAdd(kind, parentKind)}
+		<AddPart
+			{review}
+			{kind}
+			{parentKind}
+			{parentId}
+			fields={addFields[`${dataset}/${kind}`] ?? []}
+			{readings}
+			{forms}
+		/>
 	{/if}
 {/snippet}
 
@@ -83,7 +107,7 @@
 {/snippet}
 
 {#snippet sections(heading: string, owner: Json, key: string, kind: string)}
-	{#if list(owner[key]).length}
+	{#if shows(key, kind)}
 		<section class="card">
 			<h2>{heading}</h2>
 			{#each list(owner[key]) as section (section.id)}
@@ -96,8 +120,10 @@
 					{#if section.wrong}<p class="wrong">Not: <s lang="ja">{section.wrong}</s></p>{/if}
 					{@render bar(kind, section.id, section)}
 					{@render examples(section)}
+					{@render adder('example', kind, section.id)}
 				</article>
 			{/each}
+			{@render adder(kind, 'entry', response!.id)}
 		</section>
 	{/if}
 {/snippet}
@@ -153,10 +179,14 @@
 			{#if item.notes}<p><Japanese text={item.notes} {readings} prose /></p>{/if}
 			{@render bar('entry', response.id, item)}
 		</section>
-		{#if list(item.examples).length}
-			<section class="card"><h2>Examples</h2>{@render examples(item)}</section>
+		{#if shows('examples', 'example')}
+			<section class="card">
+				<h2>Examples</h2>
+				{@render examples(item)}
+				{@render adder('example', 'entry', response.id)}
+			</section>
 		{/if}
-		{#if list(item.collocations).length}
+		{#if shows('collocations', 'collocation')}
 			<section class="card">
 				<h2>Common phrases</h2>
 				{#each list(item.collocations) as c (c.id)}
@@ -165,6 +195,7 @@
 						{@render bar('collocation', c.id, c)}
 					</div>
 				{/each}
+				{@render adder('collocation', 'entry', response.id)}
 			</section>
 		{/if}
 	{:else if dataset === 'words'}
@@ -178,7 +209,7 @@
 			<p class="subtitle">{item.meaning}</p>
 			{@render bar('entry', response.id, item)}
 		</section>
-		{#if list(item.things).length}
+		{#if shows('things', 'thing')}
 			<section class="card">
 				<h2>Things it counts</h2>
 				<ul class="things">
@@ -192,10 +223,15 @@
 						</li>
 					{/each}
 				</ul>
+				{@render adder('thing', 'entry', response.id)}
 			</section>
 		{/if}
-		{#if list(item.examples).length}
-			<section class="card"><h2>Examples</h2>{@render examples(item)}</section>
+		{#if shows('examples', 'example')}
+			<section class="card">
+				<h2>Examples</h2>
+				{@render examples(item)}
+				{@render adder('example', 'entry', response.id)}
+			</section>
 		{/if}
 		{@render sections('Pitfalls', item, 'pitfalls', 'pitfall')}
 		{#if list(item.questions).length}

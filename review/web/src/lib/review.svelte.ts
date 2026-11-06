@@ -1,6 +1,7 @@
 // One entry's reviews: its parts' current hashes, approvals and suggestions, and the actions on them.
 // Shared by the item page and the queue card, so both update the same way.
 import {
+	addItem,
 	approve,
 	comment,
 	getReview,
@@ -88,6 +89,33 @@ export class EntryReview {
 	): Promise<Suggestion> {
 		const hash = this.hashOf(kind, id) ?? '';
 		const s = await suggest(this.target(kind, id), hash, action, extra);
+		this.keep(s);
+		return s;
+	}
+
+	/** Pending additions under one parent, of one kind, oldest first (they read in list order). */
+	additionsUnder(parentKind: string, parentId: string, kind: string): Suggestion[] {
+		return this.suggestions
+			.filter(
+				(s) =>
+					s.action === 'add' &&
+					s.kind === kind &&
+					s.parent_kind === parentKind &&
+					s.parent_id === parentId &&
+					s.status !== 'withdrawn'
+			)
+			.sort((a, b) => a.id - b.id);
+	}
+
+	/** Suggests a new part of `kind` under a parent of this entry. */
+	async add(
+		kind: string,
+		parentKind: string,
+		parentId: string,
+		fields: Record<string, string>,
+		extra: { furigana?: Record<string, string>; comment?: string } = {}
+	): Promise<Suggestion> {
+		const s = await addItem(this.dataset, kind, { kind: parentKind, id: parentId }, fields, extra);
 		this.keep(s);
 		return s;
 	}

@@ -45,6 +45,9 @@
 		<p class="title"><Japanese text={value.heading ?? ''} {readings} prose /> <LevelPill level={value.jlpt} /></p>
 		{#if value.explanation}<p><Japanese text={value.explanation} {readings} prose /></p>{/if}
 		{#if value.wrong}<p class="quiet">Not: <s lang="ja">{value.wrong}</s></p>{/if}
+		{#each Array.isArray(value.examples) ? value.examples : [] as ex, i (ex.id ?? i)}
+			<Sentence jp={ex.jp} en={ex.en} {readings} extra={ex.readings ?? {}} />
+		{/each}
 	</div>
 {/if}
 

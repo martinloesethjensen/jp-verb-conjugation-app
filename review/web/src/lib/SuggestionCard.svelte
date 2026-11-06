@@ -3,6 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import { problem, type Suggestion } from './api.ts';
 	import ErrorLine from './ErrorLine.svelte';
+	import PartView from './PartView.svelte';
 	import RedPen from './RedPen.svelte';
 	import { KINDS } from './labels.ts';
 
@@ -14,7 +15,9 @@
 		names,
 		onwithdraw,
 		oncomment,
-		actions
+		actions,
+		readings = {},
+		forms = {}
 	}: {
 		suggestion: Suggestion;
 		/** The target as it is now; null when it left the data. */
@@ -25,6 +28,9 @@
 		oncomment?: (text: string) => Promise<void>;
 		/** Extra buttons (the owner's decisions). */
 		actions?: Snippet;
+		/** Furigana and form labels, for previewing an addition. */
+		readings?: Record<string, string>;
+		forms?: Record<string, string>;
 	} = $props();
 
 	const uid = $props.id();
@@ -33,13 +39,15 @@
 	let failure = $state<string | null>(null);
 
 	const s = $derived(suggestion);
-	const heading = $derived(
-		s.action === 'change'
-			? `${s.author_name} suggests a change`
-			: s.action === 'delete'
-				? `${s.author_name} suggests removing it`
-				: `${s.author_name} left a note for Martin`
-	);
+	const HEADINGS: Record<string, string> = {
+		change: 'suggests a change',
+		delete: 'suggests removing it',
+		note: 'left a note for Martin',
+		add: 'suggests adding this'
+	};
+	const heading = $derived(`${s.author_name} ${HEADINGS[s.action] ?? HEADINGS.note}`);
+	const adding = $derived(s.action === 'add');
+	const extra = (item: Json): Record<string, string> => ({ ...(item.readings ?? {}), ...(s.furigana ?? {}) });
 	const fieldNames = $derived(names.length ? names : Object.keys(s.proposed ?? {}));
 	const status = $derived(s.status === 'accepted' ? 'Accepted' : s.status === 'declined' ? 'Declined' : null);
 
@@ -69,19 +77,29 @@
 <article class={['suggestion', { decided: s.status !== 'open' }]}>
 	<header>
 		<span class="who">{heading}</span>
+		{#if adding}<span class="status new">New</span>{/if}
 		{#if status}<span class="status">{status}</span>{/if}
+		{#if adding && s.landed}<span class="status">Now in the data</span>{/if}
 		{#if s.gone}<span class="flag">No longer in the data</span>
 		{:else if s.stale}<span class="flag">Changed since</span>{/if}
 	</header>
 
-	{#if s.action === 'change' && s.proposed}
+	{#if adding && s.proposed}
+		<div class="added">
+			<PartView dataset={s.dataset} kind={s.kind} value={s.proposed} readings={{ ...readings, ...extra(s.proposed) }} {forms} />
+		</div>
+	{:else if s.action === 'change' && s.proposed}
 		<RedPen before={current ?? {}} after={s.proposed} names={fieldNames} />
 	{:else if s.action === 'delete'}
 		<p class="remove">Remove this {KINDS[s.kind] ?? s.kind}</p>
 	{/if}
 	{#if s.admin_edit}
 		<p class="quiet">Martin's version:</p>
-		<RedPen before={current ?? {}} after={s.admin_edit} names={fieldNames} />
+		{#if adding}
+			<RedPen before={s.proposed ?? {}} after={s.admin_edit} names={Object.keys(s.admin_edit).filter((k) => typeof s.admin_edit?.[k] === 'string')} />
+		{:else}
+			<RedPen before={current ?? {}} after={s.admin_edit} names={fieldNames} />
+		{/if}
 	{/if}
 	{#if s.furigana && Object.keys(s.furigana).length}
 		<ul class="readings">
@@ -162,6 +180,18 @@
 
 	.flag {
 		color: var(--red);
+	}
+
+	.new {
+		color: var(--green);
+	}
+
+	.added {
+		margin: 0.25rem 0;
+		padding: 0 0.6rem;
+		background: var(--card);
+		border-left: 2px solid var(--green);
+		border-radius: var(--radius);
 	}
 
 	.remove {
