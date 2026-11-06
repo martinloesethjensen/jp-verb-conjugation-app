@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
-import { FIELDS, reviewMock } from './mock-review.ts';
+import { ADD_FIELDS, ADD_PARENTS, FIELDS, reviewMock } from './mock-review.ts';
 
 type User = { email: string; display_name: string; role: 'admin' | 'reviewer'; active: boolean };
 
@@ -98,7 +98,9 @@ function publishedData() {
 			forms: loaded.has('forms')
 				? Object.fromEntries((docs.forms.forms as Json[]).map((f) => [f.id, f.label]))
 				: {},
-			fields: FIELDS
+			fields: FIELDS,
+			add_fields: ADD_FIELDS,
+			add_parents: ADD_PARENTS
 		}),
 		formIds: () => (loaded.has('forms') ? (docs.forms.forms as Json[]).map((f) => f.id as string) : [])
 	};

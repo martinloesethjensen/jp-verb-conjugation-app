@@ -107,9 +107,11 @@ export type ItemResponse = {
 /** A field a reviewer may edit, from the Worker's table (review/api/src/proposal.rs). */
 export type Field = {
 	name: string;
-	input: 'text' | 'long' | 'jlpt' | 'choice' | 'form';
+	input: 'text' | 'long' | 'jlpt' | 'choice' | 'form' | 'kana' | 'slug';
 	optional: boolean;
 	choices: string[];
+	/** What an add form starts with (a new counter's symbol). */
+	default?: string | null;
 };
 
 export type Reference = {
@@ -117,6 +119,10 @@ export type Reference = {
 	forms: Record<string, string>;
 	/** Keyed `"<dataset>/<kind>"`. */
 	fields: Record<string, Field[]>;
+	/** The fields an add form asks for, keyed `"<dataset>/<kind>"`. */
+	add_fields: Record<string, Field[]>;
+	/** The kinds a new part may be added to, keyed `"<dataset>/<kind>"` (entries have none). */
+	add_parents: Record<string, string[]>;
 };
 
 export const getSnapshot = async () => (await request<{ files: SnapshotFile[] }>('/api/snapshot')).files;
@@ -162,7 +168,7 @@ export type Approval = {
 
 export type Comment = { author_name: string; body: string; created_at: string };
 
-export type SuggestionAction = 'change' | 'delete' | 'note';
+export type SuggestionAction = 'change' | 'delete' | 'note' | 'add';
 export type SuggestionStatus = 'open' | 'accepted' | 'declined' | 'withdrawn';
 
 export type Suggestion = {
@@ -186,8 +192,13 @@ export type Suggestion = {
 	decided_at: string | null;
 	/** The item changed since the suggestion was made. */
 	stale: boolean;
-	/** The item is no longer in the loaded data. */
+	/** The item (an addition: the place it goes) is no longer in the loaded data. */
 	gone: boolean;
+	/** An addition's parent; null otherwise and for a new entry. */
+	parent_kind: string | null;
+	parent_id: string | null;
+	/** An addition whose new item is now in the loaded data. */
+	landed: boolean;
 	comments: Comment[];
 };
 
@@ -304,3 +315,20 @@ export function problem(error: unknown): string {
 export function isStale(error: unknown): boolean {
 	return error instanceof ApiError && error.status === 409;
 }
+
+// --- Adding -------------------------------------------------------------------------------------
+
+export type ParentRef = { kind: string; id: string };
+
+/** Suggests a new part under `parent`, or a new entry when `parent` is null. */
+export const addItem = (
+	dataset: string,
+	kind: string,
+	parent: ParentRef | null,
+	fields: Record<string, string>,
+	extra: { furigana?: Record<string, string>; comment?: string } = {}
+) => request<Suggestion>('/api/add', { dataset, kind, ...(parent ? { parent } : {}), fields, ...extra });
+
+/** Suggested new entries in a dataset, newest first. */
+export const getAdditions = async (dataset: string) =>
+	(await request<{ suggestions: Suggestion[] }>(`/api/additions?${new URLSearchParams({ dataset })}`)).suggestions;

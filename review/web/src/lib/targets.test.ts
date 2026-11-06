@@ -78,3 +78,10 @@ describe('leftBehind', () => {
 		expect(groups[0].title).toBe('title のむ');
 	});
 });
+
+describe('leftBehind and additions', () => {
+	test('a pending addition is not left behind', () => {
+		const add = { id: 9, action: 'add', kind: 'example', item_id: 'new001', item_title: 'x', status: 'open' } as never;
+		expect(leftBehind([{ kind: 'entry', item_id: 'たべる', content_hash: 'h' }], [], [add])).toEqual([]);
+	});
+});

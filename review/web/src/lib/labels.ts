@@ -49,7 +49,26 @@ export const DATASET_KINDS: Record<Dataset, string[]> = {
 };
 
 const FIELD_LABELS: Record<string, string> = {
+	dict: 'Dictionary form',
+	class: 'Word class',
+	masu_pos: 'Polite (ます)',
+	masu_neg: 'Polite negative',
+	masu_past: 'Polite past',
+	masu_past_neg: 'Polite past negative',
+	short_pos: 'Plain',
+	short_neg: 'Plain negative',
+	short_past: 'Plain past',
+	short_past_neg: 'Plain past negative',
+	example_form: 'First example: form',
+	example_jp: 'First example: Japanese',
+	example_en: 'First example: English',
+	usage_heading: 'First usage: heading',
+	usage_explanation: 'First usage: explanation',
+	id: 'Id (lowercase, hyphens)',
+	sound: 'Counting sound',
+	symbol: 'Symbol',
 	jp: 'Japanese',
+	te: 'て-form',
 	en: 'English',
 	type: 'Verb type',
 	label: 'Verb group',
@@ -70,7 +89,10 @@ export function fieldLabel(name: string): string {
 }
 
 /** Fields holding Japanese text, shown in Mincho and checked for unknown kanji. */
-export const JAPANESE_FIELDS = new Set(['jp', 'counter', 'reading', 'word', 'kana', 'wrong', 'kanji']);
+export const JAPANESE_FIELDS = new Set([
+	'jp', 'counter', 'reading', 'word', 'kana', 'wrong', 'kanji', 'dict', 'example_jp',
+	'masu_pos', 'masu_neg', 'masu_past', 'masu_past_neg', 'te', 'short_pos', 'short_neg', 'short_past', 'short_past_neg'
+]);
 
 const CHOICE_LABELS: Record<string, Record<string, string>> = {
 	type: { ru: 'ru', u: 'u', 'irr.': 'irregular' },
@@ -83,3 +105,22 @@ const CHOICE_LABELS: Record<string, Record<string, string>> = {
 export function choiceLabel(field: string, value: string): string {
 	return CHOICE_LABELS[field]?.[value] ?? value;
 }
+
+/** The add button's text per `"<dataset>/<kind>"`. */
+export const ADD_LABELS: Record<string, string> = {
+	'verbs/example': 'Add an example',
+	'verbs/collocation': 'Add a common phrase',
+	'counters/thing': 'Add a thing counted',
+	'counters/example': 'Add an example',
+	'counters/pitfall': 'Add a pitfall',
+	'grammar/usage': 'Add a usage',
+	'grammar/example': 'Add an example',
+	'grammar/pitfall': 'Add a pitfall',
+	'verbs/entry': 'Suggest a new verb',
+	'words/entry': 'Suggest a new word',
+	'counters/entry': 'Suggest a new counter',
+	'grammar/entry': 'Suggest a new grammar point'
+};
+
+/** What the add forms say the site leaves to export. */
+export const ADD_NOTE = 'Forms and readings that the app works out are added when Martin exports this.';

@@ -18,7 +18,9 @@ import {
 	approve,
 	getReview,
 	suggest,
-	previewQueue
+	previewQueue,
+	addItem,
+	getAdditions
 } from './api.ts';
 
 function respond(status: number, body?: unknown) {
@@ -206,5 +208,34 @@ describe('review api', () => {
 		const filter = { dataset: 'verbs', kinds: [], jlpt: ['N5'], never_approved: false, ids: [] };
 		await previewQueue(filter, 'たべる');
 		expect(JSON.parse((calls(fetch)[0][1] as RequestInit).body as string)).toEqual({ filter, ids_text: 'たべる' });
+	});
+});
+
+describe('add api', () => {
+	test('addItem posts the target, its parent and the fields', async () => {
+		const fetch = respond(201, { id: 1 });
+		await addItem('counters', 'example', { kind: 'pitfall', id: 'pe3v3c' }, { jp: 'a', en: 'b' });
+		expect(calls(fetch)[0][0]).toBe('/api/add');
+		expect(JSON.parse((calls(fetch)[0][1] as RequestInit).body as string)).toEqual({
+			dataset: 'counters',
+			kind: 'example',
+			parent: { kind: 'pitfall', id: 'pe3v3c' },
+			fields: { jp: 'a', en: 'b' }
+		});
+	});
+	test('a new entry has no parent', async () => {
+		const fetch = respond(201, { id: 2 });
+		await addItem('words', 'entry', null, { dict: 'ねこ' }, { comment: 'Common.' });
+		expect(JSON.parse((calls(fetch)[0][1] as RequestInit).body as string)).toEqual({
+			dataset: 'words',
+			kind: 'entry',
+			fields: { dict: 'ねこ' },
+			comment: 'Common.'
+		});
+	});
+	test('getAdditions encodes the dataset', async () => {
+		const fetch = respond(200, { suggestions: [] });
+		expect(await getAdditions('verbs')).toEqual([]);
+		expect(calls(fetch)[0][0]).toBe('/api/additions?dataset=verbs');
 	});
 });

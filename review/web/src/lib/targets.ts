@@ -116,7 +116,8 @@ export function leftBehind(parts: ReviewPart[], approvals: Approval[], suggestio
 		return g;
 	};
 	for (const s of suggestions) {
-		if (s.status === 'withdrawn') continue;
+		// A pending addition isn't left behind: its item was never loaded yet.
+		if (s.status === 'withdrawn' || s.action === 'add') continue;
 		const g = group(s.kind, s.item_id);
 		if (g) {
 			g.suggestions.push(s);

@@ -61,6 +61,74 @@ export const FIELDS: Record<string, ReturnType<typeof f>[]> = {
 	'grammar/pitfall': PITFALL
 };
 
+// Add fields: entries have their own tables; parts reuse the change fields (a usage adds its first
+// example). A copy of review/api/src/addition.rs's tables, for the forms.
+const kana = (name: string, optional = false) => f(name, 'kana', optional);
+const BASIC_FORMS = ['masu_pos', 'masu_neg', 'masu_past', 'masu_past_neg', 'te', 'short_pos', 'short_neg', 'short_past', 'short_past_neg'];
+export const ADD_PARENTS: Record<string, string[]> = {
+	'verbs/example': ['entry'],
+	'verbs/collocation': ['entry'],
+	'counters/thing': ['entry'],
+	'counters/example': ['entry', 'pitfall'],
+	'counters/pitfall': ['entry'],
+	'grammar/usage': ['entry'],
+	'grammar/example': ['usage', 'pitfall'],
+	'grammar/pitfall': ['entry']
+};
+export const ADD_FIELDS: Record<string, (ReturnType<typeof f> & { default?: string })[]> = {
+	...Object.fromEntries(Object.keys(ADD_PARENTS).map((key) => [key, FIELDS[key]])),
+	'grammar/usage': [...FIELDS['grammar/usage'], f('example_jp'), f('example_en')],
+	'verbs/entry': [
+		kana('dict'), f('kanji', 'text', true), f('type', 'choice', false, ['ru', 'u', 'irr.']), f('meaning'),
+		f('description', 'long'), f('notes', 'long'), f('jlpt', 'jlpt'),
+		f('teGroup', 'choice', true, ['ide', 'ite', 'nde', 'shite', 'tte']),
+		...BASIC_FORMS.map((name) => kana(name)), f('example_form', 'form'), f('example_jp'), f('example_en')
+	],
+	'words/entry': [f('class', 'choice', false, ['i-adjective', 'na-adjective', 'noun']), kana('dict'), f('kanji', 'text', true), f('meaning'), f('jlpt', 'jlpt')],
+	'counters/entry': [f('id', 'slug'), f('counter'), kana('reading'), f('meaning'), f('jlpt', 'jlpt'),
+		f('sound', 'choice', false, ['h-b', 'h-p', 'irregular', 'k', 'plain', 's']), { ...f('symbol'), default: 'number' }],
+	'grammar/entry': [f('id', 'slug'), f('title'), f('summary', 'long'), f('jlpt', 'jlpt'), f('usage_heading'),
+		f('usage_explanation', 'long'), f('example_jp'), f('example_en')]
+};
+
+const STABLE = 'abcdefghijkmnpqrstuvwxyz23456789';
+const newStableId = () => Array.from({ length: 6 }, () => STABLE[Math.floor(Math.random() * STABLE.length)]).join('');
+
+/** A rough new item for the mock: the fields with an id; entries get their id and placeholders. */
+function mockItem(dataset: string, kind: string, fields: Json): { item: Json; id: string; title: string } {
+	if (kind !== 'entry') {
+		const id = newStableId();
+		const item: Json = { id, ...fields };
+		if (dataset === 'grammar' && kind === 'usage') {
+			item.examples = [{ id: newStableId(), jp: fields.example_jp, en: fields.example_en }];
+			delete item.example_jp;
+			delete item.example_en;
+		}
+		return { item, id, title: String(fields.jp ?? fields.heading ?? fields.word ?? id) };
+	}
+	if (dataset === 'verbs') {
+		const forms = Object.fromEntries(BASIC_FORMS.map((name) => [name, fields[name]]));
+		const label = fields.type === 'ru' ? 'Ru-verb' : fields.type === 'u' ? 'U-verb' : 'Irregular';
+		const item: Json = { type: fields.type, label, dict: fields.dict, meaning: fields.meaning, description: fields.description,
+			notes: fields.notes, jlpt: fields.jlpt, forms,
+			examples: [{ id: newStableId(), form: fields.example_form, jp: fields.example_jp, en: fields.example_en }] };
+		if (fields.kanji) item.kanji = fields.kanji;
+		return { item, id: fields.dict, title: fields.kanji ? `${fields.dict} (${fields.kanji})` : fields.dict };
+	}
+	if (dataset === 'words') {
+		const item: Json = { class: fields.class, dict: fields.dict, meaning: fields.meaning, jlpt: fields.jlpt, forms: {} };
+		if (fields.kanji) item.kanji = fields.kanji;
+		return { item, id: `${fields.class}:${fields.dict}`, title: fields.kanji ? `${fields.dict} (${fields.kanji})` : fields.dict };
+	}
+	if (dataset === 'counters') {
+		return { item: { ...fields, symbol: fields.symbol || 'number' }, id: fields.id, title: `${fields.counter} (${fields.reading})` };
+	}
+	const item = { id: fields.id, title: fields.title, summary: fields.summary, jlpt: fields.jlpt,
+		usages: [{ id: newStableId(), heading: fields.usage_heading, explanation: fields.usage_explanation,
+			examples: [{ id: newStableId(), jp: fields.example_jp, en: fields.example_en }] }] };
+	return { item, id: fields.id, title: fields.title };
+}
+
 export const hashOf = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 type Approval = { dataset: string; kind: string; item_id: string; entry_id: string; reviewer: string; hash: string; created_at: string };
@@ -68,6 +136,7 @@ type Suggestion = {
 	id: number; action: string; dataset: string; kind: string; item_id: string; entry_id: string; item_title: string;
 	author: string; status: string; base_hash: string; proposed: Json | null; furigana: Json | null; dropped_blanks: number;
 	comment: string; admin_edit: Json | null; created_at: string; decided_at: string | null;
+	parent_kind?: string | null; parent_id?: string | null;
 };
 type QueueRow = { id: number; title: string; description: string; archived: boolean };
 type QueueItem = { queue_id: number; dataset: string; kind: string; item_id: string; entry_id: string; title: string; note: string; position: number };
@@ -121,9 +190,14 @@ export function reviewMock(ctx: ReviewContext) {
 	});
 	const suggestionOut = (s: Suggestion) => {
 		const current = find(s);
+		const adding = s.action === 'add';
+		const parentGone = !!s.parent_kind && !find({ dataset: s.dataset, kind: s.parent_kind, item_id: s.parent_id ?? '' });
 		return {
 			...s, author: undefined, author_name: nameOf(s.author), mine: s.author === ctx.me.email,
-			stale: !!current && current.hash !== s.base_hash, gone: !current,
+			parent_kind: s.parent_kind ?? null, parent_id: s.parent_id ?? null,
+			stale: !adding && !!current && current.hash !== s.base_hash,
+			gone: adding ? parentGone : !current,
+			landed: adding && !!current,
 			comments: comments.filter((c) => c.suggestion_id === s.id).map((c) => ({ author_name: nameOf(c.author), body: c.body, created_at: c.created_at }))
 		};
 	};
@@ -225,6 +299,46 @@ export function reviewMock(ctx: ReviewContext) {
 			const entry = current?.entry_id;
 			return [200, { approvals: approvals.filter((a) => a.dataset === t.dataset && a.entry_id === entry).map(approvalOut) }];
 		}
+		if (path === '/add' && method === 'POST') {
+			const dataset = String(body.dataset ?? '');
+			const kind = String(body.kind ?? '');
+			const fields: Json = Object.fromEntries(Object.entries(body.fields ?? {}).map(([k, v]) => [k, String(v ?? '').trim()]));
+			const table = ADD_FIELDS[`${dataset}/${kind}`] ?? [];
+			const missing = table.find((x) => !x.optional && !('default' in x) && !fields[x.name]);
+			if (missing) return [400, { error: `${missing.name} can't be empty` }];
+			let parentEntry: string | undefined;
+			if (body.parent) {
+				const parent = find({ dataset, kind: body.parent.kind, item_id: body.parent.id });
+				if (!parent) return [404, { error: NOT_LOADED }];
+				if (!(ADD_PARENTS[`${dataset}/${kind}`] ?? []).includes(body.parent.kind)) {
+					return [400, { error: `${kind} can't be added there` }];
+				}
+				parentEntry = parent.entry_id;
+			}
+			const { item, id, title } = mockItem(dataset, kind, fields);
+			if (kind === 'entry' && targets(dataset).some((t) => t.kind === 'entry' && t.item_id === id)) {
+				return [409, { error: `${id} is already in the data` }];
+			}
+			const pending = suggestions.find((x) => x.action === 'add' && x.dataset === dataset && x.item_id === id && x.status === 'open');
+			if (kind === 'entry' && pending) {
+				if (pending.author === by) return [200, suggestionOut(pending)];
+				return [409, { error: `someone already suggested adding ${id}; reply on their suggestion instead` }];
+			}
+			const s: Suggestion = {
+				id: nextId++, action: 'add', dataset, kind, item_id: id, entry_id: parentEntry ?? id, item_title: title,
+				author: by, status: 'open', base_hash: '', proposed: item,
+				furigana: body.furigana && Object.keys(body.furigana).length ? body.furigana : null, dropped_blanks: 0,
+				comment: String(body.comment ?? '').trim(), admin_edit: null, created_at: now(), decided_at: null,
+				parent_kind: body.parent?.kind ?? null, parent_id: body.parent?.id ?? null
+			};
+			suggestions.push(s);
+			return [201, suggestionOut(s)];
+		}
+		if (path === '/additions' && method === 'GET') {
+			const dataset = params.get('dataset') ?? '';
+			const listed = suggestions.filter((x) => x.action === 'add' && x.kind === 'entry' && x.dataset === dataset && x.status !== 'withdrawn');
+			return [200, { suggestions: listed.reverse().map(suggestionOut) }];
+		}
 		if (path === '/suggest') {
 			const t = targetOf(body);
 			const current = find(t);
@@ -320,7 +434,10 @@ export function reviewMock(ctx: ReviewContext) {
 			if (body.decision === 'accept') {
 				const edits = body.edits && Object.keys(body.edits).length ? body.edits : null;
 				const current = find(suggestion);
-				if (edits) {
+				if (suggestion.action === 'add') {
+					if (out.gone) return [404, { error: "the place this was added to isn't in the loaded data" }];
+					if (edits) suggestion.admin_edit = { ...suggestion.proposed, ...edits };
+				} else if (edits) {
 					if (!current) return [404, { error: NOT_LOADED }];
 					const result = proposedFrom(suggestion, current.value, edits);
 					if (typeof result === 'string') return [400, { error: result }];
