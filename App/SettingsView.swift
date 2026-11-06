@@ -3,25 +3,10 @@ import VerbKit
 import WidgetKit
 import UserNotifications
 
-enum AppearanceMode: String, CaseIterable, Identifiable, Hashable {
-    case system, light, dark
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .system: return "System"
-        case .light: return "Light"
-        case .dark: return "Dark"
-        }
-    }
-}
-
 struct SettingsView: View {
     @Environment(VerbStore.self) private var verbStore
     @Environment(QuizHistoryStore.self) private var quizHistory
     @State private var confirmingReset = false
-    @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
@@ -77,13 +62,6 @@ struct SettingsView: View {
         )
     }
 
-    private var appearanceMode: Binding<AppearanceMode> {
-        Binding(
-            get: { AppearanceMode(rawValue: appearanceModeRaw) ?? .system },
-            set: { appearanceModeRaw = $0.rawValue }
-        )
-    }
-
     #if os(macOS)
     private let settingsApp = "System Settings"
     #else
@@ -105,15 +83,6 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Appearance") {
-                Picker("Appearance", selection: appearanceMode) {
-                    ForEach(AppearanceMode.allCases) { mode in
-                        Text(mode.label).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-            }
             Section("Reading") {
                 Toggle("Show furigana", isOn: $showFurigana)
             }
