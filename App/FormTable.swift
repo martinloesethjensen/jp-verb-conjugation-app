@@ -50,12 +50,8 @@ struct FormTable: View {
 }
 
 extension View {
-    /// The quiet card surface for groups of forms: the system's secondary
-    /// background, which adapts to light and dark on iOS and macOS.
+    /// The card surface for groups of forms: the theme's `card`, outlined in `rule`.
     func formCard() -> some View {
-        self
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 14))
+        paperCard(cornerRadius: 14)
     }
 }

@@ -55,6 +55,7 @@ struct CountersHomeView: View {
 
     var body: some View {
         content
+            .paperBackground()
             .navigationTitle("Counters")
             .navigationSubtitle(scope == .mine ? summary : "")
             .inlineSearch(

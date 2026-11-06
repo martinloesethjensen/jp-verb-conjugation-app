@@ -41,6 +41,7 @@ struct VerbDetailView: View {
                 }
                 .padding()
             }
+            .paperBackground()
             .navigationTitle(verb.dict)
             #if os(iOS)
             // The header already shows the verb large, and the toolbar leaves no room for an
@@ -119,7 +120,7 @@ struct VerbDetailView: View {
             Image(systemName: "lightbulb")
             JapaneseText(notes).font(.footnote)
         }
-        .glassCard(fillsWidth: false)
+        .paperCard(fillsWidth: false)
     }
 
     private var formGroups: some View {

@@ -53,6 +53,7 @@ struct QuizView: View {
                 QuizQuestionView(viewModel: viewModel, question: question, onDone: end)
             }
         }
+        .paperBackground()
         .onAppear(perform: save)
         .onChange(of: viewModel.results.count) { save() }
         .onChange(of: viewModel.index) { save() }

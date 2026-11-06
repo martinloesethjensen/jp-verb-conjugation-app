@@ -58,6 +58,7 @@ struct CounterDetailView: View {
             .frame(maxWidth: 720, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
+        .paperBackground()
         .navigationTitle(counter.counter)
         .toolbar {
             ToolbarItem(placement: .secondaryAction) {
@@ -71,7 +72,7 @@ struct CounterDetailView: View {
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8, content: content)
-            .glassCard()
+            .paperCard()
     }
 
     private var header: some View {

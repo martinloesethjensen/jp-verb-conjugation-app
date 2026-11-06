@@ -144,6 +144,7 @@ struct VerbListView: View {
                         }
                         .buttonStyle(.plain)
                         .tag(verb)
+                        .paperRow()
                         .swipeActions(edge: .leading) {
                             Button(favourites.contains(verb) ? "Unfavourite" : "Favourite",
                                    systemImage: favourites.contains(verb) ? "star.slash" : "star") {
@@ -191,6 +192,7 @@ struct VerbListView: View {
             .animation(.smooth, value: filtersOffscreen)
             #endif
         }
+        .paperBackground()
         .navigationTitle("早見表")
         .navigationSubtitle(filterSummary)
         .sheet(isPresented: $showGuide) { VerbGuideSheet() }

@@ -86,6 +86,7 @@ struct SettingsView: View {
             Section("Reading") {
                 Toggle("Show furigana", isOn: $showFurigana)
             }
+            .paperRow()
             if !availableLevels.isEmpty {
                 let settings = LevelSettings(rawValue: hiddenLevelsRaw)
                 let datasets = [verbStore.verbs.levels(), verbStore.grammarPoints.levels()]
@@ -99,10 +100,12 @@ struct SettingsView: View {
                 } footer: {
                     Text("Hidden levels are left out of lists, the quiz and the widgets. Search can still look at all levels. At least one level of verbs and of lessons stays visible.")
                 }
+                .paperRow()
             }
             Section("Grammar") {
                 NavigationLink("My course") { MyCourseView() }
             }
+            .paperRow()
             Section("Quiz") {
                 Picker("Number of questions", selection: $quizQuestionCount) {
                     ForEach(questionCountOptions, id: \.self) { count in
@@ -122,6 +125,7 @@ struct SettingsView: View {
                         Button("Cancel", role: .cancel) {}
                     }
             }
+            .paperRow()
             Section {
                 Toggle("Verb of the day", isOn: reminderToggle)
                 if reminderEnabled {
@@ -134,6 +138,7 @@ struct SettingsView: View {
                      ? "Notifications are turned off for this app. Allow them in \(settingsApp) > Notifications."
                      : "A notification with the same verb the widget shows. Tap it to open the verb.")
             }
+            .paperRow()
             Section {
                 Toggle("Suggest while typing", isOn: $wordBankSuggestions)
                 Button("Restore Backup…") { showingBackups = true }
@@ -143,6 +148,7 @@ struct SettingsView: View {
                 Text(OnDeviceEntrySuggester.unavailableReason
                      ?? "Suggests a reading, standard Japanese and meanings for new entries, using the model on this device. Nothing is sent anywhere.")
             }
+            .paperRow()
             Section {
                 Toggle("Speak after quiz answers", isOn: $speakQuizAnswers)
                 Picker("Speed", selection: $speechSpeedRaw) {
@@ -168,9 +174,11 @@ struct SettingsView: View {
             } footer: {
                 Text(audioFooter)
             }
+            .paperRow()
             DataSyncSection()
             ContentReviewSection()
         }
+        .paperBackground()
         .navigationTitle("Settings")
         .frame(minWidth: 320, minHeight: 240)
         .sheet(isPresented: $showingBackups) {

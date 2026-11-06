@@ -79,7 +79,7 @@ struct AttachmentSection: View {
                         JapaneseText(note).font(.footnote).foregroundStyle(.secondary)
                     }
                 }
-                .glassCard()
+                .paperCard()
             }
         }
         .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }

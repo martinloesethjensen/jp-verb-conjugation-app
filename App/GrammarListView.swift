@@ -106,6 +106,7 @@ struct GrammarListView: View {
         }
         .buttonStyle(.plain)
         .tag(point)
+        .paperRow()
     }
 
     var body: some View {
@@ -177,6 +178,7 @@ struct GrammarListView: View {
         .inlineSearch(text: $search, prompt: "Search grammar…", focused: $searchFocused)
         .levelScopeBar(isActive: levelsHidden, scope: $scope)
         .onChange(of: search) { if search.isEmpty { scope = .mine } }
+        .paperBackground()
         .navigationTitle("Grammar")
         .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }
         .sheet(isPresented: $showingMistakes) { CommonMistakesSheet() }
