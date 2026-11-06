@@ -5,6 +5,7 @@
 //! `Origin` of anything that changes state (403), then the body (400). A route not in `ROUTES` doesn't exist.
 
 use crate::access::{verify, AccessConfig, Jwk};
+use crate::add_routes;
 use crate::auth::{authorize, normalize_email, Need, Principal};
 use crate::data::DataFile;
 use crate::items::{extract_slice, slices};
@@ -70,6 +71,8 @@ enum Handler {
     RemoveQueueItem,
     Inbox,
     Decide,
+    Add,
+    Additions,
 }
 
 struct Route {
@@ -255,6 +258,18 @@ const ROUTES: &[Route] = &[
         need: Need::Admin,
         handler: Handler::Decide,
     },
+    Route {
+        method: "POST",
+        path: "/api/add",
+        need: Need::Reviewer,
+        handler: Handler::Add,
+    },
+    Route {
+        method: "GET",
+        path: "/api/additions",
+        need: Need::Reviewer,
+        handler: Handler::Additions,
+    },
 ];
 
 pub const MAX_DISPLAY_NAME: usize = 40;
@@ -364,6 +379,10 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
             review_routes::inbox(param(&req.query, "status"), &principal, store).await
         }
         Handler::Decide => review_routes::decide(&req.body, &principal, store, today).await,
+        Handler::Add => add_routes::add(&req.body, &principal, store, today).await,
+        Handler::Additions => {
+            add_routes::additions(param(&req.query, "dataset"), &principal, store).await
+        }
     }
 }
 
@@ -620,9 +639,27 @@ async fn reference<S: Store>(store: &S) -> ApiResponse {
         .into_iter()
         .map(|(name, fields)| (name, json!(fields)))
         .collect();
+    let add_fields: serde_json::Map<String, Value> = crate::proposal::addable_targets()
+        .into_iter()
+        .map(|(name, fields)| (name, json!(fields)))
+        .collect();
+    let add_parents: serde_json::Map<String, Value> = crate::proposal::addable_targets()
+        .into_iter()
+        .filter_map(|(name, _)| {
+            let (dataset, kind) = name.split_once('/')?;
+            let file = DataFile::parse_name(dataset)?;
+            let kind = crate::items::Kind::parse(kind)?;
+            let parents: Vec<&str> = crate::proposal::add_parents(file, kind)
+                .iter()
+                .map(|k| k.as_str())
+                .collect();
+            (!parents.is_empty()).then(|| (name, json!(parents)))
+        })
+        .collect();
     ApiResponse {
         status: 200,
-        body: json!({ "readings": readings, "forms": forms, "fields": fields }),
+        body: json!({ "readings": readings, "forms": forms, "fields": fields,
+                      "add_fields": add_fields, "add_parents": add_parents }),
     }
 }
 

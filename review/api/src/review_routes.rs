@@ -34,6 +34,7 @@ macro_rules! tri {
         }
     };
 }
+pub(crate) use tri;
 
 /// A dataset and kind that exist, else 400.
 pub(crate) fn target(
@@ -700,7 +701,21 @@ pub async fn decide<S: Store + ReviewStore>(
     let edits = body.edits.filter(|e| !e.is_empty());
     let mut warning = None;
     let (mut admin_edit, mut furigana) = (None, None);
-    if accept {
+    if s.action == "add" {
+        if accept {
+            if s.gone {
+                return error(404, crate::add_routes::PARENT_GONE);
+            }
+            if let Some(edits) = &edits {
+                let (p, f) = tri!(
+                    crate::add_routes::rebuild(store, &s, edits, body.furigana.as_ref()).await
+                );
+                (admin_edit, furigana) = (Some(p), f);
+            }
+        } else if edits.is_some() || body.furigana.is_some() {
+            return error(400, "only an accept carries edits or readings");
+        }
+    } else if accept {
         if let Some(edits) = &edits {
             // An accepted removal with the owner's edit would leave export guessing which one wins.
             if s.action == "delete" {

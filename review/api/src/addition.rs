@@ -29,11 +29,12 @@ pub enum Taken {
     Suggested,
 }
 
-/// Why an addition can't be built. `Conflict` is a duplicate (409); `Invalid` a bad field (400).
+/// Why an addition can't be built. `Conflict` is a duplicate entry id (409), naming the id; `Invalid` a
+/// bad field (400).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AddError {
     Invalid(String),
-    Conflict(String),
+    Conflict { message: String, id: String },
 }
 
 impl From<String> for AddError {
@@ -218,10 +219,16 @@ impl Ids<'_> {
 fn free_entry_id(id: String, taken: &dyn Fn(&str) -> Taken) -> Result<String, AddError> {
     match taken(&id) {
         Taken::Free => Ok(id),
-        Taken::Loaded => Err(AddError::Conflict(format!("{id} is already in the data"))),
-        Taken::Suggested => Err(AddError::Conflict(format!(
-            "someone already suggested adding {id}; reply on their suggestion instead"
-        ))),
+        Taken::Loaded => Err(AddError::Conflict {
+            message: format!("{id} is already in the data"),
+            id,
+        }),
+        Taken::Suggested => Err(AddError::Conflict {
+            message: format!(
+                "someone already suggested adding {id}; reply on their suggestion instead"
+            ),
+            id,
+        }),
     }
 }
 
@@ -413,4 +420,83 @@ pub fn build_add(
         item_id,
         fingerprint,
     })
+}
+
+/// How the new item is titled in lists: an entry as the site titles it, an example or common phrase by its
+/// sentence, a usage or pitfall by its heading, a thing by its word.
+pub fn add_title(file: DataFile, kind: Kind, item: &Value) -> String {
+    let text = |key: &str| item[key].as_str().unwrap_or_default().to_string();
+    match (file, kind) {
+        (DataFile::Verbs | DataFile::Words, Kind::Entry) => match item["kanji"].as_str() {
+            Some(kanji) => format!("{} ({kanji})", text("dict")),
+            None => text("dict"),
+        },
+        (DataFile::Counters, Kind::Entry) => format!("{} ({})", text("counter"), text("reading")),
+        (DataFile::Grammar, Kind::Entry) => text("title"),
+        (_, Kind::Usage | Kind::Pitfall) => text("heading"),
+        (_, Kind::Thing) => text("word"),
+        _ => text("jp"),
+    }
+}
+
+/// Where each add-only field sits in a built item, so a proposal can be turned back into form fields.
+fn field_path(file: DataFile, kind: Kind, name: &str) -> Vec<String> {
+    let path = |parts: &[&str]| parts.iter().map(|p| p.to_string()).collect();
+    match (file, kind, name) {
+        (DataFile::Verbs, Kind::Entry, form) if BASIC_FORMS.contains(&form) => {
+            path(&["forms", form])
+        }
+        (DataFile::Verbs, Kind::Entry, "example_form") => path(&["examples", "0", "form"]),
+        (
+            DataFile::Verbs | DataFile::Grammar,
+            Kind::Entry | Kind::Usage,
+            "example_jp" | "example_en",
+        ) => {
+            let key = &name["example_".len()..];
+            if (file, kind) == (DataFile::Grammar, Kind::Entry) {
+                path(&["usages", "0", "examples", "0", key])
+            } else {
+                path(&["examples", "0", key])
+            }
+        }
+        (DataFile::Grammar, Kind::Entry, "usage_heading" | "usage_explanation") => {
+            path(&["usages", "0", &name["usage_".len()..]])
+        }
+        _ => path(&[name]),
+    }
+}
+
+/// The add form's fields for a built item: the inverse of `build_add`, so the owner's edits can be applied
+/// to a proposal and built again.
+pub fn add_fields_of(file: DataFile, kind: Kind, item: &Value) -> Map<String, Value> {
+    add_fields(file, kind)
+        .iter()
+        .filter_map(|f| {
+            let value = field_path(file, kind, f.name)
+                .iter()
+                .try_fold(item, |v, key| match key.parse::<usize>() {
+                    Ok(i) => v.get(i),
+                    Err(_) => v.get(key.as_str()),
+                })?;
+            value
+                .as_str()
+                .map(|text| (f.name.to_string(), Value::String(text.to_string())))
+        })
+        .collect()
+}
+
+/// The stable ids a built item holds, in the order `build_add` assigns them, so a rebuild keeps them.
+pub fn stable_ids_of(file: DataFile, kind: Kind, item: &Value) -> Vec<String> {
+    let id = |v: &Value| v["id"].as_str().map(str::to_string);
+    let ids = match (file, kind) {
+        (DataFile::Verbs, Kind::Entry) => vec![id(&item["examples"][0])],
+        (DataFile::Grammar, Kind::Entry) => vec![
+            id(&item["usages"][0]),
+            id(&item["usages"][0]["examples"][0]),
+        ],
+        (DataFile::Grammar, Kind::Usage) => vec![id(item), id(&item["examples"][0])],
+        (_, Kind::Entry) => vec![],
+        _ => vec![id(item)],
+    };
+    ids.into_iter().flatten().collect()
 }

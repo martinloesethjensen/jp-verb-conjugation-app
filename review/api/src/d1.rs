@@ -565,6 +565,24 @@ impl ReviewStore for D1Store {
         Ok(!rows.is_empty())
     }
 
+    async fn ids_taken(
+        &self,
+        dataset: &str,
+    ) -> Result<
+        (
+            std::collections::BTreeSet<String>,
+            std::collections::BTreeSet<String>,
+        ),
+        StoreError,
+    > {
+        let loaded: Vec<ItemIdRow> = self.rows(SELECT_LOADED_IDS, &[text(dataset)]).await?;
+        let suggested: Vec<ItemIdRow> = self.rows(SELECT_SUGGESTED_IDS, &[text(dataset)]).await?;
+        Ok((
+            loaded.into_iter().map(|r| r.item_id).collect(),
+            suggested.into_iter().map(|r| r.item_id).collect(),
+        ))
+    }
+
     async fn open_add_for(
         &self,
         dataset: &str,

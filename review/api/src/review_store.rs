@@ -11,6 +11,7 @@
 use crate::store::StoreError;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Target {
@@ -160,6 +161,11 @@ pub struct Part {
     pub kind: String,
     pub item_id: String,
     pub content_hash: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ItemIdRow {
+    pub item_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -365,6 +371,12 @@ pub const SELECT_IDENTICAL_ADD: &str = "SELECT id FROM suggestions WHERE action 
 pub const SELECT_ID_IN_USE: &str = "SELECT 1 AS id FROM items WHERE dataset = ?1 AND item_id = ?2 \
      UNION ALL SELECT 1 AS id FROM suggestions WHERE dataset = ?1 AND item_id = ?2 AND action = 'add' \
      AND status IN ('open', 'accepted') LIMIT 1";
+/// ?1 dataset: every loaded item's id.
+pub const SELECT_LOADED_IDS: &str = "SELECT item_id FROM items WHERE dataset = ?1";
+/// ?1 dataset: the ids of open and accepted additions.
+pub const SELECT_SUGGESTED_IDS: &str =
+    "SELECT item_id FROM suggestions WHERE dataset = ?1 AND action = 'add' \
+     AND status IN ('open', 'accepted')";
 /// ?1 dataset, ?2 kind, ?3 item id.
 pub const SELECT_OPEN_ADD: &str =
     "SELECT id FROM suggestions WHERE action = 'add' AND dataset = ?1 AND kind = ?2 \
@@ -612,6 +624,11 @@ pub trait ReviewStore {
     async fn suggestion(&self, id: i64, viewer: &str) -> Result<Option<Suggestion>, StoreError>;
     /// Whether a loaded item, or an open or accepted addition, in the dataset uses `id`.
     async fn id_in_use(&self, dataset: &str, id: &str) -> Result<bool, StoreError>;
+    /// The ids the dataset's loaded items use, and the ids its open and accepted additions use.
+    async fn ids_taken(
+        &self,
+        dataset: &str,
+    ) -> Result<(BTreeSet<String>, BTreeSet<String>), StoreError>;
     /// The open addition of `(dataset, kind, item_id)`, if any.
     async fn open_add_for(
         &self,

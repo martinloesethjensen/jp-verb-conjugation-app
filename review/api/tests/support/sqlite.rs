@@ -535,6 +535,25 @@ impl ReviewStore for SqliteStore {
         Ok(!query::<IdRow>(&conn, SELECT_ID_IN_USE, params![dataset, id])?.is_empty())
     }
 
+    async fn ids_taken(
+        &self,
+        dataset: &str,
+    ) -> Result<
+        (
+            std::collections::BTreeSet<String>,
+            std::collections::BTreeSet<String>,
+        ),
+        StoreError,
+    > {
+        let conn = self.conn.borrow();
+        let loaded: Vec<ItemIdRow> = query(&conn, SELECT_LOADED_IDS, params![dataset])?;
+        let suggested: Vec<ItemIdRow> = query(&conn, SELECT_SUGGESTED_IDS, params![dataset])?;
+        Ok((
+            loaded.into_iter().map(|r| r.item_id).collect(),
+            suggested.into_iter().map(|r| r.item_id).collect(),
+        ))
+    }
+
     async fn open_add_for(
         &self,
         dataset: &str,

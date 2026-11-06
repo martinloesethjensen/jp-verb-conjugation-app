@@ -180,11 +180,12 @@ fn a_new_verb_gets_its_kana_id_or_a_kanji_id() {
         new_verb(json!({})),
         &suggested,
     ) {
-        Err(AddError::Conflict(m)) => {
+        Err(AddError::Conflict { message, id }) => {
             assert_eq!(
-                m,
+                message,
                 "someone already suggested adding はしる; reply on their suggestion instead"
-            )
+            );
+            assert_eq!(id, "はしる");
         }
         other => panic!("{other:?}"),
     }
@@ -460,4 +461,29 @@ fn every_addable_target_builds_against_real_data() {
         );
         assert!(built.is_ok(), "{name}: {built:?}");
     }
+}
+
+#[test]
+fn a_built_item_turns_back_into_its_fields() {
+    let f = new_verb(json!({"kanji": "走る", "teGroup": "tte"}));
+    let built = add(DataFile::Verbs, Kind::Entry, None, f.clone(), &free).unwrap();
+    let back = review_api::proposal::add_fields_of(DataFile::Verbs, Kind::Entry, &built.item);
+    assert_eq!(Value::Object(back), f);
+    let ids = review_api::proposal::stable_ids_of(DataFile::Verbs, Kind::Entry, &built.item);
+    assert_eq!(ids, [built.item["examples"][0]["id"].as_str().unwrap()]);
+    let point = json!({"id": "te-shimau", "title": "てしまう", "summary": "s", "jlpt": "N4",
+        "usage_heading": "h", "usage_explanation": "e", "example_jp": "j", "example_en": "n"});
+    let built = add(DataFile::Grammar, Kind::Entry, None, point.clone(), &free).unwrap();
+    assert_eq!(
+        Value::Object(review_api::proposal::add_fields_of(
+            DataFile::Grammar,
+            Kind::Entry,
+            &built.item
+        )),
+        point
+    );
+    assert_eq!(
+        review_api::proposal::stable_ids_of(DataFile::Grammar, Kind::Entry, &built.item).len(),
+        2
+    );
 }
