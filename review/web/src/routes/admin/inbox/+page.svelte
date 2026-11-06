@@ -8,6 +8,7 @@
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import { DATASET_TITLES, KINDS } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
+	import { addFieldsOf } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
 
 	type Status = 'open' | 'accepted' | 'declined';
@@ -24,6 +25,7 @@
 	let readings = $state<Record<string, string>>({});
 	let forms = $state<Record<string, string>>({});
 	let fieldTable = $state<Record<string, Field[]>>({});
+	let addFields = $state<Record<string, Field[]>>({});
 	let editing = $state<number | null>(null);
 	/** A whole verb or word removal waiting for "Accept and remove": its id and the warning. */
 	let confirming = $state<{ id: number; warning: string } | null>(null);
@@ -36,6 +38,7 @@
 			readings = reference.readings;
 			forms = reference.forms;
 			fieldTable = reference.fields;
+			addFields = reference.add_fields;
 		});
 	});
 
@@ -61,7 +64,24 @@
 		return out;
 	});
 
-	const fieldsOf = (s: InboxSuggestion) => fieldTable[`${s.dataset}/${s.kind}`] ?? [];
+	const adding = (s: InboxSuggestion) => s.action === 'add';
+	/** The fields the owner edits: an addition's add form, otherwise the change form. */
+	const fieldsOf = (s: InboxSuggestion) => (adding(s) ? addFields : fieldTable)[`${s.dataset}/${s.kind}`] ?? [];
+	/** What the edit form compares against and starts from. An addition has no current item. */
+	const editBase = (s: InboxSuggestion) => (adding(s) ? {} : (s.current ?? {}));
+	const editStart = (s: InboxSuggestion) =>
+		adding(s)
+			? addFieldsOf(s.dataset, s.kind, s.admin_edit ?? s.proposed ?? {})
+			: s.stale || !s.proposed
+				? (s.current ?? {})
+				: { ...s.current, ...s.proposed };
+	const canEdit = (s: InboxSuggestion) =>
+		fieldsOf(s).length > 0 && s.action !== 'delete' && (adding(s) ? !s.gone : !!s.current);
+	const ENTRY_NAMES: Record<string, string> = { verbs: 'verb', words: 'word', counters: 'counter', grammar: 'grammar point' };
+	const groupTitle = (s: InboxSuggestion) => {
+		const name = s.kind === 'entry' && adding(s) ? ENTRY_NAMES[s.dataset] : (KINDS[s.kind] ?? s.kind);
+		return adding(s) ? `New ${name}` : name;
+	};
 	const hrefOf = (s: InboxSuggestion) =>
 		`/item?${new URLSearchParams({ dataset: s.dataset, id: s.entry_id })}${s.kind === 'entry' ? '' : `#${s.item_id}`}`;
 	const wholeRemoval = (s: InboxSuggestion) =>
@@ -127,11 +147,22 @@
 		{@const first = group.items[0]}
 		<section class="group">
 			<h2>
-				<a href={hrefOf(first)} lang="ja">{first.item_title}</a>
-				<span class="kind">{KINDS[first.kind] ?? first.kind} · {DATASET_TITLES[first.dataset as Dataset] ?? first.dataset}</span>
+				{#if adding(first) && first.kind === 'entry'}
+					<span lang="ja">{first.item_title}</span>
+				{:else}
+					<a href={hrefOf(first)} lang="ja">{first.item_title}</a>
+				{/if}
+				<span class="kind">{groupTitle(first)} · {DATASET_TITLES[first.dataset as Dataset] ?? first.dataset}</span>
 			</h2>
 			{#each group.items as s (s.id)}
-				<SuggestionCard suggestion={s} current={s.current} names={fieldsOf(s).map((f) => f.name)} oncomment={(text) => reply(s, text)}>
+				<SuggestionCard
+					suggestion={s}
+					current={s.current}
+					names={fieldsOf(s).map((f) => f.name)}
+					{readings}
+					{forms}
+					oncomment={(text) => reply(s, text)}
+				>
 					{#snippet actions()}
 						{#if s.status === 'open'}
 							{#if confirming?.id === s.id}
@@ -142,11 +173,11 @@
 								<button
 									type="button"
 									class="primary small"
-									disabled={busy || (s.action === 'change' && (s.stale || s.gone))}
+									disabled={busy || ((s.action === 'change' || adding(s)) && (s.stale || s.gone))}
 									title={staleChange(s) ? ACCEPT_STALE : undefined}
 									onclick={() => accept(s)}>Accept</button
 								>
-								{#if s.current && fieldsOf(s).length && s.action !== 'delete'}
+								{#if canEdit(s)}
 									<button type="button" class="small" aria-expanded={editing === s.id} onclick={() => (editing = editing === s.id ? null : s.id)}
 										>Edit then accept</button
 									>
@@ -157,14 +188,14 @@
 						{/if}
 					{/snippet}
 				</SuggestionCard>
-				{#if editing === s.id && s.current}
+				{#if editing === s.id && canEdit(s)}
 					<SuggestForm
 						fields={fieldsOf(s)}
-						current={s.current}
-						initial={s.stale || !s.proposed ? s.current : { ...s.current, ...s.proposed }}
+						current={editBase(s)}
+						initial={editStart(s)}
 						{readings}
 						{forms}
-						extra={(s.current.readings as Record<string, string> | undefined) ?? {}}
+						extra={{ ...((s.current?.readings as Record<string, string> | undefined) ?? {}), ...(s.furigana ?? {}) }}
 						submitLabel="Accept with these edits"
 						onsubmit={async (edits, furigana) => {
 							await decide(s.id, 'accept', {

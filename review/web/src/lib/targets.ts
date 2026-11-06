@@ -127,3 +127,41 @@ export function leftBehind(parts: ReviewPart[], approvals: Approval[], suggestio
 	for (const a of approvals) group(a.kind, a.item_id)?.approvals.push(a);
 	return [...groups.values()];
 }
+
+const BASIC_FORMS = ['masu_pos', 'masu_neg', 'masu_past', 'masu_past_neg', 'te', 'short_pos', 'short_neg', 'short_past', 'short_past_neg'];
+
+/**
+ * A suggested new item's add-form fields: the inverse of the Worker's `build_add` (review/api's
+ * `add_fields_of`), so the owner's edit form starts from the proposal. Generated placeholders and ids are
+ * left out.
+ */
+export function addFieldsOf(dataset: string, kind: string, item: Json): Record<string, string> {
+	const out: Record<string, string> = {};
+	const put = (name: string, value: unknown) => {
+		if (typeof value === 'string') out[name] = value;
+	};
+	const firstExample = (owner: Json) => {
+		const ex = list(owner?.examples)[0] ?? {};
+		put('example_jp', ex.jp);
+		put('example_en', ex.en);
+		return ex;
+	};
+	if (kind === 'entry' && dataset === 'verbs') {
+		for (const key of ['type', 'dict', 'kanji', 'meaning', 'description', 'notes', 'jlpt', 'teGroup']) put(key, item[key]);
+		for (const form of BASIC_FORMS) put(form, item.forms?.[form]);
+		put('example_form', firstExample(item).form);
+	} else if (kind === 'entry' && dataset === 'grammar') {
+		for (const key of ['id', 'title', 'summary', 'jlpt']) put(key, item[key]);
+		const usage = list(item.usages)[0] ?? {};
+		put('usage_heading', usage.heading);
+		put('usage_explanation', usage.explanation);
+		firstExample(usage);
+	} else if (kind === 'usage') {
+		for (const key of ['heading', 'explanation', 'jlpt']) put(key, item[key]);
+		firstExample(item);
+	} else {
+		// Word, counter and plain parts: their own string fields (a counter's id is its slug field).
+		for (const [key, value] of Object.entries(item)) if (key !== 'id' || kind === 'entry') put(key, value);
+	}
+	return out;
+}

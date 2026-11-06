@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { entryId, entryTitle, leftBehind, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
+import { addFieldsOf, entryId, entryTitle, leftBehind, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
 
 const point = {
 	id: 'te-iru',
@@ -83,5 +83,30 @@ describe('leftBehind and additions', () => {
 	test('a pending addition is not left behind', () => {
 		const add = { id: 9, action: 'add', kind: 'example', item_id: 'new001', item_title: 'x', status: 'open' } as never;
 		expect(leftBehind([{ kind: 'entry', item_id: 'たべる', content_hash: 'h' }], [], [add])).toEqual([]);
+	});
+});
+
+describe('addFieldsOf', () => {
+	test('a new verb turns back into its form fields', () => {
+		const verb = {
+			type: 'u', label: 'U-verb', dict: 'はしる', kanji: '走る', meaning: 'to run', description: 'd', notes: 'n', jlpt: 'N4',
+			forms: { masu_pos: 'はしります', te: 'はしって' },
+			examples: [{ id: 'abcdef', form: 'te', jp: '走って行った。', en: 'Ran.' }]
+		};
+		expect(addFieldsOf('verbs', 'entry', verb)).toEqual({
+			type: 'u', dict: 'はしる', kanji: '走る', meaning: 'to run', description: 'd', notes: 'n', jlpt: 'N4',
+			masu_pos: 'はしります', te: 'はしって', example_form: 'te', example_jp: '走って行った。', example_en: 'Ran.'
+		});
+	});
+	test('a new grammar point and a usage', () => {
+		const point = { id: 'te-shimau', title: 't', summary: 's', jlpt: 'N4',
+			usages: [{ id: 'u1', heading: 'h', explanation: 'e', examples: [{ id: 'e1', jp: 'j', en: 'n' }] }] };
+		expect(addFieldsOf('grammar', 'entry', point)).toEqual({ id: 'te-shimau', title: 't', summary: 's', jlpt: 'N4',
+			usage_heading: 'h', usage_explanation: 'e', example_jp: 'j', example_en: 'n' });
+		const usage = { id: 'u2', heading: 'h', explanation: 'e', examples: [{ id: 'e2', jp: 'j', en: 'n' }] };
+		expect(addFieldsOf('grammar', 'usage', usage)).toEqual({ heading: 'h', explanation: 'e', example_jp: 'j', example_en: 'n' });
+	});
+	test('a part keeps its own fields, without its id', () => {
+		expect(addFieldsOf('verbs', 'example', { id: 'x', form: 'te', jp: 'j', en: 'n' })).toEqual({ form: 'te', jp: 'j', en: 'n' });
 	});
 });

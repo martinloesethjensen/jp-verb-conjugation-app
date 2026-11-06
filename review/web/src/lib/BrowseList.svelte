@@ -1,9 +1,19 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ApiError, listItems, type Dataset, type ItemSummary } from './api.ts';
+	import {
+		ApiError,
+		comment,
+		getAdditions,
+		listItems,
+		withdrawSuggestion,
+		type Dataset,
+		type ItemSummary,
+		type Suggestion
+	} from './api.ts';
+	import SuggestionCard from './SuggestionCard.svelte';
 	import Japanese from './Japanese.svelte';
 	import LevelPill from './LevelPill.svelte';
-	import { DATASET_TITLES } from './labels.ts';
+	import { ADD_LABELS, DATASET_TITLES } from './labels.ts';
 	import { loadReference } from './reference.ts';
 
 	let { dataset }: { dataset: Dataset } = $props();
@@ -13,6 +23,8 @@
 	let items = $state<ItemSummary[] | null>(null);
 	let version = $state('');
 	let readings = $state<Record<string, string>>({});
+	let forms = $state<Record<string, string>>({});
+	let additions = $state<Suggestion[]>([]);
 	let failure = $state<string | null>(null);
 	let search = $state('');
 	let level = $state('');
@@ -26,8 +38,18 @@
 			.catch((error) => {
 				failure = error instanceof ApiError ? error.message : 'Something went wrong. Try again in a minute.';
 			});
-		loadReference().then((reference) => (readings = reference.readings));
+		loadReference().then((reference) => {
+			readings = reference.readings;
+			forms = reference.forms;
+		});
+		refreshAdditions();
 	});
+
+	function refreshAdditions() {
+		getAdditions(dataset)
+			.then((list) => (additions = list))
+			.catch(() => (additions = []));
+	}
 
 	const shown = $derived.by(() => {
 		const needle = search.trim().toLowerCase();
@@ -44,7 +66,31 @@
 <div class="heading">
 	<h1>{DATASET_TITLES[dataset]}</h1>
 	{#if version}<p class="version">Version {version}</p>{/if}
+	<a class="suggest-new" href="/add?dataset={dataset}">{ADD_LABELS[`${dataset}/entry`]}</a>
 </div>
+
+{#if additions.length}
+	<section class="additions" aria-labelledby="additions-heading">
+		<h2 id="additions-heading">Suggested additions</h2>
+		{#each additions as s (s.id)}
+			<SuggestionCard
+				suggestion={s}
+				current={null}
+				names={[]}
+				{readings}
+				{forms}
+				onwithdraw={async () => {
+					await withdrawSuggestion(s.id);
+					refreshAdditions();
+				}}
+				oncomment={async (text) => {
+					await comment(s.id, text);
+					refreshAdditions();
+				}}
+			/>
+		{/each}
+	</section>
+{/if}
 
 {#if failure}
 	<p class="notice" role="alert">{failure}</p>
@@ -114,6 +160,22 @@
 	.version {
 		margin: 0;
 		font-size: 0.9rem;
+	}
+
+	.suggest-new {
+		margin-left: auto;
+		font-size: 0.95rem;
+	}
+
+	.additions {
+		max-width: 42rem;
+		margin-top: 1.25rem;
+	}
+
+	.additions h2 {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 500;
 	}
 
 	.filters {

@@ -315,7 +315,15 @@ export function reviewMock(ctx: ReviewContext) {
 				}
 				parentEntry = parent.entry_id;
 			}
-			const { item, id, title } = mockItem(dataset, kind, fields);
+			const built = mockItem(dataset, kind, fields);
+			const { item, title } = built;
+			let { id } = built;
+			// The verb-id rule: a kana already used by a loaded verb needs the kanji, as `kana:kanji`.
+			if (dataset === 'verbs' && kind === 'entry' && targets(dataset).some((t) => t.kind === 'entry' && t.item_id === id)) {
+				if (!fields.kanji) return [400, { error: `${id} is already a verb; add its kanji so the new one gets its own id` }];
+				id = `${fields.dict}:${fields.kanji}`;
+				item.id = id;
+			}
 			if (kind === 'entry' && targets(dataset).some((t) => t.kind === 'entry' && t.item_id === id)) {
 				return [409, { error: `${id} is already in the data` }];
 			}

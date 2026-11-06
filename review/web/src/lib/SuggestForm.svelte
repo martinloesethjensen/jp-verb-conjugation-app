@@ -21,6 +21,7 @@
 		extra = {},
 		submitLabel = 'Send suggestion',
 		hint = "Spelling and ids can't change here. Leave a note for Martin if they're wrong.",
+		conflictIsStale = true,
 		onsubmit,
 		oncancel
 	}: {
@@ -36,6 +37,8 @@
 		submitLabel?: string;
 		/** The quiet line under the fields. */
 		hint?: string;
+		/** A 409 means the item changed (offer a reload); false where it means a duplicate. */
+		conflictIsStale?: boolean;
 		onsubmit: (edits: Record<string, string>, furigana: Record<string, string>) => Promise<void>;
 		oncancel: () => void;
 	} = $props();
@@ -79,7 +82,7 @@
 			await onsubmit(edits, furigana);
 		} catch (error) {
 			failure = problem(error);
-			stale = isStale(error);
+			stale = conflictIsStale && isStale(error);
 		} finally {
 			busy = false;
 		}
@@ -108,7 +111,7 @@
 				id="{uid}-{field.name}"
 				maxlength={field.input === 'slug' ? 40 : 2000}
 				lang={JAPANESE_FIELDS.has(field.name) || field.input === 'kana' ? 'ja' : undefined}
-				placeholder={field.input === 'kana' ? 'in kana' : field.input === 'slug' ? 'like te-iru' : undefined}
+				placeholder={field.input === 'kana' ? 'in kana' : field.input === 'slug' ? 'like hon or te-iru' : undefined}
 				autocapitalize={field.input === 'slug' ? 'none' : undefined}
 				bind:value={values[field.name]}
 			/>

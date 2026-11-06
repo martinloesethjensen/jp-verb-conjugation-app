@@ -144,3 +144,34 @@ data counts as done for everyone.
 
 After the PR that adds the review tables merges, run `npm run migrate` in `review/api` once (migration
 `0004_review.sql`), then wait for Workers Builds and Pages to deploy.
+
+## Adding
+
+Reviewers can suggest new items, and you rule on them in the same inbox:
+
+- **New parts:** every list on an item page that can take more ends with a button: "Add an example", "Add a
+  common phrase", "Add a thing counted", "Add a usage", "Add a pitfall". The examples under a usage or pitfall
+  have their own button. New parts go at the end of their list. "Compared with" examples can't be added.
+- **New entries:** each browse page has "Suggest a new verb" (or word, counter, grammar point). Its form asks only
+  for what the app can't work out:
+  - For a verb, that's its dictionary form, meaning, notes, the nine basic forms (ます, て, plain, and their
+    negatives and pasts), and one first example.
+  - A word needs its class, dictionary form, meaning and level.
+  - A grammar point comes with one usage and one example, because the app needs them.
+  - A counter's symbol starts as `number` for you to change.
+
+  The other conjugations, a counter's readings and distractors, and word forms are filled in by `update_data.py`
+  when you export.
+- **Ids are given when the suggestion is made and kept through export:**
+  - A part gets a 6-character stable id.
+  - A verb gets its kana, or `kana:kanji` when that kana is already a verb. A kana-only duplicate is refused.
+  - A word gets `class:dictionary form`.
+  - A counter or grammar point gets the id the reviewer types.
+
+  Suggesting an entry someone else already suggested is refused, with a pointer to the earlier suggestion.
+- **In the inbox:** an addition shows the new item itself, marked "New". Edit then accept fills its add form
+  from the proposal and keeps its ids. If the place it was added to leaves the data, it shows "No longer in the
+  data" and plain Accept is refused. After you export and reload, it shows "Now in the data".
+
+After the PR that adds suggested additions merges, run `npm run migrate` in `review/api` once (migration
+`0005_additions.sql`). It rebuilds the suggestions table and keeps everything already stored.

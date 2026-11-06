@@ -186,6 +186,26 @@ failure back to the owner before anything is written.
 6. The owner signs (`make sign-commit`) and opens the PR. After merge, the owner marks the batch exported on
    the site (or the script does it with the next pull, by seeing the new manifest version).
 
+### Accepted additions (the contract for export)
+
+The review site (plan 5) stores a suggested addition as a suggestion with `action = 'add'`:
+
+- `dataset` and `kind` say what the new item is (`verbs/example`, `grammar/entry`…).
+- `parent_kind` and `parent_id` say where a part goes: the entry, a usage or a pitfall. Both are empty for a new
+  entry. `entry_id` is the parent's entry (the new id for a new entry).
+- The item itself, ids included, is `admin_edit_json` when the owner edited it, else `proposed_json`.
+  - A part has its 6-character stable id.
+  - A new verb has its first example, and a new grammar point its first usage and example, each with its own id.
+  - A new verb's `id` key is present only for a `kana:kanji` id.
+- Export appends a part to the end of its parent's list, and a new entry to the end of its file.
+- Fields `update_data.py` generates arrive as placeholders and are regenerated:
+  - verb forms beyond the nine basic ones;
+  - word `forms`;
+  - counter `readings`, `changed` and `distractors`.
+
+  A counter's `symbol` arrives as typed, `number` by default.
+- `furigana_json` holds readings for new kanji, for `furigana.json`.
+
 ## Fits what exists: review stamps
 
 `docs/superpowers/specs/2026-10-27-review-status-design.md` already gives counters and grammar points a
