@@ -53,7 +53,8 @@ Twelve themes in four picker groups. Names are UI copy and live in App.
 Settings: **Theme** (one of the twelve), **Match light and dark to iOS** (default on), **Seasonal
 themes** (default off). With matching on, paired and variant themes follow the system appearance;
 light-only and dark-only themes force their appearance on the window, so sheets, alerts and the
-keyboard match. With seasonal on, October shows Halloween and December shows Christmas, whatever the
+keyboard match. Picking the half of Light/Dark or Latte/Coffee that iOS is not showing turns
+matching off, so the tap visibly takes effect. With seasonal on, October shows Halloween and December shows Christmas, whatever the
 chosen theme; on 1 November and 1 January the chosen theme returns.
 
 Existing `appearanceMode` values migrate once: `system` → Light + matching on; `light` → Light +
@@ -84,12 +85,16 @@ Palette per theme: `light`/`dark` → light or dark by appearance; `latte`/`coff
 appearance; `pastel` → pastel or pastelDark; `sand` → sand or sandDark; every other theme → its own.
 
 Checked contrast (WCAG): ink on paper 10.1–15.8; muted on paper 5.2–8.4 and on card 5.6–7.5; mark on
-card 5.1–7.1; good on card 4.9–10.0; onButton on button 5.8–15.2. All ≥ 4.5.
+card 5.1–7.1; good on card 4.9–10.0; onButton on button 5.8–15.2; button on paper and card,
+and ink on markSoft and goodSoft, pass in every palette. All ≥ 4.5. `accent` and `mark`/`good` on
+their soft fills do **not** pass in every light palette, so they never colour text: a marked quiz
+answer keeps ink text and carries the mark colour in its outline, strike and glyph.
 
 **Increase Contrast**: `muted` becomes a 50/50 mix of `muted` and `ink`; `rule` becomes a 50/50 mix
 of `rule` and `muted`; card outlines draw at 1.5 pt.
 
-`accent` tints switches and the selected tab. Pastel and Ice cream set `fillsTypePills`.
+`accent` fills switches only. Text buttons, links and the selected tab use `button`. Pastel and
+Ice cream set `fillsTypePills`.
 
 ## Boards → plans
 

@@ -30,6 +30,17 @@ public enum ThemeID: String, CaseIterable, Sendable {
     }
 }
 
+extension ThemeID {
+    /// For the halves of a light/dark pair, whether this half is the dark one; nil otherwise.
+    var pairedHalfIsDark: Bool? {
+        switch self {
+        case .light, .latte: false
+        case .dark, .coffee: true
+        default: nil
+        }
+    }
+}
+
 /// The four sections of the theme picker.
 public enum ThemeGroup: String, CaseIterable, Sendable {
     case everyday, cafe, night, seasonal

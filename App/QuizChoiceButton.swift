@@ -61,7 +61,8 @@ struct QuizChoiceButton: View {
                     Text(choice)
                         .fontWeight(mark == .correct ? .bold : .regular)
                         .strikethrough(mark == .wrong, color: palette.mark)
-                        .foregroundStyle(mark == .wrong ? palette.mark : palette.ink)
+                        // Ink text on the soft fills keeps 4.5:1; the strike, cross and outline carry the mark colour.
+                        .foregroundStyle(palette.ink)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.8)
                         .lineLimit(lineLimit)
@@ -69,7 +70,7 @@ struct QuizChoiceButton: View {
                 if withoutColor, let caption {
                     Text(caption)
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(mark == .wrong ? palette.mark : palette.good)
+                        .foregroundStyle(palette.ink)
                 }
             }
             .padding(.horizontal, 10)

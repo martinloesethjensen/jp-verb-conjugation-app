@@ -31,7 +31,12 @@ struct ThemedRoot: ViewModifier {
         )
         return content
             .environment(\.palette, palette)
-            .tint(palette.accent)
+            // Text buttons, links and the selected tab use `button` (≥ 4.5:1 on paper and card in
+            // every palette); the lighter `accent` only fills switches, where it is not text.
+            .tint(palette.button)
+            #if os(iOS)
+            .toggleStyle(SwitchToggleStyle(tint: palette.accent))
+            #endif
             .onChange(of: appearance, initial: true) { _, new in
                 ThemeApplier.apply(new)
             }

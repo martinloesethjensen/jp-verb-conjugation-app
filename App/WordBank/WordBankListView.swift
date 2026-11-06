@@ -21,9 +21,9 @@ enum WordBankGrouping: String, CaseIterable, Identifiable {
 struct WordBankListView: View {
     @Environment(WordBankStore.self) private var store
     @Environment(WordBankTransferHub.self) private var transfer
+    @Environment(\.palette) private var palette
     #if os(iOS)
     @Environment(\.editMode) private var editMode
-    @Environment(\.palette) private var palette
     #endif
     @Environment(\.dismiss) private var dismiss
     let place: WordBankPlace?

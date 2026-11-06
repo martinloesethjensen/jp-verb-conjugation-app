@@ -36,6 +36,18 @@ public struct ThemeChoice: Equatable, Sendable {
         effectiveTheme(on: date, calendar: calendar).appearance(matchingSystem: matchesSystem)
     }
 
+    /// The choice after the person taps `theme` in the picker. Picking the half of a light/dark
+    /// pair (Light/Dark, Latte/Coffee) that the system is not showing turns matching off, so the
+    /// tap visibly does what it says; every other pick keeps the switches as they are.
+    public func choosing(_ theme: ThemeID, systemIsDark: Bool) -> ThemeChoice {
+        var next = self
+        next.theme = theme
+        if matchesSystem, let wantsDark = theme.pairedHalfIsDark, wantsDark != systemIsDark {
+            next.matchesSystem = false
+        }
+        return next
+    }
+
     /// The choice that keeps what an existing "Appearance" setting looked like.
     public static func migrated(appearanceMode: String?) -> ThemeChoice {
         switch appearanceMode {

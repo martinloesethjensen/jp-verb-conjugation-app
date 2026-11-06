@@ -11,6 +11,7 @@ struct ThemePickerView: View {
     @AppStorage(ThemeChoice.matchesSystemKey, store: .appGroup) private var matchesSystem = true
     @AppStorage(ThemeChoice.seasonalKey, store: .appGroup) private var seasonal = false
     @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
 
     private var selected: ThemeID { ThemeID(rawValue: themeRaw) ?? .light }
 
@@ -81,7 +82,11 @@ struct ThemePickerView: View {
         let face = ThemePalette.resolve(theme, appearance: theme.appearance(matchingSystem: false), systemScheme: .light, contrast: .standard)
         let isSelected = theme == selected
         return Button {
-            themeRaw = theme.rawValue
+            // Picking the half of Light/Dark or Latte/Coffee the system isn't showing pins it.
+            let next = ThemeChoice(theme: selected, matchesSystem: matchesSystem, seasonal: seasonal)
+                .choosing(theme, systemIsDark: colorScheme == .dark)
+            themeRaw = next.theme.rawValue
+            matchesSystem = next.matchesSystem
             reloadWidgets()
         } label: {
             VStack(spacing: 4) {

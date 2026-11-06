@@ -63,6 +63,25 @@ final class ThemeChoiceTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: ThemeChoice.themeKey), "dark")
     }
 
+    func testChoosingTheOtherHalfOfAPairPinsIt() {
+        // Matching on, light phone: picking Dark must make the app dark, so matching turns off.
+        let picked = ThemeChoice(theme: .light).choosing(.dark, systemIsDark: false)
+        XCTAssertEqual(picked, ThemeChoice(theme: .dark, matchesSystem: false))
+        XCTAssertEqual(ThemeChoice(theme: .latte).choosing(.coffee, systemIsDark: false).matchesSystem, false)
+        XCTAssertEqual(ThemeChoice(theme: .coffee).choosing(.latte, systemIsDark: true).matchesSystem, false)
+    }
+
+    func testChoosingTheMatchingHalfKeepsFollowingTheSystem() {
+        XCTAssertEqual(ThemeChoice(theme: .light).choosing(.dark, systemIsDark: true), ThemeChoice(theme: .dark, matchesSystem: true))
+        XCTAssertEqual(ThemeChoice(theme: .dark).choosing(.light, systemIsDark: false).matchesSystem, true)
+    }
+
+    func testChoosingAnUnpairedThemeLeavesMatchingAndSeasonalAlone() {
+        let choice = ThemeChoice(theme: .light, matchesSystem: true, seasonal: true)
+        XCTAssertEqual(choice.choosing(.sand, systemIsDark: false), ThemeChoice(theme: .sand, matchesSystem: true, seasonal: true))
+        XCTAssertEqual(choice.choosing(.nocturnal, systemIsDark: false).matchesSystem, true)
+    }
+
     func testSaveLoadRoundTripAndUnknownFallsBack() {
         let defaults = freshDefaults()
         let choice = ThemeChoice(theme: .northernLights, matchesSystem: false, seasonal: true)
