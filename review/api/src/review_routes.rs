@@ -699,6 +699,13 @@ pub async fn decide<S: Store + ReviewStore>(
     let (mut admin_edit, mut furigana) = (None, None);
     if accept {
         if let Some(edits) = &edits {
+            // An accepted removal with the owner's edit would leave export guessing which one wins.
+            if s.action == "delete" {
+                return error(
+                    400,
+                    "a removal can't be edited; decline it and suggest a change instead",
+                );
+            }
             let (file, kind, t) = tri!(target(&s.dataset, &s.kind, &s.item_id));
             let (_, entry_id, _) = tri!(loaded_target(store, &t).await);
             let (p, f, _) = tri!(

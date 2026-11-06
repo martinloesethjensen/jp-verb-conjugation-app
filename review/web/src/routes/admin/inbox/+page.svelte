@@ -146,7 +146,7 @@
 									title={staleChange(s) ? ACCEPT_STALE : undefined}
 									onclick={() => accept(s)}>Accept</button
 								>
-								{#if s.current && fieldsOf(s).length}
+								{#if s.current && fieldsOf(s).length && s.action !== 'delete'}
 									<button type="button" class="small" aria-expanded={editing === s.id} onclick={() => (editing = editing === s.id ? null : s.id)}
 										>Edit then accept</button
 									>

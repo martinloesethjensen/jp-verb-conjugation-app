@@ -475,3 +475,41 @@ async fn every_write_is_audited() {
         );
     }
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_decision_that_loses_a_race_writes_no_audit_row() {
+    use review_api::review_store::{DECIDE, INSERT_DECIDE_AUDIT, INSERT_WITHDRAW_AUDIT, WITHDRAW};
+    let s = setup().await;
+    let t = target("words", "entry", II);
+    let h = hash(&s, &t).await;
+    let id = s
+        .add_suggestion(&change(&t, &h, "{}"), AIKO, T0)
+        .await
+        .unwrap()
+        .0;
+    s.decide(id, true, None, None, MARTIN, T0).await.unwrap();
+    let before = audit_actions(&s).len();
+    // The second tab's batch, run after the first one committed: audit first, then the update.
+    let conn = s.conn.borrow();
+    let logged = conn
+        .execute(
+            INSERT_DECIDE_AUDIT,
+            rusqlite::params![T0, MARTIN, "suggestion.accept", "", id],
+        )
+        .unwrap();
+    let changed = conn
+        .execute(
+            DECIDE,
+            rusqlite::params![id, "accepted", None::<String>, MARTIN, T0, None::<String>],
+        )
+        .unwrap();
+    let withdrawn_log = conn
+        .execute(INSERT_WITHDRAW_AUDIT, rusqlite::params![T0, AIKO, id])
+        .unwrap();
+    let withdrawn = conn
+        .execute(WITHDRAW, rusqlite::params![id, AIKO, T0])
+        .unwrap();
+    drop(conn);
+    assert_eq!((logged, changed, withdrawn_log, withdrawn), (0, 0, 0, 0));
+    assert_eq!(audit_actions(&s).len(), before);
+}

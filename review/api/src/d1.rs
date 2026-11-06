@@ -630,15 +630,16 @@ impl ReviewStore for D1Store {
             Some(row) if row.status == "open" => return Err(StoreError::Conflict),
             _ => return Err(StoreError::NotFound),
         }
-        let update = self.statement(WITHDRAW, &[number(id), text(author), text(now)])?;
-        let log = self.log(
-            now,
-            author,
-            "suggestion.withdraw",
-            &format!("suggestion/{id}"),
-            "",
+        // The audit row goes first, written only while the suggestion is open: both apply or neither.
+        let log = self.statement(
+            INSERT_WITHDRAW_AUDIT,
+            &[text(now), text(author), number(id)],
         )?;
-        self.db.batch(vec![update, log]).await.map_err(backend)?;
+        let update = self.statement(WITHDRAW, &[number(id), text(author), text(now)])?;
+        let results = self.db.batch(vec![log, update]).await.map_err(backend)?;
+        if changes(results.get(1)) == 0 {
+            return Err(StoreError::NotFound);
+        }
         Ok(())
     }
 
@@ -661,6 +662,16 @@ impl ReviewStore for D1Store {
         } else {
             ("declined", "suggestion.decline")
         };
+        let detail = if admin_edit_json.is_some() {
+            "edited"
+        } else {
+            ""
+        };
+        // As in withdraw: the audit row first, written only while the suggestion is still open.
+        let log = self.statement(
+            INSERT_DECIDE_AUDIT,
+            &[text(now), text(by), text(action), text(detail), number(id)],
+        )?;
         let update = self.statement(
             DECIDE,
             &[
@@ -672,14 +683,8 @@ impl ReviewStore for D1Store {
                 maybe(furigana_json),
             ],
         )?;
-        let detail = if admin_edit_json.is_some() {
-            "edited"
-        } else {
-            ""
-        };
-        let log = self.log(now, by, action, &format!("suggestion/{id}"), detail)?;
-        let results = self.db.batch(vec![update, log]).await.map_err(backend)?;
-        if changes(results.first()) == 0 {
+        let results = self.db.batch(vec![log, update]).await.map_err(backend)?;
+        if changes(results.get(1)) == 0 {
             return Err(StoreError::Conflict);
         }
         Ok(())

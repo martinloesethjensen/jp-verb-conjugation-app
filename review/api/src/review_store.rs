@@ -358,6 +358,16 @@ pub const WITHDRAW: &str =
 pub const DECIDE: &str =
     "UPDATE suggestions SET status = ?2, admin_edit_json = ?3, decided_by = ?4, \
      decided_at = ?5, furigana_json = IFNULL(?6, furigana_json) WHERE id = ?1 AND status = 'open'";
+/// A decision's audit row, written before `DECIDE` in the same batch and only while the suggestion is
+/// still open, so a decision that loses a race to another tab logs nothing. ?1 now, ?2 by, ?3 action,
+/// ?4 detail, ?5 id.
+pub const INSERT_DECIDE_AUDIT: &str = "INSERT INTO audit_log (at, actor, action, target, detail) \
+     SELECT ?1, ?2, ?3, 'suggestion/' || id, ?4 FROM suggestions WHERE id = ?5 AND status = 'open'";
+/// As `INSERT_DECIDE_AUDIT`, for `WITHDRAW`: ?1 now, ?2 author, ?3 id.
+pub const INSERT_WITHDRAW_AUDIT: &str =
+    "INSERT INTO audit_log (at, actor, action, target, detail) \
+     SELECT ?1, ?2, 'suggestion.withdraw', 'suggestion/' || id, '' FROM suggestions \
+     WHERE id = ?3 AND status = 'open' AND author = ?2";
 /// ?1 suggestion, ?2 author, ?3 body, ?4 now.
 pub const INSERT_COMMENT: &str = "INSERT INTO comments (suggestion_id, author, body, created_at) \
      SELECT ?1, ?2, ?3, ?4 WHERE EXISTS (SELECT 1 FROM suggestions WHERE id = ?1)";

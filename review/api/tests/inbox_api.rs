@@ -229,3 +229,29 @@ async fn reviewers_cannot_use_the_inbox() {
     .await;
     assert_eq!(r.status, 403);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_removal_cannot_be_edited_then_accepted() {
+    let s = seeded().await;
+    let (id, hash, _) = example(&s).await;
+    let r = post(
+        &s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": id,
+        "base_hash": hash, "action": "delete"}),
+        AIKO,
+    )
+    .await;
+    let sid = r.body["id"].clone();
+    let r = decide(
+        &s,
+        json!({"id": sid, "decision": "accept", "edits": {"en": "Kept, but changed."}}),
+    )
+    .await;
+    assert_eq!(r.status, 400);
+    assert_eq!(
+        r.body["error"],
+        "a removal can't be edited; decline it and suggest a change instead"
+    );
+    assert_eq!(inbox(&s, "open").await.len(), 1, "still open");
+}

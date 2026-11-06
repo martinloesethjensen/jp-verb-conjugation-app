@@ -580,21 +580,15 @@ impl ReviewStore for SqliteStore {
             _ => return Err(StoreError::NotFound),
         }
         let tx = conn.transaction().map_err(backend)?;
+        tx.execute(INSERT_WITHDRAW_AUDIT, params![now, author, id])
+            .map_err(backend)?;
         if tx
             .execute(WITHDRAW, params![id, author, now])
             .map_err(backend)?
             == 0
         {
-            return Err(StoreError::NotFound);
+            return Err(StoreError::NotFound); // dropping tx rolls the audit row back
         }
-        audit_tx(
-            &tx,
-            now,
-            author,
-            "suggestion.withdraw",
-            &format!("suggestion/{id}"),
-            "",
-        )?;
         tx.commit().map_err(backend)
     }
 
@@ -619,7 +613,14 @@ impl ReviewStore for SqliteStore {
         } else {
             ("declined", "suggestion.decline")
         };
+        let detail = if admin_edit_json.is_some() {
+            "edited"
+        } else {
+            ""
+        };
         let tx = conn.transaction().map_err(backend)?;
+        tx.execute(INSERT_DECIDE_AUDIT, params![now, by, action, detail, id])
+            .map_err(backend)?;
         if tx
             .execute(
                 DECIDE,
@@ -628,14 +629,8 @@ impl ReviewStore for SqliteStore {
             .map_err(backend)?
             == 0
         {
-            return Err(StoreError::Conflict);
+            return Err(StoreError::Conflict); // dropping tx rolls the audit row back
         }
-        let detail = if admin_edit_json.is_some() {
-            "edited"
-        } else {
-            ""
-        };
-        audit_tx(&tx, now, by, action, &format!("suggestion/{id}"), detail)?;
         tx.commit().map_err(backend)
     }
 
