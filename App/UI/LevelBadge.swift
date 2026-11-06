@@ -39,14 +39,17 @@ struct LevelBadge: View {
         return "JLPT \(level.displayName) to \(upTo.displayName)"
     }
 
+    @Environment(\.palette) private var palette
+
     @ViewBuilder
     var body: some View {
         if level != nil {
             Text(label)
                 .font(emphasis == .row ? .caption2.weight(.semibold) : .caption.weight(.bold))
+                .foregroundStyle(palette.muted)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .glassEffect(in: Capsule())
+                .overlay(Capsule().strokeBorder(palette.rule, lineWidth: 1))
                 .accessibilityLabel(accessibilityText)
         }
     }

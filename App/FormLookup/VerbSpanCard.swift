@@ -130,11 +130,7 @@ private struct ReadingDetail: View {
 
     private var verbHeader: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text(verb.label)
-                .font(.caption2.weight(.semibold))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .accentPill(verb.type.accentColor)
+            TypeLabel(verb.type)
             VStack(alignment: .leading, spacing: 2) {
                 JapaneseText(units: verb.dictionaryUnits)
                     .font(.title3.weight(.bold))
