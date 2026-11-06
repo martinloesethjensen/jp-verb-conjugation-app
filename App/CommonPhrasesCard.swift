@@ -16,7 +16,7 @@ struct CommonPhrasesCard: View {
                         row(collocation)
                     }
                 }
-                .glassCard()
+                .paperCard()
             }
         }
     }

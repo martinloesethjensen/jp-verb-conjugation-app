@@ -80,6 +80,8 @@ targets:
         excludes:
           - Info.plist
       - path: App/VerbColors.swift
+      - path: App/Theme/ThemePalette.swift
+      - path: App/Theme/ThemePalettes.swift
     dependencies:
       - package: VerbKit
       - sdk: SwiftUI.framework

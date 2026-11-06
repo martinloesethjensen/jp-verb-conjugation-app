@@ -39,6 +39,7 @@ struct WordBankDetailView: View {
             .frame(maxWidth: 720, alignment: .leading)
             .frame(maxWidth: .infinity)
         }
+        .paperBackground()
         .navigationTitle(entry.text)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -132,7 +133,7 @@ struct WordBankDetailView: View {
                     if index < entry.equivalents.count - 1 { Divider() }
                 }
             }
-            .glassCard(cornerRadius: 16)
+            .paperCard(cornerRadius: 16)
         }
     }
 

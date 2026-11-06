@@ -96,6 +96,7 @@ struct VerbTableWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: VerbWidgetIntent.self, provider: VerbProvider()) { entry in
             VerbWidgetView(entry: entry)
+                .widgetThemed(date: entry.date)
         }
         .configurationDisplayName("Verb Table")
         .description("A verb and its key forms, from your Home or Lock Screen.")

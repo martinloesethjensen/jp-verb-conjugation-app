@@ -29,7 +29,8 @@ committed**. Never edit it; edit `project.yml` and run `make project`.
 3. **Platform code:** one shared source tree for iOS and macOS. Use `#if os(iOS)` / `#if os(macOS)`
    only where APIs genuinely differ; do not fork whole screens.
 4. **Widget sources are explicit.** The widget target compiles `Widgets/**` plus only
-   `App/VerbColors.swift` (listed in `project.yml`). If a widget needs another App file, add it to
+   `App/VerbColors.swift`, `App/Theme/ThemePalette.swift` and `App/Theme/ThemePalettes.swift`
+   (listed in `project.yml`). If a widget needs another App file, add it to
    the widget target's `sources` and run `make check-project`.
 5. **Stores are injected, not global.** `JPVerbConjugationApp` creates the `@MainActor @Observable`
    stores and injects them with `.environment(...)`. Views read them with
@@ -108,6 +109,7 @@ Run `make` for the full list. Common ones:
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
 | `SyncVerification` (internal) | The six sync services' rollback rejection, hash verification and JSON decoding |
 | `UserDefaults.verbKitAppGroup` | The App Group defaults (falls back to `.standard`); App code aliases it as `.appGroup` |
+| `ThemeID`, `ThemeGroup`, `ThemeChoice` | The twelve themes, picker groups, seasonal override, window appearance and the one-time `appearanceMode` migration (spec: `docs/superpowers/specs/2026-11-06-paper-ink-redesign-design.md`) |
 
 ### App UI components and modifiers
 
@@ -115,9 +117,14 @@ Run `make` for the full list. Common ones:
 |---|---|
 | `JapaneseText` | Any Japanese text that may need furigana. Use instead of `Text`; it styles like `Text` |
 | `WrappingFlowLayout` | Wrapping row layout for chips, tags and pills |
-| `FilterChip` / `chipBackground(_:)` | Filter-row capsule: menu or single-choice, outlined while on |
-| `LevelBadge(level:emphasis:)` | JLPT pill beside a row title or in a detail header; nil draws nothing |
-| `glassCard(cornerRadius:fillsWidth:)` | Liquid Glass card for detail sections |
+| `FilterChip` / `chipBackground(isOn:)` | Filter-row capsule: outlined in ink while off, filled with `button` while on; an accent adds a dot |
+| `LevelBadge(level:emphasis:)` | Outlined JLPT pill beside a row title or in a detail header; nil draws nothing |
+| `\.palette` / `ThemePalette` | The current theme's colours (paper, card, ink, muted, rule, mark, good, button, accent). Read these, not `.secondary`/`.white`, in restyled views |
+| `paperCard(cornerRadius:fillsWidth:)` | Card for detail sections: `card` fill, `rule` outline. Glass stays on bars and toolbars |
+| `paperBackground()`, `paperRow()` | Paper behind a screen's List/ScrollView/Form; card-coloured list rows |
+| `TypeLabel(_:teGroup:emphasis:title:)` | A verb type as a dot + ink label (shapes with Differentiate Without Color; filled pill in Pastel/Ice cream) |
+| `Font.headword(_:)` | Hiragino Mincho for Japanese headwords, scaled with Dynamic Type |
+| `themedRoot()`, `ThemePickerView` | Root palette/appearance wiring (once, in `RootView`) and Settings › Theme |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:)` | Detail-page section heading |
 | `TagPill` | Dialect/custom tag capsule |
@@ -127,7 +134,7 @@ Run `make` for the full list. Common ones:
 | `quizAdvanceBar`, `quizQuitDialog` | Pinned Next/See Results button and the quit confirmation |
 | `QuizResultsSummary` | Counter and connection quiz results; the verb quiz keeps its own `QuizResultsView` |
 | `LevelScopeBar`, `HiddenMatchesRow`, `NoMatchInLevelsView` | "My levels / All levels" search behavior |
-| `accentPill(_:)` | Pastel Liquid Glass capsule for verb-type accents |
+| `accentPill(_:)` | Pastel Liquid Glass capsule; used by `TypeLabel` for filled pills — prefer `TypeLabel` |
 | `formCard()` | Quiet grouped-card surface for form tables |
 | `textActions(_:translate:)` | Lookup, copy, translate menu for text |
 | `formLookupSheet(_:)` | "What form is this?" presentation |
@@ -156,7 +163,7 @@ Run `make` for the full list. Common ones:
 ### Extraction backlog (done)
 
 U1–U14 are complete. Use the shared symbols above instead of reintroducing a local flow
-layout, filter chip, level pill, glass card, chevron, section header, quiz chrome, title
+layout, filter chip, level pill, paper card, chevron, section header, quiz chrome, title
 formatter, App Group defaults helper, date formatter or widget theme.
 
 - U11: the quiz chrome lives in `App/UI/QuizChrome.swift`; the verb, counter and connection
@@ -180,6 +187,8 @@ formatter, App Group defaults helper, date formatter or widget theme.
   `userDefaults.verbKitAppGroup` (not a new `UserDefaults(suiteName:)`) inside VerbKit.
 - VerbKit deliberately has no SwiftUI dependency. Shared SwiftUI components live in `App/UI/` and
   are visible to the app only; the widget target still gets just `Widgets/**` plus
-  `App/VerbColors.swift`.
+  `App/VerbColors.swift` and the two palette files.
+- A colour a widget needs must live in `App/Theme/ThemePalette*.swift` (or `VerbColors.swift`);
+  widgets get the palette through `widgetThemed(date:)`, not `themedRoot()`.
 - The app and widgets rely on the App Group container at runtime; a signing/team misconfiguration
   makes the app fall back to an in-memory store. VerbKit tests use `VerbModelContainer.makeInMemory()`.

@@ -42,9 +42,7 @@ struct VerbGuideSheet: View {
 
     private func typeRow(_ type: VerbType, _ title: String, _ text: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption.weight(.bold))
-                .padding(.horizontal, 8).padding(.vertical, 2)
-                .accentPill(type.accentColor)
+            TypeLabel(type, emphasis: .header, title: title)
             Text(text).font(.callout).foregroundStyle(.secondary)
         }
     }

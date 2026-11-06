@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// The shared pill of a filter row: a menu or a single-choice chip. It is bold and
-/// outlined while `isOn`; `accent` fills it with a pastel colour instead of the
-/// neutral background.
+/// The shared pill of a filter row: a menu or a single-choice chip. Off, it is outlined in ink on
+/// the card colour; on, it fills with the theme's button colour. An `accent` adds a leading dot
+/// in that colour (the て groups) rather than a pastel fill.
 struct FilterChip: View {
     private let title: String
     private let accent: Color?
@@ -17,7 +17,10 @@ struct FilterChip: View {
     }
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
+            if let accent {
+                Circle().fill(accent).frame(width: 8, height: 8).accessibilityHidden(true)
+            }
             Text(title)
             if showsChevron {
                 Image(systemName: "chevron.down")
@@ -25,21 +28,29 @@ struct FilterChip: View {
                     .accessibilityHidden(true)
             }
         }
-        .font(.callout.weight(isOn ? .bold : .semibold))
+        .font(.callout.weight(isOn ? .semibold : .medium))
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .chipBackground(accent)
-        .overlay { if isOn { Capsule().strokeBorder(Color.primary, lineWidth: 2) } }
+        .chipBackground(isOn: isOn)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 
 extension View {
-    /// Plain filled capsules: a row of glass capsules draws a shaded band behind them.
-    @ViewBuilder func chipBackground(_ accent: Color?) -> some View {
-        if let accent {
-            foregroundStyle(Color.black.opacity(0.85)).background(accent.opacity(0.85), in: Capsule())
-        } else {
-            foregroundStyle(.primary).background(Color.primary.opacity(0.1), in: Capsule())
-        }
+    /// The filter-chip capsule: `button`-filled while on, `card` with a 1 pt `ink` outline while off.
+    func chipBackground(isOn: Bool) -> some View {
+        modifier(ChipBackground(isOn: isOn))
+    }
+}
+
+private struct ChipBackground: ViewModifier {
+    let isOn: Bool
+    @Environment(\.palette) private var palette
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(isOn ? palette.onButton : palette.ink)
+            .background(isOn ? palette.button : palette.card, in: Capsule())
+            .overlay { if !isOn { Capsule().strokeBorder(palette.ink, lineWidth: 1) } }
     }
 }

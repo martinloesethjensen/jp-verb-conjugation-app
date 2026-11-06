@@ -21,6 +21,7 @@ enum WordBankGrouping: String, CaseIterable, Identifiable {
 struct WordBankListView: View {
     @Environment(WordBankStore.self) private var store
     @Environment(WordBankTransferHub.self) private var transfer
+    @Environment(\.palette) private var palette
     #if os(iOS)
     @Environment(\.editMode) private var editMode
     #endif
@@ -312,6 +313,7 @@ struct WordBankListView: View {
         .onChange(of: store.smartFolders.map(\.id)) { _, ids in
             if case .smart(let id)? = place, !ids.contains(id) { dismiss() }
         }
+        .paperBackground()
         .navigationTitle(title)
         .navigationSubtitle(searchActive ? searchSubtitle(count: found.count) : subtitle)
         .toolbar { toolbar }
@@ -496,7 +498,8 @@ struct WordBankListView: View {
             }
         }
         .tag(entry.id)
-        .listRowBackground(selection == entry.id ? Color.accentColor.opacity(0.15) : nil)
+        .listRowBackground(selection == entry.id ? palette.accent.opacity(0.15) : palette.card)
+        .listRowSeparatorTint(palette.rule)
         .swipeActions(edge: .trailing) {
             Button("Delete", systemImage: "trash", role: .destructive) { store.delete(entryIDs: [entry.id]) }
         }

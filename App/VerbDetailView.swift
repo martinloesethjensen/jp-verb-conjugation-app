@@ -5,7 +5,6 @@ struct VerbDetailView: View {
     let verb: Verb
     var onExamples: () -> Void
     var onQuiz: () -> Void
-    @ScaledMetric(relativeTo: .caption) private var dotSize: CGFloat = 8
     @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
 
     private var isFavourite: Bool { FavouriteVerbs(rawValue: favouritesRaw).contains(verb) }
@@ -41,6 +40,7 @@ struct VerbDetailView: View {
                 }
                 .padding()
             }
+            .paperBackground()
             .navigationTitle(verb.dict)
             #if os(iOS)
             // The header already shows the verb large, and the toolbar leaves no room for an
@@ -83,19 +83,7 @@ struct VerbDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(verb.label)
-                    .font(.caption.weight(.bold))
-                    .padding(.horizontal, 8).padding(.vertical, 2)
-                    .accentPill(verb.type.accentColor)
-                if let teGroup = verb.teGroup {
-                    Text(teGroup.rawValue)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Circle().fill(teGroup.accentColor).frame(width: dotSize, height: dotSize)
-                        .accessibilityHidden(true)
-                }
-            }
+            TypeLabel(verb.type, teGroup: verb.teGroup, emphasis: .header)
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(verb.dict).font(.largeTitle.weight(.heavy)).foregroundStyle(.primary)
                 if let kanji = verb.kanji {
@@ -119,7 +107,7 @@ struct VerbDetailView: View {
             Image(systemName: "lightbulb")
             JapaneseText(notes).font(.footnote)
         }
-        .glassCard(fillsWidth: false)
+        .paperCard(fillsWidth: false)
     }
 
     private var formGroups: some View {

@@ -3,6 +3,7 @@ import VerbKit
 import WidgetKit
 
 struct VerbWidgetView: View {
+    @Environment(\.palette) private var palette
     let entry: VerbEntry
     @Environment(\.widgetFamily) private var family
 
@@ -18,7 +19,7 @@ struct VerbWidgetView: View {
     }
 
     @ViewBuilder private var background: some View {
-        WidgetTheme.background(isHome: isHome)
+        WidgetTheme.background(isHome: isHome, palette: palette)
     }
 
     @ViewBuilder private var empty: some View {
@@ -61,13 +62,13 @@ struct VerbWidgetView: View {
                 .font(.title.weight(.heavy))
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-                .foregroundStyle(verb.teGroup?.accentColor ?? verb.type.accentColor)
+                .foregroundStyle(palette.ink)
             if verb.kanji != nil {
-                Text(verb.dict).font(.caption).foregroundStyle(.white.opacity(0.8))
+                Text(verb.dict).font(.caption).foregroundStyle(palette.ink)
             }
-            Text(verb.meaning).font(.caption).foregroundStyle(.white.opacity(0.7)).lineLimit(2)
+            Text(verb.meaning).font(.caption).foregroundStyle(palette.muted).lineLimit(2)
             Spacer(minLength: 0)
-            Text(verb.forms.masuPos).font(.callout).foregroundStyle(.white)
+            Text(verb.forms.masuPos).font(.callout).foregroundStyle(palette.ink)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -82,8 +83,8 @@ struct VerbWidgetView: View {
         return LazyVGrid(columns: [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)], alignment: .leading, spacing: 8) {
             ForEach(cells, id: \.0) { cell in
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(cell.0).font(.caption2).foregroundStyle(.white.opacity(0.6))
-                    Text(cell.1).font(.callout).foregroundStyle(.white).minimumScaleFactor(0.7).lineLimit(1)
+                    Text(cell.0).font(.caption2).foregroundStyle(palette.muted)
+                    Text(cell.1).font(.callout).foregroundStyle(palette.ink).minimumScaleFactor(0.7).lineLimit(1)
                 }
             }
         }

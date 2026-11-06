@@ -3,36 +3,23 @@ import VerbKit
 
 struct VerbRow: View {
     let verb: Verb
-    @ScaledMetric(relativeTo: .title3) private var dotSize: CGFloat = 10
+    @Environment(\.palette) private var palette
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(verb.label)
-                .font(.caption2.weight(.semibold))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .accentPill(verb.type.accentColor)
-
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    if let group = verb.teGroup {
-                        Circle().fill(group.accentColor).frame(width: dotSize, height: dotSize)
-                            .accessibilityHidden(true)
-                    }
-                    Text(verb.dict)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.primary)
-                    if let kanji = verb.kanji {
-                        JapaneseText(kanji)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    LevelBadge(level: verb.jlpt)
-                }
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                // The kanji spelling with its own reading as furigana; kana alone for する.
+                JapaneseText(units: verb.dictionaryUnits)
+                    .font(.headword(.title3))
+                    .foregroundStyle(palette.ink)
                 Text(verb.meaning)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+                    .foregroundStyle(palette.muted)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                LevelBadge(level: verb.jlpt)
             }
+            TypeLabel(verb.type, teGroup: verb.teGroup)
         }
         .padding(.vertical, 4)
     }

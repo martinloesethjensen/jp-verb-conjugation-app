@@ -80,6 +80,7 @@ struct GrammarRuleWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: GrammarWidgetIntent.self, provider: GrammarProvider()) { entry in
             GrammarWidgetView(entry: entry)
+                .widgetThemed(date: entry.date)
         }
         .configurationDisplayName("Grammar Rule")
         .description("A grammar lesson from Verb Table, on your Home or Lock Screen.")

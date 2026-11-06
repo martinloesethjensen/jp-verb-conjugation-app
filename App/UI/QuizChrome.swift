@@ -100,28 +100,32 @@ enum QuizFeedbackTone {
     case wrong
     case timeout
 
-    var tint: Color {
-        switch self {
-        case .correct: QuizChoiceButton.correctColor
-        case .wrong: QuizChoiceButton.wrongColor
-        case .timeout: .orange
-        }
+    /// The mark colour: green for correct, the theme's red for wrong and timed out.
+    func tint(_ palette: ThemePalette) -> Color {
+        self == .correct ? palette.good : palette.mark
+    }
+
+    func soft(_ palette: ThemePalette) -> Color {
+        self == .correct ? palette.goodSoft : palette.markSoft
     }
 }
 
-/// The answered-question feedback card: a tinted glass surface. The verb quiz centres its
+/// The answered-question feedback card: the tone's soft fill outlined in its mark colour. The verb quiz centres its
 /// single line; the counter and connection quizzes lead with their explanation.
 struct QuizFeedbackCard<Content: View>: View {
     var tone: QuizFeedbackTone
     var alignment: Alignment = .leading
     @ViewBuilder var content: Content
 
+    @Environment(\.palette) private var palette
+
     var body: some View {
         content
             .padding()
             .frame(maxWidth: .infinity, alignment: alignment)
-            .foregroundStyle(.white)
-            .glassEffect(.regular.tint(tone.tint), in: RoundedRectangle(cornerRadius: 12))
+            .foregroundStyle(palette.ink)
+            .background(tone.soft(palette), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(tone.tint(palette), lineWidth: 1.5))
     }
 }
 

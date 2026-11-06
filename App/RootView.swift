@@ -10,7 +10,6 @@ struct RootView: View {
     @Environment(CountersStore.self) private var countersStore
     @Environment(DataSyncStatus.self) private var dataSyncStatus
     @Environment(FormCatalogueStore.self) private var formCatalogueStore
-    @AppStorage("appearanceMode", store: .appGroup) private var appearanceModeRaw = AppearanceMode.system.rawValue
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
     @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
@@ -91,10 +90,6 @@ struct RootView: View {
         }
     }
 
-    private var appearance: AppearanceMode {
-        AppearanceMode(rawValue: appearanceModeRaw) ?? .system
-    }
-
     var body: some View {
         Group {
             if verbStore.hasLocalData {
@@ -147,10 +142,8 @@ struct RootView: View {
         .environment(\.linkArrivals, linkArrivals)
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
-        // Applied to the windows rather than with preferredColorScheme: see AppearanceApplier.
-        .onChange(of: appearanceModeRaw, initial: true) { _, _ in
-            AppearanceApplier.apply(appearance)
-        }
+        // Outermost, so the Settings sheet and every other presentation get the palette too.
+        .themedRoot()
     }
 
     /// The Verbs experience, including the sheets and quiz presentation chained

@@ -22,6 +22,9 @@ struct JPVerbConjugationApp: App {
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
     init() {
+        // Before any scene: migrates the old Appearance setting into the theme keys that
+        // `themedRoot()` reads, so a dark-mode user never sees a light first frame.
+        _ = ThemeChoice.load(from: .appGroup)
         UNUserNotificationCenter.current().delegate = ReminderRouter.shared
         let container = Self.makeModelContainer()
         let context = ModelContext(container)

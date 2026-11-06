@@ -1,14 +1,16 @@
 import SwiftUI
+import VerbKit
 
-/// Applies the Appearance setting to the whole app at window level. `preferredColorScheme`
-/// cannot do this alone: going back to System leaves an already-open sheet in the old
-/// scheme. A window override reaches every sheet and cover, and changes cross-fade.
+/// Applies the theme's light/dark appearance to the whole app at window level.
+/// `preferredColorScheme` cannot do this alone: going back to the system appearance leaves an
+/// already-open sheet in the old scheme. A window override reaches every sheet, alert, menu and
+/// the keyboard, and changes cross-fade.
 @MainActor
-enum AppearanceApplier {
-    static func apply(_ mode: AppearanceMode) {
+enum ThemeApplier {
+    static func apply(_ appearance: ThemeAppearance) {
         #if os(iOS)
-        let style: UIUserInterfaceStyle = switch mode {
-        case .system: .unspecified
+        let style: UIUserInterfaceStyle = switch appearance {
+        case .followSystem: .unspecified
         case .light: .light
         case .dark: .dark
         }
@@ -20,8 +22,8 @@ enum AppearanceApplier {
             }
         }
         #elseif os(macOS)
-        NSApp.appearance = switch mode {
-        case .system: nil
+        NSApp.appearance = switch appearance {
+        case .followSystem: nil
         case .light: NSAppearance(named: .aqua)
         case .dark: NSAppearance(named: .darkAqua)
         }

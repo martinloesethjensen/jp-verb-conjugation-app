@@ -3,6 +3,7 @@ import VerbKit
 import WidgetKit
 
 struct CounterWidgetView: View {
+    @Environment(\.palette) private var palette
     let entry: CounterEntry
     @Environment(\.widgetFamily) private var family
 
@@ -17,7 +18,7 @@ struct CounterWidgetView: View {
             }
         }
         .containerBackground(for: .widget) {
-            WidgetTheme.background(isHome: true)
+            WidgetTheme.background(isHome: true, palette: palette)
         }
     }
 
@@ -31,7 +32,7 @@ struct CounterWidgetView: View {
             VStack(alignment: .leading, spacing: 4) {
                 header(counter)
                 Spacer(minLength: 0)
-                Text(changeLine(counter)).font(.caption2).foregroundStyle(.white.opacity(0.7)).lineLimit(2)
+                Text(changeLine(counter)).font(.caption2).foregroundStyle(palette.muted).lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -39,9 +40,9 @@ struct CounterWidgetView: View {
 
     private func header(_ counter: Counter) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(counter.counter).font(.system(size: 44, weight: .bold)).foregroundStyle(.white).minimumScaleFactor(0.6)
-            Text(counter.reading).font(.headline).foregroundStyle(Self.accent)
-            Text(counter.meaning).font(.caption).foregroundStyle(.white.opacity(0.7)).lineLimit(2)
+            Text(counter.counter).font(.system(size: 44, weight: .bold)).foregroundStyle(palette.ink).minimumScaleFactor(0.6)
+            Text(counter.reading).font(.headline).foregroundStyle(palette.muted)
+            Text(counter.meaning).font(.caption).foregroundStyle(palette.muted).lineLimit(2)
         }
     }
 
@@ -57,14 +58,14 @@ struct CounterWidgetView: View {
             ForEach(CounterNumber.allCases) { number in
                 let changed = counter.isChanged(number)
                 VStack(spacing: 0) {
-                    Text(counter.written(number)).font(.system(size: 8)).foregroundStyle(.white.opacity(0.55))
+                    Text(counter.written(number)).font(.system(size: 8)).foregroundStyle(palette.muted)
                     Text(counter.readings(for: number).first ?? "").font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white).minimumScaleFactor(0.6).lineLimit(1)
+                        .foregroundStyle(palette.ink).minimumScaleFactor(0.6).lineLimit(1)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(counter.written(number)), \(counter.readings(for: number).first ?? "")\(changed ? ", sound changes" : "")")
                 .frame(maxWidth: .infinity, minHeight: 30)
-                .background(changed ? Self.accent.opacity(0.28) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                .background(changed ? Self.accent.opacity(0.28) : palette.card, in: RoundedRectangle(cornerRadius: 6))
                 .overlay(alignment: .topTrailing) {
                     if changed { Circle().fill(Self.accent).frame(width: 4, height: 4).padding(3) }
                 }

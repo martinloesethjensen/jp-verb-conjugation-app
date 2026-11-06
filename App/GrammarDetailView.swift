@@ -64,6 +64,7 @@ struct GrammarDetailView: View {
             }
         }
         #endif
+        .paperBackground()
         .navigationTitle(point.title)
         .toolbar {
             ToolbarItem(placement: .secondaryAction) {
@@ -103,7 +104,7 @@ struct GrammarDetailView: View {
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8, content: content)
-            .glassCard()
+            .paperCard()
     }
 
     // MARK: Don't confuse with

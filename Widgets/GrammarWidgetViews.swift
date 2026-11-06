@@ -3,6 +3,7 @@ import VerbKit
 import WidgetKit
 
 struct GrammarWidgetView: View {
+    @Environment(\.palette) private var palette
     let entry: GrammarEntry
     @Environment(\.widgetFamily) private var family
 
@@ -18,7 +19,7 @@ struct GrammarWidgetView: View {
     }
 
     @ViewBuilder private var background: some View {
-        WidgetTheme.background(isHome: isHome)
+        WidgetTheme.background(isHome: isHome, palette: palette)
     }
 
     @ViewBuilder private var empty: some View {
@@ -45,8 +46,8 @@ struct GrammarWidgetView: View {
                 small(point)
                 if let example = point.usages.first?.examples.first {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(example.jp).font(.callout).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.7)
-                        Text(example.en).font(.caption2).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
+                        Text(example.jp).font(.callout).foregroundStyle(palette.ink).lineLimit(1).minimumScaleFactor(0.7)
+                        Text(example.en).font(.caption2).foregroundStyle(palette.muted).lineLimit(1)
                     }
                 }
             }
@@ -69,9 +70,9 @@ struct GrammarWidgetView: View {
                 .font(.title3.weight(.heavy))
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-                .foregroundStyle(WidgetTheme.accent(for: point.jlpt))
-            Text(levelName(point.jlpt)).font(.caption2).foregroundStyle(.white.opacity(0.6))
-            Text(point.summary).font(.caption).foregroundStyle(.white.opacity(0.85)).lineLimit(3)
+                .foregroundStyle(palette.ink)
+            Text(levelName(point.jlpt)).font(.caption2).foregroundStyle(palette.muted)
+            Text(point.summary).font(.caption).foregroundStyle(palette.ink).lineLimit(3)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
