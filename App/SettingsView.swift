@@ -7,6 +7,9 @@ struct SettingsView: View {
     @Environment(VerbStore.self) private var verbStore
     @Environment(QuizHistoryStore.self) private var quizHistory
     @State private var confirmingReset = false
+    @AppStorage(ThemeChoice.themeKey, store: .appGroup) private var themeRaw = ThemeID.light.rawValue
+    @AppStorage(ThemeChoice.matchesSystemKey, store: .appGroup) private var themeMatchesSystem = true
+    @AppStorage(ThemeChoice.seasonalKey, store: .appGroup) private var seasonalThemes = false
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
@@ -79,10 +82,22 @@ struct SettingsView: View {
         return "No Japanese voice is installed, so audio is unavailable. \(download)."
     }
 
+    private var themeChoice: ThemeChoice {
+        ThemeChoice(theme: ThemeID(rawValue: themeRaw) ?? .light, matchesSystem: themeMatchesSystem, seasonal: seasonalThemes)
+    }
+
     private let questionCountOptions = [5, 10, 15, 20, 30]
 
     var body: some View {
         Form {
+            Section("Appearance") {
+                NavigationLink {
+                    ThemePickerView()
+                } label: {
+                    LabeledContent("Theme", value: themeChoice.effectiveTheme(on: .now).displayName)
+                }
+            }
+            .paperRow()
             Section("Reading") {
                 Toggle("Show furigana", isOn: $showFurigana)
             }
