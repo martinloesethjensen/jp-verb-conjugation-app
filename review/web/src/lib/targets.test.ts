@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { entryId, entryTitle, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
+import { entryId, entryTitle, leftBehind, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
 
 const point = {
 	id: 'te-iru',
@@ -54,5 +54,27 @@ describe('entryTitle', () => {
 		expect(entryTitle('words', { dict: 'いい' })).toBe('いい');
 		expect(entryTitle('counters', { counter: '本', reading: 'ほん' })).toBe('本 (ほん)');
 		expect(entryTitle('grammar', { title: 'ている' })).toBe('ている');
+	});
+});
+
+describe('leftBehind', () => {
+	const approval = (kind: string, item_id: string) => ({ kind, item_id, reviewer_name: 'Aiko', mine: false, current: false, created_at: '' });
+	const suggestion = (id: number, kind: string, item_id: string, status = 'open') =>
+		({ id, kind, item_id, item_title: `title ${item_id}`, status }) as never;
+	test('reviews whose target left the data, grouped by target, with the stored title', () => {
+		const parts = [{ kind: 'entry', item_id: 'たべる', content_hash: 'h' }];
+		const groups = leftBehind(parts, [approval('example', 'gone1'), approval('entry', 'たべる')], [
+			suggestion(2, 'example', 'gone1'),
+			suggestion(3, 'example', 'gone2', 'withdrawn'),
+			suggestion(4, 'entry', 'たべる')
+		]);
+		expect(groups.map((g) => [g.kind, g.item_id, g.title, g.approvals.length, g.suggestions.length])).toEqual([
+			['example', 'gone1', 'title gone1', 1, 1]
+		]);
+	});
+	test('everything is left behind when the entry is gone', () => {
+		const groups = leftBehind([], [], [suggestion(5, 'entry', 'のむ')]);
+		expect(groups).toHaveLength(1);
+		expect(groups[0].title).toBe('title のむ');
 	});
 });

@@ -6,7 +6,9 @@
 	import { ApiError, DATASETS, getItem, problem, type Dataset, type Field, type ItemResponse } from '#lib/api.ts';
 	import ReviewBar from '#lib/ReviewBar.svelte';
 	import { EntryReview } from '#lib/review.svelte.ts';
-	import { entryTitle } from '#lib/targets.ts';
+	import { entryTitle, leftBehind } from '#lib/targets.ts';
+	import SuggestionCard from '#lib/SuggestionCard.svelte';
+	import { KINDS } from '#lib/labels.ts';
 	import Japanese from '#lib/Japanese.svelte';
 	import LevelPill from '#lib/LevelPill.svelte';
 	import Sentence from '#lib/Sentence.svelte';
@@ -24,6 +26,8 @@
 	let fieldTable = $state<Record<string, Field[]>>({});
 	let review = $state<EntryReview | null>(null);
 	let reviewFailure = $state<string | null>(null);
+	/** The entry isn't in the loaded data (any more); its reviews still show. */
+	let missing = $state(false);
 
 	const item = $derived((response?.item ?? {}) as Json);
 
@@ -44,7 +48,8 @@
 		getItem(dataset, id)
 			.then((r) => (response = r))
 			.catch((error) => {
-				failure = error instanceof ApiError ? error.message : 'Something went wrong. Try again in a minute.';
+				if (error instanceof ApiError && error.status === 404) missing = true;
+				else failure = problem(error);
 			});
 		loadReference().then((reference) => {
 			readings = reference.readings;
@@ -53,7 +58,8 @@
 		});
 	});
 
-	const title = $derived(dataset ? entryTitle(dataset, item) : '');
+	const title = $derived(dataset && response ? entryTitle(dataset, item) : '');
+	const earlier = $derived(review ? leftBehind(review.parts, review.approvals, review.suggestions) : []);
 	const list = (value: unknown): Json[] => (Array.isArray(value) ? value : []);
 </script>
 
@@ -96,8 +102,39 @@
 	{/if}
 {/snippet}
 
+{#snippet leftOver()}
+	{#if earlier.length && review}
+		<section class="card">
+			<h2>No longer in the data</h2>
+			<p class="quiet">These were reviewed, then left the loaded data. They are kept here so nothing is lost.</p>
+			{#each earlier as group (`${group.kind}/${group.item_id}`)}
+				<article class="part">
+					<h3><span lang="ja">{group.title}</span> <span class="quiet">{KINDS[group.kind] ?? group.kind}</span></h3>
+					{#each group.approvals as a (a.reviewer_name)}
+						<p class="quiet">{a.reviewer_name} approved an earlier version</p>
+					{/each}
+					{#each group.suggestions as s (s.id)}
+						<SuggestionCard
+							suggestion={s}
+							current={null}
+							names={fieldTable[`${s.dataset}/${s.kind}`]?.map((f) => f.name) ?? []}
+							onwithdraw={() => review!.withdraw(s.id)}
+							oncomment={(text) => review!.comment(s.id, text)}
+						/>
+					{/each}
+				</article>
+			{/each}
+		</section>
+	{/if}
+{/snippet}
+
 {#if failure}
 	<p class="notice" role="alert">{failure}</p>
+{:else if missing && dataset}
+	<p class="back"><a href="/browse/{dataset}">Back to {DATASET_TITLES[dataset].toLowerCase()}</a></p>
+	<p class="notice">This item is no longer in the loaded data.</p>
+	{#if reviewFailure}<p class="notice" role="alert">Reviews couldn't be loaded: {reviewFailure}</p>{/if}
+	{@render leftOver()}
 {:else if !response || !dataset}
 	<p class="quiet">Loading…</p>
 {:else}
@@ -187,6 +224,7 @@
 			</section>
 		{/if}
 	{/if}
+	{@render leftOver()}
 {/if}
 
 <style>

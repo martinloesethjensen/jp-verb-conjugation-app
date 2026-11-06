@@ -1,6 +1,6 @@
 // Where the reviewable parts of an entry sit: the TypeScript twin of review/api's `find_part` and the
 // item walk in items.rs. Keep the three in step.
-import type { Dataset } from './api.ts';
+import type { Approval, Dataset, ReviewPart, Suggestion } from './api.ts';
 import { isKanji, segments } from './ruby.ts';
 
 // Published entries are loosely typed JSON here; the Worker has already checked their shape.
@@ -87,4 +87,42 @@ export function entryTitle(dataset: string, entry: Json): string {
 	if (dataset === 'verbs' || dataset === 'words') return entry.kanji ? `${entry.dict} (${entry.kanji})` : entry.dict;
 	if (dataset === 'counters') return `${entry.counter} (${entry.reading})`;
 	return entry.title;
+}
+
+export type LeftBehind = {
+	kind: string;
+	item_id: string;
+	/** The title stored with its suggestions; the kind when only approvals remain. */
+	title: string;
+	approvals: Approval[];
+	suggestions: Suggestion[];
+};
+
+/**
+ * The reviews whose target is no longer in the loaded data (not among `parts`), grouped by target in
+ * the order they first appear, so the item page can still show them. Withdrawn suggestions are left out.
+ */
+export function leftBehind(parts: ReviewPart[], approvals: Approval[], suggestions: Suggestion[]): LeftBehind[] {
+	const loaded = new Set(parts.map((p) => `${p.kind}/${p.item_id}`));
+	const groups = new Map<string, LeftBehind>();
+	const group = (kind: string, item_id: string) => {
+		const key = `${kind}/${item_id}`;
+		if (loaded.has(key)) return undefined;
+		let g = groups.get(key);
+		if (!g) {
+			g = { kind, item_id, title: kind, approvals: [], suggestions: [] };
+			groups.set(key, g);
+		}
+		return g;
+	};
+	for (const s of suggestions) {
+		if (s.status === 'withdrawn') continue;
+		const g = group(s.kind, s.item_id);
+		if (g) {
+			g.suggestions.push(s);
+			g.title = s.item_title;
+		}
+	}
+	for (const a of approvals) group(a.kind, a.item_id)?.approvals.push(a);
+	return [...groups.values()];
 }
