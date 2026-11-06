@@ -2,6 +2,7 @@ import SwiftUI
 import VerbKit
 
 struct QuizQuestionView: View {
+    @Environment(\.palette) private var palette
     var viewModel: QuizViewModel
     let question: QuizQuestion
     var onDone: () -> Void
@@ -104,7 +105,7 @@ struct QuizQuestionView: View {
     }
 
     private var timerColor: Color {
-        viewModel.timeLeft > 10 ? .green : viewModel.timeLeft > 5 ? .orange : .red
+        viewModel.timeLeft > 10 ? palette.muted : viewModel.timeLeft > 5 ? palette.ink : palette.mark
     }
 
     private var feedback: some View {
