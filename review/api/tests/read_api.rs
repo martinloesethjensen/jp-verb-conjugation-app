@@ -168,7 +168,7 @@ async fn the_owner_loads_every_file_and_reviewers_browse() {
         verbs.body["version"],
         json!(manifest_version(DataFile::Verbs))
     );
-    assert_eq!(verbs.body["items"].as_array().unwrap().len(), 84);
+    assert_eq!(verbs.body["items"].as_array().unwrap().len(), 97);
     assert_eq!(verbs.body["items"][0]["title"], "する");
 
     let taberu = get(
@@ -379,7 +379,12 @@ async fn queries_are_validated() {
     );
     assert_eq!(load(&s, &src, "../verbs", owner_admin()).await.status, 400);
     let reference = get(&s, &src, "/api/reference", aiko()).await;
-    assert_eq!(reference.body, json!({"readings": {}, "forms": {}}));
+    assert_eq!(reference.body["readings"], json!({}));
+    assert_eq!(reference.body["forms"], json!({}));
+    assert!(
+        reference.body["fields"]["verbs/entry"].is_array(),
+        "the field table is served even before reference data is loaded"
+    );
     let no_token = ApiRequest {
         method: "GET".into(),
         path: "/api/items".into(),
