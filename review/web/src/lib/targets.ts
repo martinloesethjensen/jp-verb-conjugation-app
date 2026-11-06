@@ -116,8 +116,8 @@ export function leftBehind(parts: ReviewPart[], approvals: Approval[], suggestio
 		return g;
 	};
 	for (const s of suggestions) {
-		// A pending addition isn't left behind: its item was never loaded yet.
-		if (s.status === 'withdrawn' || s.action === 'add') continue;
+		// A pending addition isn't left behind (its item was never loaded), unless its parent left the data.
+		if (s.status === 'withdrawn' || (s.action === 'add' && !s.gone)) continue;
 		const g = group(s.kind, s.item_id);
 		if (g) {
 			g.suggestions.push(s);
@@ -164,4 +164,27 @@ export function addFieldsOf(dataset: string, kind: string, item: Json): Record<s
 		for (const [key, value] of Object.entries(item)) if (key !== 'id' || kind === 'entry') put(key, value);
 	}
 	return out;
+}
+
+/**
+ * The owner's edit form for a suggestion: what it compares against (`base`) and starts with (`start`).
+ * An addition starts from its add-form fields and compares against them too, so a field the owner clears
+ * is sent as a change. A change starts from the proposal over the current item (the current item alone
+ * when stale).
+ */
+export function editForm(s: {
+	action: string;
+	dataset: string;
+	kind: string;
+	proposed: Json | null;
+	admin_edit?: Json | null;
+	current: Json | null;
+	stale: boolean;
+}): { base: Json; start: Json } {
+	if (s.action === 'add') {
+		const fields = addFieldsOf(s.dataset, s.kind, s.admin_edit ?? s.proposed ?? {});
+		return { base: fields, start: fields };
+	}
+	const current = s.current ?? {};
+	return { base: current, start: s.stale || !s.proposed ? current : { ...current, ...s.proposed } };
 }

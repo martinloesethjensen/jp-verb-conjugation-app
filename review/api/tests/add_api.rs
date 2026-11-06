@@ -289,3 +289,31 @@ async fn reviewers_cannot_add_with_a_foreign_origin() {
     .await;
     assert_eq!(r.status, 403);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn edit_then_accept_cannot_change_a_new_entrys_id() {
+    let s = seeded().await;
+    let made = post(&s, "/api/add", new_word("ねこ", "noun"), AIKO).await;
+    let r = post(
+        &s,
+        "/api/admin/decide",
+        json!({"id": made.body["id"], "decision": "accept",
+        "edits": {"dict": "ねご"}}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 400, "{}", r.body);
+    assert_eq!(
+        r.body["error"],
+        "that would change its id from noun:ねこ to noun:ねご; decline it and suggest it again under the new spelling"
+    );
+    let r = post(
+        &s,
+        "/api/admin/decide",
+        json!({"id": made.body["id"], "decision": "accept",
+        "edits": {"meaning": "cat (the animal)"}}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}

@@ -236,6 +236,17 @@ pub(crate) async fn rebuild<S: Store + ReviewStore>(
         &taken,
     )
     .map_err(add_error)?;
+    // The suggestion row keeps its id (other additions are checked against it, and export reads it), so an
+    // edit that would give the new entry another id is refused.
+    if new.item_id != s.item_id {
+        return Err(error(
+            400,
+            &format!(
+                "that would change its id from {} to {}; decline it and suggest it again under the new spelling",
+                s.item_id, new.item_id
+            ),
+        ));
+    }
     let furigana_json = readings_json(furigana, &readings)?;
     Ok((new.item.to_string(), furigana_json))
 }

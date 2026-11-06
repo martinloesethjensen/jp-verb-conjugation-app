@@ -8,7 +8,7 @@
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import { DATASET_TITLES, KINDS } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
-	import { addFieldsOf } from '#lib/targets.ts';
+	import { editForm } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
 
 	type Status = 'open' | 'accepted' | 'declined';
@@ -67,14 +67,6 @@
 	const adding = (s: InboxSuggestion) => s.action === 'add';
 	/** The fields the owner edits: an addition's add form, otherwise the change form. */
 	const fieldsOf = (s: InboxSuggestion) => (adding(s) ? addFields : fieldTable)[`${s.dataset}/${s.kind}`] ?? [];
-	/** What the edit form compares against and starts from. An addition has no current item. */
-	const editBase = (s: InboxSuggestion) => (adding(s) ? {} : (s.current ?? {}));
-	const editStart = (s: InboxSuggestion) =>
-		adding(s)
-			? addFieldsOf(s.dataset, s.kind, s.admin_edit ?? s.proposed ?? {})
-			: s.stale || !s.proposed
-				? (s.current ?? {})
-				: { ...s.current, ...s.proposed };
 	const canEdit = (s: InboxSuggestion) =>
 		fieldsOf(s).length > 0 && s.action !== 'delete' && (adding(s) ? !s.gone : !!s.current);
 	const ENTRY_NAMES: Record<string, string> = { verbs: 'verb', words: 'word', counters: 'counter', grammar: 'grammar point' };
@@ -191,8 +183,8 @@
 				{#if editing === s.id && canEdit(s)}
 					<SuggestForm
 						fields={fieldsOf(s)}
-						current={editBase(s)}
-						initial={editStart(s)}
+						current={editForm(s).base}
+						initial={editForm(s).start}
 						{readings}
 						{forms}
 						extra={{ ...((s.current?.readings as Record<string, string> | undefined) ?? {}), ...(s.furigana ?? {}) }}

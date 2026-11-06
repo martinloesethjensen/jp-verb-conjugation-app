@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { addFieldsOf, entryId, entryTitle, leftBehind, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
+import { addFieldsOf, editForm, entryId, entryTitle, leftBehind, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
 
 const point = {
 	id: 'te-iru',
@@ -108,5 +108,26 @@ describe('addFieldsOf', () => {
 	});
 	test('a part keeps its own fields, without its id', () => {
 		expect(addFieldsOf('verbs', 'example', { id: 'x', form: 'te', jp: 'j', en: 'n' })).toEqual({ form: 'te', jp: 'j', en: 'n' });
+	});
+});
+
+describe('leftBehind and gone additions', () => {
+	test('an addition whose parent left the data is shown, titled by itself', () => {
+		const gone = { id: 10, action: 'add', kind: 'example', item_id: 'new002', item_title: '新しい文。', status: 'open', gone: true } as never;
+		const groups = leftBehind([{ kind: 'entry', item_id: 'たべる', content_hash: 'h' }], [], [gone]);
+		expect(groups.map((g) => [g.kind, g.item_id, g.title, g.suggestions.length])).toEqual([['example', 'new002', '新しい文。', 1]]);
+	});
+});
+
+describe('editForm', () => {
+	test('an addition compares against its own proposal, so a cleared field is sent', () => {
+		const s = { action: 'add', dataset: 'words', kind: 'entry', proposed: { class: 'noun', dict: 'ねこ', kanji: '猫', meaning: 'cat', jlpt: 'N5', forms: {} }, admin_edit: null, current: null, stale: false } as never;
+		const { base, start } = editForm(s);
+		expect(base).toEqual(start);
+		expect(start.kanji).toBe('猫');
+	});
+	test('a change starts from the proposal over the current item', () => {
+		const s = { action: 'change', dataset: 'verbs', kind: 'example', proposed: { en: 'new' }, current: { jp: 'j', en: 'old' }, stale: false } as never;
+		expect(editForm(s)).toEqual({ base: { jp: 'j', en: 'old' }, start: { jp: 'j', en: 'new' } });
 	});
 });

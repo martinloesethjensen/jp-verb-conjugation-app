@@ -144,6 +144,8 @@
 							suggestion={s}
 							current={null}
 							names={fieldTable[`${s.dataset}/${s.kind}`]?.map((f) => f.name) ?? []}
+							{readings}
+							{forms}
 							onwithdraw={() => review!.withdraw(s.id)}
 							oncomment={(text) => review!.comment(s.id, text)}
 						/>
