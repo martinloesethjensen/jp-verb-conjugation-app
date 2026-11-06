@@ -440,3 +440,482 @@ impl Store for D1Store {
         Ok(())
     }
 }
+
+// --- ReviewStore ----------------------------------------------------------------------------------
+
+use crate::review_store::*;
+use serde::de::DeserializeOwned;
+use worker::{D1PreparedStatement, D1Result};
+
+fn text(v: &str) -> JsValue {
+    JsValue::from(v)
+}
+
+fn maybe(v: Option<&str>) -> JsValue {
+    v.map(JsValue::from).unwrap_or(JsValue::NULL)
+}
+
+/// D1 numbers are JavaScript numbers; an i64 would become a BigInt, which D1 refuses.
+fn number(v: i64) -> JsValue {
+    JsValue::from(v as f64)
+}
+
+fn changes(result: Option<&D1Result>) -> usize {
+    result
+        .and_then(|r| r.meta().ok().flatten())
+        .and_then(|m| m.changes)
+        .unwrap_or(0)
+}
+
+impl D1Store {
+    fn statement(&self, sql: &str, binds: &[JsValue]) -> Result<D1PreparedStatement, StoreError> {
+        self.db.prepare(sql).bind(binds).map_err(backend)
+    }
+
+    async fn rows<T: DeserializeOwned>(
+        &self,
+        sql: &str,
+        binds: &[JsValue],
+    ) -> Result<Vec<T>, StoreError> {
+        let result = self.statement(sql, binds)?.all().await.map_err(backend)?;
+        result.results().map_err(backend)
+    }
+
+    fn log(
+        &self,
+        now: &str,
+        actor: &str,
+        action: &str,
+        target: &str,
+        detail: &str,
+    ) -> Result<D1PreparedStatement, StoreError> {
+        audit(&self.db, now, actor, action, target, detail)
+    }
+
+    fn target_binds(t: &Target) -> [JsValue; 3] {
+        [text(&t.dataset), text(&t.kind), text(&t.item_id)]
+    }
+
+    async fn queue_item_exists(&self, id: i64, t: &Target) -> Result<bool, StoreError> {
+        let [d, k, i] = Self::target_binds(t);
+        let rows: Vec<IdRow> = self
+            .rows(SELECT_QUEUE_ITEM_EXISTS, &[number(id), d, k, i])
+            .await?;
+        Ok(!rows.is_empty())
+    }
+
+    async fn status(&self, id: i64) -> Result<Option<StatusRow>, StoreError> {
+        let rows: Vec<StatusRow> = self.rows(SELECT_STATUS, &[number(id)]).await?;
+        Ok(rows.into_iter().next())
+    }
+}
+
+impl ReviewStore for D1Store {
+    async fn current_hash(
+        &self,
+        t: &Target,
+    ) -> Result<Option<(String, String, String)>, StoreError> {
+        let rows: Vec<HashRow> = self.rows(SELECT_HASH, &Self::target_binds(t)).await?;
+        Ok(rows
+            .into_iter()
+            .next()
+            .map(|r| (r.content_hash, r.entry_id, r.title)))
+    }
+
+    async fn approve(
+        &self,
+        t: &Target,
+        hash: &str,
+        reviewer: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let [d, k, i] = Self::target_binds(t);
+        let upsert = self.statement(
+            UPSERT_APPROVAL,
+            &[d, k, i, text(reviewer), text(hash), text(now)],
+        )?;
+        let log = self.log(
+            now,
+            reviewer,
+            "approval.add",
+            &t.audit_name(),
+            &format!("hash={hash}"),
+        )?;
+        self.db.batch(vec![upsert, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn unapprove(&self, t: &Target, reviewer: &str, now: &str) -> Result<(), StoreError> {
+        let [d, k, i] = Self::target_binds(t);
+        let delete = self.statement(DELETE_APPROVAL, &[d, k, i, text(reviewer)])?;
+        let log = self.log(now, reviewer, "approval.remove", &t.audit_name(), "")?;
+        self.db.batch(vec![delete, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn parts(&self, dataset: &str, entry_id: &str) -> Result<Vec<Part>, StoreError> {
+        self.rows(SELECT_PARTS, &[text(dataset), text(entry_id)])
+            .await
+    }
+
+    async fn add_suggestion(
+        &self,
+        s: &NewSuggestion,
+        author: &str,
+        now: &str,
+    ) -> Result<(i64, bool), StoreError> {
+        let t = &s.target;
+        let existing: Vec<IdRow> = self
+            .rows(
+                SELECT_IDENTICAL_OPEN,
+                &[
+                    text(&s.action),
+                    text(&t.dataset),
+                    text(&t.kind),
+                    text(&t.item_id),
+                    text(author),
+                    maybe(s.proposed_json.as_deref()),
+                    maybe(s.furigana_json.as_deref()),
+                    text(&s.comment),
+                ],
+            )
+            .await?;
+        if let Some(row) = existing.into_iter().next() {
+            return Ok((row.id, false));
+        }
+        let insert = self.statement(
+            INSERT_SUGGESTION,
+            &[
+                text(&s.action),
+                text(&t.dataset),
+                text(&t.kind),
+                text(&t.item_id),
+                text(&s.entry_id),
+                text(&s.item_title),
+                text(&s.base_hash),
+                maybe(s.proposed_json.as_deref()),
+                maybe(s.furigana_json.as_deref()),
+                number(s.dropped_blanks as i64),
+                text(&s.comment),
+                text(author),
+                text(now),
+            ],
+        )?;
+        let detail = format!("action={} target={}", s.action, t.audit_name());
+        let log = self.statement(
+            INSERT_SUGGESTION_AUDIT,
+            &[text(now), text(author), text(&detail)],
+        )?;
+        let results = self.db.batch(vec![insert, log]).await.map_err(backend)?;
+        let ids: Vec<IdRow> = results
+            .first()
+            .ok_or_else(|| StoreError::Backend("no insert result".into()))?
+            .results()
+            .map_err(backend)?;
+        ids.first()
+            .map(|r| (r.id, true))
+            .ok_or_else(|| StoreError::Backend("no id returned".into()))
+    }
+
+    async fn suggestion(&self, id: i64, viewer: &str) -> Result<Option<Suggestion>, StoreError> {
+        let binds = [text(viewer), number(id)];
+        let rows = self.rows(SELECT_SUGGESTION, &binds).await?;
+        let comments = self.rows(SELECT_SUGGESTION_COMMENTS, &binds).await?;
+        Ok(assemble(rows, comments).into_iter().next())
+    }
+
+    async fn withdraw(&self, id: i64, author: &str, now: &str) -> Result<(), StoreError> {
+        match self.status(id).await? {
+            Some(row) if row.status == "open" && row.author == author => {}
+            Some(row) if row.status == "open" => return Err(StoreError::Conflict),
+            _ => return Err(StoreError::NotFound),
+        }
+        // The audit row goes first, written only while the suggestion is open: both apply or neither.
+        let log = self.statement(
+            INSERT_WITHDRAW_AUDIT,
+            &[text(now), text(author), number(id)],
+        )?;
+        let update = self.statement(WITHDRAW, &[number(id), text(author), text(now)])?;
+        let results = self.db.batch(vec![log, update]).await.map_err(backend)?;
+        if changes(results.get(1)) == 0 {
+            return Err(StoreError::NotFound);
+        }
+        Ok(())
+    }
+
+    async fn decide(
+        &self,
+        id: i64,
+        accept: bool,
+        admin_edit_json: Option<&str>,
+        furigana_json: Option<&str>,
+        by: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        match self.status(id).await? {
+            None => return Err(StoreError::NotFound),
+            Some(row) if row.status != "open" => return Err(StoreError::Conflict),
+            Some(_) => {}
+        }
+        let (status, action) = if accept {
+            ("accepted", "suggestion.accept")
+        } else {
+            ("declined", "suggestion.decline")
+        };
+        let detail = if admin_edit_json.is_some() {
+            "edited"
+        } else {
+            ""
+        };
+        // As in withdraw: the audit row first, written only while the suggestion is still open.
+        let log = self.statement(
+            INSERT_DECIDE_AUDIT,
+            &[text(now), text(by), text(action), text(detail), number(id)],
+        )?;
+        let update = self.statement(
+            DECIDE,
+            &[
+                number(id),
+                text(status),
+                maybe(admin_edit_json),
+                text(by),
+                text(now),
+                maybe(furigana_json),
+            ],
+        )?;
+        let results = self.db.batch(vec![log, update]).await.map_err(backend)?;
+        if changes(results.get(1)) == 0 {
+            return Err(StoreError::Conflict);
+        }
+        Ok(())
+    }
+
+    async fn add_comment(
+        &self,
+        suggestion_id: i64,
+        body: &str,
+        author: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        if self.status(suggestion_id).await?.is_none() {
+            return Err(StoreError::NotFound);
+        }
+        let insert = self.statement(
+            INSERT_COMMENT,
+            &[number(suggestion_id), text(author), text(body), text(now)],
+        )?;
+        let log = self.log(
+            now,
+            author,
+            "comment.add",
+            &format!("suggestion/{suggestion_id}"),
+            "",
+        )?;
+        self.db.batch(vec![insert, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn entry_review(
+        &self,
+        dataset: &str,
+        entry_id: &str,
+        viewer: &str,
+    ) -> Result<(Vec<Approval>, Vec<Suggestion>), StoreError> {
+        let binds = [text(viewer), text(dataset), text(entry_id)];
+        let approvals: Vec<ApprovalRow> = self.rows(SELECT_ENTRY_APPROVALS, &binds).await?;
+        let rows = self.rows(SELECT_ENTRY_SUGGESTIONS, &binds).await?;
+        let comments = self.rows(SELECT_ENTRY_COMMENTS, &binds).await?;
+        Ok((
+            approvals.into_iter().map(Approval::from).collect(),
+            assemble(rows, comments),
+        ))
+    }
+
+    async fn inbox(&self, status: &str, viewer: &str) -> Result<Vec<Suggestion>, StoreError> {
+        let binds = [text(viewer), text(status)];
+        let rows = self.rows(SELECT_INBOX, &binds).await?;
+        let comments = self.rows(SELECT_INBOX_COMMENTS, &binds).await?;
+        Ok(assemble(rows, comments))
+    }
+
+    async fn review_counts(&self, dataset: &str) -> Result<Vec<(String, u32, u32)>, StoreError> {
+        let rows: Vec<CountRow> = self.rows(SELECT_REVIEW_COUNTS, &[text(dataset)]).await?;
+        Ok(rows
+            .into_iter()
+            .map(|r| (r.entry_id, r.approved as u32, r.open as u32))
+            .collect())
+    }
+
+    async fn queues(
+        &self,
+        viewer: &str,
+        include_archived: bool,
+    ) -> Result<Vec<QueueSummary>, StoreError> {
+        let rows: Vec<QueueRow> = self
+            .rows(
+                SELECT_QUEUES,
+                &[text(viewer), number(include_archived as i64)],
+            )
+            .await?;
+        Ok(rows.into_iter().map(QueueSummary::from).collect())
+    }
+
+    async fn queue(
+        &self,
+        id: i64,
+        viewer: &str,
+    ) -> Result<Option<(QueueSummary, Vec<QueueItem>)>, StoreError> {
+        let binds = [text(viewer), number(id)];
+        let summary: Vec<QueueRow> = self.rows(SELECT_QUEUE, &binds).await?;
+        let Some(summary) = summary.into_iter().next() else {
+            return Ok(None);
+        };
+        let items: Vec<QueueItemRow> = self.rows(SELECT_QUEUE_ITEMS, &binds).await?;
+        Ok(Some((
+            summary.into(),
+            items.into_iter().map(QueueItem::from).collect(),
+        )))
+    }
+
+    async fn preview_queue(&self, f: &QueueFilter) -> Result<Vec<QueueItem>, StoreError> {
+        let (a, b, c, d, e) = f.binds();
+        let rows: Vec<QueueItemRow> = self
+            .rows(
+                SELECT_FILTERED,
+                &[text(&a), text(&b), text(&c), number(d), text(&e)],
+            )
+            .await?;
+        Ok(rows.into_iter().map(QueueItem::from).collect())
+    }
+
+    async fn add_queue(
+        &self,
+        title: &str,
+        description: &str,
+        f: &QueueFilter,
+        by: &str,
+        now: &str,
+    ) -> Result<i64, StoreError> {
+        let (a, b, c, d, e) = f.binds();
+        let insert = self.statement(
+            INSERT_QUEUE,
+            &[text(title), text(description), text(by), text(now)],
+        )?;
+        let fill = self.statement(
+            INSERT_QUEUE_ITEMS,
+            &[text(&a), text(&b), text(&c), number(d), text(&e), text(by)],
+        )?;
+        let log = self.statement(
+            INSERT_QUEUE_AUDIT,
+            &[text(now), text(by), text(&format!("title={title}"))],
+        )?;
+        let results = self
+            .db
+            .batch(vec![insert, fill, log])
+            .await
+            .map_err(backend)?;
+        let ids: Vec<IdRow> = results
+            .first()
+            .ok_or_else(|| StoreError::Backend("no insert result".into()))?
+            .results()
+            .map_err(backend)?;
+        ids.first()
+            .map(|r| r.id)
+            .ok_or_else(|| StoreError::Backend("no id returned".into()))
+    }
+
+    async fn update_queue(
+        &self,
+        id: i64,
+        title: &str,
+        description: &str,
+        archived: bool,
+        by: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let exists: Vec<IdRow> = self.rows(SELECT_QUEUE_EXISTS, &[number(id)]).await?;
+        if exists.is_empty() {
+            return Err(StoreError::NotFound);
+        }
+        let update = self.statement(
+            UPDATE_QUEUE,
+            &[
+                number(id),
+                text(title),
+                text(description),
+                number(archived as i64),
+            ],
+        )?;
+        let detail = format!("title={title} archived={}", archived as i64);
+        let log = self.log(now, by, "queue.update", &format!("queue/{id}"), &detail)?;
+        self.db.batch(vec![update, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn set_queue_note(
+        &self,
+        id: i64,
+        t: &Target,
+        note: &str,
+        by: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        if !self.queue_item_exists(id, t).await? {
+            return Err(StoreError::NotFound);
+        }
+        let [d, k, i] = Self::target_binds(t);
+        let update = self.statement(UPDATE_QUEUE_NOTE, &[number(id), d, k, i, text(note)])?;
+        let log = self.log(
+            now,
+            by,
+            "queue.note",
+            &format!("queue/{id}"),
+            &t.audit_name(),
+        )?;
+        self.db.batch(vec![update, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn remove_queue_item(
+        &self,
+        id: i64,
+        t: &Target,
+        by: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        if !self.queue_item_exists(id, t).await? {
+            return Err(StoreError::NotFound);
+        }
+        let [d, k, i] = Self::target_binds(t);
+        let delete = self.statement(DELETE_QUEUE_ITEM, &[number(id), d, k, i])?;
+        let log = self.log(
+            now,
+            by,
+            "queue.remove_item",
+            &format!("queue/{id}"),
+            &t.audit_name(),
+        )?;
+        self.db.batch(vec![delete, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn skip(&self, id: i64, t: &Target, reviewer: &str, now: &str) -> Result<(), StoreError> {
+        if !self.queue_item_exists(id, t).await? {
+            return Err(StoreError::NotFound);
+        }
+        let [d, k, i] = Self::target_binds(t);
+        let insert = self.statement(
+            INSERT_SKIP,
+            &[number(id), d, k, i, text(reviewer), text(now)],
+        )?;
+        let log = self.log(
+            now,
+            reviewer,
+            "queue.skip",
+            &format!("queue/{id}"),
+            &t.audit_name(),
+        )?;
+        self.db.batch(vec![insert, log]).await.map_err(backend)?;
+        Ok(())
+    }
+}

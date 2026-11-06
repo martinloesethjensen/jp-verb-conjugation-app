@@ -14,7 +14,11 @@ import {
 	finishLoad,
 	loadSlice,
 	setActive,
-	setMyName
+	setMyName,
+	approve,
+	getReview,
+	suggest,
+	previewQueue
 } from './api.ts';
 
 function respond(status: number, body?: unknown) {
@@ -165,5 +169,42 @@ describe('api', () => {
 	test('datasets and files', () => {
 		expect(DATASETS).toEqual(['verbs', 'words', 'counters', 'grammar']);
 		expect(FILES).toEqual(['furigana', 'forms', 'words', 'counters', 'grammar', 'verbs']);
+	});
+});
+
+describe('review api', () => {
+	test('approve posts the target and hash', async () => {
+		const fetch = respond(200, { approvals: [] });
+		await approve({ dataset: 'verbs', kind: 'example', id: 'abcdef' }, 'h');
+		expect(calls(fetch)[0][0]).toBe('/api/approve');
+		expect(JSON.parse((calls(fetch)[0][1] as RequestInit).body as string)).toEqual({
+			dataset: 'verbs',
+			kind: 'example',
+			id: 'abcdef',
+			content_hash: 'h'
+		});
+	});
+	test('getReview encodes the id', async () => {
+		const fetch = respond(200, { parts: [], approvals: [], suggestions: [] });
+		await getReview('verbs', 'きる:切る');
+		expect(calls(fetch)[0][0]).toBe(`/api/review?dataset=verbs&id=${encodeURIComponent('きる:切る')}`);
+	});
+	test('suggest sends only what is given', async () => {
+		const fetch = respond(201, { id: 1 });
+		await suggest({ dataset: 'verbs', kind: 'entry', id: 'たべる' }, 'h', 'note', { comment: 'Hmm' });
+		expect(JSON.parse((calls(fetch)[0][1] as RequestInit).body as string)).toEqual({
+			dataset: 'verbs',
+			kind: 'entry',
+			id: 'たべる',
+			base_hash: 'h',
+			action: 'note',
+			comment: 'Hmm'
+		});
+	});
+	test('previewQueue nests the filter', async () => {
+		const fetch = respond(200, { count: 0, items: [], unmatched: [] });
+		const filter = { dataset: 'verbs', kinds: [], jlpt: ['N5'], never_approved: false, ids: [] };
+		await previewQueue(filter, 'たべる');
+		expect(JSON.parse((calls(fetch)[0][1] as RequestInit).body as string)).toEqual({ filter, ids_text: 'たべる' });
 	});
 });

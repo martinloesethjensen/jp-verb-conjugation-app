@@ -76,6 +76,12 @@
 							<LevelPill level={item.jlpt} />
 							{#if item.parts}<span class="parts">{item.parts} {item.parts === 1 ? 'part' : 'parts'}</span>{/if}
 						</span>
+						{#if item.approved || item.open}
+							<span class="reviews">
+								{#if item.approved}<span class="approved">{item.approved} of {item.targets} approved</span>{/if}
+								{#if item.open}<span class="open">{item.open} open {item.open === 1 ? 'suggestion' : 'suggestions'}</span>{/if}
+							</span>
+						{/if}
 						<span class="subtitle">{item.subtitle}</span>
 					</a>
 				</li>
@@ -137,6 +143,22 @@
 		background: var(--card);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
+	}
+
+	.reviews {
+		grid-column: 1 / -1;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 1rem;
+		font-size: 0.85rem;
+	}
+
+	.approved {
+		color: var(--muted);
+	}
+
+	.open {
+		color: var(--red);
 	}
 
 	.items li + li {

@@ -86,6 +86,12 @@ export type ItemSummary = {
 	subtitle: string;
 	jlpt: string | null;
 	parts: number;
+	/** Targets (the entry and its parts) with a current approval. */
+	approved: number;
+	/** Open suggestions on the entry or its parts. */
+	open: number;
+	/** The entry and its parts: `parts + 1`. */
+	targets: number;
 };
 
 export type ItemList = { dataset: Dataset; version: string; items: ItemSummary[] };
@@ -98,7 +104,20 @@ export type ItemResponse = {
 	item: Record<string, unknown>;
 };
 
-export type Reference = { readings: Record<string, string>; forms: Record<string, string> };
+/** A field a reviewer may edit, from the Worker's table (review/api/src/proposal.rs). */
+export type Field = {
+	name: string;
+	input: 'text' | 'long' | 'jlpt' | 'choice' | 'form';
+	optional: boolean;
+	choices: string[];
+};
+
+export type Reference = {
+	readings: Record<string, string>;
+	forms: Record<string, string>;
+	/** Keyed `"<dataset>/<kind>"`. */
+	fields: Record<string, Field[]>;
+};
 
 export const getSnapshot = async () => (await request<{ files: SnapshotFile[] }>('/api/snapshot')).files;
 
@@ -125,3 +144,163 @@ export const loadSlice = (loadId: string, slice: number) =>
 
 export const finishLoad = (loadId: string) =>
 	request<SnapshotFile>('/api/admin/snapshot/finish', { load_id: loadId });
+
+// --- Reviewing ----------------------------------------------------------------------------------
+
+/** One reviewable thing: an entry or a part of one. */
+export type Target = { dataset: string; kind: string; id: string };
+
+export type Approval = {
+	kind: string;
+	item_id: string;
+	reviewer_name: string;
+	mine: boolean;
+	/** False once the item changed after the approval. */
+	current: boolean;
+	created_at: string;
+};
+
+export type Comment = { author_name: string; body: string; created_at: string };
+
+export type SuggestionAction = 'change' | 'delete' | 'note';
+export type SuggestionStatus = 'open' | 'accepted' | 'declined' | 'withdrawn';
+
+export type Suggestion = {
+	id: number;
+	action: SuggestionAction;
+	dataset: string;
+	kind: string;
+	item_id: string;
+	entry_id: string;
+	item_title: string;
+	author_name: string;
+	mine: boolean;
+	status: SuggestionStatus;
+	base_hash: string;
+	proposed: Record<string, unknown> | null;
+	furigana: Record<string, string> | null;
+	dropped_blanks: number;
+	comment: string;
+	admin_edit: Record<string, unknown> | null;
+	created_at: string;
+	decided_at: string | null;
+	/** The item changed since the suggestion was made. */
+	stale: boolean;
+	/** The item is no longer in the loaded data. */
+	gone: boolean;
+	comments: Comment[];
+};
+
+export type ReviewPart = { kind: string; item_id: string; content_hash: string };
+export type Review = { parts: ReviewPart[]; approvals: Approval[]; suggestions: Suggestion[] };
+
+export type QueueSummary = {
+	id: number;
+	title: string;
+	description: string;
+	total: number;
+	done: number;
+	with_suggestion: number;
+	archived: boolean;
+};
+
+export type QueueItem = {
+	dataset: string;
+	kind: string;
+	item_id: string;
+	entry_id: string;
+	title: string;
+	note: string;
+	position: number;
+	gone: boolean;
+	mine: 'approved' | 'suggested' | 'skipped' | null;
+};
+
+export type Queue = { queue: QueueSummary; items: QueueItem[] };
+
+export type QueueFilter = {
+	dataset: string;
+	kinds: string[];
+	jlpt: string[];
+	never_approved: boolean;
+	ids: string[];
+};
+
+export type QueuePreview = { count: number; items: QueueItem[]; unmatched: string[] };
+
+export type InboxSuggestion = Suggestion & {
+	/** The target's JSON now, or null when it left the data. */
+	current: Record<string, unknown> | null;
+	/** Set when accepting removes a whole verb or word. */
+	warning?: string;
+};
+
+type Edits = { edits?: Record<string, string>; furigana?: Record<string, string> };
+
+const body = (target: Target) => ({ dataset: target.dataset, kind: target.kind, id: target.id });
+
+export const getReview = (dataset: string, id: string) =>
+	request<Review>(`/api/review?${new URLSearchParams({ dataset, id })}`);
+
+export const approve = (target: Target, contentHash: string) =>
+	request<{ approvals: Approval[] }>('/api/approve', { ...body(target), content_hash: contentHash });
+
+export const withdrawApproval = (target: Target) =>
+	request<{ approvals: Approval[] }>('/api/approve/withdraw', body(target));
+
+export const suggest = (
+	target: Target,
+	baseHash: string,
+	action: SuggestionAction,
+	extra: Edits & { comment?: string } = {}
+) => request<Suggestion>('/api/suggest', { ...body(target), base_hash: baseHash, action, ...extra });
+
+export const withdrawSuggestion = (id: number) => request<Suggestion>('/api/suggest/withdraw', { id });
+
+export const comment = (suggestionId: number, text: string) =>
+	request<Suggestion>('/api/comment', { suggestion_id: suggestionId, body: text });
+
+export const listQueues = async () => (await request<{ queues: QueueSummary[] }>('/api/queues')).queues;
+
+export const getQueue = (id: number) => request<Queue>(`/api/queue?${new URLSearchParams({ id: String(id) })}`);
+
+export const skip = (queueId: number, target: Target) =>
+	request<Queue>('/api/queue/skip', { queue_id: queueId, ...body(target) });
+
+export const adminQueues = async () =>
+	(await request<{ queues: QueueSummary[] }>('/api/admin/queues')).queues;
+
+export const previewQueue = (filter: QueueFilter, idsText: string) =>
+	request<QueuePreview>('/api/admin/queues/preview', { filter, ids_text: idsText });
+
+export const createQueue = (title: string, description: string, filter: QueueFilter, idsText = '') =>
+	request<Queue>('/api/admin/queues', { title, description, filter, ids_text: idsText });
+
+export const updateQueue = (id: number, title: string, description: string, archived: boolean) =>
+	request<Queue>('/api/admin/queues/update', { id, title, description, archived });
+
+export const setQueueNote = (queueId: number, target: Target, note: string) =>
+	request<Queue>('/api/admin/queues/note', { queue_id: queueId, ...body(target), note });
+
+export const removeQueueItem = (queueId: number, target: Target) =>
+	request<Queue>('/api/admin/queues/remove', { queue_id: queueId, ...body(target) });
+
+export const getInbox = async (status: 'open' | 'accepted' | 'declined' = 'open') =>
+	(await request<{ suggestions: InboxSuggestion[] }>(`/api/admin/inbox?${new URLSearchParams({ status })}`))
+		.suggestions;
+
+export const decide = (
+	id: number,
+	decision: 'accept' | 'decline',
+	extra: Edits & { reply?: string; confirm?: boolean } = {}
+) => request<Suggestion & { warning?: string }>('/api/admin/decide', { id, decision, ...extra });
+
+/** The message to show for a failed request. */
+export function problem(error: unknown): string {
+	return error instanceof ApiError ? error.message : FALLBACK;
+}
+
+/** Whether a failed request means the item changed since the page loaded. */
+export function isStale(error: unknown): boolean {
+	return error instanceof ApiError && error.status === 409;
+}

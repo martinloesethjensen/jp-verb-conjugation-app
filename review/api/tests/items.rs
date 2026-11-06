@@ -76,7 +76,7 @@ fn every_entry_and_stable_id_slot_becomes_a_row() {
 fn sub_item_counts_match_pythons_id_slots() {
     // len(stable_ids.id_slots(name, doc)) on today's data, so a missed or extra slot kind shows up.
     for (file, slots) in [
-        (DataFile::Verbs, 620),
+        (DataFile::Verbs, 690),
         (DataFile::Counters, 325),
         (DataFile::Grammar, 412),
     ] {
