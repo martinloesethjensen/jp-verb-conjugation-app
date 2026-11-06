@@ -32,6 +32,7 @@ private struct TextActions: ViewModifier {
                 }
             }
             .formLookupSheet($lookup)
+            .dismissOnLink { lookup = nil }
     }
 }
 
@@ -74,6 +75,10 @@ private struct TranslatableTextActions: ViewModifier {
             }
             .translationPresentation(isPresented: $showingAppleTranslation, text: text)
             .formLookupSheet($lookup)
+            .dismissOnLink {
+                showingAppleTranslation = false
+                lookup = nil
+            }
     }
 }
 

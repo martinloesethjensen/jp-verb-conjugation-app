@@ -22,6 +22,7 @@ struct ThingChips: View {
                         chip(thing)
                     }
                     .buttonStyle(.plain)
+                    .dismissOnLink { shown = nil }
                     .popover(item: Binding(
                         get: { shown?.word == thing.word ? shown : nil },
                         set: { shown = $0 }

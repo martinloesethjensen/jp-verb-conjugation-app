@@ -21,7 +21,9 @@ struct RootView: View {
     /// "What form is this?" (#110): its index is built here once the verbs are in, not per lookup.
     @State private var formLookup = FormLookupStore()
     @State private var selection: Verb?
-    @State private var showingExamples = false
+    /// The verb the Examples sheet shows. Its own state, not `selection`, so a link that selects
+    /// another verb can't swap the sheet's content while it closes (#12).
+    @State private var examplesVerb: Verb?
     @State private var showingSettings = false
     @State private var showingGuide = false
     @State private var showingProgress = false
@@ -37,6 +39,8 @@ struct RootView: View {
     @State private var incomingRoute: Route?
     /// A link that arrived during a quiz, waiting for "Leave the quiz?" to be answered.
     @State private var linkLeavingQuiz: URL?
+    /// Counts the links that opened something; sheets elsewhere close on it (`dismissOnLink`).
+    @State private var linkArrivals = 0
     @Environment(WordBankTransferHub.self) private var wordBankTransfer
     @Environment(QuizSessionStore.self) private var quizSessions
 
@@ -63,7 +67,7 @@ struct RootView: View {
             return
         }
         // Anything presented over the list would hide the page the link opens.
-        showingExamples = false
+        examplesVerb = nil
         showingSettings = false
         showingGuide = false
         showingProgress = false
@@ -76,6 +80,7 @@ struct RootView: View {
         pendingSpot = nil
         particleQuestions = nil
         pendingParticles = nil
+        linkArrivals += 1
         if let quizLink {
             let verbs = verbStore.verbs.visible(in: LevelSettings.load())
             let topics = quizLink.topic.map { Set([$0]) } ?? Set(QuizTopic.allCases)
@@ -139,6 +144,7 @@ struct RootView: View {
         .onChange(of: verbStore.verbs, initial: true) { updateFormLookup() }
         .onChange(of: formCatalogueStore.catalogue.version) { updateFormLookup() }
         .environment(formLookup)
+        .environment(\.linkArrivals, linkArrivals)
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
         // Applied to the windows rather than with preferredColorScheme: see AppearanceApplier.
@@ -164,17 +170,15 @@ struct RootView: View {
             if let selection {
                 VerbDetailView(
                     verb: selection,
-                    onExamples: { showingExamples = true },
+                    onExamples: { examplesVerb = selection },
                     onQuiz: { topicSheetVerbs = [selection] }
                 )
             } else {
                 ContentUnavailableView("Select a Verb", systemImage: "text.book.closed")
             }
         }
-        .sheet(isPresented: $showingExamples) {
-            if let selection {
-                ExamplesView(verb: selection)
-            }
+        .sheet(item: $examplesVerb) { verb in
+            ExamplesView(verb: verb)
         }
         .sheet(isPresented: $showingProgress) { QuizProgressView() }
         .sheet(isPresented: topicSheetBinding, onDismiss: {
