@@ -63,6 +63,15 @@ Stored settings migrate once:
   on becomes Automatic. Matching off pins the half that was showing: Dark for `dark` and `coffee`, Light for
   `light`, `latte`, `pastel` and `sand`. The six themes that used to force an appearance become Automatic.
 
+### Launch
+
+iOS draws the launch screen before any app code runs, so it follows the phone's light or dark setting
+only: paper (`light`/`dark` palette) with the 活 seal at 122 pt in the centre, a red teacher's circle in
+Light and a sumi brush circle in Dark. The default app icon has the same face. The app's first frame
+copies that screen, fades in the chosen theme half's paper and stamp over 250 ms with 活 in place, then
+fades to content over 200 ms; it never waits for data, and with Reduce Motion on it shows content at
+once. 活 is outlined from Shippori Mincho B1 (SIL OFL), never bundled; see `scripts/generate-icon.swift`.
+
 ### Palettes
 
 Twenty palettes of twelve tokens. Hex, sRGB.
@@ -111,7 +120,7 @@ Ice cream and iceCreamDark set `fillsTypePills`.
 | 1. Theme foundation | `ThemeID`/`ThemeChoice`, palettes, root wiring and migration, paper surfaces, type label, Mincho headword in verb rows, level badge, filter chip, quiz marking, theme picker, widget palette | Style map, Proposed list/page/quiz/dark, Settings, Theme picker v2, Themes across screens, Colour-blind and contrast |
 | 2. Verb page and examples (built) | Mincho headwords on detail pages, Plain/Polite table, More forms rows, genkō example cards, results stamp | Verb page full length, potential, quiz results |
 | 2b. Theme halves and Appearance (built) | Every theme light and dark, six new palettes, the Appearance control, ten swatches, migration, widgets | Six new halves, Theme picker, Themes across screens |
-| 2c. Launch screen and first frame | Paper launch screen with the 活 seal (Shippori Mincho B1), the themed first frame that fades to content | Launch screen, Themed first frame |
+| 2c. Launch screen and first frame (built) | Paper launch screen with the 活 seal (Shippori Mincho B1), the themed first frame that fades to content | Launch screen, Themed first frame |
 | 3. Kanji stroke order | KanjiVG subset as a signed `data/` file + schema + spec, a seventh concrete sync service, path parser, Watch/Trace sheet, entry points | Kanji stroke order, trace, opening it |
 | 4. Global search | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
 | 5. Onboarding | Levels, furigana, theme, first verb | Onboarding |
