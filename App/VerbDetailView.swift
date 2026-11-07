@@ -7,6 +7,7 @@ struct VerbDetailView: View {
     var onQuiz: () -> Void
     @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
     @Environment(\.palette) private var palette
+    @Environment(VerbStore.self) private var verbStore
 
     private var isFavourite: Bool { FavouriteVerbs(rawValue: favouritesRaw).contains(verb) }
 
@@ -135,9 +136,21 @@ struct VerbDetailView: View {
     }
 
     private var formGroups: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VerbFormsCard(verb: verb)
-            MoreRowsCard(verb: verb)
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionHeader("Forms") {
+                    Text("Tap to hear · hold for more")
+                        .font(.footnote)
+                        .foregroundStyle(palette.muted)
+                }
+                VerbFormsCard(verb: verb)
+            }
+            if !MoreRowsCard.rows(for: verb, lessonCount: verbStore.grammarPoints.attachingToVerbs.count).isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionHeader("More forms")
+                    MoreRowsCard(verb: verb)
+                }
+            }
         }
     }
 }
