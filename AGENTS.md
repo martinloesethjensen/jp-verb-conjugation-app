@@ -116,6 +116,7 @@ Run `make` for the full list. Common ones:
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
 | `SyncVerification` (internal) | The seven sync services' rollback rejection, hash verification and JSON decoding |
 | `KanjiStore`, `KanjiEntry`, `KanjiDataFile` | The stroke-order data (`data/kanji.json`, built by `scripts/build_kanji.py`): `entry(for:)`, and `kanji(in:)` for the kanji in some text that have data (spec: `docs/superpowers/specs/2026-11-07-kanji-stroke-order-design.md`) |
+| `KanjiStroke`, `StrokeMatcher`, `KanjiTraceSession`, `KanjiReading` | A stroke's start, end, direction and number position; judging a traced stroke; tracing progress; kun notation `た.べる` → `た(べる)` |
 | `UserDefaults.verbKitAppGroup` | The App Group defaults (falls back to `.standard`); App code aliases it as `.appGroup` |
 | `ThemeID`, `ThemeGroup`, `ThemeChoice`, `AppearanceSetting` | The ten themes (each with a light and dark half), picker groups, seasonal override, the Appearance setting and the one-time migrations from `appearanceMode` and plan 1's keys (spec: `docs/superpowers/specs/2026-11-06-paper-ink-redesign-design.md`) |
 
