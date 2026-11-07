@@ -35,36 +35,37 @@ onboarding.
 
 ## Themes
 
-Twelve themes in four picker groups. Names are UI copy and live in App.
+Ten themes in four picker groups, and every theme has a light half and a dark half. Names are UI copy and
+live in App. Light/Dark and Latte/Coffee are one theme each, named after whichever half is showing.
 
-| Group | Theme (`ThemeID`) | Appearance |
-|---|---|---|
-| Everyday | Light `light` | paired with Dark |
-| Everyday | Dark `dark` | paired with Light |
-| Everyday | Pastel `pastel` | light, with its own dark variant |
-| Everyday | Sand `sand` | light, with its own dark variant |
-| Café | Matcha `matcha` | light only |
-| Café | Latte `latte` | paired with Coffee |
-| Café | Coffee `coffee` | paired with Latte |
-| Café | Ice cream `iceCream` | light only |
-| Night | Northern lights `northernLights` | dark only |
-| Night | Nocturnal `nocturnal` | dark only |
-| Seasonal | Halloween `halloween` | dark only; automatic in October |
-| Seasonal | Christmas `christmas` | light only; automatic in December |
+| Group | Theme (`ThemeID`) | Name (light / dark half) | Palettes (light / dark) |
+|---|---|---|---|
+| Everyday | `light` | Light / Dark | light / dark |
+| Everyday | `pastel` | Pastel | pastel / pastelDark |
+| Everyday | `sand` | Sand | sand / sandDark |
+| Café | `matcha` | Matcha | matcha / matchaDark |
+| Café | `latte` | Latte / Coffee | latte / coffee |
+| Café | `iceCream` | Ice cream | iceCream / iceCreamDark |
+| Night | `northernLights` | Northern lights | northernLightsLight / northernLights |
+| Night | `nocturnal` | Nocturnal | nocturnalLight / nocturnal |
+| Seasonal | `halloween` | Halloween; automatic in October | halloweenLight / halloween |
+| Seasonal | `christmas` | Christmas; automatic in December | christmas / christmasDark |
 
-Settings: **Theme** (one of the twelve), **Match light and dark to iOS** (default on), **Seasonal
-themes** (default off). With matching on, paired and variant themes follow the system appearance;
-light-only and dark-only themes force their appearance on the window, so sheets, alerts and the
-keyboard match. Picking the half of Light/Dark or Latte/Coffee that iOS is not showing turns
-matching off, so the tap visibly takes effect. With seasonal on, October shows Halloween and December shows Christmas, whatever the
-chosen theme; on 1 November and 1 January the chosen theme returns.
+Settings › Theme: an **Appearance** control (**Automatic**, **Light**, **Dark**; default Automatic), the ten
+swatches, and **Seasonal themes** (default off). Automatic follows iOS; Light and Dark pin the window, so
+sheets, alerts and the keyboard match. The theme never forces an appearance. Swatches show the half that
+is showing. With seasonal on, October shows Halloween and December shows Christmas, whatever the chosen
+theme, in the chosen appearance; on 1 November and 1 January the chosen theme returns.
 
-Existing `appearanceMode` values migrate once: `system` → Light + matching on; `light` → Light +
-matching off; `dark` → Dark + matching off.
+Stored settings migrate once:
+- Before themes, `appearanceMode`: `system` → Light + Automatic; `light` → Light + Light; `dark` → Light + Dark.
+- Plan 1's keys (`theme`, `themeMatchesSystem`): `dark` becomes `light` and `coffee` becomes `latte`. Matching
+  on becomes Automatic. Matching off pins the half that was showing: Dark for `dark` and `coffee`, Light for
+  `light`, `latte`, `pastel` and `sand`. The six themes that used to force an appearance become Automatic.
 
 ### Palettes
 
-Twelve tokens per palette. Hex, sRGB.
+Twenty palettes of twelve tokens. Hex, sRGB.
 
 | Palette | paper | card | ink | muted | rule | mark | markSoft | good | goodSoft | button | onButton | accent |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -82,21 +83,26 @@ Twelve tokens per palette. Hex, sRGB.
 | nocturnal | 0b0b14 | 141422 | d9d7f0 | 9894b8 | 25243a | e8836f | 34201f | 8fc7a0 | 1a2e24 | b9b3ff | 0b0b14 | 8f86f0 |
 | halloween | 17121c | 231a2b | f5ebdd | b7a9bd | 3a2d44 | ff8a2a | 3b2516 | 9ad36a | 25331d | ff8a2a | 17121c | ff8a2a |
 | christmas | f4f0e8 | ffffff | 163a2a | 56675c | ddd7c9 | b3202c | f8e4e3 | 1f6b45 | e0efe5 | 163a2a | ffffff | 1f6b45 |
+| matchaDark | 141a12 | 1c2419 | e6eddc | a6b29a | 2e3a28 | ec7a66 | 3a2420 | 9fcf7f | 22301c | b5d39a | 141a12 | 8fbf6a |
+| iceCreamDark | 1f1720 | 2a1f2b | f6e6ee | c3a9b8 | 413041 | ff7a9a | 40202c | 7fd8bd | 1d3530 | f2a6c4 | 1f1720 | f08ab0 |
+| christmasDark | 0f1d16 | 16271e | f1ece0 | a9b8ad | 284034 | ef6b5e | 3a2220 | 7fcf9a | 1a3326 | f1ece0 | 0f1d16 | d9b45a |
+| northernLightsLight | eef5f6 | ffffff | 12283a | 4d6676 | d3e2e6 | c2364a | fbe6ea | 1f7a5a | dcf1e8 | 12283a | ffffff | 1fae84 |
+| nocturnalLight | f3f2fa | ffffff | 24223f | 5f5b80 | e0def0 | bf3f30 | f9e5e2 | 2f6f4a | e0efe6 | 3d3680 | ffffff | 7a70e0 |
+| halloweenLight | f6efe4 | fffaf2 | 2e2135 | 66586c | e6d9c6 | b3361f | f8e2da | 4d7a2a | e5efd8 | 2e2135 | fffaf2 | e2701a |
 
-Palette per theme: `light`/`dark` → light or dark by appearance; `latte`/`coffee` → latte or coffee by
-appearance; `pastel` → pastel or pastelDark; `sand` → sand or sandDark; every other theme → its own.
+Palette per theme and half: the Themes table above.
 
 Checked contrast (WCAG): ink on paper 10.1–15.8; muted on paper 5.2–8.4 and on card 5.6–7.5; mark on
 card 5.1–7.1; good on card 4.9–10.0; onButton on button 5.8–15.2; button on paper and card,
-and ink on markSoft and goodSoft, pass in every palette. All ≥ 4.5. `accent` and `mark`/`good` on
+and ink on markSoft and goodSoft, pass in every palette. All ≥ 4.5; the six palettes added for the dark and light halves are checked on the canvas board "Six new halves" (lowest: good on card in halloweenLight, 4.9). `accent` and `mark`/`good` on
 their soft fills do **not** pass in every light palette, so they never colour text: a marked quiz
 answer keeps ink text and carries the mark colour in its outline, strike and glyph.
 
 **Increase Contrast**: `muted` becomes a 50/50 mix of `muted` and `ink`; `rule` becomes a 50/50 mix
 of `rule` and `muted`; card outlines draw at 1.5 pt.
 
-`accent` fills switches only. Text buttons, links and the selected tab use `button`. Pastel and
-Ice cream set `fillsTypePills`.
+`accent` fills switches only. Text buttons, links and the selected tab use `button`. Pastel, pastelDark,
+Ice cream and iceCreamDark set `fillsTypePills`.
 
 ## Boards → plans
 
@@ -104,6 +110,8 @@ Ice cream set `fillsTypePills`.
 |---|---|---|
 | 1. Theme foundation | `ThemeID`/`ThemeChoice`, palettes, root wiring and migration, paper surfaces, type label, Mincho headword in verb rows, level badge, filter chip, quiz marking, theme picker, widget palette | Style map, Proposed list/page/quiz/dark, Settings, Theme picker v2, Themes across screens, Colour-blind and contrast |
 | 2. Verb page and examples (built) | Mincho headwords on detail pages, Plain/Polite table, More forms rows, genkō example cards, results stamp | Verb page full length, potential, quiz results |
+| 2b. Theme halves and Appearance | Every theme light and dark, six new palettes, the Appearance control, ten swatches, migration, widgets | Six new halves, Theme picker, Themes across screens |
+| 2c. Launch screen and first frame | Paper launch screen with the 活 seal (Shippori Mincho B1), the themed first frame that fades to content | Launch screen, Themed first frame |
 | 3. Kanji stroke order | KanjiVG subset as a signed `data/` file + schema + spec, a seventh concrete sync service, path parser, Watch/Trace sheet, entry points | Kanji stroke order, trace, opening it |
 | 4. Global search | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
 | 5. Onboarding | Levels, furigana, theme, first verb | Onboarding |
