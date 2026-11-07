@@ -20,6 +20,8 @@ struct MainTabView<VerbsTab: View>: View {
     @Binding var incomingRoute: Route?
     @State private var tab: AppTab = .verbs
     @State private var grammarSelection: GrammarPoint?
+    /// The pitfall the opened lesson scrolls to (from Common mistakes); the lesson clears it once shown.
+    @State private var grammarPitfall: Int?
     /// On iPhone a `NavigationSplitView` shows its list until told
     /// otherwise; `open` sets this to `.detail` so a cross-link lands on
     /// the lesson even when the Grammar tab hasn't been visited yet.
@@ -44,7 +46,9 @@ struct MainTabView<VerbsTab: View>: View {
                 verbsTab
             }
             Tab("Grammar", systemImage: "text.book.closed", value: AppTab.grammar) {
-                GrammarTab(selection: $grammarSelection, preferredColumn: $grammarColumn, onSettings: onSettings)
+                GrammarTab(
+                    selection: $grammarSelection, focusedPitfall: $grammarPitfall, preferredColumn: $grammarColumn,
+                    onSettings: onSettings)
             }
             Tab("Counters", systemImage: "textformat.123", value: AppTab.counters) {
                 CountersTab(destination: $counterDestination, preferredColumn: $counterColumn, onSettings: onSettings)
@@ -76,6 +80,7 @@ struct MainTabView<VerbsTab: View>: View {
             tab = .verbs
         case let .grammar(point)?:
             grammarSelection = point
+            grammarPitfall = route.pitfallAnchor(in: point)
             grammarColumn = .detail
             tab = .grammar
         case let .counter(counter)?:
@@ -94,6 +99,7 @@ struct MainTabView<VerbsTab: View>: View {
 
 struct GrammarTab: View {
     @Binding var selection: GrammarPoint?
+    @Binding var focusedPitfall: Int?
     @Binding var preferredColumn: NavigationSplitViewColumn
     let onSettings: () -> Void
 
@@ -102,7 +108,9 @@ struct GrammarTab: View {
             GrammarListView(selection: $selection, onSettings: onSettings)
         } detail: {
             if let selection {
-                GrammarDetailView(point: selection)
+                // A fresh view per lesson, so a lesson opened without an anchor starts at the top.
+                GrammarDetailView(point: selection, focusedPitfall: $focusedPitfall)
+                    .id(selection.id)
             } else {
                 ContentUnavailableView("Select a Grammar Point", systemImage: "text.book.closed")
             }

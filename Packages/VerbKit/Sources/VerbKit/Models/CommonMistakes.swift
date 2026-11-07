@@ -29,6 +29,7 @@ public enum MistakeTheme: String, CaseIterable, Hashable, Sendable {
 }
 
 /// One lesson or counter pitfall, with its theme and a route back to where it came from.
+/// A lesson pitfall's route carries its index, so the lesson opens at that pitfall.
 public struct CommonMistake: Hashable, Identifiable, Sendable, Leveled {
     /// "<lesson id>#<index>" for a lesson, "counter:<id>#<index>" for a counter.
     public var id: String
@@ -104,7 +105,7 @@ public enum CommonMistakes {
                 result.append(CommonMistake(
                     id: key, theme: grammarThemes[key] ?? .meaningAndRegister, heading: pitfall.heading,
                     explanation: pitfall.explanation, examples: pitfall.examples,
-                    wrong: pitfall.wrong, source: .grammar(point.id), sourceTitle: point.title, jlpt: point.jlpt))
+                    wrong: pitfall.wrong, source: .grammar(point.id, pitfall: index), sourceTitle: point.title, jlpt: point.jlpt))
             }
         }
         for counter in counters {
