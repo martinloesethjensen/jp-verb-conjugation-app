@@ -94,6 +94,8 @@ Run `make` for the full list. Common ones:
 | `Romaji.toHiragana(_:)` | Convert romaji queries to hiragana (Hepburn/Nihon-shiki) |
 | `JapaneseNormalizer.key/looseKey/tagKey/kanaForm` | Canonical Japanese comparison (NFKC, katakana→hiragana, long vowels, tags) |
 | `KanjiExtraction.kanji(in:)` | Distinct kanji for lookup chips |
+| `SVGPathData.parse(_:)`, `SVGPoint` | SVG `d` strings to path elements (arcs as cubics), Foundation-only |
+| `StampShape`, `StampStroke` | The twelve results/icon stamps as path data in the seal's 120-unit box |
 | `FormHighlight.range(of:for:in:)` | Where a kana form sits in an example sentence, spelled with the verb's kanji or in kana |
 | `TextUnit.emphasizing(_:characters:)` | Marks a character range of furigana units emphasised, splitting plain units and keeping ruby whole |
 | `Verb.units(for:)` / `Verb.dictionaryUnits` | A kana form (or the dictionary form) as ruby units spelled with the verb's kanji stem |
