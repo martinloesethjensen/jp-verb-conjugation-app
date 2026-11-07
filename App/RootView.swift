@@ -17,6 +17,8 @@ struct RootView: View {
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @Environment(\.scenePhase) private var scenePhase
     @State private var reminderRouter = ReminderRouter.shared
+    /// The first-frame hand-off from the launch screen, once per cold launch (iOS).
+    @State private var showsLaunchHandoff = true
     /// "What form is this?" (#110): its index is built here once the verbs are in, not per lookup.
     @State private var formLookup = FormLookupStore()
     @State private var selection: Verb?
@@ -142,6 +144,13 @@ struct RootView: View {
         .environment(\.linkArrivals, linkArrivals)
         .environment(\.furiganaEnabled, showFurigana)
         .environment(\.furiganaDictionary, furiganaStore.dictionary)
+        #if os(iOS)
+        .overlay {
+            if showsLaunchHandoff {
+                LaunchHandoff { showsLaunchHandoff = false }
+            }
+        }
+        #endif
         // Outermost, so the Settings sheet and every other presentation get the palette too.
         .themedRoot()
     }
