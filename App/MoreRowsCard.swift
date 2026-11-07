@@ -63,9 +63,20 @@ struct MoreRowsCard: View {
                     if index > 0 { Divider().overlay(palette.rule) }
                     NavigationLink(value: row.page) {
                         HStack {
-                            Text(row.page.title).foregroundStyle(palette.ink)
-                            Spacer()
-                            Text(row.preview).foregroundStyle(palette.muted)
+                            // Title and preview side by side while they fit; the preview moves
+                            // under the title at large text sizes instead of breaking words.
+                            ViewThatFits(in: .horizontal) {
+                                HStack {
+                                    Text(row.page.title).foregroundStyle(palette.ink).fixedSize()
+                                    Spacer()
+                                    Text(row.preview).foregroundStyle(palette.muted).fixedSize()
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(row.page.title).foregroundStyle(palette.ink)
+                                    Text(row.preview).foregroundStyle(palette.muted)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                             RowChevron()
                         }
                         .frame(minHeight: 48)

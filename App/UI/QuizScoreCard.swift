@@ -8,13 +8,18 @@ struct QuizScoreCard: View {
     let lines: [String]
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .largeTitle) private var stampSize: CGFloat = 120
     @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 44
     @ScaledMetric(relativeTo: .largeTitle) private var countSize: CGFloat = 22
     @State private var drawn: CGFloat = 0
 
     var body: some View {
-        HStack(spacing: 16) {
+        // At accessibility sizes the stamp sits above the text, so the lines keep a full width.
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 16))
+        layout {
             stamp
             VStack(alignment: .leading, spacing: 4) {
                 Text("Quiz complete")

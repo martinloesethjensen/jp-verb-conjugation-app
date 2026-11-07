@@ -49,12 +49,18 @@ struct PotentialPage: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(palette.muted)
             // Each side split against the other, so each bolds its own ending.
-            HStack(spacing: 10) {
-                FormCell(form: verb.dict, dict: potential).fixedSize()
-                Image(systemName: "arrow.right")
-                    .foregroundStyle(palette.muted)
-                    .accessibilityLabel("becomes")
-                FormCell(form: potential, dict: verb.dict).fixedSize()
+            // Side by side while it fits; stacked with a down arrow at large text sizes.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    FormCell(form: verb.dict, dict: potential).fixedSize()
+                    arrow("arrow.right")
+                    FormCell(form: potential, dict: verb.dict).fixedSize()
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    FormCell(form: verb.dict, dict: potential)
+                    arrow("arrow.down")
+                    FormCell(form: potential, dict: verb.dict)
+                }
             }
             .font(.title3)
             Text(explanation(potential: potential, pattern: pattern))
@@ -63,6 +69,12 @@ struct PotentialPage: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .paperCard()
+    }
+
+    private func arrow(_ name: String) -> some View {
+        Image(systemName: name)
+            .foregroundStyle(palette.muted)
+            .accessibilityLabel("becomes")
     }
 
     private func explanation(potential: String, pattern: PotentialPattern) -> String {

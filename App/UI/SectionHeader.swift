@@ -15,18 +15,30 @@ struct SectionHeader<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Label {
-                Text(title)
-            } icon: {
-                if let systemImage { Image(systemName: systemImage) }
+        // The trailing view moves under the title when both don't fit on one line (large text),
+        // so the title never breaks mid-word.
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline) {
+                label.fixedSize()
+                Spacer(minLength: 8)
+                trailing.fixedSize()
             }
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(palette.ink)
-            .accessibilityAddTraits(.isHeader)
-            Spacer(minLength: 8)
-            trailing
+            VStack(alignment: .leading, spacing: 4) {
+                label
+                trailing
+            }
         }
+    }
+
+    private var label: some View {
+        Label {
+            Text(title)
+        } icon: {
+            if let systemImage { Image(systemName: systemImage) }
+        }
+        .font(.title3.weight(.semibold))
+        .foregroundStyle(palette.ink)
+        .accessibilityAddTraits(.isHeader)
     }
 }
 

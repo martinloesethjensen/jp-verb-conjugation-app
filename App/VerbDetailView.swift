@@ -95,7 +95,9 @@ struct VerbDetailView: View {
                         meaning.fixedSize()
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        headword
+                        // Not fixed here, so a long headword can wrap between its units on a
+                        // narrow phone at the largest text sizes.
+                        headwordText
                         meaning
                     }
                 }
@@ -108,10 +110,13 @@ struct VerbDetailView: View {
     }
 
     private var headword: some View {
+        headwordText.fixedSize()
+    }
+
+    private var headwordText: some View {
         JapaneseText(units: verb.dictionaryUnits)
             .font(.headword(.largeTitle, scale: 1.5))
             .foregroundStyle(palette.ink)
-            .fixedSize()
     }
 
     private var meaning: some View {
