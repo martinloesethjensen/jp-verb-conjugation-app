@@ -125,13 +125,18 @@ public struct FormLookup: Sendable {
 public extension Verb {
     /// The dictionary form as ruby units: the kanji stem with its reading, then the
     /// okurigana (食 over た, then べる). Kana alone for a verb without kanji (する).
-    var dictionaryUnits: [TextUnit] {
-        guard let kanji, let spelling = KanjiSpelling(self), let reading = spelling.readingStems.first else {
-            return [TextUnit(text: dict)]
-        }
+    var dictionaryUnits: [TextUnit] { units(for: dict) }
+
+    /// One of the verb's kana forms as ruby units, spelled with the verb's kanji stem
+    /// (たべられる → 食 over た, then べられる; こられる → 来 over こ). Kana alone when the
+    /// verb has no kanji or the form doesn't start with a reading of the stem (する → できる).
+    func units(for kana: String) -> [TextUnit] {
+        guard let spelling = KanjiSpelling(self),
+              let reading = spelling.readingStems.first(where: { kana.hasPrefix($0) })
+        else { return [TextUnit(text: kana)] }
         return [
             TextUnit(text: spelling.kanjiStem, reading: reading),
-            TextUnit(text: String(kanji.dropFirst(spelling.kanjiStem.count))),
+            TextUnit(text: String(kana.dropFirst(reading.count))),
         ].filter { !$0.text.isEmpty }
     }
 }

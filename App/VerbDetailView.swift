@@ -71,7 +71,7 @@ struct VerbDetailView: View {
                 case .nDesu: NdesuPage(verb: verb)
                 case .auxiliaries: AuxiliariesPage(verb: verb)
                 case .advanced: AdvancedPage(verb: verb)
-                case .lessons: VerbLessonsPage()
+                case .lessons: VerbLessonsPage(verb: verb)
                 }
             }
         }

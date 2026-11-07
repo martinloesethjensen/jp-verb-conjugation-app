@@ -95,6 +95,8 @@ Run `make` for the full list. Common ones:
 | `KanjiExtraction.kanji(in:)` | Distinct kanji for lookup chips |
 | `FormHighlight.range(of:for:in:)` | Where a kana form sits in an example sentence, spelled with the verb's kanji or in kana |
 | `TextUnit.emphasizing(_:characters:)` | Marks a character range of furigana units emphasised, splitting plain units and keeping ruby whole |
+| `Verb.units(for:)` / `Verb.dictionaryUnits` | A kana form (or the dictionary form) as ruby units spelled with the verb's kanji stem |
+| `PotentialPattern(verb:)` | How the potential form is built (ru, u, する, くる); nil without one |
 | `Verb.displayTitle` / `Word.displayTitle` | `"dict (kanji)"` title for widgets, Spotlight, intents and pickers |
 | `LevelSettings` + `Leveled` | Hidden-JLPT-level filtering, summaries and visibility checks |
 | `SpeechText.spoken/clipName` | Clean text for TTS and the recorded-clip filename contract |
@@ -120,6 +122,7 @@ Run `make` for the full list. Common ones:
 | `JapaneseText` | Any Japanese text that may need furigana. Use instead of `Text`; it styles like `Text` |
 | `JapaneseText(_:emphasizing:)` | The same with a character range underlined (and bold where the font has a bold face), furigana on or off |
 | `VerbExampleRow`, `VerbExampleCard` | A verb's example sentence with its form tag and the form underlined; the card puts rows on ruled paper |
+| `VerbSubPageHeader`, `verbSubPage(title:)` | A verb sub-page's header (verb, title, optional headline form) and its paper/title chrome |
 | `WrappingFlowLayout` | Wrapping row layout for chips, tags and pills |
 | `FilterChip` / `chipBackground(isOn:)` | Filter-row capsule: outlined in ink while off, filled with `button` while on; an accent adds a dot |
 | `LevelBadge(level:emphasis:)` | Outlined JLPT pill beside a row title or in a detail header; nil draws nothing |

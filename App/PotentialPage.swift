@@ -1,9 +1,11 @@
 import SwiftUI
 import VerbKit
 
-/// The verb's nine potential forms, plain and polite, and the link to the lesson.
+/// The verb's potential form large, how it is made, its nine potential forms plain and
+/// polite, its potential examples, and the link to the lesson.
 struct PotentialPage: View {
     let verb: Verb
+    @Environment(\.palette) private var palette
 
     private var rows: [FormTableRow] {
         let f = verb.forms
@@ -16,14 +18,65 @@ struct PotentialPage: View {
         ]
     }
 
+    private var potentialExamples: [VerbExample] {
+        verb.examples.filter { $0.form.rawValue.hasPrefix("pot") }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                VerbSubPageHeader(verb: verb, title: VerbSubPage.potential.title, headline: verb.forms.potential)
+                if let potential = verb.forms.potential, let pattern = PotentialPattern(verb: verb) {
+                    howItsMade(potential: potential, pattern: pattern)
+                }
                 FormTable(columns: ["Plain", "Polite"], rows: rows, dict: verb.dict)
+                if !potentialExamples.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionHeader("Examples")
+                        VerbExampleCard(examples: potentialExamples, verb: verb)
+                    }
+                }
                 LessonLinks(ids: [GrammarPoint.potentialID])
             }
             .padding()
         }
-        .navigationTitle(VerbSubPage.potential.title)
+        .verbSubPage(title: VerbSubPage.potential.title)
+    }
+
+    private func howItsMade(potential: String, pattern: PotentialPattern) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("HOW IT’S MADE")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(palette.muted)
+            // Each side split against the other, so each bolds its own ending.
+            HStack(spacing: 10) {
+                FormCell(form: verb.dict, dict: potential).fixedSize()
+                Image(systemName: "arrow.right")
+                    .foregroundStyle(palette.muted)
+                    .accessibilityLabel("becomes")
+                FormCell(form: potential, dict: verb.dict).fixedSize()
+            }
+            .font(.title3)
+            Text(explanation(potential: potential, pattern: pattern))
+                .font(.subheadline)
+                .foregroundStyle(palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .paperCard()
+    }
+
+    private func explanation(potential: String, pattern: PotentialPattern) -> String {
+        switch pattern {
+        case .ru:
+            return "Ru-verbs drop る and add られる. The result conjugates like a ru-verb itself."
+        case .u:
+            let dictEnding = FormSplit.split(verb.dict, from: potential).ending
+            let potEnding = FormSplit.split(potential, from: verb.dict).ending
+            return "U-verbs change the final \(dictEnding) to \(potEnding.dropLast()) and add る. The result conjugates like a ru-verb."
+        case .suru:
+            return "する becomes できる. The result conjugates like a ru-verb."
+        case .kuru:
+            return "くる becomes こられる. The result conjugates like a ru-verb."
+        }
     }
 }
