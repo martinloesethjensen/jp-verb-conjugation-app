@@ -1,22 +1,24 @@
 import Foundation
 
-/// The person's theme settings: the chosen theme, whether light and dark follow iOS, and whether
-/// the seasonal themes take over in October and December. Stored as three App Group keys so the
-/// widgets read the same choice.
+/// The person's theme settings: the chosen theme, the Appearance setting, and whether the seasonal
+/// themes take over in October and December. Stored as three App Group keys so the widgets read
+/// the same choice.
 public struct ThemeChoice: Equatable, Sendable {
     public static let themeKey = "theme"
-    public static let matchesSystemKey = "themeMatchesSystem"
+    public static let appearanceKey = "themeAppearance"
     public static let seasonalKey = "seasonalThemes"
-    /// The pre-theme "Appearance" setting (system, light or dark), migrated once.
+    /// Plan 1's "Match light and dark to iOS" switch, read once by the migration.
+    public static let matchesSystemKey = "themeMatchesSystem"
+    /// The pre-theme "Appearance" setting (system, light or dark), read once by the migration.
     public static let legacyAppearanceKey = "appearanceMode"
 
     public var theme: ThemeID
-    public var matchesSystem: Bool
+    public var appearance: AppearanceSetting
     public var seasonal: Bool
 
-    public init(theme: ThemeID = .light, matchesSystem: Bool = true, seasonal: Bool = false) {
+    public init(theme: ThemeID = .light, appearance: AppearanceSetting = .automatic, seasonal: Bool = false) {
         self.theme = theme
-        self.matchesSystem = matchesSystem
+        self.appearance = appearance
         self.seasonal = seasonal
     }
 
@@ -31,50 +33,71 @@ public struct ThemeChoice: Equatable, Sendable {
         }
     }
 
-    /// The window appearance for the theme shown on `date`.
-    public func appearance(on date: Date, calendar: Calendar = .current) -> ThemeAppearance {
-        effectiveTheme(on: date, calendar: calendar).appearance(matchingSystem: matchesSystem)
-    }
-
-    /// The choice after the person taps `theme` in the picker. Picking the half of a light/dark
-    /// pair (Light/Dark, Latte/Coffee) that the system is not showing turns matching off, so the
-    /// tap visibly does what it says; every other pick keeps the switches as they are.
-    public func choosing(_ theme: ThemeID, systemIsDark: Bool) -> ThemeChoice {
-        var next = self
-        next.theme = theme
-        if matchesSystem, let wantsDark = theme.pairedHalfIsDark, wantsDark != systemIsDark {
-            next.matchesSystem = false
-        }
-        return next
-    }
-
-    /// The choice that keeps what an existing "Appearance" setting looked like.
-    public static func migrated(appearanceMode: String?) -> ThemeChoice {
-        switch appearanceMode {
-        case "light": ThemeChoice(theme: .light, matchesSystem: false)
-        case "dark": ThemeChoice(theme: .dark, matchesSystem: false)
-        default: ThemeChoice()
+    /// Whether the dark half shows: the system's appearance on Automatic, otherwise the setting.
+    public func isDark(systemIsDark: Bool) -> Bool {
+        switch appearance {
+        case .automatic: systemIsDark
+        case .light: false
+        case .dark: true
         }
     }
 
-    /// Reads the stored choice. The first time (no theme key yet) it migrates the old Appearance
-    /// setting and saves the result, so later reads, `@AppStorage` included, see the theme keys.
+    /// Reads the stored choice, migrating older settings the first time and saving the result,
+    /// so later reads, `@AppStorage` included, see the current keys.
     public static func load(from defaults: UserDefaults) -> ThemeChoice {
         guard let raw = defaults.string(forKey: themeKey) else {
             let choice = migrated(appearanceMode: defaults.string(forKey: legacyAppearanceKey))
             choice.save(to: defaults)
+            defaults.removeObject(forKey: matchesSystemKey)
+            return choice
+        }
+        guard let appearanceRaw = defaults.string(forKey: appearanceKey) else {
+            let matchesSystem = defaults.object(forKey: matchesSystemKey) as? Bool ?? true
+            var choice = migrated(plan1Theme: raw, matchesSystem: matchesSystem)
+            choice.seasonal = defaults.bool(forKey: seasonalKey)
+            choice.save(to: defaults)
+            defaults.removeObject(forKey: matchesSystemKey)
             return choice
         }
         return ThemeChoice(
             theme: ThemeID(rawValue: raw) ?? .light,
-            matchesSystem: defaults.object(forKey: matchesSystemKey) as? Bool ?? true,
+            appearance: AppearanceSetting(rawValue: appearanceRaw) ?? .automatic,
             seasonal: defaults.bool(forKey: seasonalKey)
         )
     }
 
+    /// Writes the appearance before the theme: `load` looks at the theme key first, so another
+    /// process (the widget) reading between the writes never sees a half-migrated choice.
     public func save(to defaults: UserDefaults) {
+        defaults.set(appearance.rawValue, forKey: Self.appearanceKey)
         defaults.set(theme.rawValue, forKey: Self.themeKey)
-        defaults.set(matchesSystem, forKey: Self.matchesSystemKey)
         defaults.set(seasonal, forKey: Self.seasonalKey)
+    }
+
+    /// The pre-theme Appearance setting: everyone lands on Light, pinned as before.
+    private static func migrated(appearanceMode: String?) -> ThemeChoice {
+        switch appearanceMode {
+        case "light": ThemeChoice(theme: .light, appearance: .light)
+        case "dark": ThemeChoice(theme: .light, appearance: .dark)
+        default: ThemeChoice()
+        }
+    }
+
+    /// Plan 1's twelve themes and matching switch. Dark and Coffee fold into Light and Latte;
+    /// a pinned pair or variant keeps the half that was showing; the themes that used to force
+    /// an appearance become Automatic.
+    private static func migrated(plan1Theme raw: String, matchesSystem: Bool) -> ThemeChoice {
+        let theme: ThemeID = switch raw {
+        case "dark": .light
+        case "coffee": .latte
+        default: ThemeID(rawValue: raw) ?? .light
+        }
+        guard !matchesSystem else { return ThemeChoice(theme: theme, appearance: .automatic) }
+        let appearance: AppearanceSetting = switch raw {
+        case "dark", "coffee": .dark
+        case "light", "latte", "pastel", "sand": .light
+        default: .automatic
+        }
+        return ThemeChoice(theme: theme, appearance: appearance)
     }
 }

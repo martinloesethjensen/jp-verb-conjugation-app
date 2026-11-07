@@ -1,6 +1,6 @@
 import SwiftUI
 
-// The fourteen palettes from docs/superpowers/specs/2026-11-06-paper-ink-redesign-design.md.
+// The twenty palettes from docs/superpowers/specs/2026-11-06-paper-ink-redesign-design.md.
 // Every text token is at least 4.5:1 on paper and card (checked in the spec).
 extension ThemePalette {
     private init(
@@ -32,6 +32,13 @@ extension ThemePalette {
     static let nocturnal = ThemePalette(0x0B0B14, 0x141422, 0xD9D7F0, 0x9894B8, 0x25243A, 0xE8836F, 0x34201F, 0x8FC7A0, 0x1A2E24, 0xB9B3FF, 0x0B0B14, 0x8F86F0)
     static let halloween = ThemePalette(0x17121C, 0x231A2B, 0xF5EBDD, 0xB7A9BD, 0x3A2D44, 0xFF8A2A, 0x3B2516, 0x9AD36A, 0x25331D, 0xFF8A2A, 0x17121C, 0xFF8A2A)
     static let christmas = ThemePalette(0xF4F0E8, 0xFFFFFF, 0x163A2A, 0x56675C, 0xDDD7C9, 0xB3202C, 0xF8E4E3, 0x1F6B45, 0xE0EFE5, 0x163A2A, 0xFFFFFF, 0x1F6B45)
+    // The halves added so every theme has a light and a dark palette.
+    static let matchaDark = ThemePalette(0x141A12, 0x1C2419, 0xE6EDDC, 0xA6B29A, 0x2E3A28, 0xEC7A66, 0x3A2420, 0x9FCF7F, 0x22301C, 0xB5D39A, 0x141A12, 0x8FBF6A)
+    static let iceCreamDark = ThemePalette(0x1F1720, 0x2A1F2B, 0xF6E6EE, 0xC3A9B8, 0x413041, 0xFF7A9A, 0x40202C, 0x7FD8BD, 0x1D3530, 0xF2A6C4, 0x1F1720, 0xF08AB0, fillsTypePills: true)
+    static let christmasDark = ThemePalette(0x0F1D16, 0x16271E, 0xF1ECE0, 0xA9B8AD, 0x284034, 0xEF6B5E, 0x3A2220, 0x7FCF9A, 0x1A3326, 0xF1ECE0, 0x0F1D16, 0xD9B45A)
+    static let northernLightsLight = ThemePalette(0xEEF5F6, 0xFFFFFF, 0x12283A, 0x4D6676, 0xD3E2E6, 0xC2364A, 0xFBE6EA, 0x1F7A5A, 0xDCF1E8, 0x12283A, 0xFFFFFF, 0x1FAE84)
+    static let nocturnalLight = ThemePalette(0xF3F2FA, 0xFFFFFF, 0x24223F, 0x5F5B80, 0xE0DEF0, 0xBF3F30, 0xF9E5E2, 0x2F6F4A, 0xE0EFE6, 0x3D3680, 0xFFFFFF, 0x7A70E0)
+    static let halloweenLight = ThemePalette(0xF6EFE4, 0xFFFAF2, 0x2E2135, 0x66586C, 0xE6D9C6, 0xB3361F, 0xF8E2DA, 0x4D7A2A, 0xE5EFD8, 0x2E2135, 0xFFFAF2, 0xE2701A)
 }
 
 #if DEBUG
@@ -40,6 +47,9 @@ private let previewPalettes: [(String, ThemePalette)] = [
     ("sand", .sand), ("sandDark", .sandDark), ("matcha", .matcha), ("latte", .latte),
     ("coffee", .coffee), ("iceCream", .iceCream), ("northernLights", .northernLights),
     ("nocturnal", .nocturnal), ("halloween", .halloween), ("christmas", .christmas),
+    ("matchaDark", .matchaDark), ("iceCreamDark", .iceCreamDark), ("christmasDark", .christmasDark),
+    ("northernLightsLight", .northernLightsLight), ("nocturnalLight", .nocturnalLight),
+    ("halloweenLight", .halloweenLight),
 ]
 
 #Preview("All palettes") {

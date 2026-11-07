@@ -2,7 +2,7 @@ import SwiftUI
 import VerbKit
 
 extension View {
-    /// Reads the theme settings, pins the window appearance when the theme needs it, and gives
+    /// Reads the theme settings, pins the window appearance when the Appearance setting asks, and gives
     /// everything below its palette through `\.palette`. Applied once, at the root.
     func themedRoot() -> some View {
         modifier(ThemedRoot())
@@ -11,7 +11,7 @@ extension View {
 
 struct ThemedRoot: ViewModifier {
     @AppStorage(ThemeChoice.themeKey, store: .appGroup) private var themeRaw = ThemeID.light.rawValue
-    @AppStorage(ThemeChoice.matchesSystemKey, store: .appGroup) private var matchesSystem = true
+    @AppStorage(ThemeChoice.appearanceKey, store: .appGroup) private var appearanceRaw = AppearanceSetting.automatic.rawValue
     @AppStorage(ThemeChoice.seasonalKey, store: .appGroup) private var seasonal = false
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
@@ -20,14 +20,18 @@ struct ThemedRoot: ViewModifier {
     @State private var today = Date()
 
     private var choice: ThemeChoice {
-        ThemeChoice(theme: ThemeID(rawValue: themeRaw) ?? .light, matchesSystem: matchesSystem, seasonal: seasonal)
+        ThemeChoice(
+            theme: ThemeID(rawValue: themeRaw) ?? .light,
+            appearance: AppearanceSetting(rawValue: appearanceRaw) ?? .automatic,
+            seasonal: seasonal
+        )
     }
 
     func body(content: Content) -> some View {
-        let appearance = choice.appearance(on: today)
         let palette = ThemePalette.resolve(
-            choice.effectiveTheme(on: today), appearance: appearance,
-            systemScheme: colorScheme, contrast: contrast
+            choice.effectiveTheme(on: today),
+            isDark: choice.isDark(systemIsDark: colorScheme == .dark),
+            contrast: contrast
         )
         return content
             .environment(\.palette, palette)
@@ -37,7 +41,7 @@ struct ThemedRoot: ViewModifier {
             #if os(iOS)
             .toggleStyle(SwitchToggleStyle(tint: palette.accent))
             #endif
-            .onChange(of: appearance, initial: true) { _, new in
+            .onChange(of: choice.appearance, initial: true) { _, new in
                 ThemeApplier.apply(new)
             }
             .onChange(of: scenePhase) { _, phase in

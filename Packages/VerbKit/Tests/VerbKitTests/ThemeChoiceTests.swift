@@ -18,26 +18,37 @@ final class ThemeChoiceTests: XCTestCase {
         return defaults
     }
 
-    func testPickerGroupsCoverEveryThemeOnceInOrder() {
-        XCTAssertEqual(ThemeGroup.allCases.flatMap(\.themes), ThemeID.allCases)
-        XCTAssertEqual(ThemeGroup.cafe.themes, [.matcha, .latte, .coffee, .iceCream])
+    /// Defaults as plan 1 left them: a theme and the old "match light and dark" switch.
+    private func plan1Defaults(theme: String, matchesSystem: Bool?, _ name: String = #function) -> UserDefaults {
+        let defaults = freshDefaults(name + theme)
+        defaults.set(theme, forKey: ThemeChoice.themeKey)
+        if let matchesSystem { defaults.set(matchesSystem, forKey: ThemeChoice.matchesSystemKey) }
+        return defaults
     }
 
-    func testAppearanceTable() {
-        XCTAssertEqual(ThemeID.light.appearance(matchingSystem: true), .followSystem)
-        XCTAssertEqual(ThemeID.light.appearance(matchingSystem: false), .light)
-        XCTAssertEqual(ThemeID.coffee.appearance(matchingSystem: false), .dark)
-        XCTAssertEqual(ThemeID.sand.appearance(matchingSystem: true), .followSystem)
-        XCTAssertEqual(ThemeID.matcha.appearance(matchingSystem: true), .light)
-        XCTAssertEqual(ThemeID.nocturnal.appearance(matchingSystem: true), .dark)
-        XCTAssertEqual(ThemeID.christmas.appearance(matchingSystem: true), .light)
+    func testPickerGroupsCoverEveryThemeOnceInOrder() {
+        XCTAssertEqual(ThemeID.allCases.count, 10)
+        XCTAssertEqual(ThemeGroup.allCases.flatMap(\.themes), ThemeID.allCases)
+        XCTAssertEqual(ThemeGroup.cafe.themes, [.matcha, .latte, .iceCream])
+    }
+
+    func testIsDarkFollowsSetting() {
+        XCTAssertTrue(ThemeChoice(appearance: .automatic).isDark(systemIsDark: true))
+        XCTAssertFalse(ThemeChoice(appearance: .automatic).isDark(systemIsDark: false))
+        XCTAssertTrue(ThemeChoice(appearance: .dark).isDark(systemIsDark: false))
+        XCTAssertFalse(ThemeChoice(appearance: .light).isDark(systemIsDark: true))
     }
 
     func testSeasonalOverridesInOctoberAndDecember() {
         let choice = ThemeChoice(theme: .matcha, seasonal: true)
         XCTAssertEqual(choice.effectiveTheme(on: date(2026, 10, 1), calendar: utc), .halloween)
         XCTAssertEqual(choice.effectiveTheme(on: date(2026, 12, 31), calendar: utc), .christmas)
-        XCTAssertEqual(choice.appearance(on: date(2026, 10, 15), calendar: utc), .dark)
+    }
+
+    func testSeasonalKeepsTheChosenAppearance() {
+        let choice = ThemeChoice(theme: .sand, appearance: .light, seasonal: true)
+        XCTAssertEqual(choice.effectiveTheme(on: date(2026, 10, 15), calendar: utc), .halloween)
+        XCTAssertFalse(choice.isDark(systemIsDark: true))
     }
 
     func testSeasonalReturnsChosenThemeInNovember() {
@@ -50,44 +61,83 @@ final class ThemeChoiceTests: XCTestCase {
         XCTAssertEqual(ThemeChoice(theme: .sand).effectiveTheme(on: date(2026, 10, 31), calendar: utc), .sand)
     }
 
-    func testMigratesSystemLightAndDark() {
-        XCTAssertEqual(ThemeChoice.migrated(appearanceMode: "system"), ThemeChoice(theme: .light, matchesSystem: true))
-        XCTAssertEqual(ThemeChoice.migrated(appearanceMode: "light"), ThemeChoice(theme: .light, matchesSystem: false))
-        XCTAssertEqual(ThemeChoice.migrated(appearanceMode: nil), ThemeChoice())
+    func testMigratesPreThemeAppearanceMode() {
+        let cases: [(String?, ThemeChoice)] = [
+            ("system", ThemeChoice(theme: .light, appearance: .automatic)),
+            ("light", ThemeChoice(theme: .light, appearance: .light)),
+            ("dark", ThemeChoice(theme: .light, appearance: .dark)),
+            (nil, ThemeChoice()),
+        ]
+        for (mode, expected) in cases {
+            let defaults = freshDefaults(#function + (mode ?? "nil"))
+            if let mode { defaults.set(mode, forKey: ThemeChoice.legacyAppearanceKey) }
+            XCTAssertEqual(ThemeChoice.load(from: defaults), expected, "\(mode ?? "nil")")
+            XCTAssertEqual(defaults.string(forKey: ThemeChoice.themeKey), expected.theme.rawValue)
+            XCTAssertEqual(defaults.string(forKey: ThemeChoice.appearanceKey), expected.appearance.rawValue)
+        }
     }
 
-    func testMigratesDarkAppearance() {
+    func testMigratesPlan1PinnedCoffee() {
+        let defaults = plan1Defaults(theme: "coffee", matchesSystem: false)
+        XCTAssertEqual(ThemeChoice.load(from: defaults), ThemeChoice(theme: .latte, appearance: .dark))
+        XCTAssertEqual(defaults.string(forKey: ThemeChoice.themeKey), "latte")
+        XCTAssertEqual(defaults.string(forKey: ThemeChoice.appearanceKey), "dark")
+        XCTAssertNil(defaults.object(forKey: ThemeChoice.matchesSystemKey))
+    }
+
+    func testMigratesPlan1Matching() {
+        XCTAssertEqual(ThemeChoice.load(from: plan1Defaults(theme: "dark", matchesSystem: true)),
+                       ThemeChoice(theme: .light, appearance: .automatic))
+        XCTAssertEqual(ThemeChoice.load(from: plan1Defaults(theme: "sand", matchesSystem: false)),
+                       ThemeChoice(theme: .sand, appearance: .light))
+        XCTAssertEqual(ThemeChoice.load(from: plan1Defaults(theme: "latte", matchesSystem: nil)),
+                       ThemeChoice(theme: .latte, appearance: .automatic))
+    }
+
+    func testMigratesForcedThemeToAutomatic() {
+        for theme in ["matcha", "nocturnal", "halloween"] {
+            XCTAssertEqual(ThemeChoice.load(from: plan1Defaults(theme: theme, matchesSystem: false)).appearance,
+                           .automatic, theme)
+        }
+    }
+
+    /// The widget can read between two writes. Writing the appearance first means a reader that
+    /// sees the new theme key always sees the appearance with it, never a half-migrated plan 1 state.
+    func testSaveWritesAppearanceBeforeTheme() {
+        let defaults = RecordingDefaults(suiteName: #function)!
+        defaults.removePersistentDomain(forName: #function)
+        ThemeChoice(theme: .sand, appearance: .dark).save(to: defaults)
+        let order = defaults.keysSet
+        XCTAssertLessThan(order.firstIndex(of: ThemeChoice.appearanceKey)!, order.firstIndex(of: ThemeChoice.themeKey)!)
+    }
+
+    func testPreThemeMigrationRemovesStaleMatchingKey() {
         let defaults = freshDefaults()
-        defaults.set("dark", forKey: ThemeChoice.legacyAppearanceKey)
-        XCTAssertEqual(ThemeChoice.load(from: defaults), ThemeChoice(theme: .dark, matchesSystem: false))
-        XCTAssertEqual(defaults.string(forKey: ThemeChoice.themeKey), "dark")
-    }
-
-    func testChoosingTheOtherHalfOfAPairPinsIt() {
-        // Matching on, light phone: picking Dark must make the app dark, so matching turns off.
-        let picked = ThemeChoice(theme: .light).choosing(.dark, systemIsDark: false)
-        XCTAssertEqual(picked, ThemeChoice(theme: .dark, matchesSystem: false))
-        XCTAssertEqual(ThemeChoice(theme: .latte).choosing(.coffee, systemIsDark: false).matchesSystem, false)
-        XCTAssertEqual(ThemeChoice(theme: .coffee).choosing(.latte, systemIsDark: true).matchesSystem, false)
-    }
-
-    func testChoosingTheMatchingHalfKeepsFollowingTheSystem() {
-        XCTAssertEqual(ThemeChoice(theme: .light).choosing(.dark, systemIsDark: true), ThemeChoice(theme: .dark, matchesSystem: true))
-        XCTAssertEqual(ThemeChoice(theme: .dark).choosing(.light, systemIsDark: false).matchesSystem, true)
-    }
-
-    func testChoosingAnUnpairedThemeLeavesMatchingAndSeasonalAlone() {
-        let choice = ThemeChoice(theme: .light, matchesSystem: true, seasonal: true)
-        XCTAssertEqual(choice.choosing(.sand, systemIsDark: false), ThemeChoice(theme: .sand, matchesSystem: true, seasonal: true))
-        XCTAssertEqual(choice.choosing(.nocturnal, systemIsDark: false).matchesSystem, true)
+        defaults.set(false, forKey: ThemeChoice.matchesSystemKey)
+        _ = ThemeChoice.load(from: defaults)
+        XCTAssertNil(defaults.object(forKey: ThemeChoice.matchesSystemKey))
     }
 
     func testSaveLoadRoundTripAndUnknownFallsBack() {
         let defaults = freshDefaults()
-        let choice = ThemeChoice(theme: .northernLights, matchesSystem: false, seasonal: true)
+        let choice = ThemeChoice(theme: .northernLights, appearance: .dark, seasonal: true)
         choice.save(to: defaults)
         XCTAssertEqual(ThemeChoice.load(from: defaults), choice)
         defaults.set("neon", forKey: ThemeChoice.themeKey)
         XCTAssertEqual(ThemeChoice.load(from: defaults).theme, .light)
+        defaults.set("sepia", forKey: ThemeChoice.appearanceKey)
+        XCTAssertEqual(ThemeChoice.load(from: defaults).appearance, .automatic)
+    }
+}
+
+private final class RecordingDefaults: UserDefaults {
+    var keysSet: [String] = []
+    override func set(_ value: Any?, forKey defaultName: String) {
+        keysSet.append(defaultName)
+        super.set(value, forKey: defaultName)
+    }
+    override func set(_ value: Bool, forKey defaultName: String) {
+        keysSet.append(defaultName)
+        super.set(value, forKey: defaultName)
     }
 }

@@ -8,8 +8,9 @@ struct SettingsView: View {
     @Environment(QuizHistoryStore.self) private var quizHistory
     @State private var confirmingReset = false
     @AppStorage(ThemeChoice.themeKey, store: .appGroup) private var themeRaw = ThemeID.light.rawValue
-    @AppStorage(ThemeChoice.matchesSystemKey, store: .appGroup) private var themeMatchesSystem = true
+    @AppStorage(ThemeChoice.appearanceKey, store: .appGroup) private var themeAppearanceRaw = AppearanceSetting.automatic.rawValue
     @AppStorage(ThemeChoice.seasonalKey, store: .appGroup) private var seasonalThemes = false
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
@@ -83,7 +84,11 @@ struct SettingsView: View {
     }
 
     private var themeChoice: ThemeChoice {
-        ThemeChoice(theme: ThemeID(rawValue: themeRaw) ?? .light, matchesSystem: themeMatchesSystem, seasonal: seasonalThemes)
+        ThemeChoice(
+            theme: ThemeID(rawValue: themeRaw) ?? .light,
+            appearance: AppearanceSetting(rawValue: themeAppearanceRaw) ?? .automatic,
+            seasonal: seasonalThemes
+        )
     }
 
     private let questionCountOptions = [5, 10, 15, 20, 30]
@@ -94,7 +99,8 @@ struct SettingsView: View {
                 NavigationLink {
                     ThemePickerView()
                 } label: {
-                    LabeledContent("Theme", value: themeChoice.effectiveTheme(on: .now).displayName)
+                    LabeledContent("Theme", value: themeChoice.effectiveTheme(on: .now)
+                        .displayName(isDark: themeChoice.isDark(systemIsDark: colorScheme == .dark)))
                 }
             }
             .paperRow()

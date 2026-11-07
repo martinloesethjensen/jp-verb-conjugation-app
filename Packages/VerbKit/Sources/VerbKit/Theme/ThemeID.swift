@@ -1,42 +1,20 @@
 import Foundation
 
-/// The app's twelve themes. `allCases` is the picker order; the names shown to people live in App.
+/// The app's ten themes, each with a light and a dark half. `allCases` is the picker order; the
+/// names shown to people live in App (Light/Dark and Latte/Coffee are named after the half showing).
 public enum ThemeID: String, CaseIterable, Sendable {
-    case light, dark, pastel, sand
-    case matcha, latte, coffee, iceCream
+    case light, pastel, sand
+    case matcha, latte, iceCream
     case northernLights, nocturnal
     case halloween, christmas
 
     /// The picker section the theme sits in.
     public var group: ThemeGroup {
         switch self {
-        case .light, .dark, .pastel, .sand: .everyday
-        case .matcha, .latte, .coffee, .iceCream: .cafe
+        case .light, .pastel, .sand: .everyday
+        case .matcha, .latte, .iceCream: .cafe
         case .northernLights, .nocturnal: .night
         case .halloween, .christmas: .seasonal
-        }
-    }
-
-    /// Whether the window follows iOS or is pinned light or dark. Paired themes (Light/Dark,
-    /// Latte/Coffee) and themes with a dark variant (Pastel, Sand) follow the system while matching
-    /// is on; light-only and dark-only themes always pin their appearance.
-    public func appearance(matchingSystem: Bool) -> ThemeAppearance {
-        switch self {
-        case .light, .pastel, .sand, .latte: matchingSystem ? .followSystem : .light
-        case .dark, .coffee: matchingSystem ? .followSystem : .dark
-        case .matcha, .iceCream, .christmas: .light
-        case .northernLights, .nocturnal, .halloween: .dark
-        }
-    }
-}
-
-extension ThemeID {
-    /// For the halves of a light/dark pair, whether this half is the dark one; nil otherwise.
-    var pairedHalfIsDark: Bool? {
-        switch self {
-        case .light, .latte: false
-        case .dark, .coffee: true
-        default: nil
         }
     }
 }
@@ -51,7 +29,8 @@ public enum ThemeGroup: String, CaseIterable, Sendable {
     }
 }
 
-/// How the window's light/dark appearance is set for a theme.
-public enum ThemeAppearance: Sendable, Equatable {
-    case followSystem, light, dark
+/// Settings › Theme › Appearance: follow iOS, or keep the app light or dark. The theme itself never
+/// forces an appearance.
+public enum AppearanceSetting: String, CaseIterable, Sendable {
+    case automatic, light, dark
 }
