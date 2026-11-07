@@ -8,6 +8,7 @@ Order: requested stamps are checked against the data first; then changes, additi
 then stamps are written, and any existing stamp whose entry this batch changed is removed. Something that
 can't be applied (its target or parent is gone, a reading clashes) is skipped and reported, never raised.
 """
+import copy
 from dataclasses import dataclass, field
 
 import mark_reviewed as mr
@@ -106,7 +107,7 @@ def apply_batch(batch, docs, today):
     gone = "no longer in the data"
 
     def skip(s, why):
-        report.skipped.append(Line(f"{s['item_title']}: {why}", credit_of(s["credit"])))
+        report.skipped.append(Line(f"{s['item_title']} (suggestion {s['id']}): {why}", credit_of(s["credit"])))
 
     def done(s, verb, section):
         report.applied.append(Line(f"{verb} {s['item_title']}", credit_of(s["credit"]), section))
@@ -118,7 +119,7 @@ def apply_batch(batch, docs, today):
     stamps = []
     for t in batch.get("stamps", []):
         entry = entry_of(docs, t["dataset"], t["item_id"])
-        title = t["item_title"]
+        title = f"{t['item_title']} (stamp {t['id']})"
         if entry is None:
             report.skipped.append(Line(f"{title}: {gone}"))
         elif ud.review_hash(entry, STAMPED[t["dataset"]]) != t["content_hash"]:
@@ -129,17 +130,32 @@ def apply_batch(batch, docs, today):
             stamps.append(t)
 
     applied = []
-    # 2. Changes: only the keys the change's form edits.
+    # 2. Changes. A change carries its whole form, built from the data it was accepted against, so only the
+    # keys whose value differs from the data before this batch are written: two changes to different fields
+    # of one item both land, and a later change can't put back what an earlier one replaced.
+    pristine = copy.deepcopy(docs)
+    missing = object()
+    written = {}  # (dataset, kind, item id, key) -> the value an earlier change wrote
     for s in (s for s in suggestions if s["action"] == "change"):
-        target = _target(docs, s)
-        if target is None:
+        target, before = _target(docs, s), _target(pristine, s)
+        if target is None or before is None:
             skip(s, gone)
             continue
-        for key in s["editable"] or []:
-            if key in s["item"]:
-                target[key] = s["item"][key]
-            else:
+        if s.get("stale"):
+            skip(s, "the data changed since it was accepted; apply it by hand or suggest it again")
+            continue
+        edits = {key: s["item"].get(key, missing) for key in s["editable"] or []
+                 if s["item"].get(key, missing) != before.get(key, missing)}
+        where = (s["dataset"], s["kind"], s["item_id"])
+        if any(written.get((*where, key), value) != value for key, value in edits.items()):
+            skip(s, "another change in this batch set the same field differently; apply it by hand")
+            continue
+        for key, value in edits.items():
+            written[(*where, key)] = value
+            if value is missing:
                 target.pop(key, None)
+            else:
+                target[key] = value
         done(s, "Changed", "Changes")
         applied.append(s)
 

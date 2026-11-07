@@ -46,6 +46,7 @@ fn suggestion_json(r: &ExportRow) -> Value {
         "item_title": r.item_title, "item": item, "editable": keys,
         "furigana": json_or_null(r.furigana_json.as_deref()), "comment": r.comment,
         "credit": { "role": r.credit_role, "name": r.credit_name }, "decided_at": r.decided_at,
+        "stale": r.stale != 0,
     })
 }
 

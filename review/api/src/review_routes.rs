@@ -6,7 +6,9 @@ use crate::auth::Principal;
 use crate::data::DataFile;
 use crate::items::Kind;
 use crate::proposal::{build_change, check_furigana, MAX_TEXT};
-use crate::review_store::{NewSuggestion, QueueFilter, QueueItem, ReviewStore, Suggestion, Target};
+use crate::review_store::{
+    NewSuggestion, OwnerEdit, QueueFilter, QueueItem, ReviewStore, Suggestion, Target,
+};
 use crate::store::{Role, Store, StoreError};
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
@@ -715,7 +717,7 @@ pub async fn decide<S: Store + ReviewStore>(
     }
     let edits = body.edits.filter(|e| !e.is_empty());
     let mut warning = None;
-    let (mut admin_edit, mut furigana) = (None, None);
+    let (mut admin_edit, mut furigana, mut base) = (None, None, None);
     if s.action == "add" {
         if accept {
             if s.gone {
@@ -740,7 +742,8 @@ pub async fn decide<S: Store + ReviewStore>(
                 );
             }
             let (file, kind, t) = tri!(target(&s.dataset, &s.kind, &s.item_id));
-            let (_, entry_id, _) = tri!(loaded_target(store, &t).await);
+            let (hash, entry_id, _) = tri!(loaded_target(store, &t).await);
+            base = Some(hash);
             let (p, f, _) = tri!(
                 proposed_change(
                     store,
@@ -772,8 +775,11 @@ pub async fn decide<S: Store + ReviewStore>(
         .decide(
             s.id,
             accept,
-            admin_edit.as_deref(),
-            furigana.as_deref(),
+            OwnerEdit {
+                item_json: admin_edit.as_deref(),
+                furigana_json: furigana.as_deref(),
+                base_hash: base.as_deref(),
+            },
             &by.email,
             now,
         )

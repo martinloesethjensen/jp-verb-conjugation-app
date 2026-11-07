@@ -216,3 +216,76 @@ async fn marking_exported_skips_rows_that_are_not_accepted() {
     let listed = get(&s, "/api/admin/export", MARTIN).await;
     assert_eq!(listed.body["suggestions"][0]["id"], open.body["id"]);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_change_is_stale_in_export_once_newer_data_is_loaded() {
+    let s = seeded().await;
+    let (ex, hash) = first_example(&s, "たべる").await;
+    let plain = post(
+        &s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": ex,
+        "base_hash": hash, "action": "change", "edits": {"en": "Plain accept."}}),
+        AIKO,
+    )
+    .await;
+    decide(&s, &plain.body["id"], json!({"decision": "accept"})).await;
+    let r = get(&s, "/api/admin/export", MARTIN).await;
+    assert_eq!(r.body["suggestions"][0]["stale"], false);
+
+    let mut verbs = doc(review_api::data::DataFile::Verbs);
+    let verb = verbs["verbs"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|v| v["dict"] == "たべる")
+        .unwrap();
+    verb["examples"][0]["en"] = json!("Changed on main.");
+    load_bytes(
+        &s,
+        review_api::data::DataFile::Verbs,
+        verbs.to_string().as_bytes(),
+    )
+    .await;
+    let r = get(&s, "/api/admin/export", MARTIN).await;
+    assert_eq!(r.body["suggestions"][0]["stale"], true);
+
+    // Edit then accept builds on the data as it is now, so it isn't stale.
+    let (_, hash) = first_example(&s, "たべる").await;
+    let edited = post(
+        &s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": ex,
+        "base_hash": hash, "action": "change", "edits": {"en": "Reviewer."}}),
+        BEN,
+    )
+    .await;
+    let mut verbs2 = verbs.clone();
+    verbs2["verbs"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|v| v["dict"] == "たべる")
+        .unwrap()["examples"][0]["jp"] = json!("食べてから寝る。");
+    load_bytes(
+        &s,
+        review_api::data::DataFile::Verbs,
+        verbs2.to_string().as_bytes(),
+    )
+    .await;
+    decide(
+        &s,
+        &edited.body["id"],
+        json!({"decision": "accept", "edits": {"en": "Owner."}}),
+    )
+    .await;
+    let r = get(&s, "/api/admin/export", MARTIN).await;
+    let row = r.body["suggestions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["id"] == edited.body["id"])
+        .unwrap()
+        .clone();
+    assert_eq!(row["stale"], false, "{row}");
+}

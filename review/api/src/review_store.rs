@@ -439,12 +439,16 @@ pub struct ExportRow {
     pub credit_role: String,
     pub credit_name: Option<String>,
     pub decided_at: Option<String>,
+    /// A change whose target's hash is no longer the one it was built on.
+    pub stale: i64,
 }
 
 pub const SELECT_EXPORT_SUGGESTIONS: &str = "SELECT s.id, s.action, s.dataset, s.kind, s.item_id, s.entry_id, \
      s.parent_kind, s.parent_id, s.item_title, IFNULL(s.admin_edit_json, s.proposed_json) AS item_json, \
      s.furigana_json, s.comment, IFNULL(u.public_role, 'native') AS credit_role, u.public_name AS credit_name, \
-     s.decided_at FROM suggestions s LEFT JOIN users u ON u.email = s.author \
+     s.decided_at, (s.action = 'change' AND i.content_hash IS NOT NULL AND i.content_hash <> s.base_hash) AS stale \
+     FROM suggestions s LEFT JOIN users u ON u.email = s.author \
+     LEFT JOIN items i ON i.dataset = s.dataset AND i.kind = s.kind AND i.item_id = s.item_id \
      WHERE s.status = 'accepted' AND s.exported_at IS NULL ORDER BY s.id";
 pub const SELECT_EXPORT_STAMPS: &str = concat!(
     stamp_columns!(),
@@ -534,10 +538,21 @@ pub const WITHDRAW: &str =
     "UPDATE suggestions SET status = 'withdrawn', decided_at = ?3, decided_by = ?2 \
      WHERE id = ?1 AND author = ?2 AND status = 'open'";
 /// ?1 id, ?2 status, ?3 admin edit, ?4 by, ?5 now, ?6 the owner's furigana (replaces the reviewer's
-/// when set).
+/// when set), ?7 the hash the owner's edit was built on (replaces the reviewer's base, so export can tell
+/// whether the data moved on since).
+/// What an accept with the owner's edit stores: the edited item, the owner's readings (replacing the
+/// reviewer's), and the hash of the data the edit was built on (replacing the reviewer's base).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct OwnerEdit<'a> {
+    pub item_json: Option<&'a str>,
+    pub furigana_json: Option<&'a str>,
+    pub base_hash: Option<&'a str>,
+}
+
 pub const DECIDE: &str =
     "UPDATE suggestions SET status = ?2, admin_edit_json = ?3, decided_by = ?4, \
-     decided_at = ?5, furigana_json = IFNULL(?6, furigana_json) WHERE id = ?1 AND status = 'open'";
+     decided_at = ?5, furigana_json = IFNULL(?6, furigana_json), base_hash = IFNULL(?7, base_hash) \
+     WHERE id = ?1 AND status = 'open'";
 /// A decision's audit row, written before `DECIDE` in the same batch and only while the suggestion is
 /// still open, so a decision that loses a race to another tab logs nothing. ?1 now, ?2 by, ?3 action,
 /// ?4 detail, ?5 id.
@@ -785,8 +800,7 @@ pub trait ReviewStore {
         &self,
         id: i64,
         accept: bool,
-        admin_edit_json: Option<&str>,
-        furigana_json: Option<&str>,
+        edit: OwnerEdit<'_>,
         by: &str,
         now: &str,
     ) -> Result<(), StoreError>;

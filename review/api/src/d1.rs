@@ -779,11 +779,15 @@ impl ReviewStore for D1Store {
         &self,
         id: i64,
         accept: bool,
-        admin_edit_json: Option<&str>,
-        furigana_json: Option<&str>,
+        edit: OwnerEdit<'_>,
         by: &str,
         now: &str,
     ) -> Result<(), StoreError> {
+        let OwnerEdit {
+            item_json: admin_edit_json,
+            furigana_json,
+            base_hash,
+        } = edit;
         match self.status(id).await? {
             None => return Err(StoreError::NotFound),
             Some(row) if row.status != "open" => return Err(StoreError::Conflict),
@@ -813,6 +817,7 @@ impl ReviewStore for D1Store {
                 text(by),
                 text(now),
                 maybe(furigana_json),
+                maybe(base_hash),
             ],
         )?;
         let results = self.db.batch(vec![log, update]).await.map_err(backend)?;

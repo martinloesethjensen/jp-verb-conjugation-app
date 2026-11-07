@@ -2,7 +2,7 @@ mod support;
 
 use review_api::data::DataFile;
 use review_api::items::{extract, ItemRow};
-use review_api::review_store::{NewSuggestion, QueueFilter, ReviewStore, Target};
+use review_api::review_store::{NewSuggestion, OwnerEdit, QueueFilter, ReviewStore, Target};
 use review_api::store::{NewUser, Role, SnapshotFile, Store, StoreError};
 use serde_json::Value;
 use support::sqlite::SqliteStore;
@@ -246,15 +246,24 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
         .unwrap()
         .0;
     assert_eq!(s.withdraw(a, BEN, T0).await, Err(StoreError::Conflict));
-    s.decide(a, true, Some(r#"{"a":2}"#), None, MARTIN, T0)
-        .await
-        .unwrap();
+    s.decide(
+        a,
+        true,
+        OwnerEdit {
+            item_json: Some(r#"{"a":2}"#),
+            ..OwnerEdit::default()
+        },
+        MARTIN,
+        T0,
+    )
+    .await
+    .unwrap();
     let got = s.suggestion(a, MARTIN).await.unwrap().unwrap();
     assert_eq!(got.status, "accepted");
     assert_eq!(got.admin_edit, Some(serde_json::json!({"a": 2})));
     assert_eq!(got.decided_at.as_deref(), Some(T0));
     assert_eq!(
-        s.decide(a, false, None, None, MARTIN, T0).await,
+        s.decide(a, false, OwnerEdit::default(), MARTIN, T0).await,
         Err(StoreError::Conflict)
     );
 
@@ -263,11 +272,13 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
         .await
         .unwrap()
         .0;
-    s.decide(b, false, None, None, MARTIN, T0).await.unwrap();
+    s.decide(b, false, OwnerEdit::default(), MARTIN, T0)
+        .await
+        .unwrap();
     assert_eq!(s.withdraw(b, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(s.withdraw(9999, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(
-        s.decide(9999, true, None, None, MARTIN, T0).await,
+        s.decide(9999, true, OwnerEdit::default(), MARTIN, T0).await,
         Err(StoreError::NotFound)
     );
 }
@@ -480,13 +491,17 @@ async fn every_write_is_audited() {
         .await
         .unwrap()
         .0;
-    s.decide(b, true, None, None, MARTIN, T0).await.unwrap();
+    s.decide(b, true, OwnerEdit::default(), MARTIN, T0)
+        .await
+        .unwrap();
     let c = s
         .add_suggestion(&change(&t, &h, r#"{"c":1}"#), AIKO, T0)
         .await
         .unwrap()
         .0;
-    s.decide(c, false, None, None, MARTIN, T0).await.unwrap();
+    s.decide(c, false, OwnerEdit::default(), MARTIN, T0)
+        .await
+        .unwrap();
     s.add_comment(c, "ok", MARTIN, T0).await.unwrap();
     let (q, ids) = four_word_queue(&s).await;
     s.update_queue(q, "x", "", false, MARTIN, T0).await.unwrap();
@@ -528,7 +543,9 @@ async fn a_decision_that_loses_a_race_writes_no_audit_row() {
         .await
         .unwrap()
         .0;
-    s.decide(id, true, None, None, MARTIN, T0).await.unwrap();
+    s.decide(id, true, OwnerEdit::default(), MARTIN, T0)
+        .await
+        .unwrap();
     let before = audit_actions(&s).len();
     // The second tab's batch, run after the first one committed: audit first, then the update.
     let conn = s.conn.borrow();
@@ -541,7 +558,15 @@ async fn a_decision_that_loses_a_race_writes_no_audit_row() {
     let changed = conn
         .execute(
             DECIDE,
-            rusqlite::params![id, "accepted", None::<String>, MARTIN, T0, None::<String>],
+            rusqlite::params![
+                id,
+                "accepted",
+                None::<String>,
+                MARTIN,
+                T0,
+                None::<String>,
+                None::<String>
+            ],
         )
         .unwrap();
     let withdrawn_log = conn

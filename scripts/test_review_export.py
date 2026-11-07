@@ -79,6 +79,40 @@ class ChangeTests(unittest.TestCase):
         self.assertEqual(d["grammar"]["grammar"][0]["usages"][0]["examples"][0]["en"], "What happened?")
 
 
+class OverlapTests(unittest.TestCase):
+    def usage_change(self, id, **edits):
+        usage = docs()["grammar"]["grammar"][0]["usages"][0]
+        item = {**usage, **edits}
+        return suggestion(id, "change", "grammar", "usage", "us1abc", "n-desu", item,
+                          editable=["heading", "explanation"])
+
+    def test_two_changes_to_one_item_both_land(self):
+        d = docs()
+        report = rx.apply_batch(batch([self.usage_change(20, heading="New heading"),
+                                       self.usage_change(21, explanation="New explanation")]), d, TODAY)
+        usage = d["grammar"]["grammar"][0]["usages"][0]
+        self.assertEqual((usage["heading"], usage["explanation"]), ("New heading", "New explanation"))
+        self.assertEqual(report.suggestion_ids, [20, 21])
+
+    def test_conflicting_changes_skip_the_later(self):
+        d = docs()
+        report = rx.apply_batch(batch([self.usage_change(22, heading="First"),
+                                       self.usage_change(23, heading="Second")]), d, TODAY)
+        self.assertEqual(d["grammar"]["grammar"][0]["usages"][0]["heading"], "First")
+        self.assertEqual(report.suggestion_ids, [22])
+        self.assertEqual(len(report.skipped), 1)
+        self.assertIn("suggestion 23", report.skipped[0].text)
+        self.assertIn("another change in this batch", report.skipped[0].text)
+
+    def test_stale_change_is_skipped(self):
+        d = docs()
+        change = {**self.usage_change(24, heading="Late"), "stale": True}
+        report = rx.apply_batch(batch([change]), d, TODAY)
+        self.assertEqual(d["grammar"]["grammar"][0]["usages"][0]["heading"], "H")
+        self.assertEqual(report.suggestion_ids, [])
+        self.assertIn("the data changed since it was accepted", report.skipped[0].text)
+
+
 class AdditionTests(unittest.TestCase):
     def test_addition_goes_to_its_parent(self):
         d = docs()
@@ -114,7 +148,7 @@ class RemovalTests(unittest.TestCase):
         self.assertEqual(report.suggestion_ids, [6, 7])
         later = suggestion(8, "change", "counters", "example", "ex1abc", "hon", item, editable=["en"])
         report = rx.apply_batch(batch([later]), d, TODAY)
-        self.assertEqual([line.text for line in report.skipped], ["ex1abc: no longer in the data"])
+        self.assertEqual([line.text for line in report.skipped], ["ex1abc (suggestion 8): no longer in the data"])
         self.assertEqual(report.suggestion_ids, [])
 
     def test_removing_an_entry(self):
@@ -151,7 +185,7 @@ class StampTests(unittest.TestCase):
         req = stamp_request(3, "counters", entry, "0" * 64)
         report = rx.apply_batch(batch(stamps=[req]), d, TODAY)
         self.assertNotIn("review", entry)
-        self.assertEqual([line.text for line in report.skipped], ["hon: changed since it was stamped"])
+        self.assertEqual([line.text for line in report.skipped], ["hon (stamp 3): changed since it was stamped"])
 
     def test_change_removes_a_stale_stamp(self):
         d = docs()

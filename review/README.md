@@ -201,7 +201,9 @@ later.
 2. Add a third Access application for the path `review.martinloeseth.dev/api/export` with one policy: action
    Service Auth, include that service token. Copy its AUD tag.
 3. Give the Worker two secrets, `ACCESS_EXPORT_AUD` (that AUD tag) and `ACCESS_EXPORT_CLIENT_ID` (the token's
-   client id), with `npx wrangler secret put` in `review/api`. Without them, `/api/export` answers 403.
+   client id), with `npx wrangler secret put` in `review/api`. Without them, `/api/export` answers 403. After
+   deploying, try `make review-pull` once: if it reports a 403, the token's `common_name` isn't the client id
+   the Worker expects.
 4. Store the token in your Keychain:
 
    ```bash
@@ -220,8 +222,13 @@ later.
    summary. Anything it couldn't apply is listed under "Skipped". If the site's copy of a file is older than
    `main`, it stops without writing anything.
 3. Push the branch and open the PR with the summary. It isn't signed; `make data-release` signs merged batches.
-4. After it merges, open Export on the admin page, tick what the PR contained (everything is ticked) and press
-   "Mark ticked as exported".
+4. After it merges, open Export on the admin page, paste the summary's last line ("Site suggestion ids: …
+   Stamp ids: …") and press "Tick these", then "Mark ticked as exported". Only what the pull wrote is marked;
+   anything it skipped, or anything accepted since, stays waiting for the next pull.
+
+A change the pull skips as "the data changed since it was accepted" was built against older data: apply it by
+hand or have it suggested again. Two accepted changes to different fields of one item both land; if they set
+the same field differently, the later one is skipped.
 
 A change to an entry that already had a stamp removes that stamp ("needs a new review"); stamp it again once it
 is approved.

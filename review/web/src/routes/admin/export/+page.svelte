@@ -13,6 +13,7 @@
 		type ReadyEntry
 	} from '#lib/api.ts';
 	import ErrorLine from '#lib/ErrorLine.svelte';
+	import { idsFromSummary } from '#lib/export.ts';
 	import { CREDIT_ROLES, DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
@@ -23,8 +24,10 @@
 	let actionError = $state<string | null>(null);
 	let notice = $state<string | null>(null);
 	let busy = $state(false);
-	/** Ticked rows, as `s<id>` (suggestions) and `t<id>` (stamps): everything is ticked when it loads. */
+	/** Ticked rows, as `s<id>` (suggestions) and `t<id>` (stamps). Nothing is ticked until the owner pastes
+	 * the PR summary's ids or ticks rows: what the pull skipped, or what came after it, must stay waiting. */
 	let ticked = $state<Set<string>>(new Set());
+	let pasted = $state('');
 
 	const dataset = (name: string) => DATASET_TITLES[name as Dataset] ?? name;
 	const credit = (c: { role: keyof typeof CREDIT_ROLES; name: string | null }) => c.name ?? CREDIT_ROLES[c.role];
@@ -35,7 +38,19 @@
 		const [r, b] = await Promise.all([getStampable(), getExport()]);
 		ready = r;
 		batch = b;
-		ticked = new Set([...b.suggestions.map((s) => `s${s.id}`), ...b.stamps.map((t) => `t${t.id}`)]);
+		ticked = new Set([...ticked].filter((k) => rowKeys(b).has(k)));
+	}
+
+	const rowKeys = (b: ExportBatch) =>
+		new Set([...b.suggestions.map((s) => `s${s.id}`), ...b.stamps.map((t) => `t${t.id}`)]);
+
+	/** Ticks exactly the ids in a pasted PR summary that are still waiting. */
+	function tickFromSummary() {
+		if (!batch) return;
+		const ids = idsFromSummary(pasted);
+		const keys = rowKeys(batch);
+		ticked = new Set([...ids.suggestions.map((id) => `s${id}`), ...ids.stamps.map((id) => `t${id}`)].filter((k) => keys.has(k)));
+		notice = ticked.size === 0 ? 'No waiting ids found in that text.' : null;
 	}
 
 	onMount(() => {
@@ -80,7 +95,8 @@
 			const ids = (prefix: string) =>
 				[...ticked].filter((k) => k.startsWith(prefix)).map((k) => Number(k.slice(1)));
 			const done = await markExported(ids('s'), ids('t'));
-			return `Marked ${done.suggestions} suggestions and ${done.stamps} stamps as exported.`;
+			const count = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+			return `Marked ${count(done.suggestions, 'suggestion')} and ${count(done.stamps, 'stamp')} as exported.`;
 		});
 </script>
 
@@ -125,12 +141,20 @@
 	<section aria-labelledby="waiting-heading">
 		<h2 id="waiting-heading">Waiting for export</h2>
 		<p class="hint">
-			Run <code>make review-pull</code> to put these in a data branch. After its PR merges, mark what it
-			contained.
+			Run <code>make review-pull</code> to put these in a data branch. After its PR merges, paste the
+			summary's last line ("Site suggestion ids: …") to tick exactly what it wrote, then mark those exported.
+			Anything it skipped stays here.
 		</p>
 		{#if empty}
 			<p class="quiet">Nothing is waiting for export.</p>
 		{:else}
+			<form class="paste" onsubmit={(e) => (e.preventDefault(), tickFromSummary())}>
+				<label>
+					<span>Ids from the PR summary</span>
+					<input type="text" bind:value={pasted} placeholder="Site suggestion ids: 12, 13. Stamp ids: none." />
+				</label>
+				<button type="submit">Tick these</button>
+			</form>
 			<ul class="rows">
 				{#each batch.suggestions as s (`s${s.id}`)}
 					<li>
@@ -143,7 +167,7 @@
 							<span class="kind">
 								{s.action === 'delete' ? 'Remove' : s.action === 'note' ? 'Note' : groupTitle(s)} · {dataset(s.dataset)}
 							</span>
-							<p class="credit">Credited as {credit(s.credit)}</p>
+							<p class="credit">Suggestion {s.id} · credited as {credit(s.credit)}</p>
 						</div>
 					</li>
 				{/each}
@@ -156,7 +180,7 @@
 						<div>
 							<a href={entryHref(t.dataset, t.item_id)} lang="ja">{t.item_title}</a>
 							<span class="kind">Stamp · {dataset(t.dataset)}</span>
-							<p class="credit">Credited as {credit({ role: t.by, name: t.name })}</p>
+							<p class="credit">Stamp {t.id} · credited as {credit({ role: t.by, name: t.name })}</p>
 						</div>
 						<button type="button" class="link" disabled={busy} onclick={() => unstamp(t.dataset, t.item_id)}>
 							Withdraw stamp
@@ -225,5 +249,19 @@
 
 	.tick {
 		display: flex;
+	}
+
+	.paste {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: end;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+	}
+
+	.paste label {
+		display: grid;
+		flex: 1 1 16rem;
+		gap: 0.3rem;
 	}
 </style>

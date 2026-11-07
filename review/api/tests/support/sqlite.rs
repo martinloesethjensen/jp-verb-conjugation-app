@@ -733,11 +733,15 @@ impl ReviewStore for SqliteStore {
         &self,
         id: i64,
         accept: bool,
-        admin_edit_json: Option<&str>,
-        furigana_json: Option<&str>,
+        edit: OwnerEdit<'_>,
         by: &str,
         now: &str,
     ) -> Result<(), StoreError> {
+        let OwnerEdit {
+            item_json: admin_edit_json,
+            furigana_json,
+            base_hash,
+        } = edit;
         let mut conn = self.conn.borrow_mut();
         let status: Vec<StatusRow> = query(&conn, SELECT_STATUS, params![id])?;
         match status.first() {
@@ -761,7 +765,15 @@ impl ReviewStore for SqliteStore {
         if tx
             .execute(
                 DECIDE,
-                params![id, status, admin_edit_json, by, now, furigana_json],
+                params![
+                    id,
+                    status,
+                    admin_edit_json,
+                    by,
+                    now,
+                    furigana_json,
+                    base_hash
+                ],
             )
             .map_err(backend)?
             == 0
