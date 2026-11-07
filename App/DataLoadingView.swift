@@ -1,34 +1,37 @@
 import SwiftUI
 import VerbKit
 
-/// What the app shows on a first run, before any verb data exists. It continues the
-/// launch screen: the same image in the same place on the same navy, so the hand-off
-/// does not move; the loading status or an error is layered on top.
+/// What the app shows on a first run, before any verb data exists. It continues the first
+/// frame: the theme's paper with its 活 seal at the launch image's exact size and place, so the
+/// hand-off doesn't move; the loading status sits under the seal, and an error card below it.
 struct DataLoadingView: View {
     let state: FirstLaunchState
     let onRetry: () -> Void
 
-    /// The launch screen's background colour (LaunchBackground in the asset catalog).
-    private let navy = Color(red: 0.043, green: 0.063, blue: 0.149)
+    @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var colorScheme
 
     private var failure: VerbSyncError? {
         if case .failed(let error) = state { return error }
         return nil
     }
 
+    private var stamp: ThemeStamp {
+        let choice = ThemeChoice.load(from: .appGroup)
+        return .stamp(for: choice.effectiveTheme(on: .now), isDark: colorScheme == .dark)
+    }
+
     var body: some View {
         ZStack {
-            navy.ignoresSafeArea()
+            palette.paper.ignoresSafeArea()
 
-            Image("LaunchImage")
-                .overlay(alignment: .bottom) {
-                    if failure == nil { status }
-                }
-                // With an error, the artwork shrinks upward to make room for the card.
-                .scaleEffect(failure == nil ? 1 : 0.6)
+            SealView(stamp: stamp, ink: palette.ink)
+                // With an error, the seal moves up to make room for the card.
                 .offset(y: failure == nil ? 0 : -110)
 
-            if let failure {
+            if failure == nil {
+                status.offset(y: SealView.side / 2 + 28)
+            } else if let failure {
                 VStack {
                     Spacer()
                     errorCard(failure)
@@ -38,8 +41,6 @@ struct DataLoadingView: View {
             }
         }
         .animation(.smooth, value: failure != nil)
-        // Light type and controls on the dark background, whatever the app's appearance.
-        .environment(\.colorScheme, .dark)
     }
 
     private var status: some View {
@@ -47,9 +48,8 @@ struct DataLoadingView: View {
             ProgressView()
             Text("Loading verb data…")
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(palette.muted)
         }
-        .padding(.bottom, 14)
     }
 
     private func errorCard(_ error: VerbSyncError) -> some View {
@@ -57,20 +57,20 @@ struct DataLoadingView: View {
         return VStack(spacing: 14) {
             Image(systemName: content.symbol)
                 .font(.system(size: 34))
-                .foregroundStyle(.white)
+                .foregroundStyle(palette.ink)
             Text(content.title)
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(palette.ink)
             Text(content.message)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.78))
+                .foregroundStyle(palette.muted)
             Button("Try Again", action: onRetry)
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.paper)
         }
-        .padding(24)
+        .padding(12)
         .frame(maxWidth: 420)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 28))
+        .paperCard(cornerRadius: 20, fillsWidth: false)
     }
 
     private static func content(for error: VerbSyncError) -> (symbol: String, title: String, message: String) {

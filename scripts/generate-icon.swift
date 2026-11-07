@@ -1,27 +1,42 @@
 #!/usr/bin/env swift
-// Renders the app icon and launch image into App/Assets.xcassets.
+// Renders the launch screen and the default iOS app icon into App/Assets.xcassets, and writes
+// the 活 outline as App/Launch/SealGlyph.swift so the app's first frame draws the same glyph.
 //
-//     swift scripts/generate-icon.swift
+//     swift scripts/generate-icon.swift --font <ShipporiMinchoB1-Bold.ttf> [repo-root]
 //
-// The art: a dark aurora (violet, teal, pink) with a frosted glass tile carrying 活
-// (from 活用, "conjugation"). Everything is drawn with CoreGraphics and CoreText so the
-// icon can be regenerated and tweaked without a design tool.
+// The art is the seal from the paper-and-ink design: 活 (from 活用, "conjugation") in Mincho
+// ink inside a stamp: the teacher's red circle in Light, a sumi brush circle in Dark. Everything
+// is drawn in one 120-unit box: 活 at an em of 60 with its bounding box centred, the stamp
+// scaled 0.84 about the centre, strokes at the board's width × 1.8. The font is used only here;
+// it is never committed or bundled (SIL Open Font License 1.1).
+// Mac icons are parked and left as they are.
 import CoreGraphics
 import CoreText
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-let root = URL(fileURLWithPath: CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : FileManager.default.currentDirectoryPath)
-let assets = root.appendingPathComponent("App/Assets.xcassets")
+let fontURL = "https://github.com/google/fonts/raw/main/ofl/shipporiminchob1/ShipporiMinchoB1-Bold.ttf"
+var args = Array(CommandLine.arguments.dropFirst())
+guard let flag = args.firstIndex(of: "--font"), flag + 1 < args.count else {
+    FileHandle.standardError.write("""
+    usage: swift scripts/generate-icon.swift --font <ShipporiMinchoB1-Bold.ttf> [repo-root]
+    Download the font (SIL Open Font License 1.1) from:
+      \(fontURL)
 
+    """.data(using: .utf8)!)
+    exit(1)
+}
+let fontPath = args[flag + 1]
+args.removeSubrange(flag...(flag + 1))
+let root = URL(fileURLWithPath: args.first ?? FileManager.default.currentDirectoryPath)
+let assets = root.appendingPathComponent("App/Assets.xcassets")
 let space = CGColorSpace(name: CGColorSpace.sRGB)!
 
 func color(_ hex: UInt32, _ alpha: CGFloat = 1) -> CGColor {
-    CGColor(
-        colorSpace: space,
-        components: [CGFloat((hex >> 16) & 255) / 255, CGFloat((hex >> 8) & 255) / 255, CGFloat(hex & 255) / 255, alpha]
-    )!
+    CGColor(colorSpace: space, components: [
+        CGFloat((hex >> 16) & 255) / 255, CGFloat((hex >> 8) & 255) / 255, CGFloat(hex & 255) / 255, alpha,
+    ])!
 }
 
 func makeContext(_ width: Int, _ height: Int) -> CGContext {
@@ -30,231 +45,228 @@ func makeContext(_ width: Int, _ height: Int) -> CGContext {
         space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     )!
     ctx.interpolationQuality = .high
+    ctx.setShouldAntialias(true)
     return ctx
 }
 
 func write(_ ctx: CGContext, to url: URL) throws {
-    let image = ctx.makeImage()!
     let dest = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)!
-    CGImageDestinationAddImage(dest, image, nil)
+    CGImageDestinationAddImage(dest, ctx.makeImage()!, nil)
     guard CGImageDestinationFinalize(dest) else { throw NSError(domain: "icon", code: 1) }
 }
 
-/// A soft blob of colour: opaque in the middle, transparent at `radius`.
-func blob(_ ctx: CGContext, at center: CGPoint, radius: CGFloat, hex: UInt32, alpha: CGFloat = 1) {
-    let gradient = CGGradient(
-        colorsSpace: space,
-        // A gaussian-like falloff, so no blob has a visible edge.
-        colors: [1.0, 0.78, 0.46, 0.2, 0.06, 0].map { color(hex, alpha * $0) } as CFArray,
-        locations: [0, 0.2, 0.42, 0.65, 0.85, 1]
-    )!
-    ctx.drawRadialGradient(gradient, startCenter: center, startRadius: 0, endCenter: center, endRadius: radius, options: [])
+// MARK: The glyph, in the 120-unit box, y down, rounded to 0.01.
+
+enum Step {
+    case move(CGPoint), line(CGPoint), quad(CGPoint, CGPoint), cubic(CGPoint, CGPoint, CGPoint), close
 }
 
-/// The aurora, laid out in unit coordinates (0,0 bottom-left to 1,1 top-right) of `rect`.
-func aurora(_ ctx: CGContext, in rect: CGRect, variant: Variant = .standard) {
-    func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * rect.width, y: rect.minY + y * rect.height) }
-    let r = min(rect.width, rect.height)
-    let c = variant.blobColors, k = variant.blobStrength
-    blob(ctx, at: p(0.22, 0.80), radius: r * 0.60, hex: c[0], alpha: k)         // top left
-    blob(ctx, at: p(0.84, 0.74), radius: r * 0.54, hex: c[1], alpha: k)         // top right
-    blob(ctx, at: p(0.50, 0.08), radius: r * 0.58, hex: c[2], alpha: 0.9 * k)   // bottom
+func round2(_ p: CGPoint) -> CGPoint {
+    CGPoint(x: (p.x * 100).rounded() / 100, y: (p.y * 100).rounded() / 100)
 }
 
-/// The three looks iOS asks for: the normal icon, the dark-mode icon (deeper, calmer)
-/// and the tinted icon (monochrome, so the system can tint it with any colour).
-enum Variant {
-    case standard, dark, tinted
-
-    var background: UInt32 {
-        switch self {
-        case .standard: return 0x0B1026
-        case .dark: return 0x05070F
-        case .tinted: return 0x101010
+func glyphSteps() -> [Step] {
+    guard let descriptors = CTFontManagerCreateFontDescriptorsFromURL(URL(fileURLWithPath: fontPath) as CFURL) as? [CTFontDescriptor],
+          let descriptor = descriptors.first else {
+        FileHandle.standardError.write("can't read a font from \(fontPath)\n".data(using: .utf8)!)
+        exit(1)
+    }
+    let font = CTFontCreateWithFontDescriptor(descriptor, 60, nil)
+    var chars: [UniChar] = Array("活".utf16)
+    var glyphs = [CGGlyph](repeating: 0, count: chars.count)
+    guard CTFontGetGlyphsForCharacters(font, &chars, &glyphs, chars.count),
+          let raw = CTFontCreatePathForGlyph(font, glyphs[0], nil) else {
+        FileHandle.standardError.write("the font has no 活\n".data(using: .utf8)!)
+        exit(1)
+    }
+    // Flip to y-down and centre the bounding box on (60, 60).
+    let box = raw.boundingBoxOfPath
+    var flip = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 60 - box.midX, ty: 60 + box.midY)
+    let path = raw.copy(using: &flip)!
+    var steps: [Step] = []
+    path.applyWithBlock { element in
+        let e = element.pointee
+        switch e.type {
+        case .moveToPoint: steps.append(.move(round2(e.points[0])))
+        case .addLineToPoint: steps.append(.line(round2(e.points[0])))
+        case .addQuadCurveToPoint: steps.append(.quad(round2(e.points[1]), round2(e.points[0])))
+        case .addCurveToPoint: steps.append(.cubic(round2(e.points[2]), round2(e.points[0]), round2(e.points[1])))
+        case .closeSubpath: steps.append(.close)
+        @unknown default: break
         }
     }
-    var blobColors: [UInt32] {
-        self == .tinted ? [0xFFFFFF, 0xFFFFFF, 0xFFFFFF] : [0x8A5BFF, 0x23D5C3, 0xFF5FA2]
-    }
-    var blobStrength: CGFloat {
-        switch self {
-        case .standard: return 1
-        case .dark: return 0.62
-        case .tinted: return 0.34
+    return steps
+}
+
+let glyph = glyphSteps()
+
+func glyphPath() -> CGPath {
+    let p = CGMutablePath()
+    for step in glyph {
+        switch step {
+        case let .move(to): p.move(to: to)
+        case let .line(to): p.addLine(to: to)
+        case let .quad(to, c): p.addQuadCurve(to: to, control: c)
+        case let .cubic(to, c1, c2): p.addCurve(to: to, control1: c1, control2: c2)
+        case .close: p.closeSubpath()
         }
     }
+    return p
 }
 
-func tilePath(_ rect: CGRect) -> CGPath {
-    CGPath(roundedRect: rect, cornerWidth: rect.width * 0.26, cornerHeight: rect.width * 0.26, transform: nil)
+// MARK: The two default stamps, in absolute box units. Same data as VerbKit's
+// StampShape.teacher / .sumi (this script can't import VerbKit).
+
+func teacherPath() -> CGPath {
+    // M60 10C87 9 110 31 109 60c-1 28-23 50-51 49C31 108 10 87 11 59 12 34 31 14 57 11
+    let p = CGMutablePath()
+    p.move(to: CGPoint(x: 60, y: 10))
+    p.addCurve(to: CGPoint(x: 109, y: 60), control1: CGPoint(x: 87, y: 9), control2: CGPoint(x: 110, y: 31))
+    p.addCurve(to: CGPoint(x: 58, y: 109), control1: CGPoint(x: 108, y: 88), control2: CGPoint(x: 86, y: 110))
+    p.addCurve(to: CGPoint(x: 11, y: 59), control1: CGPoint(x: 31, y: 108), control2: CGPoint(x: 10, y: 87))
+    p.addCurve(to: CGPoint(x: 57, y: 11), control1: CGPoint(x: 12, y: 34), control2: CGPoint(x: 31, y: 14))
+    return p
 }
 
-func glyph(_ text: String, size: CGFloat, weight: String, color hex: UInt32, in rect: CGRect, ctx: CGContext, dy: CGFloat = 0) {
-    let font = CTFontCreateWithName(weight as CFString, size, nil)
-    let attributes: [CFString: Any] = [kCTFontAttributeName: font, kCTForegroundColorAttributeName: color(hex)]
-    let line = CTLineCreateWithAttributedString(CFAttributedStringCreate(nil, text as CFString, attributes as CFDictionary))
-    let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
-    ctx.saveGState()
-    ctx.textPosition = CGPoint(x: rect.midX - bounds.midX, y: rect.midY - bounds.midY + dy)
-    CTLineDraw(line, ctx)
-    ctx.restoreGState()
+func sumiPath() -> CGPath {
+    // M98 34C88 16 70 9 52 12 28 16 12 38 14 62s6 48 46 48c22 0 40-12 47-32
+    let p = CGMutablePath()
+    p.move(to: CGPoint(x: 98, y: 34))
+    p.addCurve(to: CGPoint(x: 52, y: 12), control1: CGPoint(x: 88, y: 16), control2: CGPoint(x: 70, y: 9))
+    p.addCurve(to: CGPoint(x: 14, y: 62), control1: CGPoint(x: 28, y: 16), control2: CGPoint(x: 12, y: 38))
+    // The lower-left sweep swings wide enough to keep 活's left stroke clear (same gap as the teacher's circle).
+    p.addCurve(to: CGPoint(x: 60, y: 110), control1: CGPoint(x: 16, y: 86), control2: CGPoint(x: 20, y: 110))
+    p.addCurve(to: CGPoint(x: 107, y: 78), control1: CGPoint(x: 82, y: 110), control2: CGPoint(x: 100, y: 98))
+    return p
 }
 
-/// The frosted glass tile with the 活 glyph on it.
-func glassTile(_ ctx: CGContext, rect: CGRect) {
-    let path = tilePath(rect)
-    let u = rect.width / 100   // one "percent" of the tile
+struct Look {
+    let paper: CGColor?
+    let stamp: CGPath
+    let stampWidth: CGFloat   // the board's base width
+    let stampColor: CGColor
+    let ink: CGColor
+}
 
-    // Soft shadow around the tile, drawn only outside it so the glass stays clear.
+let light = Look(paper: color(0xF6F7F4), stamp: teacherPath(), stampWidth: 3, stampColor: color(0xC2372B), ink: color(0x1E2633))
+let dark = Look(paper: color(0x14171C), stamp: sumiPath(), stampWidth: 7, stampColor: color(0xE9EBE6), ink: color(0xE9EBE6))
+let tinted = Look(paper: color(0x000000), stamp: teacherPath(), stampWidth: 3, stampColor: color(0xFFFFFF, 0.6), ink: color(0xFFFFFF, 0.95))
+
+/// Draws the seal filling a `px` square: optional paper, the stamp, then 活.
+func seal(_ look: Look, px: Int, transparent: Bool) -> CGContext {
+    let ctx = makeContext(px, px)
+    if !transparent, let paper = look.paper {
+        ctx.setFillColor(paper)
+        ctx.fill(CGRect(x: 0, y: 0, width: px, height: px))
+    }
+    // Box units, y down.
+    ctx.translateBy(x: 0, y: CGFloat(px))
+    ctx.scaleBy(x: CGFloat(px) / 120, y: -CGFloat(px) / 120)
+
     ctx.saveGState()
-    ctx.addRect(rect.insetBy(dx: -rect.width, dy: -rect.height))
-    ctx.addPath(path)
-    ctx.clip(using: .evenOdd)
-    ctx.setShadow(offset: CGSize(width: 0, height: -u * 5), blur: u * 12, color: color(0x000000, 0.38))
-    ctx.addPath(path)
-    ctx.setFillColor(color(0x000000, 1))
-    ctx.fillPath()
-    ctx.restoreGState()
-
-    // Glass body: a diagonal wash of white, strongest top left.
-    ctx.saveGState()
-    ctx.addPath(path)
-    ctx.clip()
-    let body = CGGradient(
-        colorsSpace: space,
-        colors: [color(0xFFFFFF, 0.46), color(0xFFFFFF, 0.14)] as CFArray, locations: [0, 1]
-    )!
-    ctx.drawLinearGradient(body, start: CGPoint(x: rect.minX, y: rect.maxY), end: CGPoint(x: rect.maxX, y: rect.minY), options: [])
-
-    // Specular sheen across the upper half.
-    let sheen = CGGradient(
-        colorsSpace: space,
-        colors: [color(0xFFFFFF, 0.38), color(0xFFFFFF, 0)] as CFArray, locations: [0, 1]
-    )!
-    ctx.drawLinearGradient(
-        sheen,
-        start: CGPoint(x: rect.minX, y: rect.maxY),
-        end: CGPoint(x: rect.minX + rect.width * 0.55, y: rect.minY + rect.height * 0.35),
-        options: []
-    )
-
-    // Thin inner highlight along the top edge.
-    ctx.setStrokeColor(color(0xFFFFFF, 0.7))
-    ctx.setLineWidth(u * 1.6)
-    ctx.addPath(tilePath(rect.insetBy(dx: u * 0.8, dy: u * 0.8)))
+    ctx.translateBy(x: 60, y: 60)
+    ctx.scaleBy(x: 0.84, y: 0.84)
+    ctx.translateBy(x: -60, y: -60)
+    ctx.addPath(look.stamp)
+    ctx.setStrokeColor(look.stampColor)
+    ctx.setLineWidth(look.stampWidth * 1.8)
+    ctx.setLineCap(.round)
+    ctx.setLineJoin(.round)
     ctx.strokePath()
     ctx.restoreGState()
 
-    // Crisp rim.
-    ctx.saveGState()
-    ctx.addPath(path)
-    ctx.setStrokeColor(color(0xFFFFFF, 0.6))
-    ctx.setLineWidth(u * 1.4)
-    ctx.strokePath()
-    ctx.restoreGState()
-
-    // The glyph, with a faint shadow so it lifts off the glass.
-    ctx.saveGState()
-    ctx.setShadow(offset: CGSize(width: 0, height: -u * 2.4), blur: u * 5, color: color(0x1B1050, 0.35))
-    glyph("活", size: rect.width * 0.8, weight: "HiraginoSans-W8", color: 0xFFFFFF, in: rect, ctx: ctx, dy: -rect.width * 0.015)
-    ctx.restoreGState()
-}
-
-// MARK: iOS icon: full-bleed 1024 square (the system applies the corner mask).
-
-func iosIcon(_ variant: Variant = .standard) -> CGContext {
-    let size = 1024
-    let ctx = makeContext(size, size)
-    let full = CGRect(x: 0, y: 0, width: size, height: size)
-    ctx.setFillColor(color(variant.background))
-    ctx.fill(full)
-    aurora(ctx, in: full, variant: variant)
-    glassTile(ctx, rect: CGRect(x: 1024 * 0.20, y: 1024 * 0.20, width: 1024 * 0.60, height: 1024 * 0.60))
-    return ctx
-}
-
-// MARK: Mac icon: the same art in a rounded square inset on a transparent 1024 canvas.
-
-func macIcon() -> CGContext {
-    let size = 1024
-    let ctx = makeContext(size, size)
-    let body = CGRect(x: 100, y: 100, width: 824, height: 824)
-    let path = CGPath(roundedRect: body, cornerWidth: 185, cornerHeight: 185, transform: nil)
-
-    ctx.saveGState()
-    ctx.setShadow(offset: CGSize(width: 0, height: -12), blur: 24, color: color(0x000000, 0.4))
-    ctx.addPath(path)
-    ctx.setFillColor(color(0x0B1026))
+    ctx.addPath(glyphPath())
+    ctx.setFillColor(look.ink)
     ctx.fillPath()
-    ctx.restoreGState()
-
-    ctx.saveGState()
-    ctx.addPath(path)
-    ctx.clip()
-    ctx.setFillColor(color(0x0B1026))
-    ctx.fill(body)
-    aurora(ctx, in: body)
-    glassTile(ctx, rect: CGRect(x: body.minX + body.width * 0.20, y: body.minY + body.height * 0.20, width: body.width * 0.60, height: body.height * 0.60))
-    ctx.restoreGState()
     return ctx
 }
 
-func scaled(_ source: CGContext, to size: Int) -> CGContext {
-    let ctx = makeContext(size, size)
-    ctx.draw(source.makeImage()!, in: CGRect(x: 0, y: 0, width: size, height: size))
-    return ctx
-}
+// MARK: Generated Swift.
 
-// MARK: Launch image: transparent PNG with a glow, the tile and the title. The
-// launch background colour is the same navy, so the glow melts into it on any screen.
+func swiftSource() -> String {
+    func f(_ v: CGFloat) -> String { String(format: "%.2f", v) }
+    func pt(_ p: CGPoint) -> String { "CGPoint(x: \(f(p.x)), y: \(f(p.y)))" }
+    var lines: [String] = []
+    for step in glyph {
+        switch step {
+        case let .move(to): lines.append("        p.move(to: \(pt(to)))")
+        case let .line(to): lines.append("        p.addLine(to: \(pt(to)))")
+        case let .quad(to, c): lines.append("        p.addQuadCurve(to: \(pt(to)), control: \(pt(c)))")
+        case let .cubic(to, c1, c2): lines.append("        p.addCurve(to: \(pt(to)), control1: \(pt(c1)), control2: \(pt(c2)))")
+        case .close: lines.append("        p.closeSubpath()")
+        }
+    }
+    return """
+    // Generated by scripts/generate-icon.swift from Shippori Mincho B1 Bold (SIL Open Font License 1.1).
+    // Do not edit: rerun the script instead.
+    import SwiftUI
 
-func launchImage(scale: Int) -> CGContext {
-    let w = 360 * scale, h = 460 * scale
-    let ctx = makeContext(w, h)
-    let s = CGFloat(scale)
-    let area = CGRect(x: 0, y: 0, width: w, height: h)
+    /// 活, outlined from Shippori Mincho B1 in the seal's 120-unit box (em 60, centred, y down):
+    /// the same outline the launch image and the app icon are drawn with.
+    enum SealGlyph {
+        static func path(in rect: CGRect) -> Path {
+            unit.applying(
+                CGAffineTransform(scaleX: rect.width / 120, y: rect.height / 120)
+                    .concatenating(CGAffineTransform(translationX: rect.minX, y: rect.minY))
+            )
+        }
 
-    // Aurora glow centred behind the tile, fading out before the edges.
-    let tile = CGRect(x: (CGFloat(w) - 190 * s) / 2, y: 190 * s, width: 190 * s, height: 190 * s)
-    blob(ctx, at: CGPoint(x: 125 * s, y: 335 * s), radius: 110 * s, hex: 0x8A5BFF, alpha: 0.85)
-    blob(ctx, at: CGPoint(x: 240 * s, y: 320 * s), radius: 100 * s, hex: 0x23D5C3, alpha: 0.8)
-    blob(ctx, at: CGPoint(x: 180 * s, y: 215 * s), radius: 110 * s, hex: 0xFF5FA2, alpha: 0.6)
-    _ = area
+        private static let unit: Path = {
+            var p = Path()
+    \(lines.joined(separator: "\n"))
+            return p
+        }()
+    }
 
-    glassTile(ctx, rect: tile)
-
-    // Title and tagline.
-    glyph("早見表", size: 38 * s, weight: "HiraginoSans-W7", color: 0xFFFFFF, in: CGRect(x: 0, y: 112 * s, width: CGFloat(w), height: 44 * s), ctx: ctx)
-    let tagline = CFAttributedStringCreate(nil, "VERB CONJUGATION" as CFString, [
-        kCTFontAttributeName: CTFontCreateWithName("HelveticaNeue-Medium" as CFString, 11 * s, nil),
-        kCTForegroundColorAttributeName: color(0xFFFFFF, 0.72),
-        kCTKernAttributeName: 3.2 * s,
-    ] as CFDictionary)!
-    let line = CTLineCreateWithAttributedString(tagline)
-    let b = CTLineGetBoundsWithOptions(line, [])
-    ctx.textPosition = CGPoint(x: (CGFloat(w) - b.width) / 2, y: 86 * s)
-    CTLineDraw(line, ctx)
-    return ctx
+    """
 }
 
 // MARK: Write everything.
 
-let iconSet = assets.appendingPathComponent("AppIcon.appiconset")
-try write(iosIcon(), to: iconSet.appendingPathComponent("icon-1024.png"))
-try write(iosIcon(.dark), to: iconSet.appendingPathComponent("icon-1024-dark.png"))
-try write(iosIcon(.tinted), to: iconSet.appendingPathComponent("icon-1024-tinted.png"))
-
-let mac = macIcon()
-for (name, px) in [
-    ("mac-16.png", 16), ("mac-16@2x.png", 32), ("mac-32.png", 32), ("mac-32@2x.png", 64),
-    ("mac-128.png", 128), ("mac-128@2x.png", 256), ("mac-256.png", 256), ("mac-256@2x.png", 512),
-    ("mac-512.png", 512), ("mac-512@2x.png", 1024),
-] {
-    try write(px == 1024 ? mac : scaled(mac, to: px), to: iconSet.appendingPathComponent(name))
-}
-
 let launchSet = assets.appendingPathComponent("LaunchImage.imageset")
-for scale in 1...3 {
-    try write(launchImage(scale: scale), to: launchSet.appendingPathComponent("launch-image@\(scale)x.png"))
+for old in (try? FileManager.default.contentsOfDirectory(atPath: launchSet.path)) ?? [] where old.hasSuffix(".png") {
+    try FileManager.default.removeItem(at: launchSet.appendingPathComponent(old))
 }
-print("wrote icon and launch image into \(assets.path)")
+var launchImages: [[String: Any]] = []
+for (name, look, isDark) in [("launch-light", light, false), ("launch-dark", dark, true)] {
+    for scale in 1...3 {
+        let file = "\(name)@\(scale)x.png"
+        try write(seal(look, px: 122 * scale, transparent: true), to: launchSet.appendingPathComponent(file))
+        var entry: [String: Any] = ["filename": file, "idiom": "universal", "scale": "\(scale)x"]
+        if isDark { entry["appearances"] = [["appearance": "luminosity", "value": "dark"]] }
+        launchImages.append(entry)
+    }
+}
+
+func writeJSON(_ object: [String: Any], to url: URL) throws {
+    let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
+    try (String(data: data, encoding: .utf8)! + "\n").write(to: url, atomically: true, encoding: .utf8)
+}
+
+let info: [String: Any] = ["author": "xcode", "version": 1]
+try writeJSON(["images": launchImages, "info": info], to: launchSet.appendingPathComponent("Contents.json"))
+
+func colorEntry(_ hex: UInt32, dark: Bool) -> [String: Any] {
+    func c(_ shift: UInt32) -> String { String(format: "%.3f", Double((hex >> shift) & 255) / 255) }
+    var entry: [String: Any] = [
+        "color": ["color-space": "srgb", "components": ["alpha": "1.000", "red": c(16), "green": c(8), "blue": c(0)]],
+        "idiom": "universal",
+    ]
+    if dark { entry["appearances"] = [["appearance": "luminosity", "value": "dark"]] }
+    return entry
+}
+try writeJSON(
+    ["colors": [colorEntry(0xF6F7F4, dark: false), colorEntry(0x14171C, dark: true)], "info": info],
+    to: assets.appendingPathComponent("LaunchBackground.colorset/Contents.json")
+)
+
+let iconSet = assets.appendingPathComponent("AppIcon.appiconset")
+try write(seal(light, px: 1024, transparent: false), to: iconSet.appendingPathComponent("icon-1024.png"))
+try write(seal(dark, px: 1024, transparent: false), to: iconSet.appendingPathComponent("icon-1024-dark.png"))
+try write(seal(tinted, px: 1024, transparent: false), to: iconSet.appendingPathComponent("icon-1024-tinted.png"))
+
+let swiftDir = root.appendingPathComponent("App/Launch")
+try FileManager.default.createDirectory(at: swiftDir, withIntermediateDirectories: true)
+try swiftSource().write(to: swiftDir.appendingPathComponent("SealGlyph.swift"), atomically: true, encoding: .utf8)
+
+print("wrote the launch image, the iOS icons and App/Launch/SealGlyph.swift (\(glyph.count) path steps)")
