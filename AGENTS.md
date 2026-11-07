@@ -140,7 +140,8 @@ Run `make` for the full list. Common ones:
 | `QuizHeader`, `QuizChoiceGrid` | Quiz progress/score header and two-column answer grid |
 | `QuizPromptCard`, `QuizFeedbackCard`, `QuizMissedCard` | Question, feedback and missed-question card surfaces |
 | `quizAdvanceBar`, `quizQuitDialog` | Pinned Next/See Results button and the quit confirmation |
-| `QuizResultsSummary` | Counter and connection quiz results; the verb quiz keeps its own `QuizResultsView` |
+| `QuizScoreCard`, `quizResultsActions(practise:onPractise:onDone:)` | The results score in a red hand-drawn ring on ruled paper, and the pinned Practise/Done buttons |
+| `QuizResultsSummary` | Counter and connection quiz results, built on `QuizScoreCard`; the verb quiz keeps its own `QuizResultsView` |
 | `LevelScopeBar`, `HiddenMatchesRow`, `NoMatchInLevelsView` | "My levels / All levels" search behavior |
 | `accentPill(_:)` | Pastel Liquid Glass capsule; used by `TypeLabel` for filled pills — prefer `TypeLabel` |
 | `formCard()` | Quiet grouped-card surface for form tables |
