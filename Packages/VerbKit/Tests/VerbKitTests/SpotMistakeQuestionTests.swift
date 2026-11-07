@@ -107,6 +107,28 @@ final class SpotMistakeQuestionTests: XCTestCase {
         XCTAssertEqual(q.corrects, ["静かなので"])
     }
 
+    /// Lesson mistakes route to their own pitfall, so "Open <lesson>" lands on it; borrowing
+    /// correct sentences still pools the whole lesson, whatever the pitfall index.
+    func testLessonLinkKeepsThePitfallAnchorAndBorrowingIgnoresIt() throws {
+        let bare = mistake("node#0", wrong: "x", examples: [], source: .grammar("node", pitfall: 0))
+        let sibling = mistake("node#1", wrong: nil, examples: ["静かなので。"], source: .grammar("node", pitfall: 1))
+        let other = mistake("tai#0", wrong: nil, examples: ["食べたい。"], source: .grammar("tai", pitfall: 0))
+        let q = try XCTUnwrap(buildSpotMistakeQuestions(mistakes: [bare, sibling, other], counters: [], count: 5).first)
+        XCTAssertEqual(q.corrects, ["静かなので"])
+        XCTAssertEqual(q.source, .grammar("node", pitfall: 0))
+    }
+
+    func testRealDataQuestionsLinkToTheirPitfall() throws {
+        let g = try JSONDecoder().decode(GrammarDataFile.self, from: Data(contentsOf: dataURL("grammar.json")))
+        let c = try JSONDecoder().decode(CountersDataFile.self, from: Data(contentsOf: dataURL("counters.json")))
+        let mistakes = CommonMistakes.build(grammar: g.grammar, counters: c.counters)
+        for q in buildSpotMistakeQuestions(mistakes: mistakes, counters: c.counters, count: 1000)
+        where !q.mistakeID.hasPrefix("counter:") {
+            let parts = q.mistakeID.split(separator: "#")
+            XCTAssertEqual(q.source, .grammar(String(parts[0]), pitfall: Int(parts[1])), q.mistakeID)
+        }
+    }
+
     func testNoCorrectFormToShowMeansNoQuestion() {
         let bare = mistake("node#0", wrong: "x", examples: [], source: .grammar("node"))
         let elsewhere = mistake("tai#0", wrong: nil, examples: ["食べたい。"], source: .grammar("tai"))

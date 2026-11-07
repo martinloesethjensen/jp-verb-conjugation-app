@@ -6,8 +6,8 @@ use crate::auth::Principal;
 use crate::data::DataFile;
 use crate::items::Kind;
 use crate::proposal::{
-    add_fields_of, add_title, build_add, check_furigana, find_part, random_stable_id,
-    stable_ids_of, AddError, Taken,
+    add_fields_of, add_title, build_add, check_furigana, find_part, fingerprint_of, random_stable_id,
+    same_loaded_verb, stable_ids_of, AddError, Taken,
 };
 use crate::review_routes::{
     loaded_target, ok, reference_sets, suggestion_response, target, text_field, tri, unavailable,
@@ -88,6 +88,27 @@ fn taken_by<'a>(
     }
 }
 
+/// A new verb that is already loaded under its kana with the same kanji (the id rule would otherwise give
+/// it a `kana:kanji` id of its own).
+async fn loaded_twin<S: Store + ReviewStore>(
+    store: &S,
+    body: &AddBody,
+    file: DataFile,
+    kind: Kind,
+    loaded: &BTreeSet<String>,
+) -> Result<Option<AddError>, ApiResponse> {
+    let dict = body.fields.get("dict").and_then(Value::as_str).unwrap_or("").trim();
+    if file != DataFile::Verbs || kind != Kind::Entry || !loaded.contains(dict) {
+        return Ok(None);
+    }
+    let Some((json, _)) = store.entry(&body.dataset, dict).await.map_err(unavailable)? else {
+        return Ok(None);
+    };
+    let verb: Value =
+        serde_json::from_str(&json).map_err(|_| error(500, "the database is unavailable"))?;
+    Ok(same_loaded_verb(&verb, &body.fields))
+}
+
 fn add_error(e: AddError) -> ApiResponse {
     match e {
         AddError::Invalid(message) => error(400, &message),
@@ -122,35 +143,53 @@ pub async fn add<S: Store + ReviewStore>(
         None => None,
     };
     let (loaded, suggested) = tri!(store.ids_taken(&body.dataset).await.map_err(unavailable));
+    if let Some(e) = tri!(loaded_twin(store, &body, file, kind, &loaded).await) {
+        return add_error(e);
+    }
     let (form_ids, readings) = tri!(reference_sets(store).await);
-    let taken = taken_by(&loaded, &suggested, &[]);
-    let built = build_add(
-        file,
-        kind,
-        parent.as_ref().map(|(value, k, _)| (value, *k)),
-        &body.fields,
-        &form_ids,
-        &mut random_stable_id,
-        &taken,
-    );
-    let new = match built {
+    let furigana_json = tri!(readings_json(body.furigana.as_ref(), &readings));
+    let comment = tri!(text_field(body.comment.as_deref().unwrap_or(""), "comment"));
+    let build = |own: &[String]| {
+        build_add(
+            file,
+            kind,
+            parent.as_ref().map(|(value, k, _)| (value, *k)),
+            &body.fields,
+            &form_ids,
+            &mut random_stable_id,
+            &taken_by(&loaded, &suggested, own),
+        )
+    };
+    let new = match build(&[]) {
         Ok(new) => new,
-        // A double tap on a new entry: the reviewer's own open addition of the same id comes back.
+        // The reviewer's own open addition of this id: a double tap gets it back; a changed version is
+        // refused, since the id can hold only one suggestion.
         Err(AddError::Conflict { message, id }) if suggested.contains(&id) => {
-            if let Ok(Some(existing)) = store.open_add_for(&body.dataset, kind.as_str(), &id).await
-            {
-                if let Ok(Some(s)) = store.suggestion(existing, &by.email).await {
-                    if s.mine {
-                        return ok(200, json!(s));
-                    }
-                }
-            }
-            return error(409, &message);
+            let mine = match store.open_add_for(&body.dataset, kind.as_str(), &id).await {
+                Ok(Some(existing)) => match store.suggestion(existing, &by.email).await {
+                    Ok(Some(s)) if s.mine => s,
+                    _ => return error(409, &message),
+                },
+                _ => return error(409, &message),
+            };
+            let again = tri!(build(std::slice::from_ref(&id)).map_err(add_error));
+            let furigana = furigana_json.as_deref().and_then(|f| serde_json::from_str(f).ok());
+            let same = mine.proposed.as_ref().map(fingerprint_of) == Some(again.fingerprint)
+                && mine.furigana == furigana
+                && mine.comment == comment;
+            return if same {
+                ok(200, json!(mine))
+            } else {
+                error(
+                    409,
+                    &format!(
+                        "you already suggested adding {id}; withdraw that suggestion to send a changed one"
+                    ),
+                )
+            };
         }
         Err(e) => return add_error(e),
     };
-    let furigana_json = tri!(readings_json(body.furigana.as_ref(), &readings));
-    let comment = tri!(text_field(body.comment.as_deref().unwrap_or(""), "comment"));
     let entry_id = parent
         .as_ref()
         .map(|(_, _, entry_id)| entry_id.clone())

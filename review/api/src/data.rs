@@ -195,6 +195,9 @@ pub struct Verb {
     pub examples: Vec<VerbExample>,
     #[serde(default)]
     pub collocations: Option<Vec<Collocation>>,
+    /// The verb's transitive/intransitive partner (#58). Authored, so it is part of the entry's hash.
+    #[serde(default)]
+    pub pair: Option<VerbPair>,
     #[serde(default)]
     pub id: Option<String>,
     /// A string, `null` or missing (the schema allows all three).
@@ -221,6 +224,23 @@ pub struct Collocation {
     pub id: String,
     pub jp: String,
     pub en: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VerbPair {
+    /// The partner verb's id.
+    pub verb: String,
+    pub transitivity: Transitivity,
+    pub jp: String,
+    pub en: String,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Transitivity {
+    Transitive,
+    Intransitive,
 }
 
 // --- words.json ---------------------------------------------------------------------------------

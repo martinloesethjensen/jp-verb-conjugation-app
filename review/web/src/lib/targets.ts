@@ -188,3 +188,19 @@ export function editForm(s: {
 	const current = s.current ?? {};
 	return { base: current, start: s.stale || !s.proposed ? current : { ...current, ...s.proposed } };
 }
+
+/** Where a suggestion is seen on the site: its entry at its part; a new part at the part it goes under (it
+ * has no place of its own yet); a new entry in its dataset's list of suggested additions. */
+export function suggestionHref(s: {
+	action: string;
+	dataset: string;
+	kind: string;
+	item_id: string;
+	entry_id: string;
+	parent_kind?: string | null;
+	parent_id?: string | null;
+}): string {
+	if (s.action === 'add' && s.kind === 'entry') return `/browse/${s.dataset}#additions-heading`;
+	const anchor = s.action === 'add' ? (s.parent_kind === 'entry' ? null : s.parent_id) : s.kind === 'entry' ? null : s.item_id;
+	return `/item?${new URLSearchParams({ dataset: s.dataset, id: s.entry_id })}${anchor ? `#${anchor}` : ''}`;
+}

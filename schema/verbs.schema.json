@@ -151,6 +151,38 @@
         }
       }
     },
+    "pair": {
+      "type": "object",
+      "required": [
+        "verb",
+        "transitivity",
+        "jp",
+        "en"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "verb": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The partner verb's id."
+        },
+        "transitivity": {
+          "enum": [
+            "transitive",
+            "intransitive"
+          ],
+          "description": "This verb's half: transitive takes を, intransitive が."
+        },
+        "jp": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "verb": {
       "type": "object",
       "required": [
@@ -219,6 +251,9 @@
           "items": {
             "$ref": "#/$defs/collocation"
           }
+        },
+        "pair": {
+          "$ref": "#/$defs/pair"
         },
         "id": {
           "type": "string",

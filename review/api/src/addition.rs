@@ -273,6 +273,23 @@ fn without_ids(value: &Value) -> Value {
     }
 }
 
+/// An item without its ids, as canonical JSON: two submissions of the same new item match on it.
+pub fn fingerprint_of(item: &Value) -> String {
+    canonical_json(&without_ids(item))
+}
+
+/// The error for a new verb whose kana and kanji match `loaded`, the verb already under that kana.
+pub fn same_loaded_verb(loaded: &Value, submitted: &Map<String, Value>) -> Option<AddError> {
+    let text = |v: Option<&Value>| v.and_then(Value::as_str).unwrap_or("").trim().to_string();
+    let (dict, kanji) = (text(submitted.get("dict")), text(submitted.get("kanji")));
+    (!kanji.is_empty() && text(loaded.get("dict")) == dict && text(loaded.get("kanji")) == kanji).then(|| {
+        AddError::Conflict {
+            message: format!("{dict} ({kanji}) is already in the data"),
+            id: dict.clone(),
+        }
+    })
+}
+
 /// The new item for `kind` in `file`, built from the reviewer's fields. `parent` is where a part goes (the
 /// parent object and its kind); entries take none. `next_id` yields candidate stable ids and `taken` says
 /// whether an id is in use.
@@ -414,7 +431,7 @@ pub fn build_add(
         Kind::Entry => check_entry(file, &item).map_err(schema)?,
         _ => check_part(file, kind, &item).map_err(schema)?,
     }
-    let fingerprint = canonical_json(&without_ids(&item));
+    let fingerprint = fingerprint_of(&item);
     Ok(NewItem {
         item,
         item_id,

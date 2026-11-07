@@ -13,6 +13,8 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
     /// Common chunks the verb is used in (シャワーを浴びる). Optional in verbs.json, so data
     /// published before collocations existed decodes with none.
     public var collocations: [VerbCollocation]
+    /// The transitive/intransitive partner (開ける ↔ 開く), when both halves are in the data.
+    public var pair: VerbPair?
     /// Set only where a homophone's `dict` would collide with another verb's, as `dict:kanji`
     /// (`きる:切る`). Once shipped it never changes, even if the verb's spelling is corrected.
     /// See docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md.
@@ -27,7 +29,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
     public var displayTitle: String { kanji.map { "\(dict) (\($0))" } ?? dict }
 
     enum CodingKeys: String, CodingKey {
-        case type, label, dict, kanji, meaning, description, notes, teGroup, jlpt, forms, examples, collocations
+        case type, label, dict, kanji, meaning, description, notes, teGroup, jlpt, forms, examples, collocations, pair
         case explicitID = "id"
     }
 
@@ -44,6 +46,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
         forms: VerbForms,
         examples: [VerbExample],
         collocations: [VerbCollocation] = [],
+        pair: VerbPair? = nil,
         id explicitID: String? = nil
     ) {
         self.type = type
@@ -58,6 +61,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
         self.forms = forms
         self.examples = examples
         self.collocations = collocations
+        self.pair = pair
         self.explicitID = explicitID
     }
 
@@ -75,6 +79,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
         forms = try container.decode(VerbForms.self, forKey: .forms)
         examples = try container.decode([VerbExample].self, forKey: .examples)
         collocations = try container.decodeIfPresent([VerbCollocation].self, forKey: .collocations) ?? []
+        pair = try container.decodeIfPresent(VerbPair.self, forKey: .pair)
         explicitID = try container.decodeIfPresent(String.self, forKey: .explicitID)
     }
 }

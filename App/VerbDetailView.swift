@@ -30,6 +30,7 @@ struct VerbDetailView: View {
                     actions
                     formGroups
                     CommonPhrasesCard(collocations: verb.collocations)
+                    VerbPairCard(verb: verb)
                     examples
                     if let notes = verb.notes {
                         notesBox(notes)

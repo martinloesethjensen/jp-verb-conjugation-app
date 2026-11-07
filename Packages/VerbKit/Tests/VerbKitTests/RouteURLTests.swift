@@ -14,6 +14,14 @@ final class RouteURLTests: XCTestCase {
         XCTAssertEqual(Route(url: route.url), route)
     }
 
+    /// The pitfall anchor is in-app only: the link is the plain lesson link and opens at the top.
+    func testGrammarPitfallAnchorIsLeftOutOfTheURL() {
+        let anchored = Route.grammar("n-desu", pitfall: 2)
+        XCTAssertEqual(anchored.url, Route.grammar("n-desu").url)
+        XCTAssertEqual(anchored.url.absoluteString, "verbtable://grammar/n-desu")
+        XCTAssertEqual(Route(url: anchored.url), .grammar("n-desu"))
+    }
+
     func testCounterAndGroupRoundTripIncludingHyphenatedIDs() {
         for route in [Route.counter("hon"), .counter("kai-floor"), .counterGroup("drinks"), .counterGroup("times-floors")] {
             XCTAssertEqual(Route(url: route.url), route)

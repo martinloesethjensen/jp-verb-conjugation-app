@@ -3,6 +3,11 @@ import VerbKit
 
 struct GrammarDetailView: View {
     let point: GrammarPoint
+    /// A pitfall to scroll to and briefly highlight (Common mistakes sets it). Cleared once handled,
+    /// so going back to the lesson later starts at the top again.
+    @Binding var focusedPitfall: Int?
+    @State private var highlightedPitfall: Int?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(VerbStore.self) private var verbStore
     @Environment(\.openRoute) private var openRoute
     @Environment(WordsStore.self) private var wordsStore
@@ -19,6 +24,11 @@ struct GrammarDetailView: View {
         courseStore.course?.lessonTag(for: point.id, points: verbStore.grammarPoints, textbooks: verbStore.textbooks)
     }
 
+    init(point: GrammarPoint, focusedPitfall: Binding<Int?> = .constant(nil)) {
+        self.point = point
+        _focusedPitfall = focusedPitfall
+    }
+
     private let registerOrder: [GrammarRegister] = [.polite, .casual, .formal]
 
     /// Related points that exist locally; a link to a lesson that hasn't
@@ -33,6 +43,31 @@ struct GrammarDetailView: View {
     }
 
     var body: some View {
+        ScrollViewReader { proxy in
+            content
+                .onChange(of: focusedPitfall, initial: true) { _, index in
+                    guard let index else { return }
+                    focusedPitfall = nil
+                    guard point.pitfalls.indices.contains(index) else { return }
+                    Task { await reveal(pitfall: index, with: proxy) }
+                }
+        }
+    }
+
+    private static func pitfallID(_ index: Int) -> String { "pitfall-\(index)" }
+
+    /// Scrolls to a pitfall once the page has laid out, then rings it for a moment.
+    private func reveal(pitfall index: Int, with proxy: ScrollViewProxy) async {
+        try? await Task.sleep(for: .milliseconds(350))
+        withAnimation(reduceMotion ? nil : .smooth) {
+            proxy.scrollTo(Self.pitfallID(index), anchor: .top)
+        }
+        withAnimation(.easeIn(duration: 0.2)) { highlightedPitfall = index }
+        try? await Task.sleep(for: .seconds(1.6))
+        withAnimation(.easeOut(duration: 0.6)) { highlightedPitfall = nil }
+    }
+
+    private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 header
@@ -227,7 +262,7 @@ struct GrammarDetailView: View {
     private var pitfallsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader("Watch out", systemImage: "exclamationmark.triangle")
-            ForEach(Array(point.pitfalls.enumerated()), id: \.offset) { _, pitfall in
+            ForEach(Array(point.pitfalls.enumerated()), id: \.offset) { index, pitfall in
                 card {
                     JapaneseText(pitfall.heading).font(.headline)
                     if let wrong = pitfall.wrong { WrongForm(text: wrong) }
@@ -237,6 +272,13 @@ struct GrammarDetailView: View {
                         ExampleRow(example: example)
                     }
                 }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(.tint, lineWidth: 3)
+                        .opacity(highlightedPitfall == index ? 1 : 0)
+                        .allowsHitTesting(false)
+                }
+                .id(Self.pitfallID(index))
             }
         }
     }

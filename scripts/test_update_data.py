@@ -528,6 +528,67 @@ class CollocationTests(unittest.TestCase):
         ])
 
 
+class VerbPairTests(unittest.TestCase):
+    def doc(self, akeru=None, aku=None):
+        akeru = akeru or {"verb": "あく", "transitivity": "transitive", "jp": "ドアを開ける", "en": "open the door"}
+        aku = aku or {"verb": "あける", "transitivity": "intransitive", "jp": "ドアが開く", "en": "the door opens"}
+        return {"verbs": [
+            {"dict": "あける", "kanji": "開ける", "pair": akeru},
+            {"dict": "あく", "kanji": "開く", "pair": aku},
+            {"dict": "つく", "id": "つく:点く", "kanji": None},
+        ]}
+
+    def test_pairs_are_optional(self):
+        self.assertEqual(ud.check_verb_pairs({"verbs": [{"dict": "あける"}]}), [])
+
+    def test_a_valid_pair(self):
+        self.assertEqual(ud.check_verb_pairs(self.doc()), [])
+
+    def test_a_pair_by_explicit_id_with_a_kana_phrase(self):
+        doc = self.doc(aku={"verb": "あける", "transitivity": "intransitive", "jp": "ドアがあく", "en": "x"})
+        self.assertEqual(ud.check_verb_pairs(doc), [])
+        doc = {"verbs": [
+            {"dict": "つける", "pair": {"verb": "つく:点く", "transitivity": "transitive", "jp": "電気をつける", "en": "x"}},
+            {"dict": "つく", "id": "つく:点く", "kanji": None,
+             "pair": {"verb": "つける", "transitivity": "intransitive", "jp": "電気がつく", "en": "y"}},
+        ]}
+        self.assertEqual(ud.check_verb_pairs(doc), [])
+
+    def test_the_partner_must_exist_and_point_back(self):
+        doc = self.doc(akeru={"verb": "しまる", "transitivity": "transitive", "jp": "ドアを開ける", "en": "x"})
+        self.assertEqual(ud.check_verb_pairs(doc), ["あける: pair names unknown verb 'しまる'",
+                                                    "あく: pair partner あける must name あく as its pair"])
+        doc = self.doc(aku={"verb": "つく:点く", "transitivity": "intransitive", "jp": "ドアが開く", "en": "x"})
+        self.assertIn("あける: pair partner あく must name あける as its pair", ud.check_verb_pairs(doc))
+
+    def test_both_halves_cannot_share_a_transitivity(self):
+        doc = self.doc(aku={"verb": "あける", "transitivity": "transitive", "jp": "ドアを開く", "en": "x"})
+        self.assertIn("あける: あける and あく are both transitive", ud.check_verb_pairs(doc))
+
+    def test_the_phrase_needs_the_right_particle_and_ending(self):
+        doc = self.doc(akeru={"verb": "あく", "transitivity": "transitive", "jp": "ドアが開けます", "en": "x"})
+        self.assertEqual(ud.check_verb_pairs(doc), [
+            "あける: pair jp 'ドアが開けます' must end with the verb's dictionary form (あける or 開ける)",
+            "あける: pair jp 'ドアが開けます' must use を for a transitive verb",
+        ])
+
+    def test_self_reference_unknown_keys_and_missing_text(self):
+        doc = self.doc(akeru={"verb": "あける", "transitivity": "both", "jp": "", "en": "", "id": "abcdef"})
+        self.assertEqual(ud.check_verb_pairs(doc), [
+            "あける: pair has unknown keys ['id']",
+            "あける: pair transitivity must be one of ['intransitive', 'transitive']",
+            "あける: pair cannot name the verb itself",
+            "あける: pair jp must be a non-empty string",
+            "あける: pair en must be a non-empty string",
+            "あく: pair partner あける must name あく as its pair",
+        ])
+
+    def test_the_published_pairs_are_valid(self):
+        doc = json.loads((Path(__file__).resolve().parent.parent / "data/verbs.json").read_text(encoding="utf-8"))
+        self.assertEqual(ud.check_verb_pairs(doc), [])
+        self.assertEqual(sum("pair" in verb for verb in doc["verbs"]), 14)
+
+
 class BooksTests(unittest.TestCase):
     def doc(self, books=None, taught_in=None):
         doc = valid_grammar()

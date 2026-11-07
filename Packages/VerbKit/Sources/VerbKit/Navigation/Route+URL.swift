@@ -5,7 +5,8 @@ public extension Route {
     static let urlScheme = "verbtable"
 
     /// `verbtable://verb/<id>`, `grammar/<id>`, `counter/<id>` or `counters/<id>` (a group),
-    /// with the id percent-encoded.
+    /// with the id percent-encoded. A grammar route's pitfall anchor is in-app only and not
+    /// part of the URL.
     var url: URL {
         var components = URLComponents()
         components.scheme = Self.urlScheme
@@ -13,7 +14,7 @@ public extension Route {
         case let .verb(id):
             components.host = "verb"
             components.percentEncodedPath = "/" + Self.encode(id)
-        case let .grammar(id):
+        case let .grammar(id, _):
             components.host = "grammar"
             components.percentEncodedPath = "/" + Self.encode(id)
         case let .counter(id):

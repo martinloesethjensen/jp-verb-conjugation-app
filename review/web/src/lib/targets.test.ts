@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { addFieldsOf, editForm, entryId, entryTitle, leftBehind, partOf, partsOf, unknownKanjiRuns } from './targets.ts';
+import { addFieldsOf, editForm, entryId, entryTitle, leftBehind, partOf, partsOf, suggestionHref, unknownKanjiRuns } from './targets.ts';
 
 const point = {
 	id: 'te-iru',
@@ -129,5 +129,27 @@ describe('editForm', () => {
 	test('a change starts from the proposal over the current item', () => {
 		const s = { action: 'change', dataset: 'verbs', kind: 'example', proposed: { en: 'new' }, current: { jp: 'j', en: 'old' }, stale: false } as never;
 		expect(editForm(s)).toEqual({ base: { jp: 'j', en: 'old' }, start: { jp: 'j', en: 'new' } });
+	});
+});
+
+describe('suggestionHref', () => {
+	const at = (s: Partial<Parameters<typeof suggestionHref>[0]>) =>
+		suggestionHref({ action: 'change', dataset: 'verbs', kind: 'entry', item_id: 'たべる', entry_id: 'たべる', ...s });
+	test('a change opens the entry, at its part', () => {
+		expect(at({})).toBe(`/item?dataset=verbs&id=${encodeURIComponent('たべる')}`);
+		expect(at({ kind: 'example', item_id: 'abc234' })).toBe(`/item?dataset=verbs&id=${encodeURIComponent('たべる')}#abc234`);
+	});
+	test('a new part opens where it goes: its entry, at its parent part', () => {
+		expect(at({ action: 'add', kind: 'example', item_id: 'new234', parent_kind: 'entry', parent_id: 'たべる' })).toBe(
+			`/item?dataset=verbs&id=${encodeURIComponent('たべる')}`
+		);
+		expect(
+			at({ action: 'add', dataset: 'grammar', kind: 'example', item_id: 'new234', entry_id: 'te-form', parent_kind: 'usage', parent_id: 'use234' })
+		).toBe('/item?dataset=grammar&id=te-form#use234');
+	});
+	test('a new entry opens its list of suggested additions', () => {
+		expect(at({ action: 'add', dataset: 'words', item_id: 'noun:ねこ', entry_id: 'noun:ねこ' })).toBe(
+			'/browse/words#additions-heading'
+		);
 	});
 });
