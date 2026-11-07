@@ -58,34 +58,20 @@ struct QuizResultsView: View {
 
     private func missedRow(_ question: QuizQuestion, _ result: QuizResult) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                JapaneseText(units: question.verb.dictionaryUnits)
-                    .font(.headword(.title3))
-                    .foregroundStyle(palette.ink)
-                // Identify rows ask for the label, so the heading shows the form's string.
-                Text(" — " + (result.kind == .identify ? result.formString : result.formLabel))
-                    .font(.subheadline)
-                    .foregroundStyle(palette.muted)
-            }
-            WrappingFlowLayout(spacing: 8) {
-                if result.timedOut {
-                    Text("TIME’S UP")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(palette.mark)
-                } else {
-                    Text("YOU CHOSE")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(palette.mark)
-                    Text(result.chosen)
-                        .strikethrough(color: palette.mark)
-                        .foregroundStyle(palette.ink)
+            // Each line stacks when it doesn't fit (large text), so no row is wider than the screen.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    headword(question).fixedSize()
+                    formLabel(result).fixedSize()
                 }
-                Text("CORRECT")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(palette.good)
-                Text(result.correct)
-                    .bold()
-                    .foregroundStyle(palette.ink)
+                VStack(alignment: .leading, spacing: 2) {
+                    headword(question)
+                    formLabel(result)
+                }
+            }
+            ViewThatFits(in: .horizontal) {
+                WrappingFlowLayout(spacing: 8) { choiceLine(result) }
+                VStack(alignment: .leading, spacing: 2) { choiceLine(result) }
             }
             if let why = result.errorExplanation {
                 Text(why)
@@ -95,5 +81,39 @@ struct QuizResultsView: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private func headword(_ question: QuizQuestion) -> some View {
+        JapaneseText(units: question.verb.dictionaryUnits)
+            .font(.headword(.title3))
+            .foregroundStyle(palette.ink)
+    }
+
+    /// Identify rows ask for the label, so the heading shows the form's string.
+    private func formLabel(_ result: QuizResult) -> some View {
+        Text(" — " + (result.kind == .identify ? result.formString : result.formLabel))
+            .font(.subheadline)
+            .foregroundStyle(palette.muted)
+    }
+
+    @ViewBuilder private func choiceLine(_ result: QuizResult) -> some View {
+        if result.timedOut {
+            Text("TIME’S UP")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(palette.mark)
+        } else {
+            Text("YOU CHOSE")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(palette.mark)
+            Text(result.chosen)
+                .strikethrough(color: palette.mark)
+                .foregroundStyle(palette.ink)
+        }
+        Text("CORRECT")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(palette.good)
+        Text(result.correct)
+            .bold()
+            .foregroundStyle(palette.ink)
     }
 }

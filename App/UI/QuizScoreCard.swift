@@ -50,11 +50,13 @@ struct QuizScoreCard: View {
             StampRing()
                 .trim(from: 0, to: drawn)
                 .stroke(palette.mark, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+            // Fixed sizes: the metrics above already scale with Dynamic Type, like the ring, so
+            // the score must not scale a second time or it outgrows the ring.
             HStack(alignment: .firstTextBaseline, spacing: 1) {
                 Text("\(score)")
-                    .font(.custom("HiraMinProN-W6", size: scoreSize))
+                    .font(.custom("HiraMinProN-W6", fixedSize: scoreSize))
                 Text("/\(count)")
-                    .font(.custom("HiraMinProN-W6", size: countSize))
+                    .font(.custom("HiraMinProN-W6", fixedSize: countSize))
             }
             .foregroundStyle(palette.mark)
             .minimumScaleFactor(0.5)
