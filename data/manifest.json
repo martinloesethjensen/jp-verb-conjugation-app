@@ -20,5 +20,9 @@
   "forms": {
     "version": "1.0.0",
     "sha256": "83c2f324b779b24c96ac68b064807f8cca8685ac56e4f03b6f1acc4efe40134e"
+  },
+  "kanji": {
+    "version": "1.0.0",
+    "sha256": "8c315064422e1d951c85278e4303227ffd4714e3b209655b21b0570e7b87dcd1"
   }
 }

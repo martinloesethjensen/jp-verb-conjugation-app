@@ -98,14 +98,15 @@ def read_kanjidic(path):
     return created, entries
 
 
+def kanji_in(texts):
+    """Every kanji in `texts`, without 々."""
+    return {c for text in texts for c in text if is_kanji(c)}
+
+
 def app_kanji(data_dir):
     """Every kanji in the app's published data files (not kanji.json), without 々."""
-    found = set()
-    for name in APP_DATA_FILES:
-        path = Path(data_dir) / f"{name}.json"
-        if path.exists():
-            found.update(c for c in path.read_text(encoding="utf-8") if is_kanji(c))
-    return found
+    paths = [Path(data_dir) / f"{name}.json" for name in APP_DATA_FILES]
+    return kanji_in(path.read_text(encoding="utf-8") for path in paths if path.exists())
 
 
 def build(kanjivg_path, kanjidic_path, data_dir):

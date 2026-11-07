@@ -15,6 +15,7 @@ let package = Package(
             name: "VerbKit",
             resources: [
                 .copy("Resources/forms.json"), .copy("Resources/forms.manifest.json"),
+                .copy("Resources/kanji.json"), .copy("Resources/kanji.manifest.json"),
                 .copy("Resources/counters.json"), .copy("Resources/counters.manifest.json"),
                 .copy("Resources/verbs.json"), .copy("Resources/verbs.manifest.json"),
                 .copy("Resources/grammar.json"), .copy("Resources/grammar.manifest.json"),
