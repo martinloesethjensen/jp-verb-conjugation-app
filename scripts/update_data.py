@@ -46,6 +46,9 @@ It does nine things:
   9. Validates each verb's optional `collocations` ({id, jp, en} chunks such as シャワーを浴びる; see
      docs/superpowers/specs/2026-10-29-verb-collocations-design.md). Their `jp` is covered by the
      furigana check like every other string.
+ 10. Validates each verb's optional `pair` (its transitive/intransitive partner, #58): the partner
+     exists and points back with the other transitivity, and the phrase uses を or が. See
+     docs/superpowers/specs/2026-11-05-verb-pairs-design.md.
 
 Every manifest change must be re-signed (scripts/sign_manifest.py sign): the app
 refuses a manifest whose signature does not match its exact bytes. --ref TAG pins the
@@ -790,6 +793,62 @@ def check_verb_collocations(verbs_doc):
                 seen.add(jp)
             if not isinstance(en, str) or not en.strip():
                 problems.append(f"{where}: en must be a non-empty string")
+    return problems
+
+
+PAIR_KEYS = {"verb", "transitivity", "jp", "en"}
+# The particle each half of a 自動詞・他動詞 pair takes: ドアを開ける ↔ ドアが開く.
+PAIR_PARTICLES = {"transitive": "を", "intransitive": "が"}
+
+
+def check_verb_pairs(verbs_doc):
+    """Problems with a verb's optional `pair`: its transitive/intransitive partner (#58), as
+    `{"verb", "transitivity", "jp", "en"}`. `verb` is the partner's id, and the partner's own pair
+    must point back with the other transitivity. `jp` is a phrase that ends with this verb's
+    dictionary form and uses を (transitive) or が (intransitive); both halves should share a noun
+    (ドアを開ける ↔ ドアが開く) so the page can show them side by side. Furigana is checked by
+    check_coverage. See docs/superpowers/specs/2026-11-05-verb-pairs-design.md."""
+    problems = []
+    by_id = {verb_id(verb): verb for verb in verbs_doc["verbs"]}
+    for verb in verbs_doc["verbs"]:
+        if "pair" not in verb:
+            continue
+        name = verb_id(verb) or "?"
+        pair = verb["pair"]
+        if not isinstance(pair, dict):
+            problems.append(f"{name}: pair must be an object")
+            continue
+        unknown = sorted(set(pair) - PAIR_KEYS)
+        if unknown:
+            problems.append(f"{name}: pair has unknown keys {unknown}")
+        transitivity = pair.get("transitivity")
+        if transitivity not in PAIR_PARTICLES:
+            problems.append(f"{name}: pair transitivity must be one of {sorted(PAIR_PARTICLES)}")
+        partner_id = pair.get("verb")
+        partner = by_id.get(partner_id)
+        if partner_id == name:
+            problems.append(f"{name}: pair cannot name the verb itself")
+        elif partner is None:
+            problems.append(f"{name}: pair names unknown verb {partner_id!r}")
+        else:
+            back = partner.get("pair")
+            if not isinstance(back, dict) or back.get("verb") != name:
+                problems.append(f"{name}: pair partner {partner_id} must name {name} as its pair")
+            elif back.get("transitivity") == transitivity:
+                problems.append(f"{name}: {name} and {partner_id} are both {transitivity}")
+        jp, en = pair.get("jp"), pair.get("en")
+        endings = tuple(s for s in (verb.get("dict"), verb.get("kanji")) if s)
+        if not isinstance(jp, str) or not jp.strip():
+            problems.append(f"{name}: pair jp must be a non-empty string")
+        else:
+            if not jp.endswith(endings):
+                problems.append(f"{name}: pair jp {jp!r} must end with the verb's dictionary form "
+                                f"({' or '.join(endings)})")
+            particle = PAIR_PARTICLES.get(transitivity)
+            if particle and particle not in jp:
+                problems.append(f"{name}: pair jp {jp!r} must use {particle} for a {transitivity} verb")
+        if not isinstance(en, str) or not en.strip():
+            problems.append(f"{name}: pair en must be a non-empty string")
     return problems
 
 
@@ -2012,6 +2071,9 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_verb_collocations(verbs_doc)
     if problems:
         return 1, capped("verbs.json has invalid collocations:", problems)
+    problems = check_verb_pairs(verbs_doc)
+    if problems:
+        return 1, capped("verbs.json has invalid transitive/intransitive pairs:", problems)
     apply_nd_forms(verbs_doc)
     try:
         apply_potential_forms(verbs_doc)

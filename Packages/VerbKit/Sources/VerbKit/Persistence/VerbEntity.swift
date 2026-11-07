@@ -41,6 +41,8 @@ public final class VerbEntity {
     /// `[VerbCollocation]` as JSON, stored like `examples`. Optional with a default so rows saved
     /// before collocations existed migrate; nil reads as none.
     private var collocationsData: Data? = nil
+    /// `VerbPair` as JSON. Optional with a default so rows saved before pairs existed migrate.
+    private var pairData: Data? = nil
 
     public var forms: VerbForms {
         get {
@@ -78,6 +80,11 @@ public final class VerbEntity {
         }
     }
 
+    public var pair: VerbPair? {
+        get { pairData.flatMap { try? JSONDecoder().decode(VerbPair.self, from: $0) } }
+        set { pairData = newValue.flatMap { try? JSONEncoder().encode($0) } }
+    }
+
     public init(
         dict: String,
         type: String,
@@ -91,6 +98,7 @@ public final class VerbEntity {
         forms: VerbForms,
         examples: [VerbExample],
         collocations: [VerbCollocation] = [],
+        pair: VerbPair? = nil,
         sortOrder: Int = 0,
         kana: String? = nil
     ) {
@@ -108,6 +116,7 @@ public final class VerbEntity {
         self.formsData = (try? JSONEncoder().encode(forms)) ?? Data()
         self.examplesData = (try? JSONEncoder().encode(examples)) ?? Data()
         self.collocationsData = try? JSONEncoder().encode(collocations)
+        self.pairData = pair.flatMap { try? JSONEncoder().encode($0) }
     }
 }
 
@@ -137,6 +146,7 @@ public extension VerbEntity {
             forms: verb.forms,
             examples: verb.examples,
             collocations: verb.collocations,
+            pair: verb.pair,
             sortOrder: sortOrder,
             kana: verb.explicitID == nil ? nil : verb.dict
         )
@@ -161,6 +171,7 @@ public extension VerbEntity {
             forms: forms,
             examples: examples,
             collocations: collocations,
+            pair: pair,
             id: kana == nil ? nil : dict
         )
     }

@@ -34,6 +34,7 @@ struct VerbDetailView: View {
                         .font(.body)
                     formGroups
                     CommonPhrasesCard(collocations: verb.collocations)
+                    VerbPairCard(verb: verb)
                     if let notes = verb.notes {
                         notesBox(notes)
                     }
