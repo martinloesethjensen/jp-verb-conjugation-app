@@ -10,7 +10,9 @@
 		finishLoad,
 		loadSlice,
 		setActive,
+		setPublicRole,
 		type DataFileName,
+		type PublicRole,
 		type SnapshotFile,
 		type User
 	} from '#lib/api.ts';
@@ -97,6 +99,19 @@
 		}
 	}
 
+	async function credit(user: User, role: PublicRole) {
+		busy = true;
+		notice = null;
+		try {
+			const updated = await setPublicRole(user.email, role);
+			users = users.map((u) => (u.email === updated.email ? updated : u));
+		} catch (error) {
+			notice = text(error);
+		} finally {
+			busy = false;
+		}
+	}
+
 	async function toggle(user: User) {
 		busy = true;
 		notice = null;
@@ -134,6 +149,21 @@
 							<div>
 								<p class="person">{user.display_name}</p>
 								<p class="email">{user.email}</p>
+								{#if user.public_role === 'owner'}
+									<p class="credit">Credited as the owner</p>
+								{:else}
+									<label class="credit">
+										<span>Credited as</span>
+										<select
+											value={user.public_role}
+											disabled={busy}
+											onchange={(e) => credit(user, e.currentTarget.value as PublicRole)}
+										>
+											<option value="teacher">a teacher</option>
+											<option value="native">a native speaker</option>
+										</select>
+									</label>
+								{/if}
 							</div>
 							<div class="state">
 								<span class={['pill', user.active ? 'active' : 'inactive']}>
@@ -388,5 +418,14 @@
 	.result td {
 		border-top: none;
 		padding-top: 0;
+	}
+
+	.credit {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin: 0.3rem 0 0;
+		color: var(--muted);
+		font-size: 0.9rem;
 	}
 </style>

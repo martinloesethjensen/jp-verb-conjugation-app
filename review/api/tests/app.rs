@@ -35,7 +35,7 @@ async fn seeded() -> SqliteStore {
     s.conn
         .borrow()
         .execute(
-            "INSERT INTO users (email, display_name, role, active, created_at) VALUES (?1, 'Martin', 'admin', 1, ?2)",
+            "INSERT INTO users (email, display_name, role, active, created_at, public_role) VALUES (?1, 'Martin', 'admin', 1, ?2, 'owner')",
             rusqlite::params![OWNER, T0],
         )
         .unwrap();
@@ -141,7 +141,8 @@ async fn me_returns_the_signed_in_user() {
     assert_eq!(response.status, 200);
     assert_eq!(
         response.body,
-        json!({"email": "aiko@example.com", "display_name": "Aiko", "role": "reviewer"})
+        json!({"email": "aiko@example.com", "display_name": "Aiko", "role": "reviewer",
+               "public_role": "native", "public_name": null})
     );
 }
 
@@ -189,8 +190,10 @@ async fn the_owner_needs_the_admin_application_for_admin_routes() {
     assert_eq!(
         passkey.body,
         json!({"users": [
-            {"email": "aiko@example.com", "display_name": "Aiko", "role": "reviewer", "active": true},
-            {"email": OWNER, "display_name": "Martin", "role": "admin", "active": true},
+            {"email": "aiko@example.com", "display_name": "Aiko", "role": "reviewer", "active": true,
+             "public_role": "native", "public_name": null},
+            {"email": OWNER, "display_name": "Martin", "role": "admin", "active": true,
+             "public_role": "owner", "public_name": null},
         ]})
     );
 }
@@ -299,7 +302,8 @@ async fn adding_a_reviewer() {
     assert_eq!(added.status, 201);
     assert_eq!(
         added.body,
-        json!({"email": "ken@example.com", "display_name": "Ken", "role": "reviewer", "active": true})
+        json!({"email": "ken@example.com", "display_name": "Ken", "role": "reviewer", "active": true,
+               "public_role": "native", "public_name": null})
     );
     let again = post_admin(
         &s,
@@ -441,7 +445,8 @@ async fn a_reviewer_can_change_their_own_name() {
     assert_eq!(response.status, 200);
     assert_eq!(
         response.body,
-        json!({"email": "aiko@example.com", "display_name": "Aiko S.", "role": "reviewer"})
+        json!({"email": "aiko@example.com", "display_name": "Aiko S.", "role": "reviewer",
+               "public_role": "native", "public_name": null})
     );
     let me = call(
         &s,
@@ -532,4 +537,95 @@ async fn renaming_follows_the_usual_rules() {
     )
     .await;
     assert_eq!(no_token.status, 401);
+}
+
+async fn me(store: &SqliteStore, email: &str) -> Value {
+    call(
+        store,
+        req("GET", "/api/me", Some(reviewer_token(email)), None, ""),
+    )
+    .await
+    .body
+}
+
+async fn public_name(store: &SqliteStore, body: Value) -> ApiResponse {
+    call(
+        store,
+        req(
+            "POST",
+            "/api/me/public-name",
+            Some(reviewer_token("aiko@example.com")),
+            Some(SITE),
+            &body.to_string(),
+        ),
+    )
+    .await
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_reviewer_chooses_a_public_name() {
+    let s = seeded().await;
+    let r = public_name(&s, json!({"public_name": "  Aiko  "})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let body = me(&s, "aiko@example.com").await;
+    assert_eq!(
+        (body["public_name"].clone(), body["public_role"].clone()),
+        (json!("Aiko"), json!("native"))
+    );
+    assert_eq!(
+        public_name(&s, json!({"public_name": null})).await.status,
+        200
+    );
+    assert_eq!(me(&s, "aiko@example.com").await["public_name"], Value::Null);
+    assert_eq!(
+        public_name(&s, json!({"public_name": "   "})).await.status,
+        200
+    );
+    assert_eq!(me(&s, "aiko@example.com").await["public_name"], Value::Null);
+    assert_eq!(
+        public_name(&s, json!({"public_name": "x".repeat(41)}))
+            .await
+            .status,
+        400
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_owner_sets_a_reviewers_public_role() {
+    let s = seeded().await;
+    let body = json!({"email": "aiko@example.com", "public_role": "teacher"});
+    let r = post_admin(&s, "/api/admin/users/role", body.clone()).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["public_role"], "teacher");
+    assert_eq!(me(&s, "aiko@example.com").await["public_role"], "teacher");
+    assert_eq!(me(&s, OWNER).await["public_role"], "owner");
+    let as_reviewer = call(
+        &s,
+        req(
+            "POST",
+            "/api/admin/users/role",
+            Some(reviewer_token("aiko@example.com")),
+            Some(SITE),
+            &body.to_string(),
+        ),
+    )
+    .await;
+    assert_eq!(as_reviewer.status, 403);
+    let owner = post_admin(
+        &s,
+        "/api/admin/users/role",
+        json!({"email": "aiko@example.com", "public_role": "owner"}),
+    )
+    .await;
+    assert_eq!(
+        (owner.status, owner.body["error"].as_str()),
+        (400, Some("only the owner is credited as the owner"))
+    );
+    let unknown = post_admin(
+        &s,
+        "/api/admin/users/role",
+        json!({"email": "nobody@example.com", "public_role": "native"}),
+    )
+    .await;
+    assert_eq!(unknown.status, 404);
 }

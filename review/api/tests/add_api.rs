@@ -340,7 +340,13 @@ async fn a_verb_already_loaded_with_the_same_kanji_is_refused() {
         r.body
     );
     // Another spelling of the same kana is a different verb and gets its own id.
-    let r = post(&s, "/api/add", new_verb("たべる", "喰べる", "to devour"), AIKO).await;
+    let r = post(
+        &s,
+        "/api/add",
+        new_verb("たべる", "喰べる", "to devour"),
+        AIKO,
+    )
+    .await;
     assert_eq!(r.status, 201, "{}", r.body);
     assert_eq!(r.body["item_id"], "たべる:喰べる");
 }

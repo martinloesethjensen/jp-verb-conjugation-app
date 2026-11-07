@@ -2,7 +2,16 @@
 // only credential, so every request just sends same-origin credentials.
 
 export type Role = 'admin' | 'reviewer';
-export type Me = { email: string; display_name: string; role: Role };
+/** How someone is credited in the public repo. */
+export type PublicRole = 'owner' | 'teacher' | 'native';
+export type Me = {
+	email: string;
+	display_name: string;
+	role: Role;
+	public_role: PublicRole;
+	/** Null: credited by role only. */
+	public_name: string | null;
+};
 export type User = Me & { active: boolean };
 
 export class ApiError extends Error {
@@ -59,6 +68,13 @@ export const setActive = (email: string, active: boolean) =>
 
 export const setMyName = (displayName: string) =>
 	request<Me>('/api/me/name', { display_name: displayName });
+
+/** Null or blank: anonymous, credited by role only. */
+export const setPublicName = (publicName: string | null) =>
+	request<Me>('/api/me/public-name', { public_name: publicName });
+
+export const setPublicRole = (email: string, publicRole: PublicRole) =>
+	request<User>('/api/admin/users/role', { email, public_role: publicRole });
 
 // --- Published data ---------------------------------------------------------------------------
 

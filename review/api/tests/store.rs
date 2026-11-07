@@ -289,3 +289,21 @@ async fn renaming_writes_an_audit_row() {
         Err(StoreError::NotFound)
     );
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn migration_0006_credits_the_admin_as_owner() {
+    let s = SqliteStore::with_migrations_before("0006");
+    s.conn
+        .borrow()
+        .execute_batch(
+            "INSERT INTO users (email, display_name, role, active, created_at) VALUES \
+             ('owner@example.com', 'Martin', 'admin', 1, 't'), ('aiko@example.com', 'Aiko', 'reviewer', 1, 't');",
+        )
+        .unwrap();
+    s.apply_migrations_from("0006");
+    let owner = s.user("owner@example.com").await.unwrap().unwrap();
+    let aiko = s.user("aiko@example.com").await.unwrap().unwrap();
+    assert_eq!(owner.public_role.as_str(), "owner");
+    assert_eq!(aiko.public_role.as_str(), "native");
+    assert_eq!(aiko.public_name, None);
+}

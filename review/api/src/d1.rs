@@ -17,17 +17,24 @@ struct Row {
     display_name: String,
     role: String,
     active: i64,
+    public_role: String,
+    public_name: Option<String>,
 }
 
 impl Row {
     fn into_user(self) -> Result<User, StoreError> {
         let role = Role::parse(&self.role)
             .ok_or_else(|| StoreError::Backend(format!("unknown role {:?}", self.role)))?;
+        let public_role = PublicRole::parse(&self.public_role).ok_or_else(|| {
+            StoreError::Backend(format!("unknown public role {:?}", self.public_role))
+        })?;
         Ok(User {
             email: self.email,
             display_name: self.display_name,
             role,
             active: self.active == 1,
+            public_role,
+            public_name: self.public_name,
         })
     }
 }
@@ -58,6 +65,32 @@ fn audit(
             detail.into(),
         ])
         .map_err(backend)
+}
+
+impl D1Store {
+    /// One column of a user (`sql` binds ?1 value, ?2 email) and its audit row, in one batch. The user is
+    /// looked up first, since a batch can't skip its audit row when the UPDATE matches nothing.
+    async fn update_user(
+        &self,
+        sql: &str,
+        value: JsValue,
+        email: &str,
+        (actor, now): (&str, &str),
+        action: &str,
+        detail: &str,
+    ) -> Result<(), StoreError> {
+        if self.user(email).await?.is_none() {
+            return Err(StoreError::NotFound);
+        }
+        let update = self
+            .db
+            .prepare(sql)
+            .bind(&[value, email.into()])
+            .map_err(backend)?;
+        let log = audit(&self.db, now, actor, action, email, detail)?;
+        self.db.batch(vec![update, log]).await.map_err(backend)?;
+        Ok(())
+    }
 }
 
 impl Store for D1Store {
@@ -132,19 +165,56 @@ impl Store for D1Store {
         actor: &str,
         now: &str,
     ) -> Result<(), StoreError> {
-        // As in set_active: look the user up first, since the batch always writes its audit row.
-        if self.user(email).await?.is_none() {
-            return Err(StoreError::NotFound);
-        }
-        let update = self
-            .db
-            .prepare(UPDATE_DISPLAY_NAME)
-            .bind(&[display_name.into(), email.into()])
-            .map_err(backend)?;
         let detail = format!("name={display_name}");
-        let log = audit(&self.db, now, actor, "user.name", email, &detail)?;
-        self.db.batch(vec![update, log]).await.map_err(backend)?;
-        Ok(())
+        self.update_user(
+            UPDATE_DISPLAY_NAME,
+            display_name.into(),
+            email,
+            (actor, now),
+            "user.name",
+            &detail,
+        )
+        .await
+    }
+
+    async fn set_public_name(
+        &self,
+        email: &str,
+        public_name: Option<&str>,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let value = public_name.map(JsValue::from).unwrap_or(JsValue::NULL);
+        let detail = format!("public_name={}", public_name.unwrap_or(""));
+        self.update_user(
+            UPDATE_PUBLIC_NAME,
+            value,
+            email,
+            (actor, now),
+            "user.public_name",
+            &detail,
+        )
+        .await
+    }
+
+    async fn set_public_role(
+        &self,
+        email: &str,
+        public_role: PublicRole,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let detail = format!("public_role={}", public_role.as_str());
+        let value = public_role.as_str().into();
+        self.update_user(
+            UPDATE_PUBLIC_ROLE,
+            value,
+            email,
+            (actor, now),
+            "user.public_role",
+            &detail,
+        )
+        .await
     }
 
     async fn replace_snapshot(

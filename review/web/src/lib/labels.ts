@@ -1,5 +1,5 @@
 // Display names for datasets and data values.
-import type { Dataset } from './api.ts';
+import type { Dataset, PublicRole } from './api.ts';
 
 export const DATASET_TITLES: Record<Dataset, string> = {
 	verbs: 'Verbs',
@@ -124,3 +124,14 @@ export const ADD_LABELS: Record<string, string> = {
 
 /** What the add forms say the site leaves to export. */
 export const ADD_NOTE = 'Forms and readings that the app works out are added when Martin exports this.';
+
+/** How a public role reads in a credit: "credited as a native speaker". */
+export const CREDIT_ROLES: Record<PublicRole, string> = {
+	owner: 'the owner',
+	teacher: 'a teacher',
+	native: 'a native speaker'
+};
+
+/** What the public repo says about someone: their public name, else their role. */
+export const creditOf = (c: { public_role: PublicRole; public_name: string | null }) =>
+	c.public_name ?? CREDIT_ROLES[c.public_role];

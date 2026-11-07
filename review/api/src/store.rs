@@ -28,12 +28,43 @@ impl Role {
     }
 }
 
+/// How someone is credited in the public repo: a stamp's `by` and the PR summary's wording.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PublicRole {
+    Owner,
+    Teacher,
+    Native,
+}
+
+impl PublicRole {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            PublicRole::Owner => "owner",
+            PublicRole::Teacher => "teacher",
+            PublicRole::Native => "native",
+        }
+    }
+
+    pub fn parse(text: &str) -> Option<PublicRole> {
+        match text {
+            "owner" => Some(PublicRole::Owner),
+            "teacher" => Some(PublicRole::Teacher),
+            "native" => Some(PublicRole::Native),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct User {
     pub email: String,
     pub display_name: String,
     pub role: Role,
     pub active: bool,
+    pub public_role: PublicRole,
+    /// `None`: credited by role only.
+    pub public_name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -86,13 +117,15 @@ pub enum StoreError {
 }
 
 pub const SELECT_USER: &str =
-    "SELECT email, display_name, role, active FROM users WHERE email = ?1";
+    "SELECT email, display_name, role, active, public_role, public_name FROM users WHERE email = ?1";
 pub const SELECT_USERS: &str =
-    "SELECT email, display_name, role, active FROM users ORDER BY display_name, email";
+    "SELECT email, display_name, role, active, public_role, public_name FROM users ORDER BY display_name, email";
 pub const INSERT_USER: &str =
     "INSERT INTO users (email, display_name, role, active, created_at) VALUES (?1, ?2, ?3, 1, ?4)";
 pub const UPDATE_ACTIVE: &str = "UPDATE users SET active = ?1 WHERE email = ?2";
 pub const UPDATE_DISPLAY_NAME: &str = "UPDATE users SET display_name = ?1 WHERE email = ?2";
+pub const UPDATE_PUBLIC_NAME: &str = "UPDATE users SET public_name = ?1 WHERE email = ?2";
+pub const UPDATE_PUBLIC_ROLE: &str = "UPDATE users SET public_role = ?1 WHERE email = ?2";
 pub const DELETE_ITEMS: &str = "DELETE FROM items WHERE dataset = ?1";
 /// All of a dataset's rows in one statement: ?2 is a JSON array of `ItemRow`s.
 pub const INSERT_ITEMS: &str = "INSERT INTO items (dataset, kind, item_id, parent_id, entry_id, position, title, subtitle, jlpt, content_hash, json) \
@@ -173,6 +206,22 @@ pub trait Store {
         &self,
         email: &str,
         display_name: &str,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError>;
+    /// `None` makes the user anonymous. Audit row `user.public_name`.
+    async fn set_public_name(
+        &self,
+        email: &str,
+        public_name: Option<&str>,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError>;
+    /// Audit row `user.public_role`.
+    async fn set_public_role(
+        &self,
+        email: &str,
+        public_role: PublicRole,
         actor: &str,
         now: &str,
     ) -> Result<(), StoreError>;

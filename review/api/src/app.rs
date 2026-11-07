@@ -10,10 +10,10 @@ use crate::auth::{authorize, normalize_email, Need, Principal};
 use crate::data::DataFile;
 use crate::items::{extract_slice, slices};
 use crate::manifest::{self, TRUSTED_KEYS};
-use crate::review_routes::{self, QueueItemAction};
+use crate::review_routes::{self, tri, QueueItemAction};
 use crate::review_store::ReviewStore;
 use crate::source::Source;
-use crate::store::{NewUser, Role, SnapshotFile, SnapshotLoad, Store, StoreError};
+use crate::store::{NewUser, PublicRole, Role, SnapshotFile, SnapshotLoad, Store, StoreError};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -51,6 +51,8 @@ enum Handler {
     LoadFinish,
     Me,
     Rename,
+    PublicName,
+    PublicRole,
     ListUsers,
     AddUser,
     SetActive,
@@ -137,6 +139,18 @@ const ROUTES: &[Route] = &[
         path: "/api/me/name",
         need: Need::Reviewer,
         handler: Handler::Rename,
+    },
+    Route {
+        method: "POST",
+        path: "/api/me/public-name",
+        need: Need::Reviewer,
+        handler: Handler::PublicName,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/users/role",
+        need: Need::Admin,
+        handler: Handler::PublicRole,
     },
     Route {
         method: "GET",
@@ -327,8 +341,10 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
         Handler::LoadBegin => load_begin(&req.body, &principal, store, source, today).await,
         Handler::LoadSlice => load_slice(&req.body, store, source).await,
         Handler::LoadFinish => load_finish(&req.body, &principal, store, source, today).await,
-        Handler::Me => me_response(&principal.email, &principal.display_name, principal.role),
+        Handler::Me => me_response(store, &principal.email).await,
         Handler::Rename => rename(&req.body, &principal, store, today).await,
+        Handler::PublicName => public_name(&req.body, &principal, store, today).await,
+        Handler::PublicRole => public_role(&req.body, &principal, store, today).await,
         Handler::ListUsers => match store.users().await {
             Ok(users) => ApiResponse {
                 status: 200,
@@ -386,10 +402,16 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
     }
 }
 
-fn me_response(email: &str, display_name: &str, role: Role) -> ApiResponse {
-    ApiResponse {
-        status: 200,
-        body: json!({ "email": email, "display_name": display_name, "role": role }),
+/// The signed-in user as they see themselves: their site name, role and how they're credited.
+async fn me_response<S: Store>(store: &S, email: &str) -> ApiResponse {
+    match store.user(email).await {
+        Ok(Some(u)) => ApiResponse {
+            status: 200,
+            body: json!({ "email": u.email, "display_name": u.display_name, "role": u.role,
+                          "public_role": u.public_role, "public_name": u.public_name }),
+        },
+        Ok(None) => store_error(StoreError::NotFound),
+        Err(e) => store_error(e),
     }
 }
 
@@ -397,6 +419,19 @@ fn me_response(email: &str, display_name: &str, role: Role) -> ApiResponse {
 #[serde(deny_unknown_fields)]
 struct RenameBody {
     display_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PublicNameBody {
+    public_name: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PublicRoleBody {
+    email: String,
+    public_role: PublicRole,
 }
 
 #[derive(Deserialize)]
@@ -456,7 +491,51 @@ async fn rename<S: Store>(body: &[u8], by: &Principal, store: &S, today: &str) -
         .set_display_name(&by.email, &name, &by.email, today)
         .await
     {
-        Ok(()) => me_response(&by.email, &name, by.role),
+        Ok(()) => me_response(store, &by.email).await,
+        Err(e) => store_error(e),
+    }
+}
+
+/// The caller's own public name; null or blank makes them anonymous (credited by role only).
+async fn public_name<S: Store>(body: &[u8], by: &Principal, store: &S, today: &str) -> ApiResponse {
+    let body: PublicNameBody = tri!(parse(body));
+    let name = match body
+        .public_name
+        .as_deref()
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+    {
+        Some(name) if name.chars().count() > MAX_DISPLAY_NAME => {
+            return error(400, "the public name must be 1 to 40 characters")
+        }
+        other => other,
+    };
+    match store
+        .set_public_name(&by.email, name, &by.email, today)
+        .await
+    {
+        Ok(()) => me_response(store, &by.email).await,
+        Err(e) => store_error(e),
+    }
+}
+
+/// The owner sets how a reviewer is credited. Only an admin is credited as the owner.
+async fn public_role<S: Store>(body: &[u8], by: &Principal, store: &S, today: &str) -> ApiResponse {
+    let body: PublicRoleBody = tri!(parse(body));
+    let email = tri!(email_field(&body.email));
+    let user = match store.user(&email).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return store_error(StoreError::NotFound),
+        Err(e) => return store_error(e),
+    };
+    if body.public_role == PublicRole::Owner && user.role != Role::Admin {
+        return error(400, "only the owner is credited as the owner");
+    }
+    match store
+        .set_public_role(&email, body.public_role, &by.email, today)
+        .await
+    {
+        Ok(()) => user_response(store, &email, 200).await,
         Err(e) => store_error(e),
     }
 }

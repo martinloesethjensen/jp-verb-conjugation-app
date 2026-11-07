@@ -74,6 +74,8 @@ fn row_to_user(row: &rusqlite::Row) -> rusqlite::Result<User> {
         display_name: row.get(1)?,
         role: role(row.get(2)?),
         active: row.get::<_, i64>(3)? == 1,
+        public_role: PublicRole::parse(&row.get::<_, String>(4)?).unwrap_or(PublicRole::Native),
+        public_name: row.get(5)?,
     })
 }
 
@@ -93,6 +95,28 @@ fn backend(error: rusqlite::Error) -> StoreError {
     match error.sqlite_error_code() {
         Some(ErrorCode::ConstraintViolation) => StoreError::Conflict,
         _ => StoreError::Backend(error.to_string()),
+    }
+}
+
+impl SqliteStore {
+    /// One column of a user (`sql` binds ?1 value, ?2 email) and its audit row, in one transaction.
+    fn update_user(
+        &self,
+        sql: &str,
+        value: &dyn rusqlite::ToSql,
+        email: &str,
+        (actor, now): (&str, &str),
+        action: &str,
+        detail: &str,
+    ) -> Result<(), StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        if tx.execute(sql, params![value, email]).map_err(backend)? == 0 {
+            return Err(StoreError::NotFound);
+        }
+        tx.execute(INSERT_AUDIT, params![now, actor, action, email, detail])
+            .map_err(backend)?;
+        tx.commit().map_err(backend)
     }
 }
 
@@ -171,26 +195,52 @@ impl Store for SqliteStore {
         actor: &str,
         now: &str,
     ) -> Result<(), StoreError> {
-        let mut conn = self.conn.borrow_mut();
-        let tx = conn.transaction().map_err(backend)?;
-        let changed = tx
-            .execute(UPDATE_DISPLAY_NAME, params![display_name, email])
-            .map_err(backend)?;
-        if changed == 0 {
-            return Err(StoreError::NotFound);
-        }
-        tx.execute(
-            INSERT_AUDIT,
-            params![
-                now,
-                actor,
-                "user.name",
-                email,
-                format!("name={display_name}")
-            ],
+        let detail = format!("name={display_name}");
+        self.update_user(
+            UPDATE_DISPLAY_NAME,
+            &display_name,
+            email,
+            (actor, now),
+            "user.name",
+            &detail,
         )
-        .map_err(backend)?;
-        tx.commit().map_err(backend)
+    }
+
+    async fn set_public_name(
+        &self,
+        email: &str,
+        public_name: Option<&str>,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let detail = format!("public_name={}", public_name.unwrap_or(""));
+        self.update_user(
+            UPDATE_PUBLIC_NAME,
+            &public_name,
+            email,
+            (actor, now),
+            "user.public_name",
+            &detail,
+        )
+    }
+
+    async fn set_public_role(
+        &self,
+        email: &str,
+        public_role: PublicRole,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let detail = format!("public_role={}", public_role.as_str());
+        let value = public_role.as_str();
+        self.update_user(
+            UPDATE_PUBLIC_ROLE,
+            &value,
+            email,
+            (actor, now),
+            "user.public_role",
+            &detail,
+        )
     }
 
     async fn replace_snapshot(

@@ -6,8 +6,8 @@ use crate::auth::Principal;
 use crate::data::DataFile;
 use crate::items::Kind;
 use crate::proposal::{
-    add_fields_of, add_title, build_add, check_furigana, find_part, fingerprint_of, random_stable_id,
-    same_loaded_verb, stable_ids_of, AddError, Taken,
+    add_fields_of, add_title, build_add, check_furigana, find_part, fingerprint_of,
+    random_stable_id, same_loaded_verb, stable_ids_of, AddError, Taken,
 };
 use crate::review_routes::{
     loaded_target, ok, reference_sets, suggestion_response, target, text_field, tri, unavailable,
@@ -97,11 +97,20 @@ async fn loaded_twin<S: Store + ReviewStore>(
     kind: Kind,
     loaded: &BTreeSet<String>,
 ) -> Result<Option<AddError>, ApiResponse> {
-    let dict = body.fields.get("dict").and_then(Value::as_str).unwrap_or("").trim();
+    let dict = body
+        .fields
+        .get("dict")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim();
     if file != DataFile::Verbs || kind != Kind::Entry || !loaded.contains(dict) {
         return Ok(None);
     }
-    let Some((json, _)) = store.entry(&body.dataset, dict).await.map_err(unavailable)? else {
+    let Some((json, _)) = store
+        .entry(&body.dataset, dict)
+        .await
+        .map_err(unavailable)?
+    else {
         return Ok(None);
     };
     let verb: Value =
@@ -173,7 +182,9 @@ pub async fn add<S: Store + ReviewStore>(
                 _ => return error(409, &message),
             };
             let again = tri!(build(std::slice::from_ref(&id)).map_err(add_error));
-            let furigana = furigana_json.as_deref().and_then(|f| serde_json::from_str(f).ok());
+            let furigana = furigana_json
+                .as_deref()
+                .and_then(|f| serde_json::from_str(f).ok());
             let same = mine.proposed.as_ref().map(fingerprint_of) == Some(again.fingerprint)
                 && mine.furigana == furigana
                 && mine.comment == comment;

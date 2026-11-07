@@ -282,12 +282,11 @@ pub fn fingerprint_of(item: &Value) -> String {
 pub fn same_loaded_verb(loaded: &Value, submitted: &Map<String, Value>) -> Option<AddError> {
     let text = |v: Option<&Value>| v.and_then(Value::as_str).unwrap_or("").trim().to_string();
     let (dict, kanji) = (text(submitted.get("dict")), text(submitted.get("kanji")));
-    (!kanji.is_empty() && text(loaded.get("dict")) == dict && text(loaded.get("kanji")) == kanji).then(|| {
-        AddError::Conflict {
+    (!kanji.is_empty() && text(loaded.get("dict")) == dict && text(loaded.get("kanji")) == kanji)
+        .then(|| AddError::Conflict {
             message: format!("{dict} ({kanji}) is already in the data"),
             id: dict.clone(),
-        }
-    })
+        })
 }
 
 /// The new item for `kind` in `file`, built from the reviewer's fields. `parent` is where a part goes (the

@@ -6,7 +6,14 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { ADD_FIELDS, ADD_PARENTS, FIELDS, reviewMock } from './mock-review.ts';
 
-type User = { email: string; display_name: string; role: 'admin' | 'reviewer'; active: boolean };
+type User = {
+	email: string;
+	display_name: string;
+	role: 'admin' | 'reviewer';
+	active: boolean;
+	public_role: 'owner' | 'teacher' | 'native';
+	public_name: string | null;
+};
 
 export function mockApi(): Plugin {
 	return {
@@ -108,8 +115,8 @@ function publishedData() {
 
 function handler() {
 	const users: User[] = [
-		{ email: 'aiko@example.com', display_name: 'Aiko', role: 'reviewer', active: true },
-		{ email: 'owner@example.com', display_name: 'Martin', role: 'admin', active: true }
+		{ email: 'aiko@example.com', display_name: 'Aiko', role: 'reviewer', active: true, public_role: 'native', public_name: null },
+		{ email: 'owner@example.com', display_name: 'Martin', role: 'admin', active: true, public_role: 'owner', public_name: null }
 	];
 	const me = process.env.MOCK_ROLE === 'reviewer' ? users[0] : users[1];
 	const data = publishedData();
@@ -173,8 +180,16 @@ function handler() {
 			if (path === '/admin/snapshot/slice') return send(200, { load_id: body.load_id, slice: body.slice, rows: 10 });
 			if (path === '/admin/snapshot/finish') return send(200, data.load(file));
 		}
-		if (path === '/me' && req.method === 'GET') {
-			return send(200, { email: me.email, display_name: me.display_name, role: me.role });
+		const meBody = () => {
+			const { email, display_name, role, public_role, public_name } = me;
+			return { email, display_name, role, public_role, public_name };
+		};
+		if (path === '/me' && req.method === 'GET') return send(200, meBody());
+		if (path === '/me/public-name' && req.method === 'POST') {
+			const name = typeof body.public_name === 'string' ? body.public_name.trim() : '';
+			if (name.length > 40) return send(400, { error: 'the public name must be 1 to 40 characters' });
+			me.public_name = name || null;
+			return send(200, meBody());
 		}
 		if (path === '/me/name' && req.method === 'POST') {
 			const name = String(body.display_name ?? '').trim();
@@ -182,7 +197,7 @@ function handler() {
 				return send(400, { error: 'the display name must be 1 to 40 characters' });
 			}
 			me.display_name = name;
-			return send(200, { email: me.email, display_name: me.display_name, role: me.role });
+			return send(200, meBody());
 		}
 		if (path?.startsWith('/admin/')) {
 			if (me.role !== 'admin') return send(403, { error: "this account can't do that" });
@@ -196,11 +211,26 @@ function handler() {
 					email,
 					display_name: String(body.display_name ?? '').trim(),
 					role: 'reviewer',
-					active: true
+					active: true,
+					public_role: 'native',
+					public_name: null
 				};
 				users.push(user);
 				users.sort((a, b) => a.display_name.localeCompare(b.display_name));
 				return send(201, user);
+			}
+			if (path === '/admin/users/role' && req.method === 'POST') {
+				const user = users.find((u) => u.email === body.email);
+				if (!user) return send(404, { error: 'no reviewer has that email' });
+				const role = body.public_role;
+				if (role === 'owner' && user.role !== 'admin') {
+					return send(400, { error: 'only the owner is credited as the owner' });
+				}
+				if (role !== 'owner' && role !== 'teacher' && role !== 'native') {
+					return send(400, { error: 'the request body is not valid' });
+				}
+				user.public_role = role;
+				return send(200, user);
 			}
 			if (path === '/admin/users/active' && req.method === 'POST') {
 				const user = users.find((u) => u.email === body.email);
