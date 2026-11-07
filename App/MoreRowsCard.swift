@@ -6,18 +6,25 @@ import VerbKit
 struct MoreRowsCard: View {
     let verb: Verb
     @Environment(VerbStore.self) private var verbStore
+    @Environment(\.palette) private var palette
 
-    private struct Row: Identifiable {
+    struct Row: Identifiable {
         let page: VerbSubPage
         let preview: String
         var id: VerbSubPage { page }
     }
 
-    private func firstForm(_ forms: [String?]) -> String? {
+    private static func firstForm(_ forms: [String?]) -> String? {
         forms.compactMap { $0 }.first
     }
 
     private var rows: [Row] {
+        Self.rows(for: verb, lessonCount: verbStore.grammarPoints.attachingToVerbs.count)
+    }
+
+    /// The rows in their fixed order (Potential, んです, Auxiliaries, Advanced, then lessons),
+    /// leaving out a group the verb has no form of. The verb page also asks, to head the card.
+    static func rows(for verb: Verb, lessonCount: Int) -> [Row] {
         let f = verb.forms
         var rows: [Row] = []
         let groups: [(VerbSubPage, String?)] = [
@@ -42,7 +49,6 @@ struct MoreRowsCard: View {
         for (page, preview) in groups {
             if let preview { rows.append(Row(page: page, preview: preview)) }
         }
-        let lessonCount = verbStore.grammarPoints.attachingToVerbs.count
         if lessonCount > 0 {
             rows.append(Row(page: .lessons,
                             preview: lessonCount == 1 ? "1 lesson" : "\(lessonCount) lessons"))
@@ -54,15 +60,26 @@ struct MoreRowsCard: View {
         if !rows.isEmpty {
             VStack(spacing: 0) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                    if index > 0 { Divider() }
+                    if index > 0 { Divider().overlay(palette.rule) }
                     NavigationLink(value: row.page) {
                         HStack {
-                            Text(row.page.title)
-                            Spacer()
-                            Text(row.preview).foregroundStyle(.secondary)
+                            // Title and preview side by side while they fit; the preview moves
+                            // under the title at large text sizes instead of breaking words.
+                            ViewThatFits(in: .horizontal) {
+                                HStack {
+                                    Text(row.page.title).foregroundStyle(palette.ink).fixedSize()
+                                    Spacer()
+                                    Text(row.preview).foregroundStyle(palette.muted).fixedSize()
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(row.page.title).foregroundStyle(palette.ink)
+                                    Text(row.preview).foregroundStyle(palette.muted)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                             RowChevron()
                         }
-                        .padding(.vertical, 10)
+                        .frame(minHeight: 48)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)

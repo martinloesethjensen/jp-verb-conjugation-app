@@ -94,6 +94,10 @@ Run `make` for the full list. Common ones:
 | `Romaji.toHiragana(_:)` | Convert romaji queries to hiragana (Hepburn/Nihon-shiki) |
 | `JapaneseNormalizer.key/looseKey/tagKey/kanaForm` | Canonical Japanese comparison (NFKC, katakana→hiragana, long vowels, tags) |
 | `KanjiExtraction.kanji(in:)` | Distinct kanji for lookup chips |
+| `FormHighlight.range(of:for:in:)` | Where a kana form sits in an example sentence, spelled with the verb's kanji or in kana |
+| `TextUnit.emphasizing(_:characters:)` | Marks a character range of furigana units emphasised, splitting plain units and keeping ruby whole |
+| `Verb.units(for:)` / `Verb.dictionaryUnits` | A kana form (or the dictionary form) as ruby units spelled with the verb's kanji stem |
+| `PotentialPattern(verb:)` | How the potential form is built (ru, u, する, くる); nil without one |
 | `Verb.displayTitle` / `Word.displayTitle` | `"dict (kanji)"` title for widgets, Spotlight, intents and pickers |
 | `LevelSettings` + `Leveled` | Hidden-JLPT-level filtering, summaries and visibility checks |
 | `SpeechText.spoken/clipName` | Clean text for TTS and the recorded-clip filename contract |
@@ -117,23 +121,28 @@ Run `make` for the full list. Common ones:
 | Symbol | Use |
 |---|---|
 | `JapaneseText` | Any Japanese text that may need furigana. Use instead of `Text`; it styles like `Text` |
+| `JapaneseText(_:emphasizing:)` | The same with a character range underlined (and bold where the font has a bold face), furigana on or off |
+| `VerbExampleRow`, `VerbExampleCard` | A verb's example sentence with its form tag and the form underlined; the card puts rows on ruled paper |
+| `VerbSubPageHeader`, `verbSubPage(title:)` | A verb sub-page's header (verb, title, optional headline form) and its paper/title chrome |
 | `WrappingFlowLayout` | Wrapping row layout for chips, tags and pills |
 | `FilterChip` / `chipBackground(isOn:)` | Filter-row capsule: outlined in ink while off, filled with `button` while on; an accent adds a dot |
 | `LevelBadge(level:emphasis:)` | Outlined JLPT pill beside a row title or in a detail header; nil draws nothing |
 | `\.palette` / `ThemePalette` | The current theme's colours (paper, card, ink, muted, rule, mark, good, button, accent). Read these, not `.secondary`/`.white`, in restyled views |
-| `paperCard(cornerRadius:fillsWidth:)` | Card for detail sections: `card` fill, `rule` outline. Glass stays on bars and toolbars |
+| `paperCard(cornerRadius:fillsWidth:ruled:)` | Card for detail sections: `card` fill, `rule` outline. Glass stays on bars and toolbars. `ruled: true` adds the genkō grid, for example sentences and results |
+| `PaperButtonStyle` (`.paper` / `.paperSecondary`) | Ink-filled or outlined full-width capsule for content buttons, instead of glass |
 | `paperBackground()`, `paperRow()` | Paper behind a screen's List/ScrollView/Form; card-coloured list rows |
 | `TypeLabel(_:teGroup:emphasis:title:)` | A verb type as a dot + ink label (shapes with Differentiate Without Color; filled pill in Pastel/Ice cream) |
-| `Font.headword(_:)` | Hiragino Mincho for Japanese headwords, scaled with Dynamic Type |
+| `Font.headword(_:scale:)` / `Font.sentence(_:)` | Hiragino Mincho W6 for Japanese headwords, W3 for example sentences and phrases; both scale with Dynamic Type |
 | `themedRoot()`, `ThemePickerView` | Root palette/appearance wiring (once, in `RootView`) and Settings › Theme |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
-| `SectionHeader(_:systemImage:)` | Detail-page section heading |
+| `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |
 | `QuizChoiceButton` | Shared answer button (colors, shapes, correct/wrong states) |
 | `QuizHeader`, `QuizChoiceGrid` | Quiz progress/score header and two-column answer grid |
 | `QuizPromptCard`, `QuizFeedbackCard`, `QuizMissedCard` | Question, feedback and missed-question card surfaces |
 | `quizAdvanceBar`, `quizQuitDialog` | Pinned Next/See Results button and the quit confirmation |
-| `QuizResultsSummary` | Counter and connection quiz results; the verb quiz keeps its own `QuizResultsView` |
+| `QuizScoreCard`, `quizResultsActions(practise:onPractise:onDone:)` | The results score in a red hand-drawn ring on ruled paper, and the pinned Practise/Done buttons |
+| `QuizResultsSummary` | Counter and connection quiz results, built on `QuizScoreCard`; the verb quiz keeps its own `QuizResultsView` |
 | `LevelScopeBar`, `HiddenMatchesRow`, `NoMatchInLevelsView` | "My levels / All levels" search behavior |
 | `accentPill(_:)` | Pastel Liquid Glass capsule; used by `TypeLabel` for filled pills — prefer `TypeLabel` |
 | `formCard()` | Quiet grouped-card surface for form tables |
