@@ -114,7 +114,7 @@ Run `make` for the full list. Common ones:
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
 | `SyncVerification` (internal) | The six sync services' rollback rejection, hash verification and JSON decoding |
 | `UserDefaults.verbKitAppGroup` | The App Group defaults (falls back to `.standard`); App code aliases it as `.appGroup` |
-| `ThemeID`, `ThemeGroup`, `ThemeChoice` | The twelve themes, picker groups, seasonal override, window appearance and the one-time `appearanceMode` migration (spec: `docs/superpowers/specs/2026-11-06-paper-ink-redesign-design.md`) |
+| `ThemeID`, `ThemeGroup`, `ThemeChoice`, `AppearanceSetting` | The ten themes (each with a light and dark half), picker groups, seasonal override, the Appearance setting and the one-time migrations from `appearanceMode` and plan 1's keys (spec: `docs/superpowers/specs/2026-11-06-paper-ink-redesign-design.md`) |
 
 ### App UI components and modifiers
 
