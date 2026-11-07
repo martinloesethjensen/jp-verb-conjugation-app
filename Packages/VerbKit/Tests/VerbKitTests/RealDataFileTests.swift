@@ -73,3 +73,58 @@ final class RealFormsDataFileTests: XCTestCase {
         XCTAssertEqual(catalogue.forms, FormCatalogue.bundled.forms)
     }
 }
+
+/// The real kanji data (plan 3): `data/kanji.json` is published and signed like the other files,
+/// the app bundles the same file, it covers every verb's kanji, and every stroke draws.
+final class RealKanjiDataFileTests: XCTestCase {
+    private struct Manifest: Decodable { let kanji: KanjiManifest }
+
+    private var published: Data {
+        get throws { try Data(contentsOf: FormsJSON.repoRoot.appendingPathComponent("data/kanji.json")) }
+    }
+
+    func testTheManifestHashMatchesTheBundledAndPublishedFile() throws {
+        let manifest = try JSONDecoder().decode(
+            Manifest.self, from: Data(contentsOf: FormsJSON.repoRoot.appendingPathComponent("data/manifest.json"))
+        )
+        XCTAssertEqual(manifest.kanji.sha256, sha256Hex(of: try published))
+        let bundled = try XCTUnwrap(BundledKanji.load())
+        XCTAssertEqual(bundled.data, try published)
+        XCTAssertEqual(bundled.version, manifest.kanji.version)
+    }
+
+    func testBundledKanjiCoversEveryVerbKanji() throws {
+        let file = try KanjiDataFile.decode(try published)
+        let verbs = try JSONDecoder().decode(
+            VerbDataFile.self, from: Data(contentsOf: FormsJSON.repoRoot.appendingPathComponent("data/verbs.json"))
+        )
+        let used = KanjiExtraction.kanji(in: verbs.verbs.compactMap(\.kanji))
+        XCTAssertFalse(used.isEmpty)
+        XCTAssertEqual(used.filter { file.entries[$0] == nil }, [])
+    }
+
+    func testEveryBundledStrokeParsesInsideTheBox() throws {
+        let file = try KanjiDataFile.decode(try published)
+        var bad: [String] = []
+        for (character, entry) in file.entries {
+            for (index, d) in entry.strokes.enumerated() {
+                let elements = SVGPathData.parse(d)
+                guard case .move? = elements.first, elements.count >= 2 else {
+                    bad.append("\(character) \(index + 1): \(elements.count) elements"); continue
+                }
+                let points: [SVGPoint] = elements.flatMap { element -> [SVGPoint] in
+                    switch element {
+                    case let .move(p), let .line(p): return [p]
+                    case let .quad(p, c): return [p, c]
+                    case let .cubic(p, c1, c2): return [p, c1, c2]
+                    case .close: return []
+                    }
+                }
+                if points.contains(where: { !(-5...114).contains($0.x) || !(-5...114).contains($0.y) }) {
+                    bad.append("\(character) \(index + 1): outside the box")
+                }
+            }
+        }
+        XCTAssertEqual(bad, [], "\(bad.count) strokes do not draw")
+    }
+}

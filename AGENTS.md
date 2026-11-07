@@ -114,7 +114,8 @@ Run `make` for the full list. Common ones:
 | `ParticleBlank`, `ParticleQuiz`, `buildParticleQuestions` | Marked `particle_blanks` on examples and the particle quiz built from them (spec: `docs/superpowers/specs/2026-10-29-particle-blanks-design.md`) |
 | `DataSyncStatus` | Per-file sync status shown in Settings |
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
-| `SyncVerification` (internal) | The six sync services' rollback rejection, hash verification and JSON decoding |
+| `SyncVerification` (internal) | The seven sync services' rollback rejection, hash verification and JSON decoding |
+| `KanjiStore`, `KanjiEntry`, `KanjiDataFile` | The stroke-order data (`data/kanji.json`, built by `scripts/build_kanji.py`): `entry(for:)`, and `kanji(in:)` for the kanji in some text that have data (spec: `docs/superpowers/specs/2026-11-07-kanji-stroke-order-design.md`) |
 | `UserDefaults.verbKitAppGroup` | The App Group defaults (falls back to `.standard`); App code aliases it as `.appGroup` |
 | `ThemeID`, `ThemeGroup`, `ThemeChoice`, `AppearanceSetting` | The ten themes (each with a light and dark half), picker groups, seasonal override, the Appearance setting and the one-time migrations from `appearanceMode` and plan 1's keys (spec: `docs/superpowers/specs/2026-11-06-paper-ink-redesign-design.md`) |
 
@@ -165,11 +166,11 @@ Run `make` for the full list. Common ones:
 - **Per-file manifest types** (`VerbManifest`, `GrammarManifest`, `FuriganaManifest`,
   `WordsManifest`, `CountersManifest`) are separate on purpose: each file's sync state compares
   independently, so editing grammar does not re-download verbs. Do not merge them.
-- **Six concrete sync services** (`Verb`, `Grammar`, `Furigana`, `Words`, `Counters`, `Forms`) each
+- **Seven concrete sync services** (`Verb`, `Grammar`, `Furigana`, `Words`, `Counters`, `Forms`, `Kanji`) each
   follow the same contract and stay concrete by decision (U12). Each file keeps its own manifest,
   result type and sync-state entry, so syncing one never disturbs another. The rules that must not
   drift — rollback rejection, hash verification, decoding — live once in `SyncVerification`. Do
-  not replace the six with a generic `ManifestSyncService`; revisit only if a file stops fitting
+  not replace the seven with a generic `ManifestSyncService`; revisit only if a file stops fitting
   this shape.
 - **`RubyFlowLayout`** is intentionally specialized (glued punctuation, max lines, baseline
   alignment). Do not fold it into a generic flow layout.

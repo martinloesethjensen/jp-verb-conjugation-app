@@ -151,6 +151,21 @@ final class GitHubVerbFetcherTests: XCTestCase {
         XCTAssertEqual(data, Data("forms-at-v9".utf8))
     }
 
+    func testTheKanjiEntryIsReadAndItsFileFetchedFromItsPinnedTag() async throws {
+        try serve(
+            manifest: #"{"version": "1.0.0", "sha256": "a", "kanji": {"version": "1.3.0", "sha256": "k", "ref": "data-v9"}}"#,
+            files: ["data-v9/data/kanji.json": Data("kanji-at-v9".utf8)]
+        )
+        let fetcher = makeFetcher()
+        let manifest = try await fetcher.fetchKanjiManifest()
+        XCTAssertEqual(manifest, KanjiManifest(version: "1.3.0", sha256: "k"))
+        let data = try await fetcher.fetchKanjiData()
+        XCTAssertEqual(data, Data("kanji-at-v9".utf8))
+        try serve(manifest: #"{"version": "1.0.0", "sha256": "abc"}"#)
+        let none = try await makeFetcher().fetchKanjiManifest()
+        XCTAssertNil(none)
+    }
+
     func testFetchFormsManifestIsNilWithoutAFormsBlock() async throws {
         try serve(manifest: #"{"version": "1.0.0", "sha256": "abc"}"#)
         let forms = try await makeFetcher().fetchFormsManifest()

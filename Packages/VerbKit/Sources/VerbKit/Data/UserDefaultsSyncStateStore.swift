@@ -14,6 +14,8 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
     private let countersHashKey = "VerbKit.lastSyncedCountersManifest.sha256"
     private let formsVersionKey = "VerbKit.lastSyncedFormsManifest.version"
     private let formsHashKey = "VerbKit.lastSyncedFormsManifest.sha256"
+    private let kanjiVersionKey = "VerbKit.lastSyncedKanjiManifest.version"
+    private let kanjiHashKey = "VerbKit.lastSyncedKanjiManifest.sha256"
 
     private let build: String
 
@@ -116,6 +118,19 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
         defaults.set(manifest.version, forKey: formsVersionKey)
         markCurrent(formsVersionKey)
         defaults.set(manifest.sha256, forKey: formsHashKey)
+    }
+
+    public func lastSyncedKanjiManifest() -> KanjiManifest? {
+        guard isCurrent(kanjiVersionKey),
+              let version = defaults.string(forKey: kanjiVersionKey),
+              let sha256 = defaults.string(forKey: kanjiHashKey) else { return nil }
+        return KanjiManifest(version: version, sha256: sha256)
+    }
+
+    public func saveLastSyncedKanjiManifest(_ manifest: KanjiManifest) {
+        defaults.set(manifest.version, forKey: kanjiVersionKey)
+        markCurrent(kanjiVersionKey)
+        defaults.set(manifest.sha256, forKey: kanjiHashKey)
     }
 
     public func highestAcceptedVersion(for file: String) -> String? {
