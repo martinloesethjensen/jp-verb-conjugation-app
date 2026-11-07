@@ -7,9 +7,11 @@ enum WidgetTheme {
     /// The palette of the theme the app shows on `date`, read from the shared App Group.
     static func palette(on date: Date, scheme: ColorScheme, contrast: ColorSchemeContrast) -> ThemePalette {
         let choice = ThemeChoice.load(from: .verbKitAppGroup)
+        // From the stored setting, not only the scheme: a pinned Dark reaches the widgets, which
+        // don't see the app's window override.
         return ThemePalette.resolve(
-            choice.effectiveTheme(on: date), appearance: choice.appearance(on: date),
-            systemScheme: scheme, contrast: contrast
+            choice.effectiveTheme(on: date), isDark: choice.isDark(systemIsDark: scheme == .dark),
+            contrast: contrast
         )
     }
 

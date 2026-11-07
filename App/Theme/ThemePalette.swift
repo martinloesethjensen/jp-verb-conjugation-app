@@ -40,27 +40,19 @@ struct ThemePalette: Equatable {
         )
     }
 
-    /// The palette for `theme`. `systemScheme` decides only when the theme follows the system.
-    static func resolve(
-        _ theme: ThemeID, appearance: ThemeAppearance,
-        systemScheme: ColorScheme, contrast: ColorSchemeContrast
-    ) -> ThemePalette {
-        let isDark = switch appearance {
-        case .followSystem: systemScheme == .dark
-        case .light: false
-        case .dark: true
-        }
+    /// The palette for `theme`'s light or dark half (the spec's Themes table).
+    static func resolve(_ theme: ThemeID, isDark: Bool, contrast: ColorSchemeContrast) -> ThemePalette {
         let palette: ThemePalette = switch theme {
-        case .light, .dark: isDark ? .dark : .light
-        case .latte, .coffee: isDark ? .coffee : .latte
+        case .light: isDark ? .dark : .light
         case .pastel: isDark ? .pastelDark : .pastel
         case .sand: isDark ? .sandDark : .sand
-        case .matcha: .matcha
-        case .iceCream: .iceCream
-        case .northernLights: .northernLights
-        case .nocturnal: .nocturnal
-        case .halloween: .halloween
-        case .christmas: .christmas
+        case .matcha: isDark ? .matchaDark : .matcha
+        case .latte: isDark ? .coffee : .latte
+        case .iceCream: isDark ? .iceCreamDark : .iceCream
+        case .northernLights: isDark ? .northernLights : .northernLightsLight
+        case .nocturnal: isDark ? .nocturnal : .nocturnalLight
+        case .halloween: isDark ? .halloween : .halloweenLight
+        case .christmas: isDark ? .christmasDark : .christmas
         }
         return contrast == .increased ? palette.increasedContrast() : palette
     }

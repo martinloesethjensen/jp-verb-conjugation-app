@@ -8,7 +8,7 @@ import WidgetKit
 /// groups, and the two switches. Choosing repaints the whole app and the widgets.
 struct ThemePickerView: View {
     @AppStorage(ThemeChoice.themeKey, store: .appGroup) private var themeRaw = ThemeID.light.rawValue
-    @AppStorage(ThemeChoice.matchesSystemKey, store: .appGroup) private var matchesSystem = true
+    @AppStorage(ThemeChoice.appearanceKey, store: .appGroup) private var appearanceRaw = AppearanceSetting.automatic.rawValue
     @AppStorage(ThemeChoice.seasonalKey, store: .appGroup) private var seasonal = false
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
@@ -33,9 +33,6 @@ struct ThemePickerView: View {
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     VStack(spacing: 0) {
-                        Toggle("Match light and dark to iOS", isOn: changing($matchesSystem))
-                            .padding(.vertical, 10)
-                        Divider().overlay(palette.rule)
                         Toggle("Seasonal themes", isOn: changing($seasonal))
                             .padding(.vertical, 10)
                     }
@@ -72,18 +69,14 @@ struct ThemePickerView: View {
         }
         .paperCard(cornerRadius: 16)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Preview of the \(selected.displayName) theme")
+        .accessibilityLabel("Preview of the \(selected.displayName(isDark: colorScheme == .dark)) theme")
     }
 
     private func swatch(_ theme: ThemeID) -> some View {
-        let face = ThemePalette.resolve(theme, appearance: theme.appearance(matchingSystem: false), systemScheme: .light, contrast: .standard)
+        let face = ThemePalette.resolve(theme, isDark: colorScheme == .dark, contrast: .standard)
         let isSelected = theme == selected
         return Button {
-            // Picking the half of Light/Dark or Latte/Coffee the system isn't showing pins it.
-            let next = ThemeChoice(theme: selected, matchesSystem: matchesSystem, seasonal: seasonal)
-                .choosing(theme, systemIsDark: colorScheme == .dark)
-            themeRaw = next.theme.rawValue
-            matchesSystem = next.matchesSystem
+            themeRaw = theme.rawValue
             reloadWidgets()
         } label: {
             VStack(spacing: 4) {
@@ -97,7 +90,7 @@ struct ThemePickerView: View {
                 .overlay(Circle().strokeBorder(face.rule, lineWidth: 1))
                 .padding(3)
                 .overlay(Circle().strokeBorder(isSelected ? palette.ink : .clear, lineWidth: 3))
-                Text(theme.displayName)
+                Text(theme.displayName(isDark: colorScheme == .dark))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(palette.ink)
                     .multilineTextAlignment(.center)
