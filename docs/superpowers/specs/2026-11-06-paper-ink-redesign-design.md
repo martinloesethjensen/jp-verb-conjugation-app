@@ -110,7 +110,7 @@ Ice cream and iceCreamDark set `fillsTypePills`.
 |---|---|---|
 | 1. Theme foundation | `ThemeID`/`ThemeChoice`, palettes, root wiring and migration, paper surfaces, type label, Mincho headword in verb rows, level badge, filter chip, quiz marking, theme picker, widget palette | Style map, Proposed list/page/quiz/dark, Settings, Theme picker v2, Themes across screens, Colour-blind and contrast |
 | 2. Verb page and examples (built) | Mincho headwords on detail pages, Plain/Polite table, More forms rows, genkō example cards, results stamp | Verb page full length, potential, quiz results |
-| 2b. Theme halves and Appearance | Every theme light and dark, six new palettes, the Appearance control, ten swatches, migration, widgets | Six new halves, Theme picker, Themes across screens |
+| 2b. Theme halves and Appearance (built) | Every theme light and dark, six new palettes, the Appearance control, ten swatches, migration, widgets | Six new halves, Theme picker, Themes across screens |
 | 2c. Launch screen and first frame | Paper launch screen with the 活 seal (Shippori Mincho B1), the themed first frame that fades to content | Launch screen, Themed first frame |
 | 3. Kanji stroke order | KanjiVG subset as a signed `data/` file + schema + spec, a seventh concrete sync service, path parser, Watch/Trace sheet, entry points | Kanji stroke order, trace, opening it |
 | 4. Global search | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
