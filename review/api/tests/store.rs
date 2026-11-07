@@ -41,6 +41,7 @@ async fn seeded() -> SqliteStore {
 fn claims(email: Option<&str>) -> Claims {
     Claims {
         email: email.map(str::to_string),
+        common_name: None,
         aud: vec!["reviewer-aud".into()],
         iss: "https://team.cloudflareaccess.com".into(),
         exp: 0,

@@ -95,6 +95,11 @@ input {
 	background: var(--card);
 }
 
+input[type='checkbox'],
+input[type='radio'] {
+	width: auto;
+}
+
 input:focus-visible {
 	border-color: var(--ink);
 }

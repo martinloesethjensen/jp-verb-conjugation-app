@@ -6,6 +6,7 @@ pub mod addition;
 pub mod app;
 pub mod auth;
 pub mod data;
+pub mod export_routes;
 pub mod items;
 pub mod manifest;
 pub mod proposal;

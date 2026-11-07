@@ -26,6 +26,16 @@ pub struct AccessConfig {
     pub aud: String,
     /// The admin application's AUD tag (GitHub sign-in only).
     pub admin_aud: String,
+    /// The export application (`/api/export`, service token only); `None` turns export off.
+    pub export: Option<ExportAccess>,
+}
+
+/// The Access application in front of `GET /api/export` and the one service token it lets through.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExportAccess {
+    pub aud: String,
+    /// The service token's client id, which Access puts in the token's `common_name`.
+    pub client_id: String,
 }
 
 impl AccessConfig {
@@ -40,7 +50,20 @@ impl AccessConfig {
             team_domain: team_domain.into(),
             aud: aud.into(),
             admin_aud: admin_aud.into(),
+            export: None,
         })
+    }
+
+    /// Turns export on, unless a value is blank or the AUD tag is one of the other applications'.
+    pub fn with_export(mut self, aud: &str, client_id: &str) -> AccessConfig {
+        let (aud, client_id) = (aud.trim(), client_id.trim());
+        self.export =
+            (!aud.is_empty() && !client_id.is_empty() && aud != self.aud && aud != self.admin_aud)
+                .then(|| ExportAccess {
+                    aud: aud.into(),
+                    client_id: client_id.into(),
+                });
+        self
     }
 
     pub fn issuer(&self) -> String {
@@ -64,6 +87,8 @@ pub struct Jwk {
 pub enum Audience {
     Reviewer,
     Admin,
+    /// The export application: a service token, allowed on `GET /api/export` only.
+    Export,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -71,6 +96,9 @@ pub struct Claims {
     /// Absent for an Access service token.
     #[serde(default)]
     pub email: Option<String>,
+    /// A service token's client id (absent for people).
+    #[serde(default)]
+    pub common_name: Option<String>,
     #[serde(deserialize_with = "string_or_list")]
     pub aud: Vec<String>,
     pub iss: String,
@@ -82,9 +110,16 @@ pub struct Claims {
 }
 
 impl Claims {
-    /// `Admin` when the token is for the admin application, `Reviewer` for the reviewer one, else `None`.
+    /// `Export` for the export application (when on), `Admin` for the admin one, `Reviewer` for the reviewer
+    /// one, else `None`.
     pub fn audience(&self, cfg: &AccessConfig) -> Option<Audience> {
-        if self.aud.contains(&cfg.admin_aud) {
+        if cfg
+            .export
+            .as_ref()
+            .is_some_and(|e| self.aud.contains(&e.aud))
+        {
+            Some(Audience::Export)
+        } else if self.aud.contains(&cfg.admin_aud) {
             Some(Audience::Admin)
         } else if self.aud.contains(&cfg.aud) {
             Some(Audience::Reviewer)

@@ -136,6 +136,7 @@
 	<nav class="review-links" aria-label="Reviews">
 		<a href="/admin/inbox">Suggestions{openSuggestions === null ? '' : ` (${openSuggestions} open)`}</a>
 		<a href="/admin/queues">Queues</a>
+		<a href="/admin/export">Export</a>
 	</nav>
 	<div class="columns">
 		<section aria-labelledby="reviewers-heading">

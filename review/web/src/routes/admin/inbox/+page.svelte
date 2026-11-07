@@ -6,7 +6,7 @@
 	import ErrorLine from '#lib/ErrorLine.svelte';
 	import SuggestForm from '#lib/SuggestForm.svelte';
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
-	import { DATASET_TITLES, KINDS } from '#lib/labels.ts';
+	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
 	import { editForm, suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
@@ -69,11 +69,6 @@
 	const fieldsOf = (s: InboxSuggestion) => (adding(s) ? addFields : fieldTable)[`${s.dataset}/${s.kind}`] ?? [];
 	const canEdit = (s: InboxSuggestion) =>
 		fieldsOf(s).length > 0 && s.action !== 'delete' && (adding(s) ? !s.gone : !!s.current);
-	const ENTRY_NAMES: Record<string, string> = { verbs: 'verb', words: 'word', counters: 'counter', grammar: 'grammar point' };
-	const groupTitle = (s: InboxSuggestion) => {
-		const name = s.kind === 'entry' && adding(s) ? ENTRY_NAMES[s.dataset] : (KINDS[s.kind] ?? s.kind);
-		return adding(s) ? `New ${name}` : name;
-	};
 	const wholeRemoval = (s: InboxSuggestion) =>
 		s.action === 'delete' && s.kind === 'entry' && (s.dataset === 'verbs' || s.dataset === 'words');
 	const staleChange = (s: InboxSuggestion) => s.action === 'change' && s.stale;

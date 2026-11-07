@@ -9,7 +9,13 @@ import type { Dataset } from '../lib/api.ts';
 // The mock reads loosely typed JSON.
 type Json = { [key: string]: any };
 type Entry = { item_id: string; title: string; jlpt: string | null; json: Json };
-type User = { email: string; display_name: string; role: 'admin' | 'reviewer' };
+type User = {
+	email: string;
+	display_name: string;
+	role: 'admin' | 'reviewer';
+	public_role: 'owner' | 'teacher' | 'native';
+	public_name: string | null;
+};
 export type Reply = [number, unknown];
 
 export type ReviewContext = {
@@ -136,8 +142,13 @@ type Suggestion = {
 	id: number; action: string; dataset: string; kind: string; item_id: string; entry_id: string; item_title: string;
 	author: string; status: string; base_hash: string; proposed: Json | null; furigana: Json | null; dropped_blanks: number;
 	comment: string; admin_edit: Json | null; created_at: string; decided_at: string | null;
-	parent_kind?: string | null; parent_id?: string | null;
+	parent_kind?: string | null; parent_id?: string | null; exported_at?: string | null;
 };
+type StampRow = {
+	id: number; dataset: string; kind: string; item_id: string; entry_id: string; item_title: string;
+	content_hash: string; by: string; reviewer: string; created_at: string; exported_at: string | null;
+};
+const RANK: Record<string, number> = { owner: 0, teacher: 1, native: 2 };
 type QueueRow = { id: number; title: string; description: string; archived: boolean };
 type QueueItem = { queue_id: number; dataset: string; kind: string; item_id: string; entry_id: string; title: string; note: string; position: number };
 
@@ -148,6 +159,7 @@ export function reviewMock(ctx: ReviewContext) {
 	const queues: QueueRow[] = [];
 	const queueItems: QueueItem[] = [];
 	const skips: { queue_id: number; dataset: string; kind: string; item_id: string; reviewer: string }[] = [];
+	const stamps: StampRow[] = [];
 	let nextId = 1;
 	const now = () => new Date().toISOString();
 	const nameOf = (email: string) => ctx.users.find((u) => u.email === email)?.display_name ?? '';
@@ -183,6 +195,30 @@ export function reviewMock(ctx: ReviewContext) {
 		);
 	}
 	const find = (t: { dataset: string; kind: string; item_id: string }) => targets(t.dataset).find((x) => same(x, t));
+
+	const userOf = (email: string) => ctx.users.find((u) => u.email === email);
+	const pendingStamp = (dataset: string, id: string) =>
+		stamps.find((t) => t.dataset === dataset && t.item_id === id && !t.exported_at);
+	const stampOut = (t: StampRow) => ({
+		...t, reviewer: undefined, exported_at: undefined, name: userOf(t.reviewer)?.public_name ?? null,
+		reviewer_name: nameOf(t.reviewer)
+	});
+	/** Who a stamp of the entry would name, or why it can't be stamped (the Worker's rules). */
+	function stampReadiness(dataset: string, id: string): { reviewer: string; role: string } | string {
+		const parts = targets(dataset).filter((t) => t.entry_id === id);
+		const current = (p: (typeof parts)[number]) =>
+			approvals.filter((a) => same(a, p) && a.hash === p.hash);
+		if (parts.length === 0 || !parts.every((p) => current(p).length > 0)) return 'every part needs an approval first';
+		if (suggestions.some((s) => s.dataset === dataset && s.entry_id === id && s.status === 'open')) {
+			return 'settle its open suggestions first';
+		}
+		const best = parts
+			.flatMap(current)
+			.map((a) => ({ a, role: userOf(a.reviewer)?.public_role ?? 'native' }))
+			.sort((x, y) => RANK[x.role] - RANK[y.role] || x.a.created_at.localeCompare(y.a.created_at))[0];
+		return { reviewer: best.a.reviewer, role: best.role };
+	}
+	const stampsHere = (dataset: string) => dataset === 'counters' || dataset === 'grammar';
 
 	const approvalOut = (a: Approval) => ({
 		kind: a.kind, item_id: a.item_id, reviewer_name: nameOf(a.reviewer), mine: a.reviewer === ctx.me.email,
@@ -272,7 +308,8 @@ export function reviewMock(ctx: ReviewContext) {
 
 	function handle(path: string, method: string, params: URLSearchParams, body: Json): Reply | undefined {
 		const admin = path.startsWith('/admin/');
-		if (admin && (['/admin/inbox', '/admin/decide'].includes(path) || path.startsWith('/admin/queues'))) {
+		const adminPaths = ['/admin/inbox', '/admin/decide', '/admin/stamp', '/admin/stamp/withdraw', '/admin/stampable', '/admin/export', '/admin/exported'];
+		if (admin && (adminPaths.includes(path) || path.startsWith('/admin/queues'))) {
 			if (ctx.me.role !== 'admin') return [403, { error: "this account can't do that" }];
 		}
 		const by = ctx.me.email;
@@ -283,8 +320,61 @@ export function reviewMock(ctx: ReviewContext) {
 			return [200, {
 				parts: targets(dataset).filter((t) => t.entry_id === id).map((t) => ({ kind: t.kind, item_id: t.item_id, content_hash: t.hash })),
 				approvals: approvals.filter((a) => a.dataset === dataset && a.entry_id === id).map(approvalOut),
-				suggestions: suggestions.filter((s) => s.dataset === dataset && s.entry_id === id).reverse().map(suggestionOut)
+				suggestions: suggestions.filter((s) => s.dataset === dataset && s.entry_id === id).reverse().map(suggestionOut),
+				stamp: stampsHere(dataset) && pendingStamp(dataset, id) ? stampOut(pendingStamp(dataset, id)!) : null,
+				stampable: stampsHere(dataset) && !pendingStamp(dataset, id) && typeof stampReadiness(dataset, id) !== 'string'
 			}];
+		}
+		if (path === '/admin/stampable' && method === 'GET') {
+			const entries = ['counters', 'grammar'].flatMap((d) =>
+				targets(d)
+					.filter((t) => t.kind === 'entry' && !t.value.review && !pendingStamp(d, t.item_id))
+					.filter((t) => typeof stampReadiness(d, t.item_id) !== 'string')
+					.map((t) => ({ dataset: d, item_id: t.item_id, title: t.title }))
+			);
+			return [200, { entries }];
+		}
+		if (path === '/admin/stamp' || path === '/admin/stamp/withdraw') {
+			const dataset = String(body.dataset ?? '');
+			const id = String(body.id ?? '');
+			if (!stampsHere(dataset)) return [400, { error: 'only counters and grammar points take a stamp for now' }];
+			const pending = pendingStamp(dataset, id);
+			if (path === '/admin/stamp/withdraw') {
+				if (!pending) return [404, { error: 'there is no stamp waiting for export on that' }];
+				stamps.splice(stamps.indexOf(pending), 1);
+				return [200, { withdrawn: true }];
+			}
+			if (pending) return [200, stampOut(pending)];
+			const entry = find({ dataset, kind: 'entry', item_id: id });
+			if (!entry) return [404, { error: NOT_LOADED }];
+			const ready = stampReadiness(dataset, id);
+			if (typeof ready === 'string') return [409, { error: ready }];
+			const row: StampRow = { id: nextId++, dataset, kind: 'entry', item_id: id, entry_id: id, item_title: entry.title,
+				content_hash: entry.hash, by: ready.role, reviewer: ready.reviewer, created_at: now(), exported_at: null };
+			stamps.push(row);
+			return [201, stampOut(row)];
+		}
+		if (path === '/admin/export' && method === 'GET') {
+			const waiting = suggestions.filter((s) => s.status === 'accepted' && !s.exported_at);
+			return [200, {
+				files: {},
+				suggestions: waiting.map((s) => ({
+					id: s.id, action: s.action, dataset: s.dataset, kind: s.kind, item_id: s.item_id, entry_id: s.entry_id,
+					parent_kind: s.parent_kind ?? null, parent_id: s.parent_id ?? null, item_title: s.item_title,
+					item: ['change', 'add'].includes(s.action) ? (s.admin_edit ?? s.proposed) : null,
+					editable: null, furigana: s.furigana, comment: s.comment,
+					credit: { role: userOf(s.author)?.public_role ?? 'native', name: userOf(s.author)?.public_name ?? null },
+					decided_at: s.decided_at
+				})),
+				stamps: stamps.filter((t) => !t.exported_at).map(stampOut)
+			}];
+		}
+		if (path === '/admin/exported' && method === 'POST') {
+			const ids = (v: unknown) => (Array.isArray(v) ? v.map(Number) : []);
+			const marked = suggestions.filter((s) => ids(body.suggestions).includes(s.id) && s.status === 'accepted' && !s.exported_at);
+			const markedStamps = stamps.filter((t) => ids(body.stamps).includes(t.id) && !t.exported_at);
+			for (const row of [...marked, ...markedStamps]) row.exported_at = now();
+			return [200, { suggestions: marked.length, stamps: markedStamps.length }];
 		}
 		if (path === '/approve' || path === '/approve/withdraw') {
 			const t = targetOf(body);

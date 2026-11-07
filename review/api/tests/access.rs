@@ -181,3 +181,13 @@ fn the_config_refuses_missing_or_identical_audiences() {
     assert_eq!(AccessConfig::new("t", " ", "b"), None);
     assert_eq!(AccessConfig::new("t", "a", ""), None);
 }
+
+#[test]
+fn export_config_needs_a_distinct_aud_and_a_client_id() {
+    let with = |aud: &str, id: &str| cfg().with_export(aud, id).export;
+    assert!(with("export-aud", "client.access").is_some());
+    assert_eq!(with("", "client.access"), None);
+    assert_eq!(with("export-aud", " "), None);
+    assert_eq!(with("reviewer-aud", "client.access"), None);
+    assert_eq!(with("admin-aud", "client.access"), None);
+}

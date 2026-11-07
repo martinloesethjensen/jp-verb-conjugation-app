@@ -82,7 +82,11 @@ fn config(env: &Env) -> Option<AppConfig> {
             &secret("ACCESS_TEAM_DOMAIN"),
             &secret("ACCESS_AUD"),
             &secret("ACCESS_ADMIN_AUD"),
-        )?,
+        )?
+        .with_export(
+            &secret("ACCESS_EXPORT_AUD"),
+            &secret("ACCESS_EXPORT_CLIENT_ID"),
+        ),
         site_origin: env
             .var("SITE_ORIGIN")
             .ok()

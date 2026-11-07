@@ -826,6 +826,36 @@ impl ReviewStore for SqliteStore {
         query(&conn, SELECT_READY_TO_STAMP, [])
     }
 
+    async fn export_batch(&self) -> Result<(Vec<ExportRow>, Vec<Stamp>), StoreError> {
+        let conn = self.conn.borrow();
+        Ok((
+            query(&conn, SELECT_EXPORT_SUGGESTIONS, [])?,
+            query(&conn, SELECT_EXPORT_STAMPS, [])?,
+        ))
+    }
+
+    async fn mark_exported(
+        &self,
+        suggestions: &[i64],
+        stamps: &[i64],
+        actor: &str,
+        now: &str,
+    ) -> Result<(usize, usize), StoreError> {
+        let ids = |v: &[i64]| serde_json::to_string(v).unwrap();
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let a = tx
+            .execute(MARK_SUGGESTIONS_EXPORTED, params![ids(suggestions), now])
+            .map_err(backend)?;
+        let b = tx
+            .execute(MARK_STAMPS_EXPORTED, params![ids(stamps), now])
+            .map_err(backend)?;
+        let detail = format!("suggestions={} stamps={}", ids(suggestions), ids(stamps));
+        audit_tx(&tx, now, actor, "export.mark", "export", &detail)?;
+        tx.commit().map_err(backend)?;
+        Ok((a, b))
+    }
+
     async fn add_stamp(&self, s: &NewStamp, actor: &str, now: &str) -> Result<(), StoreError> {
         let mut conn = self.conn.borrow_mut();
         let tx = conn.transaction().map_err(backend)?;

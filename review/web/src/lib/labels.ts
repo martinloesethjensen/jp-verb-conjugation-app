@@ -135,3 +135,18 @@ export const CREDIT_ROLES: Record<PublicRole, string> = {
 /** What the public repo says about someone: their public name, else their role. */
 export const creditOf = (c: { public_role: PublicRole; public_name: string | null }) =>
 	c.public_name ?? CREDIT_ROLES[c.public_role];
+
+/** What a new entry is called, per dataset. */
+export const ENTRY_NAMES: Record<string, string> = {
+	verbs: 'verb',
+	words: 'word',
+	counters: 'counter',
+	grammar: 'grammar point'
+};
+
+/** A suggestion's heading in the inbox and on the Export page: "Example", "New verb". */
+export function groupTitle(s: { action: string; kind: string; dataset: string }): string {
+	const adding = s.action === 'add';
+	const name = s.kind === 'entry' && adding ? ENTRY_NAMES[s.dataset] : (KINDS[s.kind] ?? s.kind);
+	return adding ? `New ${name}` : name;
+}

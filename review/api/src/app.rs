@@ -6,8 +6,9 @@
 
 use crate::access::{verify, AccessConfig, Jwk};
 use crate::add_routes;
-use crate::auth::{authorize, normalize_email, Need, Principal};
+use crate::auth::{authorize, authorize_export, normalize_email, Need, Principal};
 use crate::data::DataFile;
+use crate::export_routes;
 use crate::items::{extract_slice, slices};
 use crate::manifest::{self, TRUSTED_KEYS};
 use crate::review_routes::{self, tri, QueueItemAction};
@@ -79,6 +80,9 @@ enum Handler {
     Stamp,
     WithdrawStamp,
     Stampable,
+    Export,
+    AdminExport,
+    MarkExported,
 }
 
 struct Route {
@@ -306,6 +310,24 @@ const ROUTES: &[Route] = &[
         need: Need::Admin,
         handler: Handler::Stampable,
     },
+    Route {
+        method: "GET",
+        path: "/api/export",
+        need: Need::Export,
+        handler: Handler::Export,
+    },
+    Route {
+        method: "GET",
+        path: "/api/admin/export",
+        need: Need::Admin,
+        handler: Handler::AdminExport,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/exported",
+        need: Need::Admin,
+        handler: Handler::MarkExported,
+    },
 ];
 
 pub const MAX_DISPLAY_NAME: usize = 40;
@@ -347,7 +369,12 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
     let Some(route) = candidates.into_iter().find(|r| r.method == req.method) else {
         return error(405, "method not allowed");
     };
-    let Ok(principal) = authorize(&claims, audience, route.need, store).await else {
+    let principal = if route.need == Need::Export {
+        authorize_export(&claims, audience, &cfg.access)
+    } else {
+        authorize(&claims, audience, route.need, store).await
+    };
+    let Ok(principal) = principal else {
         return error(403, "this account can't do that");
     };
     if !matches!(req.method.as_str(), "GET" | "HEAD")
@@ -424,6 +451,8 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
         Handler::Stamp => stamp_routes::stamp(&req.body, &principal, store, today).await,
         Handler::WithdrawStamp => stamp_routes::withdraw(&req.body, &principal, store, today).await,
         Handler::Stampable => stamp_routes::ready_list(store).await,
+        Handler::Export | Handler::AdminExport => export_routes::batch(store).await,
+        Handler::MarkExported => export_routes::mark(&req.body, &principal, store, today).await,
     }
 }
 

@@ -299,6 +299,36 @@ export type ReadyEntry = { dataset: string; item_id: string; title: string };
 export const getStampable = async () =>
 	(await request<{ entries: ReadyEntry[] }>('/api/admin/stampable')).entries;
 
+/** An accepted suggestion as export carries it (no email: only how its author is credited). */
+export type ExportSuggestion = {
+	id: number;
+	action: SuggestionAction;
+	dataset: string;
+	kind: string;
+	item_id: string;
+	entry_id: string;
+	parent_kind: string | null;
+	parent_id: string | null;
+	item_title: string;
+	item: Record<string, unknown> | null;
+	editable: string[] | null;
+	furigana: Record<string, string> | null;
+	comment: string;
+	credit: { role: PublicRole; name: string | null };
+	decided_at: string | null;
+};
+
+export type ExportBatch = {
+	files: Record<string, string>;
+	suggestions: ExportSuggestion[];
+	stamps: Stamp[];
+};
+
+export const getExport = () => request<ExportBatch>('/api/admin/export');
+
+export const markExported = (suggestions: number[], stamps: number[]) =>
+	request<{ suggestions: number; stamps: number }>('/api/admin/exported', { suggestions, stamps });
+
 export const getReview = (dataset: string, id: string) =>
 	request<Review>(`/api/review?${new URLSearchParams({ dataset, id })}`);
 

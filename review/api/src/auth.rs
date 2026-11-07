@@ -1,6 +1,6 @@
 //! Who is asking, and may they. Access says who signed in; D1 says whether they may use the site, and as what.
 
-use crate::access::{Audience, Claims};
+use crate::access::{AccessConfig, Audience, Claims};
 use crate::store::{Role, Store};
 
 /// What a route needs. Admin routes also need the admin Access application (GitHub with a passkey), so
@@ -9,6 +9,8 @@ use crate::store::{Role, Store};
 pub enum Need {
     Reviewer,
     Admin,
+    /// The export service token, and nobody else.
+    Export,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -45,6 +47,11 @@ pub async fn authorize<S: Store>(
     need: Need,
     store: &S,
 ) -> Result<Principal, Denied> {
+    // The export application's token is a service token: it reads export and nothing else, and people
+    // never get through it.
+    if audience == Audience::Export || need == Need::Export {
+        return Err(Denied::Forbidden);
+    }
     let email = claims
         .email
         .as_deref()
@@ -61,5 +68,26 @@ pub async fn authorize<S: Store>(
         email: user.email,
         display_name: user.display_name,
         role: user.role,
+    })
+}
+
+/// The export service token: the export application's AUD, no email, and the configured client id.
+pub fn authorize_export(
+    claims: &Claims,
+    audience: Audience,
+    cfg: &AccessConfig,
+) -> Result<Principal, Denied> {
+    let client_id = cfg.export.as_ref().map(|e| e.client_id.as_str());
+    if audience != Audience::Export
+        || claims.email.is_some()
+        || client_id.is_none()
+        || claims.common_name.as_deref() != client_id
+    {
+        return Err(Denied::Forbidden);
+    }
+    Ok(Principal {
+        email: "export".into(),
+        display_name: "export".into(),
+        role: Role::Admin,
     })
 }

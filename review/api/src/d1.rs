@@ -887,6 +887,31 @@ impl ReviewStore for D1Store {
         self.rows(SELECT_READY_TO_STAMP, &[]).await
     }
 
+    async fn export_batch(&self) -> Result<(Vec<ExportRow>, Vec<Stamp>), StoreError> {
+        let suggestions = self.rows(SELECT_EXPORT_SUGGESTIONS, &[]).await?;
+        let stamps = self.rows(SELECT_EXPORT_STAMPS, &[]).await?;
+        Ok((suggestions, stamps))
+    }
+
+    async fn mark_exported(
+        &self,
+        suggestions: &[i64],
+        stamps: &[i64],
+        actor: &str,
+        now: &str,
+    ) -> Result<(usize, usize), StoreError> {
+        let ids = |v: &[i64]| serde_json::to_string(v).unwrap_or_else(|_| "[]".into());
+        let a = self.statement(
+            MARK_SUGGESTIONS_EXPORTED,
+            &[text(&ids(suggestions)), text(now)],
+        )?;
+        let b = self.statement(MARK_STAMPS_EXPORTED, &[text(&ids(stamps)), text(now)])?;
+        let detail = format!("suggestions={} stamps={}", ids(suggestions), ids(stamps));
+        let log = self.log(now, actor, "export.mark", "export", &detail)?;
+        let results = self.db.batch(vec![a, b, log]).await.map_err(backend)?;
+        Ok((changes(results.first()), changes(results.get(1))))
+    }
+
     async fn add_stamp(&self, s: &NewStamp, actor: &str, now: &str) -> Result<(), StoreError> {
         let [d, k, i] = Self::target_binds(&s.target);
         let insert = self.statement(

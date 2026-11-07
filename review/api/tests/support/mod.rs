@@ -43,6 +43,7 @@ pub fn cfg() -> AccessConfig {
         team_domain: "team.cloudflareaccess.com".into(),
         aud: "reviewer-aud".into(),
         admin_aud: "admin-aud".into(),
+        export: None,
     }
 }
 

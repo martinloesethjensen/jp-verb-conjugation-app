@@ -420,6 +420,43 @@ pub const SELECT_STAMP_READINESS: &str = concat!(
      (SELECT content_hash FROM items WHERE dataset = ?1 AND kind = 'entry' AND item_id = ?2) AS content_hash, \
      (SELECT title FROM items WHERE dataset = ?1 AND kind = 'entry' AND item_id = ?2) AS title"
 );
+/// An accepted suggestion as export reads it: the item to write (the owner's edit, else the reviewer's),
+/// and how its author is credited. Never the author's email.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ExportRow {
+    pub id: i64,
+    pub action: String,
+    pub dataset: String,
+    pub kind: String,
+    pub item_id: String,
+    pub entry_id: String,
+    pub parent_kind: Option<String>,
+    pub parent_id: Option<String>,
+    pub item_title: String,
+    pub item_json: Option<String>,
+    pub furigana_json: Option<String>,
+    pub comment: String,
+    pub credit_role: String,
+    pub credit_name: Option<String>,
+    pub decided_at: Option<String>,
+}
+
+pub const SELECT_EXPORT_SUGGESTIONS: &str = "SELECT s.id, s.action, s.dataset, s.kind, s.item_id, s.entry_id, \
+     s.parent_kind, s.parent_id, s.item_title, IFNULL(s.admin_edit_json, s.proposed_json) AS item_json, \
+     s.furigana_json, s.comment, IFNULL(u.public_role, 'native') AS credit_role, u.public_name AS credit_name, \
+     s.decided_at FROM suggestions s LEFT JOIN users u ON u.email = s.author \
+     WHERE s.status = 'accepted' AND s.exported_at IS NULL ORDER BY s.id";
+pub const SELECT_EXPORT_STAMPS: &str = concat!(
+    stamp_columns!(),
+    "WHERE s.exported_at IS NULL ORDER BY s.id"
+);
+/// ?1 a JSON array of ids, ?2 now. Only accepted, not yet exported suggestions change.
+pub const MARK_SUGGESTIONS_EXPORTED: &str = "UPDATE suggestions SET exported_at = ?2 \
+     WHERE id IN (SELECT value FROM json_each(?1)) AND status = 'accepted' AND exported_at IS NULL";
+/// ?1 a JSON array of ids, ?2 now.
+pub const MARK_STAMPS_EXPORTED: &str = "UPDATE stamps SET exported_at = ?2 \
+     WHERE id IN (SELECT value FROM json_each(?1)) AND exported_at IS NULL";
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ReadyEntry {
     pub dataset: String,
@@ -775,6 +812,16 @@ pub trait ReviewStore {
     ) -> Result<StampReadiness, StoreError>;
     async fn pending_stamp(&self, t: &Target) -> Result<Option<Stamp>, StoreError>;
     async fn ready_to_stamp(&self) -> Result<Vec<ReadyEntry>, StoreError>;
+    /// Accepted suggestions and stamps not yet exported, oldest first.
+    async fn export_batch(&self) -> Result<(Vec<ExportRow>, Vec<Stamp>), StoreError>;
+    /// Marks those still waiting as exported (audit row `export.mark`); returns how many of each changed.
+    async fn mark_exported(
+        &self,
+        suggestions: &[i64],
+        stamps: &[i64],
+        actor: &str,
+        now: &str,
+    ) -> Result<(usize, usize), StoreError>;
     /// Stores a pending stamp with its audit row (`stamp.add`); a pending one for the target is kept.
     async fn add_stamp(&self, s: &NewStamp, actor: &str, now: &str) -> Result<(), StoreError>;
     /// Deletes the pending stamp (audit row `stamp.withdraw`); false when there was none.
