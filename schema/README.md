@@ -10,6 +10,7 @@ One [JSON Schema](https://json-schema.org/draft/2020-12) per published file in `
 | `grammar.schema.json` | `data/grammar.json` |
 | `furigana.schema.json` | `data/furigana.json` |
 | `forms.schema.json` | `data/forms.json` |
+| `kanji.schema.json` | `data/kanji.json` (built by `scripts/build_kanji.py`) |
 
 They are the contract for every client that reads `data/`: the iOS app's `Codable` models, the review site's
 Rust Worker (`review/api`), and an Android app later. `scripts/update_data.py` checks each file against its

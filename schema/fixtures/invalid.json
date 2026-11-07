@@ -2430,5 +2430,57 @@
       ]
     },
     "error": "'ね' is not one of"
+  },
+  {
+    "name": "kanji stroke not a path",
+    "dataset": "kanji",
+    "doc": {
+      "schema": 1,
+      "sources": {
+        "kanjivg": "20260714",
+        "kanjidic2": "2026-11-07"
+      },
+      "license": "x",
+      "kanji": {
+        "人": {
+          "strokes": [
+            "x"
+          ],
+          "on": [
+            "ジン"
+          ],
+          "kun": [
+            "ひと"
+          ],
+          "meanings": [
+            "person"
+          ]
+        }
+      }
+    },
+    "error": "does not match"
+  },
+  {
+    "name": "kanji key is the repeat mark",
+    "dataset": "kanji",
+    "doc": {
+      "schema": 1,
+      "sources": {
+        "kanjivg": "20260714",
+        "kanjidic2": "2026-11-07"
+      },
+      "license": "x",
+      "kanji": {
+        "々": {
+          "strokes": [
+            "M1,1c1,1,1,1,1,1"
+          ],
+          "on": [],
+          "kun": [],
+          "meanings": []
+        }
+      }
+    },
+    "error": "does not match"
   }
 ]

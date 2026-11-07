@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/martinloesethjensen/jp-verb-conjugation-app/main/schema/kanji.schema.json",
+  "title": "Kanji stroke order",
+  "description": "data/kanji.json: stroke paths (KanjiVG, CC BY-SA 3.0) and readings, meanings and grade (KANJIDIC2, CC BY-SA 4.0) for every jōyō kanji and every kanji in the app's data. Built by scripts/build_kanji.py; spec docs/superpowers/specs/2026-11-07-kanji-stroke-order-design.md.",
+  "type": "object",
+  "required": ["schema", "sources", "license", "kanji"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": 1},
+    "sources": {
+      "type": "object",
+      "required": ["kanjivg", "kanjidic2"],
+      "additionalProperties": false,
+      "properties": {
+        "kanjivg": {"type": "string", "pattern": "^[0-9]{8}$"},
+        "kanjidic2": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      }
+    },
+    "license": {"type": "string", "minLength": 1},
+    "kanji": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[一-鿿]$"},
+      "additionalProperties": {"$ref": "#/$defs/entry"}
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "required": ["strokes", "on", "kun", "meanings"],
+      "additionalProperties": false,
+      "properties": {
+        "strokes": {
+          "description": "One SVG path d per stroke, in stroke order, in KanjiVG's 109 x 109 box (y down).",
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "pattern": "^[Mm][-0-9.,eMmCcSsLlHhVvQqTtZz ]+$"}
+        },
+        "grade": {
+          "description": "KANJIDIC2 school grade: 1-6, or 8 for the jōyō kanji taught in secondary school. Absent otherwise.",
+          "enum": [1, 2, 3, 4, 5, 6, 8]
+        },
+        "on": {"type": "array", "items": {"type": "string", "pattern": "^-?[ァ-ヺー]+-?$"}},
+        "kun": {
+          "description": "KANJIDIC2 notation: '.' separates the okurigana, '-' marks a prefix or suffix use.",
+          "type": "array",
+          "items": {"type": "string", "pattern": "^-?[ぁ-ゖー]+(\\.[ぁ-ゖー]+)?-?$"}
+        },
+        "meanings": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}
