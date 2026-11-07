@@ -48,6 +48,7 @@ public struct ThemeChoice: Equatable, Sendable {
         guard let raw = defaults.string(forKey: themeKey) else {
             let choice = migrated(appearanceMode: defaults.string(forKey: legacyAppearanceKey))
             choice.save(to: defaults)
+            defaults.removeObject(forKey: matchesSystemKey)
             return choice
         }
         guard let appearanceRaw = defaults.string(forKey: appearanceKey) else {
@@ -65,9 +66,11 @@ public struct ThemeChoice: Equatable, Sendable {
         )
     }
 
+    /// Writes the appearance before the theme: `load` looks at the theme key first, so another
+    /// process (the widget) reading between the writes never sees a half-migrated choice.
     public func save(to defaults: UserDefaults) {
-        defaults.set(theme.rawValue, forKey: Self.themeKey)
         defaults.set(appearance.rawValue, forKey: Self.appearanceKey)
+        defaults.set(theme.rawValue, forKey: Self.themeKey)
         defaults.set(seasonal, forKey: Self.seasonalKey)
     }
 

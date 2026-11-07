@@ -26,7 +26,7 @@ struct ThemePalette: Equatable {
     let onButton: Color
     /// Switches and the selected tab.
     let accent: Color
-    /// Pastel and Ice cream fill the verb-type pill with the type colour instead of a dot.
+    /// Both halves of Pastel and Ice cream fill the verb-type pill with the type colour instead of a dot.
     let fillsTypePills: Bool
 
     /// Increase Contrast: secondary text halfway to ink, hairlines halfway to secondary text.

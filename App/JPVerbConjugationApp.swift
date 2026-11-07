@@ -147,6 +147,8 @@ struct JPVerbConjugationApp: App {
             NavigationStack {
                 SettingsView()
             }
+            // The Settings window is its own scene, so it needs the theme's palette too.
+            .themedRoot()
             .environment(verbStore)
             .environment(dataSyncStatus)
             .environment(quizHistory)

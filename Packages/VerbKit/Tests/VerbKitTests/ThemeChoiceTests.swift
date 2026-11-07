@@ -101,6 +101,23 @@ final class ThemeChoiceTests: XCTestCase {
         }
     }
 
+    /// The widget can read between two writes. Writing the appearance first means a reader that
+    /// sees the new theme key always sees the appearance with it, never a half-migrated plan 1 state.
+    func testSaveWritesAppearanceBeforeTheme() {
+        let defaults = RecordingDefaults(suiteName: #function)!
+        defaults.removePersistentDomain(forName: #function)
+        ThemeChoice(theme: .sand, appearance: .dark).save(to: defaults)
+        let order = defaults.keysSet
+        XCTAssertLessThan(order.firstIndex(of: ThemeChoice.appearanceKey)!, order.firstIndex(of: ThemeChoice.themeKey)!)
+    }
+
+    func testPreThemeMigrationRemovesStaleMatchingKey() {
+        let defaults = freshDefaults()
+        defaults.set(false, forKey: ThemeChoice.matchesSystemKey)
+        _ = ThemeChoice.load(from: defaults)
+        XCTAssertNil(defaults.object(forKey: ThemeChoice.matchesSystemKey))
+    }
+
     func testSaveLoadRoundTripAndUnknownFallsBack() {
         let defaults = freshDefaults()
         let choice = ThemeChoice(theme: .northernLights, appearance: .dark, seasonal: true)
@@ -110,5 +127,17 @@ final class ThemeChoiceTests: XCTestCase {
         XCTAssertEqual(ThemeChoice.load(from: defaults).theme, .light)
         defaults.set("sepia", forKey: ThemeChoice.appearanceKey)
         XCTAssertEqual(ThemeChoice.load(from: defaults).appearance, .automatic)
+    }
+}
+
+private final class RecordingDefaults: UserDefaults {
+    var keysSet: [String] = []
+    override func set(_ value: Any?, forKey defaultName: String) {
+        keysSet.append(defaultName)
+        super.set(value, forKey: defaultName)
+    }
+    override func set(_ value: Bool, forKey defaultName: String) {
+        keysSet.append(defaultName)
+        super.set(value, forKey: defaultName)
     }
 }
