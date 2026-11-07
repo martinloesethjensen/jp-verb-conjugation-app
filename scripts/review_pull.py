@@ -106,13 +106,16 @@ def pull(repo, batch, today, base, commit):
         return None
     if base.startswith("origin/"):
         git(repo, "fetch", "--quiet", "origin")
-    start = git(repo, "branch", "--show-current") or git(repo, "rev-parse", "HEAD")
+    # On a detached HEAD (as in CI's pull request checkout) the way back is a commit, which
+    # `git switch` only accepts with --detach.
+    current = git(repo, "branch", "--show-current")
+    start = [current] if current else ["--detach", git(repo, "rev-parse", "HEAD")]
     branch = free_branch(repo, today)
     git(repo, "switch", "--quiet", "-c", branch, base)
     for name in touched_files(batch):
         sha = hashlib.sha256((repo / "data" / f"{name}.json").read_bytes()).hexdigest()
         if sha != batch["files"].get(name):
-            git(repo, "switch", "--quiet", start)
+            git(repo, "switch", "--quiet", *start)
             git(repo, "branch", "--quiet", "-D", branch)
             raise Refused(
                 f"The site's copy of {name}.json is older than main: load the published data on the site, then "
