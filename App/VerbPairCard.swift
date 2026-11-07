@@ -19,7 +19,7 @@ struct VerbPairCard: View {
                     Divider()
                     row(partnerPair, of: partner, opens: true)
                 }
-                .glassCard()
+                .paperCard()
             }
         }
     }
