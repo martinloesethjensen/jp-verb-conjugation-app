@@ -1767,10 +1767,14 @@ def validate_grammar(doc):
     return errors
 
 
-# Review stamps: an entry (a counter, a grammar point) may carry {"by", "on", "sha256"}. The hash covers the
+# Review stamps: an entry (a counter, a grammar point) may carry {"by", "on", "sha256"} and an optional public
+# "name" (the reviewer's choice; without it only the role is public). The hash covers the
 # entry's own content without the stamp and without generated fields, so regenerating keeps a stamp valid and
 # any edit to the text makes it stale.
-REVIEWERS = ("owner", "teacher")
+REVIEWERS = ("owner", "teacher", "native")
+# Who outranks whom when a stamp names "the most senior reviewer involved".
+REVIEWER_RANK = {"owner": 0, "teacher": 1, "native": 2}
+MAX_REVIEW_NAME = 40
 COUNTER_GENERATED = ("readings", "changed", "distractors")
 ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -1806,6 +1810,10 @@ def check_reviews(entries, generated=()):
             problems.append(f"{name}: review.by must be one of {list(REVIEWERS)}")
         if not valid_iso_date(stamp.get("on")):
             problems.append(f"{name}: review.on must be a date like 2026-10-24")
+        if "name" in stamp and not (isinstance(stamp["name"], str)
+                                    and 1 <= len(stamp["name"].strip()) <= MAX_REVIEW_NAME
+                                    and stamp["name"] == stamp["name"].strip()):
+            problems.append(f"{name}: review.name must be 1 to {MAX_REVIEW_NAME} characters")
         if not isinstance(stamp.get("sha256"), str):
             problems.append(f"{name}: review.sha256 is missing")
         elif stamp["sha256"] != review_hash(entry, generated) and stamp.get("by") in REVIEWERS \

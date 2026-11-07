@@ -2471,3 +2471,23 @@ class ParticleBlankRunTests(unittest.TestCase):
         self.assertEqual(code, 0, messages)
         written = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
         self.assertEqual(written["verbs"][0]["examples"][0]["particle_blanks"], [{"particle": "を", "at": 5}])
+
+
+class PublicNameStampTests(unittest.TestCase):
+    stamped = ReviewStampTests.stamped
+
+    def test_native_stamp_with_name_passes(self):
+        self.assertEqual(ud.check_reviews([self.stamped(counter(), by="native", name="Aiko")]), [])
+
+    def test_stamp_name_must_be_short_text(self):
+        problems = ud.check_reviews([self.stamped(counter(), name=""), self.stamped(counter(id="b"), name="x" * 41)])
+        self.assertEqual(problems, ["hon: review.name must be 1 to 40 characters",
+                                    "b: review.name must be 1 to 40 characters"])
+
+    def test_schema_accepts_native_stamp_with_name(self):
+        doc = json.loads((ud.SCHEMA_DIR.parent / "data" / "counters.json").read_text(encoding="utf-8"))
+        doc["counters"][0]["review"] = {"by": "native", "on": "2026-11-07", "sha256": "a" * 64, "name": "Aiko"}
+        self.assertEqual(ud.schema_problems("counters", doc), [])
+        grammar = json.loads((ud.SCHEMA_DIR.parent / "data" / "grammar.json").read_text(encoding="utf-8"))
+        grammar["grammar"][0]["review"] = {"by": "native", "on": "2026-11-07", "sha256": "a" * 64, "name": "Aiko"}
+        self.assertEqual(ud.schema_problems("grammar", grammar), [])

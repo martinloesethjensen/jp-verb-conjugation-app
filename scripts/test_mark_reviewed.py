@@ -89,3 +89,11 @@ class StampGrammarTextTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PublicStampTests(unittest.TestCase):
+    def test_name_is_written_only_when_given(self):
+        entry = counters_doc()["counters"][0]
+        self.assertEqual(mr.stamp(entry, "native", "2026-11-07", name="Aiko")["name"], "Aiko")
+        self.assertNotIn("name", mr.stamp(entry, "teacher", "2026-11-07"))
+        self.assertEqual(mr.stamp(entry, "native", "2026-11-07")["by"], "native")

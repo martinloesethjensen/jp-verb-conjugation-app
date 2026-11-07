@@ -83,3 +83,12 @@ fn a_missing_verb_kanji_is_like_null() {
     doc["verbs"][1]["kanji"] = serde_json::Value::Null;
     assert!(parse(DataFile::Verbs, doc.to_string().as_bytes()).is_ok());
 }
+
+#[test]
+fn a_native_stamp_with_a_name_parses() {
+    let mut doc: serde_json::Value = serde_json::from_slice(&real(DataFile::Counters)).unwrap();
+    doc["counters"][0]["review"] = serde_json::json!({
+        "by": "native", "on": "2026-11-07", "sha256": "a".repeat(64), "name": "Aiko"
+    });
+    assert!(parse(DataFile::Counters, doc.to_string().as_bytes()).is_ok());
+}

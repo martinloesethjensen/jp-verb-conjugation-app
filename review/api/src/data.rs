@@ -131,6 +131,9 @@ pub struct ReviewStamp {
     pub by: Reviewer,
     pub on: String,
     pub sha256: String,
+    /// The reviewer's public name, when they chose one.
+    #[serde(default)]
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -138,6 +141,7 @@ pub struct ReviewStamp {
 pub enum Reviewer {
     Owner,
     Teacher,
+    Native,
 }
 
 // --- verbs.json ---------------------------------------------------------------------------------

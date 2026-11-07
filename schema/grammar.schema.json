@@ -58,7 +58,8 @@
         "by": {
           "enum": [
             "owner",
-            "teacher"
+            "teacher",
+            "native"
           ]
         },
         "on": {
@@ -68,6 +69,10 @@
         "sha256": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },

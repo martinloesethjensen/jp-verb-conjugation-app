@@ -45,7 +45,8 @@ content with its generated fields (`readings`, `changed`, `distractors`) and the
 
 - computes the hash and **fails with a clear message when a stamp no longer matches** ("hon was edited after
   review on 2026-10-24: re-review it, or run `scripts/mark_reviewed.py` again");
-- validates the shape (`by` is `owner` or `teacher`, `on` is a date);
+- validates the shape (`by` is `owner`, `teacher` or `native`, `on` is a date, the optional `name` is 1 to 40
+  characters);
 - never writes a stamp itself.
 
 `scripts/mark_reviewed.py <counters|grammar> <id>… --by teacher --on 2026-10-24` adds or refreshes stamps, so
@@ -93,7 +94,8 @@ reviewing is: read the entries, run the script, sign. Old builds ignore the fiel
 1. **Scope:** counters and grammar points.
 2. **Stamp:** a hash, a date and a reviewer, so an edit un-reviews an entry.
 3. **Wording:** "Not yet reviewed" and "Reviewed".
-4. **Reviewers:** `owner` and `teacher` only.
+4. **Reviewers:** `owner` and `teacher` only. Since the review site (plan 6): also `native`, and an optional `name`,
+   the reviewer's public name, present only when they chose one (`--name` on `mark_reviewed.py`).
 
 ## As built
 

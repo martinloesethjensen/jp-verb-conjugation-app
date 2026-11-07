@@ -1,13 +1,14 @@
 import Foundation
 
-/// Who reviewed an entry. The data pipeline accepts only these two.
+/// Who reviewed an entry. The data pipeline accepts only these.
 public enum Reviewer: String, Codable, Hashable, Sendable {
-    case owner, teacher
+    case owner, teacher, native
 
     public var displayName: String {
         switch self {
         case .owner: "the owner"
         case .teacher: "a teacher"
+        case .native: "a native speaker"
         }
     }
 }
@@ -20,11 +21,14 @@ public struct ReviewStamp: Codable, Hashable, Sendable {
     /// An ISO date, "2026-10-24".
     public var on: String
     public var sha256: String
+    /// The reviewer's public name, when they chose one; otherwise only the role is public.
+    public var name: String?
 
-    public init(by: Reviewer, on: String, sha256: String) {
+    public init(by: Reviewer, on: String, sha256: String, name: String? = nil) {
         self.by = by
         self.on = on
         self.sha256 = sha256
+        self.name = name
     }
 }
 

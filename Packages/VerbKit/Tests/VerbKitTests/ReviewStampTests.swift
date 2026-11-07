@@ -64,4 +64,13 @@ final class ReviewStampTests: XCTestCase {
         XCTAssertEqual(ReviewSummary([Counter]()), ReviewSummary(reviewed: 0, total: 0, latest: nil))
         XCTAssertEqual(ReviewSummary([counter(), counter()]), ReviewSummary(reviewed: 0, total: 2, latest: nil))
     }
+
+    func testANativeStampWithANameDecodes() throws {
+        let native = #", "review": {"by": "native", "on": "2026-11-07", "sha256": "abc", "name": "Aiko"}"#
+        let review = try XCTUnwrap(counter(native).review)
+        XCTAssertEqual(review.by, .native)
+        XCTAssertEqual(review.name, "Aiko")
+        XCTAssertEqual(review.by.displayName, "a native speaker")
+        XCTAssertNil(counter(stamp).review?.name)
+    }
 }
