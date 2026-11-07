@@ -45,6 +45,11 @@ final class SVGPathDataTests: XCTestCase {
         XCTAssertEqual(SVGPathData.parse("M0 0L1 1z").last, .close)
     }
 
+    /// Numbers after Z have no command to belong to: parsing stops instead of looping.
+    func testNumbersAfterCloseStop() {
+        XCTAssertEqual(SVGPathData.parse("M0 0Z 1 1"), [.move(p(0, 0)), .close])
+    }
+
     func testGarbageStopsWithoutCrashing() {
         XCTAssertEqual(SVGPathData.parse("M1 2 X 3"), [.move(p(1, 2))])
     }

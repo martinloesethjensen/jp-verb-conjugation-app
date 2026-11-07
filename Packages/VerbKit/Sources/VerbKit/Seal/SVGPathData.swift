@@ -81,6 +81,7 @@ public enum SVGPathData {
                 current = to
             case "Z":
                 out.append(.close); current = start
+                command = nil   // Z takes no numbers: a number after it stops parsing
             default:
                 return out
             }
