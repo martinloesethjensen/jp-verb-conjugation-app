@@ -129,12 +129,13 @@ func teacherPath() -> CGPath {
 }
 
 func sumiPath() -> CGPath {
-    // M98 34C88 16 70 9 52 12 28 16 12 38 14 62s22 44 46 46c22 2 40-10 47-30
+    // M98 34C88 16 70 9 52 12 28 16 12 38 14 62s6 48 46 48c22 0 40-12 47-32
     let p = CGMutablePath()
     p.move(to: CGPoint(x: 98, y: 34))
     p.addCurve(to: CGPoint(x: 52, y: 12), control1: CGPoint(x: 88, y: 16), control2: CGPoint(x: 70, y: 9))
     p.addCurve(to: CGPoint(x: 14, y: 62), control1: CGPoint(x: 28, y: 16), control2: CGPoint(x: 12, y: 38))
-    p.addCurve(to: CGPoint(x: 60, y: 108), control1: CGPoint(x: 16, y: 86), control2: CGPoint(x: 36, y: 106))
+    // The lower-left sweep swings wide enough to keep 活's left stroke clear (same gap as the teacher's circle).
+    p.addCurve(to: CGPoint(x: 60, y: 110), control1: CGPoint(x: 16, y: 86), control2: CGPoint(x: 20, y: 110))
     p.addCurve(to: CGPoint(x: 107, y: 78), control1: CGPoint(x: 82, y: 110), control2: CGPoint(x: 100, y: 98))
     return p
 }

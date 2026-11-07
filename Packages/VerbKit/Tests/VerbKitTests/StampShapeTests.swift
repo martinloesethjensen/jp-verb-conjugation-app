@@ -20,6 +20,12 @@ final class StampShapeTests: XCTestCase {
         XCTAssertEqual(StampShape.moon.strokes.map(\.usesSecondColor), [false, true, true])
     }
 
+    /// Widened on 2026-11-07 so the brush circle no longer touches the foot of 活 (measured
+    /// against the generated outline: 2.79 units clear, like the teacher's circle).
+    func testSumiSweepsWideAtTheLowerLeft() {
+        XCTAssertEqual(StampShape.sumi.strokes.first?.d, "M98 34C88 16 70 9 52 12 28 16 12 38 14 62s6 48 46 48c22 0 40-12 47-32")
+    }
+
     func testEveryShapeParses() {
         for shape in StampShape.allCases {
             for stroke in shape.strokes {

@@ -33,7 +33,8 @@ public enum StampShape: String, CaseIterable, Sendable {
     }
 
     static let teacherPath = "M60 10C87 9 110 31 109 60c-1 28-23 50-51 49C31 108 10 87 11 59 12 34 31 14 57 11"
-    static let sumiPath = "M98 34C88 16 70 9 52 12 28 16 12 38 14 62s22 44 46 46c22 2 40-10 47-30"
+    /// The lower-left sweep keeps 活's left stroke clear by the same gap as the teacher's circle.
+    static let sumiPath = "M98 34C88 16 70 9 52 12 28 16 12 38 14 62s6 48 46 48c22 0 40-12 47-32"
     static let ensoPath = "M86 22C70 8 38 9 22 30S14 90 44 104s66 0 70-36c2-18-6-32-14-40"
     static let heartPath = "M60 110C24 86 4 62 12 36c6-18 32-24 48-6 16-18 42-12 48 6 8 26-12 50-48 74z"
     static let moonPath = "M95 13a13 13 0 1 0 10 21a10 10 0 1 1-10-21z"
