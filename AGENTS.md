@@ -120,13 +120,14 @@ Run `make` for the full list. Common ones:
 | `FilterChip` / `chipBackground(isOn:)` | Filter-row capsule: outlined in ink while off, filled with `button` while on; an accent adds a dot |
 | `LevelBadge(level:emphasis:)` | Outlined JLPT pill beside a row title or in a detail header; nil draws nothing |
 | `\.palette` / `ThemePalette` | The current theme's colours (paper, card, ink, muted, rule, mark, good, button, accent). Read these, not `.secondary`/`.white`, in restyled views |
-| `paperCard(cornerRadius:fillsWidth:)` | Card for detail sections: `card` fill, `rule` outline. Glass stays on bars and toolbars |
+| `paperCard(cornerRadius:fillsWidth:ruled:)` | Card for detail sections: `card` fill, `rule` outline. Glass stays on bars and toolbars. `ruled: true` adds the genkō grid, for example sentences and results |
+| `PaperButtonStyle` (`.paper` / `.paperSecondary`) | Ink-filled or outlined full-width capsule for content buttons, instead of glass |
 | `paperBackground()`, `paperRow()` | Paper behind a screen's List/ScrollView/Form; card-coloured list rows |
 | `TypeLabel(_:teGroup:emphasis:title:)` | A verb type as a dot + ink label (shapes with Differentiate Without Color; filled pill in Pastel/Ice cream) |
-| `Font.headword(_:)` | Hiragino Mincho for Japanese headwords, scaled with Dynamic Type |
+| `Font.headword(_:scale:)` / `Font.sentence(_:)` | Hiragino Mincho W6 for Japanese headwords, W3 for example sentences and phrases; both scale with Dynamic Type |
 | `themedRoot()`, `ThemePickerView` | Root palette/appearance wiring (once, in `RootView`) and Settings › Theme |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
-| `SectionHeader(_:systemImage:)` | Detail-page section heading |
+| `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |
 | `QuizChoiceButton` | Shared answer button (colors, shapes, correct/wrong states) |
 | `QuizHeader`, `QuizChoiceGrid` | Quiz progress/score header and two-column answer grid |
