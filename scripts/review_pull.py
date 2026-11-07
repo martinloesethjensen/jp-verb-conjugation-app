@@ -20,6 +20,8 @@ import hashlib
 import json
 import subprocess
 import sys
+import re
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -53,6 +55,23 @@ def keychain(account):
     return result.stdout.strip()
 
 
+def describe_http_error(status, content_type, body):
+    """What a failed export request means: the Worker's own error, or Cloudflare Access refusing the token."""
+    text = body.decode("utf-8", errors="replace")
+    if "json" in (content_type or ""):
+        try:
+            return f"HTTP {status} from the site: {json.loads(text)['error']}"
+        except (ValueError, KeyError, TypeError):
+            pass
+    if "html" in (content_type or "") and "Cloudflare Access" in text:
+        return (f"HTTP {status} from Cloudflare Access: it refused the service token before the site saw it. "
+                f"Check the Keychain items ({KEYCHAIN_SERVICE}: client-id, client-secret) against the token, and "
+                "that the export application's policy is Service Auth with that token (review/README.md, "
+                "Exporting).")
+    short = re.sub(r"\s+", " ", text).strip()[:200]
+    return f"HTTP {status}: {short}"
+
+
 def fetch_from_site():
     request = urllib.request.Request(EXPORT_URL, headers={
         "CF-Access-Client-Id": keychain("client-id"),
@@ -62,6 +81,8 @@ def fetch_from_site():
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        raise Refused(describe_http_error(error.code, error.headers.get("content-type"), error.read()))
     except Exception as error:  # urllib raises several kinds; the message is what the owner needs
         raise Refused(f"couldn't read {EXPORT_URL}: {error}")
 

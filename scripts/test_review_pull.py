@@ -17,6 +17,22 @@ def git(cwd, *args):
     return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
 
 
+class HttpErrorTests(unittest.TestCase):
+    def test_the_workers_json_error_is_shown(self):
+        self.assertEqual(rp.describe_http_error(401, "application/json", b'{"error":"sign in first"}'),
+                         "HTTP 401 from the site: sign in first")
+
+    def test_an_access_page_points_at_the_token(self):
+        page = b"<!doctype html><html><head><title>Error \xe3\x83\xbb Cloudflare Access</title></head></html>"
+        message = rp.describe_http_error(401, "text/html", page)
+        self.assertIn("HTTP 401 from Cloudflare Access", message)
+        self.assertIn("Keychain", message)
+        self.assertIn("Service Auth", message)
+
+    def test_anything_else_is_shown_short(self):
+        self.assertEqual(rp.describe_http_error(502, "text/plain", b"x" * 500), "HTTP 502: " + "x" * 200)
+
+
 class PullTests(unittest.TestCase):
     """Each test runs in a fresh local clone, based on the clone's HEAD (this branch)."""
 
