@@ -219,7 +219,29 @@ export type Suggestion = {
 };
 
 export type ReviewPart = { kind: string; item_id: string; content_hash: string };
-export type Review = { parts: ReviewPart[]; approvals: Approval[]; suggestions: Suggestion[] };
+/** A stamp the owner made, waiting for export. `name` is the reviewer's public name (null: anonymous). */
+export type Stamp = {
+	id: number;
+	dataset: string;
+	kind: string;
+	item_id: string;
+	entry_id: string;
+	item_title: string;
+	content_hash: string;
+	by: PublicRole;
+	name: string | null;
+	reviewer_name: string;
+	created_at: string;
+};
+
+export type Review = {
+	parts: ReviewPart[];
+	approvals: Approval[];
+	suggestions: Suggestion[];
+	/** Counters and grammar points: the pending stamp, and whether one can be made now. */
+	stamp: Stamp | null;
+	stampable: boolean;
+};
 
 export type QueueSummary = {
 	id: number;
@@ -265,6 +287,17 @@ export type InboxSuggestion = Suggestion & {
 type Edits = { edits?: Record<string, string>; furigana?: Record<string, string> };
 
 const body = (target: Target) => ({ dataset: target.dataset, kind: target.kind, id: target.id });
+
+export const stampEntry = (dataset: string, id: string) => request<Stamp>('/api/admin/stamp', { dataset, id });
+
+export const withdrawStamp = (dataset: string, id: string) =>
+	request<{ withdrawn: boolean }>('/api/admin/stamp/withdraw', { dataset, id });
+
+/** A counter or grammar point whose every part is approved, with nothing open and no stamp yet. */
+export type ReadyEntry = { dataset: string; item_id: string; title: string };
+
+export const getStampable = async () =>
+	(await request<{ entries: ReadyEntry[] }>('/api/admin/stampable')).entries;
 
 export const getReview = (dataset: string, id: string) =>
 	request<Review>(`/api/review?${new URLSearchParams({ dataset, id })}`);

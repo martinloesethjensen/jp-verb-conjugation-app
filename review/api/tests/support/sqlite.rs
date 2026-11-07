@@ -798,6 +798,73 @@ impl ReviewStore for SqliteStore {
         tx.commit().map_err(backend)
     }
 
+    async fn stamp_readiness(
+        &self,
+        dataset: &str,
+        entry_id: &str,
+    ) -> Result<StampReadiness, StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<StampReadiness> =
+            query(&conn, SELECT_STAMP_READINESS, params![dataset, entry_id])?;
+        rows.into_iter()
+            .next()
+            .ok_or_else(|| StoreError::Backend("no readiness row".into()))
+    }
+
+    async fn pending_stamp(&self, t: &Target) -> Result<Option<Stamp>, StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<Stamp> = query(
+            &conn,
+            SELECT_PENDING_STAMP,
+            params![t.dataset, t.kind, t.item_id],
+        )?;
+        Ok(rows.into_iter().next())
+    }
+
+    async fn ready_to_stamp(&self) -> Result<Vec<ReadyEntry>, StoreError> {
+        let conn = self.conn.borrow();
+        query(&conn, SELECT_READY_TO_STAMP, [])
+    }
+
+    async fn add_stamp(&self, s: &NewStamp, actor: &str, now: &str) -> Result<(), StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let t = &s.target;
+        tx.execute(
+            INSERT_STAMP,
+            params![
+                t.dataset,
+                t.kind,
+                t.item_id,
+                s.entry_id,
+                s.item_title,
+                s.content_hash,
+                s.by_role,
+                s.reviewer,
+                actor,
+                now
+            ],
+        )
+        .map_err(backend)?;
+        let detail = format!("by={} hash={}", s.by_role, s.content_hash);
+        audit_tx(&tx, now, actor, "stamp.add", &t.audit_name(), &detail)?;
+        tx.commit().map_err(backend)
+    }
+
+    async fn withdraw_stamp(&self, t: &Target, actor: &str, now: &str) -> Result<bool, StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let deleted = tx
+            .execute(DELETE_PENDING_STAMP, params![t.dataset, t.kind, t.item_id])
+            .map_err(backend)?;
+        if deleted == 0 {
+            return Ok(false);
+        }
+        audit_tx(&tx, now, actor, "stamp.withdraw", &t.audit_name(), "")?;
+        tx.commit().map_err(backend)?;
+        Ok(true)
+    }
+
     async fn entry_review(
         &self,
         dataset: &str,

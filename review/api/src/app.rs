@@ -13,6 +13,7 @@ use crate::manifest::{self, TRUSTED_KEYS};
 use crate::review_routes::{self, tri, QueueItemAction};
 use crate::review_store::ReviewStore;
 use crate::source::Source;
+use crate::stamp_routes;
 use crate::store::{NewUser, PublicRole, Role, SnapshotFile, SnapshotLoad, Store, StoreError};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -75,6 +76,9 @@ enum Handler {
     Decide,
     Add,
     Additions,
+    Stamp,
+    WithdrawStamp,
+    Stampable,
 }
 
 struct Route {
@@ -284,6 +288,24 @@ const ROUTES: &[Route] = &[
         need: Need::Reviewer,
         handler: Handler::Additions,
     },
+    Route {
+        method: "POST",
+        path: "/api/admin/stamp",
+        need: Need::Admin,
+        handler: Handler::Stamp,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/stamp/withdraw",
+        need: Need::Admin,
+        handler: Handler::WithdrawStamp,
+    },
+    Route {
+        method: "GET",
+        path: "/api/admin/stampable",
+        need: Need::Admin,
+        handler: Handler::Stampable,
+    },
 ];
 
 pub const MAX_DISPLAY_NAME: usize = 40;
@@ -399,6 +421,9 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
         Handler::Additions => {
             add_routes::additions(param(&req.query, "dataset"), &principal, store).await
         }
+        Handler::Stamp => stamp_routes::stamp(&req.body, &principal, store, today).await,
+        Handler::WithdrawStamp => stamp_routes::withdraw(&req.body, &principal, store, today).await,
+        Handler::Stampable => stamp_routes::ready_list(store).await,
     }
 }
 

@@ -127,9 +127,24 @@ pub async fn review<S: ReviewStore>(
         .entry_review(file.name(), &id, &by.email)
         .await
         .map_err(unavailable));
+    // Stamps: only for what the pipeline stamps, so other datasets cost no extra queries.
+    let (mut stamp, mut stampable) = (None, false);
+    if crate::stamp_routes::stampable(file, Kind::Entry) {
+        let t = Target {
+            dataset: file.name().to_string(),
+            kind: Kind::Entry.as_str().to_string(),
+            item_id: id.clone(),
+        };
+        stamp = tri!(store.pending_stamp(&t).await.map_err(unavailable));
+        stampable = stamp.is_none()
+            && crate::stamp_routes::ready(store, file.name(), &id)
+                .await
+                .is_ok();
+    }
     ok(
         200,
-        json!({ "parts": parts, "approvals": approvals, "suggestions": suggestions }),
+        json!({ "parts": parts, "approvals": approvals, "suggestions": suggestions,
+                "stamp": stamp, "stampable": stampable }),
     )
 }
 

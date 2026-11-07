@@ -12,6 +12,7 @@ pub mod proposal;
 pub mod review_routes;
 pub mod review_store;
 pub mod source;
+pub mod stamp_routes;
 pub mod store;
 
 #[cfg(target_arch = "wasm32")]

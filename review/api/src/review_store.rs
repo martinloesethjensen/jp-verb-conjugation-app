@@ -346,6 +346,108 @@ pub fn assemble(rows: Vec<SuggestionRow>, comments: Vec<CommentRow>) -> Vec<Sugg
 // --- SQL ------------------------------------------------------------------------------------------
 
 /// ?1 dataset, ?2 entry id: the entry and its parts in file order.
+/// A stamp the owner made, waiting for export. `by` is the reviewer's public role when stamped; `name` is
+/// their public name now (they can change it until export); `reviewer_name` is their site name.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Stamp {
+    pub id: i64,
+    pub dataset: String,
+    pub kind: String,
+    pub item_id: String,
+    pub entry_id: String,
+    pub item_title: String,
+    pub content_hash: String,
+    pub by: String,
+    pub name: Option<String>,
+    pub reviewer_name: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NewStamp {
+    pub target: Target,
+    pub entry_id: String,
+    pub item_title: String,
+    pub content_hash: String,
+    pub by_role: String,
+    pub reviewer: String,
+}
+
+/// Whether an entry can be stamped: parts without a current approval, open suggestions on it, and the most
+/// senior reviewer among its current approvals (by public role, then the earliest approval).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct StampReadiness {
+    pub missing: i64,
+    pub open: i64,
+    pub reviewer: Option<String>,
+    pub reviewer_role: Option<String>,
+    pub content_hash: Option<String>,
+    pub title: Option<String>,
+}
+
+macro_rules! stamp_columns {
+    () => {
+        "SELECT s.id, s.dataset, s.kind, s.item_id, s.entry_id, s.item_title, s.content_hash, \
+     s.by_role AS \"by\", u.public_name AS name, IFNULL(u.display_name, '') AS reviewer_name, s.created_at \
+     FROM stamps s LEFT JOIN users u ON u.email = s.reviewer "
+    };
+}
+/// ?1–?3 the target.
+pub const SELECT_PENDING_STAMP: &str = concat!(
+    stamp_columns!(),
+    "WHERE s.dataset = ?1 AND s.kind = ?2 AND s.item_id = ?3 AND s.exported_at IS NULL"
+);
+/// The current approvals of an entry's parts, most senior reviewer first. ?1 dataset, ?2 entry id.
+macro_rules! senior_approval {
+    () => {
+        "FROM approvals a \
+     JOIN items i ON i.dataset = a.dataset AND i.kind = a.kind AND i.item_id = a.item_id AND i.content_hash = a.content_hash \
+     JOIN users u ON u.email = a.reviewer WHERE a.dataset = ?1 AND i.entry_id = ?2 \
+     ORDER BY CASE u.public_role WHEN 'owner' THEN 0 WHEN 'teacher' THEN 1 ELSE 2 END, a.created_at, a.reviewer LIMIT 1"
+    };
+}
+/// ?1 dataset, ?2 entry id.
+pub const SELECT_STAMP_READINESS: &str = concat!(
+    "SELECT (SELECT COUNT(*) FROM items i WHERE i.dataset = ?1 AND i.entry_id = ?2 AND NOT EXISTS \
+     (SELECT 1 FROM approvals a WHERE a.dataset = i.dataset AND a.kind = i.kind AND a.item_id = i.item_id \
+     AND a.content_hash = i.content_hash)) AS missing, \
+     (SELECT COUNT(*) FROM suggestions WHERE dataset = ?1 AND entry_id = ?2 AND status = 'open') AS open, \
+     (SELECT a.reviewer ",
+    senior_approval!(),
+    ") AS reviewer, (SELECT u.public_role ",
+    senior_approval!(),
+    ") AS reviewer_role, \
+     (SELECT content_hash FROM items WHERE dataset = ?1 AND kind = 'entry' AND item_id = ?2) AS content_hash, \
+     (SELECT title FROM items WHERE dataset = ?1 AND kind = 'entry' AND item_id = ?2) AS title"
+);
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReadyEntry {
+    pub dataset: String,
+    pub item_id: String,
+    pub title: String,
+}
+
+/// Counters and grammar points ready for the owner's stamp: every part approved at its current hash,
+/// nothing open, no pending stamp, and no stamp in the published data already.
+pub const SELECT_READY_TO_STAMP: &str = "SELECT e.dataset, e.item_id, e.title FROM items e \
+     WHERE e.kind = 'entry' AND e.dataset IN ('counters', 'grammar') AND json_extract(e.json, '$.review') IS NULL \
+     AND NOT EXISTS (SELECT 1 FROM items i WHERE i.dataset = e.dataset AND i.entry_id = e.item_id AND NOT EXISTS \
+       (SELECT 1 FROM approvals a WHERE a.dataset = i.dataset AND a.kind = i.kind AND a.item_id = i.item_id \
+        AND a.content_hash = i.content_hash)) \
+     AND NOT EXISTS (SELECT 1 FROM suggestions s WHERE s.dataset = e.dataset AND s.entry_id = e.item_id \
+       AND s.status = 'open') \
+     AND NOT EXISTS (SELECT 1 FROM stamps t WHERE t.dataset = e.dataset AND t.kind = 'entry' \
+       AND t.item_id = e.item_id AND t.exported_at IS NULL) \
+     ORDER BY e.dataset, e.position";
+/// ?1–?3 target, ?4 entry id, ?5 title, ?6 hash, ?7 role, ?8 reviewer, ?9 by, ?10 now.
+pub const INSERT_STAMP: &str =
+    "INSERT INTO stamps (dataset, kind, item_id, entry_id, item_title, content_hash, \
+     by_role, reviewer, created_by, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) \
+     ON CONFLICT (dataset, kind, item_id) WHERE exported_at IS NULL DO NOTHING";
+/// ?1–?3 the target.
+pub const DELETE_PENDING_STAMP: &str =
+    "DELETE FROM stamps WHERE dataset = ?1 AND kind = ?2 AND item_id = ?3 AND exported_at IS NULL";
+
 pub const SELECT_PARTS: &str = "SELECT kind, item_id, content_hash FROM items WHERE dataset = ?1 AND entry_id = ?2 ORDER BY position";
 
 pub const SELECT_HASH: &str = "SELECT content_hash, entry_id, title FROM items WHERE dataset = ?1 AND kind = ?2 AND item_id = ?3";
@@ -666,6 +768,17 @@ pub trait ReviewStore {
         entry_id: &str,
         viewer: &str,
     ) -> Result<(Vec<Approval>, Vec<Suggestion>), StoreError>;
+    async fn stamp_readiness(
+        &self,
+        dataset: &str,
+        entry_id: &str,
+    ) -> Result<StampReadiness, StoreError>;
+    async fn pending_stamp(&self, t: &Target) -> Result<Option<Stamp>, StoreError>;
+    async fn ready_to_stamp(&self) -> Result<Vec<ReadyEntry>, StoreError>;
+    /// Stores a pending stamp with its audit row (`stamp.add`); a pending one for the target is kept.
+    async fn add_stamp(&self, s: &NewStamp, actor: &str, now: &str) -> Result<(), StoreError>;
+    /// Deletes the pending stamp (audit row `stamp.withdraw`); false when there was none.
+    async fn withdraw_stamp(&self, t: &Target, actor: &str, now: &str) -> Result<bool, StoreError>;
     /// Suggestions in a status, oldest first.
     async fn inbox(&self, status: &str, viewer: &str) -> Result<Vec<Suggestion>, StoreError>;
     /// `(entry_id, approved targets, open suggestions)` per entry of a dataset.

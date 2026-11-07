@@ -863,6 +863,63 @@ impl ReviewStore for D1Store {
         ))
     }
 
+    async fn stamp_readiness(
+        &self,
+        dataset: &str,
+        entry_id: &str,
+    ) -> Result<StampReadiness, StoreError> {
+        let rows = self
+            .rows(SELECT_STAMP_READINESS, &[text(dataset), text(entry_id)])
+            .await?;
+        rows.into_iter()
+            .next()
+            .ok_or_else(|| StoreError::Backend("no readiness row".into()))
+    }
+
+    async fn pending_stamp(&self, t: &Target) -> Result<Option<Stamp>, StoreError> {
+        let rows = self
+            .rows(SELECT_PENDING_STAMP, &Self::target_binds(t))
+            .await?;
+        Ok(rows.into_iter().next())
+    }
+
+    async fn ready_to_stamp(&self) -> Result<Vec<ReadyEntry>, StoreError> {
+        self.rows(SELECT_READY_TO_STAMP, &[]).await
+    }
+
+    async fn add_stamp(&self, s: &NewStamp, actor: &str, now: &str) -> Result<(), StoreError> {
+        let [d, k, i] = Self::target_binds(&s.target);
+        let insert = self.statement(
+            INSERT_STAMP,
+            &[
+                d,
+                k,
+                i,
+                text(&s.entry_id),
+                text(&s.item_title),
+                text(&s.content_hash),
+                text(&s.by_role),
+                text(&s.reviewer),
+                text(actor),
+                text(now),
+            ],
+        )?;
+        let detail = format!("by={} hash={}", s.by_role, s.content_hash);
+        let log = self.log(now, actor, "stamp.add", &s.target.audit_name(), &detail)?;
+        self.db.batch(vec![insert, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn withdraw_stamp(&self, t: &Target, actor: &str, now: &str) -> Result<bool, StoreError> {
+        if self.pending_stamp(t).await?.is_none() {
+            return Ok(false);
+        }
+        let delete = self.statement(DELETE_PENDING_STAMP, &Self::target_binds(t))?;
+        let log = self.log(now, actor, "stamp.withdraw", &t.audit_name(), "")?;
+        self.db.batch(vec![delete, log]).await.map_err(backend)?;
+        Ok(true)
+    }
+
     async fn inbox(&self, status: &str, viewer: &str) -> Result<Vec<Suggestion>, StoreError> {
         let binds = [text(viewer), text(status)];
         let rows = self.rows(SELECT_INBOX, &binds).await?;
