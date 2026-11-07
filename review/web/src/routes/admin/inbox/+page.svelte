@@ -8,7 +8,7 @@
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import { DATASET_TITLES, KINDS } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
-	import { editForm } from '#lib/targets.ts';
+	import { editForm, suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
 
 	type Status = 'open' | 'accepted' | 'declined';
@@ -74,8 +74,6 @@
 		const name = s.kind === 'entry' && adding(s) ? ENTRY_NAMES[s.dataset] : (KINDS[s.kind] ?? s.kind);
 		return adding(s) ? `New ${name}` : name;
 	};
-	const hrefOf = (s: InboxSuggestion) =>
-		`/item?${new URLSearchParams({ dataset: s.dataset, id: s.entry_id })}${s.kind === 'entry' ? '' : `#${s.item_id}`}`;
 	const wholeRemoval = (s: InboxSuggestion) =>
 		s.action === 'delete' && s.kind === 'entry' && (s.dataset === 'verbs' || s.dataset === 'words');
 	const staleChange = (s: InboxSuggestion) => s.action === 'change' && s.stale;
@@ -139,11 +137,7 @@
 		{@const first = group.items[0]}
 		<section class="group">
 			<h2>
-				{#if adding(first) && first.kind === 'entry'}
-					<span lang="ja">{first.item_title}</span>
-				{:else}
-					<a href={hrefOf(first)} lang="ja">{first.item_title}</a>
-				{/if}
+				<a href={suggestionHref(first)} lang="ja">{first.item_title}</a>
 				<span class="kind">{groupTitle(first)} · {DATASET_TITLES[first.dataset as Dataset] ?? first.dataset}</span>
 			</h2>
 			{#each group.items as s (s.id)}

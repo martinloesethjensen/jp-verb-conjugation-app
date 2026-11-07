@@ -317,3 +317,51 @@ async fn edit_then_accept_cannot_change_a_new_entrys_id() {
     .await;
     assert_eq!(r.status, 200, "{}", r.body);
 }
+
+fn new_verb(dict: &str, kanji: &str, meaning: &str) -> Value {
+    json!({"dataset": "verbs", "kind": "entry", "fields": {
+        "dict": dict, "kanji": kanji, "type": "ru", "meaning": meaning, "description": "A ru-verb.",
+        "notes": "Everyday verb.", "jlpt": "N5",
+        "masu_pos": "たべます", "masu_neg": "たべません", "masu_past": "たべました",
+        "masu_past_neg": "たべませんでした", "te": "たべて", "short_pos": "たべる",
+        "short_neg": "たべない", "short_past": "たべた", "short_past_neg": "たべなかった",
+        "example_form": "te", "example_jp": "たべて寝た。", "example_en": "Ate and slept."
+    }})
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_verb_already_loaded_with_the_same_kanji_is_refused() {
+    let s = seeded().await;
+    let r = post(&s, "/api/add", new_verb("たべる", "食べる", "to eat"), AIKO).await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str()),
+        (409, Some("たべる (食べる) is already in the data")),
+        "{}",
+        r.body
+    );
+    // Another spelling of the same kana is a different verb and gets its own id.
+    let r = post(&s, "/api/add", new_verb("たべる", "喰べる", "to devour"), AIKO).await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    assert_eq!(r.body["item_id"], "たべる:喰べる");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_changed_resubmission_of_your_own_new_entry_is_refused() {
+    let s = seeded().await;
+    let first = post(&s, "/api/add", new_word("ねこ", "noun"), AIKO).await;
+    assert_eq!(first.status, 201, "{}", first.body);
+    let mut changed = new_word("ねこ", "noun");
+    changed["fields"]["meaning"] = json!("cat (pet)");
+    let r = post(&s, "/api/add", changed, AIKO).await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str()),
+        (
+            409,
+            Some("you already suggested adding noun:ねこ; withdraw that suggestion to send a changed one")
+        ),
+        "{}",
+        r.body
+    );
+    let r = get(&s, "/api/additions?dataset=words", AIKO).await;
+    assert_eq!(r.body["suggestions"][0]["proposed"]["meaning"], "cat");
+}

@@ -164,11 +164,15 @@ Reviewers can suggest new items, and you rule on them in the same inbox:
   when you export.
 - **Ids are given when the suggestion is made and kept through export:**
   - A part gets a 6-character stable id.
-  - A verb gets its kana, or `kana:kanji` when that kana is already a verb. A kana-only duplicate is refused.
+  - A verb gets its kana, or `kana:kanji` when that kana is already a verb with other kanji. A verb already
+    loaded with the same kana and kanji, or a kana-only duplicate, is refused.
   - A word gets `class:dictionary form`.
   - A counter or grammar point gets the id the reviewer types.
 
-  Suggesting an entry someone else already suggested is refused, with a pointer to the earlier suggestion.
+  Suggesting an entry someone else already suggested is refused, with a pointer to the earlier suggestion. Sending
+  your own pending entry again returns it unchanged; a changed version is refused until you withdraw the first.
+- **Links from the inbox:** a new part opens the item page at the part it goes under, and a new entry opens its
+  list of suggested additions.
 - **In the inbox:** an addition shows the new item itself, marked "New". Edit then accept fills its add form
   from the proposal and keeps its ids. If the place it was added to leaves the data, it shows "No longer in the
   data" and plain Accept is refused. After you export and reload, it shows "Now in the data".
