@@ -72,6 +72,7 @@ public enum CommonMistakes {
         "ppoi#0": .meaningAndRegister, "ppoi#1": .joining,
         "teiru#0": .meaningAndRegister, "teiru#1": .meaningAndRegister, "teiru#2": .joining,
         "teiru#3": .lookAlike,
+        "verb-pairs#0": .lookAlike, "verb-pairs#1": .joining, "verb-pairs#2": .meaningAndRegister,
         "teshimau#0": .meaningAndRegister, "teshimau#1": .lookAlike, "teshimau#2": .meaningAndRegister,
         "temiru#0": .meaningAndRegister, "temiru#1": .joining, "temiru#2": .meaningAndRegister,
         "sugiru#0": .joining, "sugiru#1": .meaningAndRegister, "sugiru#2": .lookAlike,
