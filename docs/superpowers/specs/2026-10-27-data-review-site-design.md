@@ -182,9 +182,16 @@ failure back to the owner before anything is written.
    `mark_reviewed.py` does.
 3. Writes `review` stamps for approvals (see below).
 4. Runs `update_data.py`; on failure, reports which suggestion caused it and stops.
-5. Prints a summary for the PR body: each change with its author's display name or role (see open question 2).
-6. The owner signs (`make sign-commit`) and opens the PR. After merge, the owner marks the batch exported on
-   the site (or the script does it with the next pull, by seeing the new manifest version).
+5. Prints a summary for the PR body: each change with its author's public name or role (see open question 2).
+6. The owner pushes and opens the PR, an ordinary unsigned data PR: since #197 the owner signs merged batches
+   with `make data-release`. After merge, the owner marks the batch exported on the site's Export page
+   (`suggestions.exported_at` and `stamps.exported_at`, set by `POST /api/admin/exported`; there is no
+   `exported` status).
+
+Implemented in plan 6: `scripts/review_pull.py` (fetch, branch, checks), `scripts/review_export.py` (applying a
+batch) and `scripts/json_preserve.py` (keeping `grammar.json`'s and `furigana.json`'s formatting). The export
+JSON is built in `review/api/src/export_routes.rs`. A change carries `editable`, the keys its form may set or
+remove; export applies only those keys, so the rest of the item keeps whatever the data has.
 
 ### Accepted additions (the contract for export)
 

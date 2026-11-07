@@ -8,7 +8,7 @@ PUSH   ?=
 .DEFAULT_GOAL := help
 .PHONY: help install-deps data data-check data-merge data-release sign verify sign-commit keygen \
         test test-py test-swift project check-project check audio-dry clean \
-        review-test review-build
+        review-test review-build review-pull
 
 help: ## List the commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  \033[1m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -62,6 +62,9 @@ check: data-check test-py check-project ## Run the checks CI runs on a pull requ
 review-test: ## Test the review site: the Worker natively, the Svelte pages and their CSP
 	cd review/api && cargo test
 	cd review/web && npm run check && npm test -- --exclude src/csp.test.ts && npm run build && npm run test:csp
+
+review-pull: ## Owner only: pull accepted review work into a review-pull/<date> data branch
+	$(PYTHON) scripts/review_pull.py
 
 review-build: ## Build the review site's Worker bundle and static pages (deploy: review/README.md)
 	cd review/api && worker-build --release

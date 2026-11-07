@@ -44,7 +44,7 @@ committed**. Never edit it; edit `project.yml` and run `make project`.
    and committed with everything it writes, but feature PRs are **not** signed and never touch
    `data/manifest.sig`. If a data PR conflicts with main, run `make data-merge`, which resolves the
    generated files and stops only on real conflicts in hand-authored files. The owner publishes merged
-   changes with `make data-release`; never run it or `make sign-commit` yourself. CI rejects stale
+   changes with `make data-release`; never run it, `make sign-commit` or `make review-pull` yourself. CI rejects stale
    or invalid data on PRs, and checks the signature on `main` (red there means "not released yet").
 
 ## Future Android client
@@ -82,6 +82,7 @@ Run `make` for the full list. Common ones:
 | `make data-merge` | Merge `origin/main` into a data branch, regenerating the generated files |
 | `make data-release` | Owner only: sign everything merged since the last release on a `data-release/<date>` PR |
 | `make sign-commit` | Sign the manifest and commit only `manifest.sig` (used by `make data-release`) |
+| `make review-pull` | Owner only: pull accepted review-site work into a `review-pull/<date>` data branch (needs the export token in the Keychain) |
 | `make review-test` / `make review-build` | Test / build the review site |
 
 ## Use these first — do not reinvent

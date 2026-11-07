@@ -179,3 +179,49 @@ Reviewers can suggest new items, and you rule on them in the same inbox:
 
 After the PR that adds suggested additions merges, run `npm run migrate` in `review/api` once (migration
 `0005_additions.sql`). It rebuilds the suggestions table and keeps everything already stored.
+
+## Exporting
+
+Accepted work reaches the app through an ordinary data PR that you make with `make review-pull`. The site never
+writes to the repository: the command reads from the site with a read-only token and does everything else on
+your Mac.
+
+**Credits.** Each reviewer is credited by role: "a teacher" or "a native speaker", which you set on the admin
+page. A reviewer can choose a public name on their account page; it then appears in stamps and PR summaries
+instead of the role. Emails never leave the site.
+
+**Stamps.** On the Export page, "Ready to stamp" lists the counters and grammar points whose every part has a
+current approval, with nothing open. A stamp names the most senior reviewer who approved (owner, then teacher,
+then native speaker) and becomes a `review` stamp in the data at the next pull. Verbs, words and examples come
+later.
+
+**Setting it up (once):**
+
+1. In Zero Trust, create a service token (Access → Service credentials). Keep its client id and secret.
+2. Add a third Access application for the path `review.martinloeseth.dev/api/export` with one policy: action
+   Service Auth, include that service token. Copy its AUD tag.
+3. Give the Worker two secrets, `ACCESS_EXPORT_AUD` (that AUD tag) and `ACCESS_EXPORT_CLIENT_ID` (the token's
+   client id), with `npx wrangler secret put` in `review/api`. Without them, `/api/export` answers 403.
+4. Store the token in your Keychain:
+
+   ```bash
+   security add-generic-password -s kotobatable-review-export -a client-id -w
+   security add-generic-password -s kotobatable-review-export -a client-secret -w
+   ```
+
+5. Run `npm run migrate` in `review/api` for migration `0006_export.sql` (credits, stamps, exported marks).
+
+**Each time:**
+
+1. Load the published data on the admin page, so the site's copy matches `main`. If `main` has unreleased data
+   changes, run `make data-release` first.
+2. In a clean checkout, run `make review-pull`. It starts `review-pull/<date>` from `origin/main`, writes the
+   accepted changes, additions, removals, readings and stamps, runs `update_data.py`, commits, and prints a PR
+   summary. Anything it couldn't apply is listed under "Skipped". If the site's copy of a file is older than
+   `main`, it stops without writing anything.
+3. Push the branch and open the PR with the summary. It isn't signed; `make data-release` signs merged batches.
+4. After it merges, open Export on the admin page, tick what the PR contained (everything is ticked) and press
+   "Mark ticked as exported".
+
+A change to an entry that already had a stamp removes that stamp ("needs a new review"); stamp it again once it
+is approved.
