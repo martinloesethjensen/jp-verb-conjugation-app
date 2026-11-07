@@ -976,7 +976,115 @@
           ]
         }
       ],
-      "related": ["teshimau"]
+      "related": ["teshimau", "verb-pairs"]
+    },
+    {
+      "id": "verb-pairs",
+      "title": "自動詞・他動詞",
+      "summary": "Many verbs come in pairs. The transitive verb (他動詞) takes を: someone does something to a thing, ドアを開ける. The intransitive verb (自動詞) takes が: the thing changes by itself, ドアが開く.",
+      "keywords": ["transitive", "intransitive", "verb pairs", "by itself", "jidoushi", "tadoushi"],
+      "jlpt": "N4",
+      "taught_in": [
+        { "book": "genki-2", "lesson": 18, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "ssybea",
+          "heading": "を or が",
+          "explanation": "A transitive verb (他動詞) has a person who acts and a thing that is acted on, marked with を. Its intransitive partner (自動詞) describes the same change from the thing's side: the thing is the subject, marked with が, and nobody is mentioned.",
+          "examples": [
+            { "id": "tbqjai", "jp": "私は窓を開けました。", "en": "I opened the window.", "particle_blanks": [{ "particle": "を", "at": 3 }] },
+            { "id": "5mmsca", "jp": "窓が開きました。", "en": "The window opened.", "particle_blanks": [{ "particle": "が", "at": 1 }] },
+            { "id": "xipp5r", "jp": "田中さんが電気を消した。", "en": "Mr. Tanaka turned off the light.", "particle_blanks": [{ "particle": "が", "at": 4 }, { "particle": "を", "at": 7 }] },
+            { "id": "zi6xq6", "jp": "電気が消えた。", "en": "The light went out.", "particle_blanks": [{ "particle": "が", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "n9aqp7",
+          "heading": "〜す is transitive",
+          "explanation": "A verb that ends in す is almost always the transitive half. Its partner usually ends in る or える: 出す and 出る, 直す and 直る, 消す and 消える.",
+          "examples": [
+            { "id": "ykau8i", "jp": "もっと大きい声を出してください。", "en": "Please speak up.", "particle_blanks": [{ "particle": "を", "at": 7 }] },
+            { "id": "zvk9vg", "jp": "風邪で声が出ません。", "en": "I've lost my voice because of a cold.", "particle_blanks": [{ "particle": "が", "at": 4 }] },
+            { "id": "3k4xkz", "jp": "父が自転車を直しました。", "en": "My father fixed the bicycle.", "particle_blanks": [{ "particle": "が", "at": 1 }, { "particle": "を", "at": 5 }] },
+            { "id": "wxu5ky", "jp": "自転車が直りました。", "en": "The bicycle is fixed.", "particle_blanks": [{ "particle": "が", "at": 3 }] }
+          ]
+        },
+        {
+          "id": "7tviyq",
+          "heading": "〜める・〜える and 〜まる・〜わる",
+          "explanation": "When one verb ends in める or える and its partner in まる or わる, the める/える verb is transitive and the まる/わる verb intransitive: 始める and 始まる, 閉める and 閉まる, 決める and 決まる, 変える and 変わる.",
+          "examples": [
+            { "id": "6qsbuh", "jp": "先生が授業を始めます。", "en": "The teacher starts the class.", "particle_blanks": [{ "particle": "が", "at": 2 }, { "particle": "を", "at": 5 }] },
+            { "id": "iwxi3a", "jp": "授業は九時に始まります。", "en": "Class starts at nine.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "に", "at": 5 }] },
+            { "id": "ptk2xe", "jp": "会議の時間を決めましょう。", "en": "Let's set a time for the meeting.", "particle_blanks": [{ "particle": "を", "at": 5 }] },
+            { "id": "wig9vw", "jp": "会議の時間が決まりました。", "en": "The time of the meeting has been set.", "particle_blanks": [{ "particle": "が", "at": 5 }] }
+          ]
+        },
+        {
+          "id": "6jg8sj",
+          "heading": "〜える is not always transitive",
+          "explanation": "In other pairs the える verb is the transitive one and its partner is a u-verb: 開ける and 開く, つける and つく, 入れる and 入る. But 消える is intransitive. Ending alone is not enough, so learn the two verbs together with their particle.",
+          "examples": [
+            { "id": "wea4dk", "jp": "かばんに本を入れました。", "en": "I put a book in my bag.", "particle_blanks": [{ "particle": "に", "at": 3 }, { "particle": "を", "at": 5 }] },
+            { "id": "jbx4eu", "jp": "かばんに本が入っています。", "en": "There's a book in my bag.", "particle_blanks": [{ "particle": "に", "at": 3 }, { "particle": "が", "at": 5 }] },
+            { "id": "4ncyji", "jp": "部屋の電気をつけてください。", "en": "Please turn on the light in the room.", "particle_blanks": [{ "particle": "を", "at": 5 }] },
+            { "id": "7vzpk5", "jp": "部屋の電気がつきました。", "en": "The light in the room came on.", "particle_blanks": [{ "particle": "が", "at": 5 }] }
+          ]
+        },
+        {
+          "id": "pv8k3e",
+          "heading": "Saying that it happened",
+          "explanation": "Japanese often uses the intransitive verb when who did it does not matter, or to avoid sounding as if you blame someone. コップを割った says that someone broke the glass; コップが割れた says only that the glass broke.",
+          "examples": [
+            { "id": "5eghn4", "jp": "すみません、コップを割ってしまいました。", "en": "Sorry, I broke a glass.", "particle_blanks": [{ "particle": "を", "at": 9 }] },
+            { "id": "gsvrxe", "jp": "地震でコップが割れました。", "en": "A glass broke in the earthquake.", "particle_blanks": [{ "particle": "が", "at": 6 }] }
+          ]
+        },
+        {
+          "id": "ph4xnu",
+          "heading": "てある or ている",
+          "explanation": "The transitive half with てある says that someone left it that way on purpose. The intransitive half with ている simply describes the state, without anybody behind it.",
+          "examples": [
+            { "id": "hxk7v3", "jp": "電気がつけてあります。", "en": "The light has been left on. (someone did it)", "particle_blanks": [{ "particle": "が", "at": 2 }] },
+            { "id": "v6nu92", "jp": "電気がついています。", "en": "The light is on.", "particle_blanks": [{ "particle": "が", "at": 2 }] },
+            { "id": "623vxc", "jp": "窓が閉めてあります。", "en": "The window has been closed. (someone did it)", "particle_blanks": [{ "particle": "が", "at": 1 }] },
+            { "id": "8a59ek", "jp": "窓が閉まっています。", "en": "The window is closed.", "particle_blanks": [{ "particle": "が", "at": 1 }] }
+          ]
+        }
+      ],
+      "attachment": [],
+      "conjugations": [],
+      "pitfalls": [
+        {
+          "id": "hhs8k5",
+          "heading": "を with an intransitive verb",
+          "explanation": "An intransitive verb has no object, so the thing that changes never takes を. Say 電気を消した (I turned off the light) or 電気が消えた (the light went out), not a mix of the two.",
+          "wrong": "電気を消えた",
+          "examples": [
+            { "id": "jqb4yc", "jp": "寝る前に電気を消しました。", "en": "I turned off the light before going to bed.", "particle_blanks": [{ "particle": "を", "at": 6 }] },
+            { "id": "bp7j29", "jp": "急に電気が消えました。", "en": "Suddenly the lights went out.", "particle_blanks": [{ "particle": "が", "at": 4 }] }
+          ]
+        },
+        {
+          "id": "85vjnk",
+          "heading": "てある needs the transitive half",
+          "explanation": "てある says that a person did something, so it only follows the transitive verb. To describe the state on its own, use the intransitive verb with ている.",
+          "wrong": "電気がついてある",
+          "examples": [
+            { "id": "xsywpm", "jp": "電気がつけてあります。", "en": "The light has been left on.", "particle_blanks": [{ "particle": "が", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "ircgw7",
+          "heading": "を after 出る marks a place",
+          "explanation": "Verbs of movement such as 出る, 歩く and 渡る take を for the place you leave or move through: 家を出る, 道を歩く. That を is not an object: 出る is still the intransitive partner of 出す.",
+          "examples": [
+            { "id": "rn6mh8", "jp": "毎朝七時に家を出ます。", "en": "I leave home at seven every morning.", "particle_blanks": [{ "particle": "に", "at": 4 }, { "particle": "を", "at": 6 }] }
+          ]
+        }
+      ],
+      "related": ["teiru"]
     },
     {
       "id": "teshimau",

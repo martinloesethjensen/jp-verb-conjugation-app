@@ -218,6 +218,9 @@ public struct GrammarPoint: Codable, Hashable, Identifiable, Sendable {
     /// The id verb detail pages link to for the potential-form lesson.
     public static let potentialID = "potential"
 
+    /// The id of the transitive/intransitive pairs lesson the verb page's pair card links to.
+    public static let verbPairsID = "verb-pairs"
+
     /// True when the lesson has an attachment rule for verbs. The verb page's
     /// Grammar section lists exactly these lessons.
     public var attachesToVerbs: Bool {

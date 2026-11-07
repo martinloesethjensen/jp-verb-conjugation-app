@@ -20,6 +20,7 @@ struct VerbPairCard: View {
                     row(partnerPair, of: partner, opens: true)
                 }
                 .paperCard()
+                LessonLinks(ids: [GrammarPoint.verbPairsID])
             }
         }
     }

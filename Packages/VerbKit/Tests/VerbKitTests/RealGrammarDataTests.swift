@@ -32,6 +32,18 @@ final class RealGrammarDataTests: XCTestCase {
         return try JSONDecoder().decode(GrammarDataFile.self, from: data)
     }
 
+    /// Issue #58: the pair card on the verb page links to the pairs lesson, which every
+    /// paired verb's particle (を or が) appears in, and which links back from ている・てある.
+    func testTheVerbPairsLessonExistsAndCoversBothParticles() throws {
+        let grammar = try loadGrammar()
+        let lesson = try XCTUnwrap(grammar.first { $0.id == GrammarPoint.verbPairsID })
+        XCTAssertTrue(lesson.related.contains("teiru"))
+        XCTAssertTrue(try XCTUnwrap(grammar.first { $0.id == "teiru" }).related.contains(GrammarPoint.verbPairsID))
+        let blanks = lesson.usages.flatMap(\.examples).flatMap(\.particleBlanks).map(\.particle)
+        XCTAssertTrue(blanks.contains("を"))
+        XCTAssertTrue(blanks.contains("が"))
+    }
+
     /// Issue #102: an N4-only learner sees "maybe" in the certainty lesson, and not わけ (N3).
     func testCertaintyWithOnlyN4ShowsHazuAndKamoshirenaiButNotWake() throws {
         let certainty = try XCTUnwrap(loadGrammar().first { $0.id == "certainty" })

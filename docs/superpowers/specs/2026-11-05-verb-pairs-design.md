@@ -12,8 +12,11 @@ verbs look alike and differ in the particle: ドアを開ける (someone opens t
 
 1. **Data and the verb page (this spec):** a `pair` link on each half and a card on the verb page
    that shows both phrases side by side, with the partner one tap away.
-2. Later, separate pull requests: a lesson on the patterns (〜える/〜まる, 〜す/〜る, を/が,
-   てある/ている) and a quiz kind that asks which half fits a sentence.
+2. **The lesson:** a grammar point `verb-pairs` (自動詞・他動詞, N4) on the patterns (を/が,
+   〜す, 〜める/〜まる, the pairs where える is transitive, intransitive verbs for things that
+   happened, てある/ている). Its examples mark を and が as `particle_blanks`, so the particle quiz
+   already asks which particle each half takes. The pair card ends with a "Learn about" link to it.
+3. Later, a separate pull request: a quiz kind that asks which half fits a sentence.
 
 ## Data contract (`data/verbs.json`)
 
