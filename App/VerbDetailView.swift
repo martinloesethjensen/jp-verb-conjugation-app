@@ -6,12 +6,9 @@ struct VerbDetailView: View {
     var onExamples: () -> Void
     var onQuiz: () -> Void
     @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
+    @Environment(\.palette) private var palette
 
     private var isFavourite: Bool { FavouriteVerbs(rawValue: favouritesRaw).contains(verb) }
-
-    private var accent: Color {
-        verb.teGroup?.accentColor ?? verb.type.accentColor
-    }
 
     private var reportItem: String {
         "Verb: " + verb.dict + (verb.kanji.map { " (\($0))" } ?? "")
@@ -30,8 +27,6 @@ struct VerbDetailView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     header
                     actions
-                    JapaneseText(verb.description)
-                        .font(.body)
                     formGroups
                     CommonPhrasesCard(collocations: verb.collocations)
                     if let notes = verb.notes {
@@ -57,14 +52,14 @@ struct VerbDetailView: View {
                         favouritesRaw = favourites.rawValue
                     }
                     SpeakButton(text: verb.jishoQuery)
-                    Button("Examples", systemImage: "book", action: onExamples)
+                }
+                // iOS draws these as the "More" menu.
+                ToolbarItemGroup(placement: .secondaryAction) {
                     if let jishoURL {
                         Link(destination: jishoURL) {
-                            Label("Jisho", systemImage: "link")
+                            Label("Open in Jisho", systemImage: "link")
                         }
                     }
-                }
-                ToolbarItem(placement: .secondaryAction) {
                     ReportProblemButton(item: reportItem)
                 }
             }
@@ -82,24 +77,53 @@ struct VerbDetailView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            TypeLabel(verb.type, teGroup: verb.teGroup, emphasis: .header)
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(verb.dict).font(.largeTitle.weight(.heavy)).foregroundStyle(.primary)
-                if let kanji = verb.kanji {
-                    JapaneseText(kanji).font(.title2).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                // Wraps the level onto its own line at large text sizes instead of breaking the type name.
+                WrappingFlowLayout(spacing: 8) {
+                    TypeLabel(verb.type, teGroup: verb.teGroup, emphasis: .header)
+                    LevelBadge(level: verb.jlpt, emphasis: .header)
+                }
+                // The meaning sits beside the headword while it fits, and wraps under it when
+                // it is long or the text size is large.
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .lastTextBaseline, spacing: 14) {
+                        headword
+                        // Unwrapped here, so the row only fits when the meaning fits on one line.
+                        meaning.fixedSize()
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        headword
+                        meaning
+                    }
                 }
             }
-            Text(verb.meaning).font(.headline).foregroundStyle(.secondary).italic()
+            .accessibilityElement(children: .combine)
+            JapaneseText(verb.description)
+                .font(.body)
+                .foregroundStyle(palette.ink)
         }
     }
 
+    private var headword: some View {
+        JapaneseText(units: verb.dictionaryUnits)
+            .font(.headword(.largeTitle, scale: 1.5))
+            .foregroundStyle(palette.ink)
+            .fixedSize()
+    }
+
+    private var meaning: some View {
+        Text(verb.meaning)
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(palette.ink)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
     private var actions: some View {
-        Button("Test this verb", systemImage: "gamecontroller", action: onQuiz)
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-            .tint(accent)
-            .foregroundStyle(Color.black.opacity(0.85))
+        Button(action: onQuiz) {
+            Label("Test this verb", systemImage: "checkmark.circle")
+        }
+        .buttonStyle(.paper)
     }
 
     private func notesBox(_ notes: String) -> some View {
