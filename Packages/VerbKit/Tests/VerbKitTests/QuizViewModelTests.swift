@@ -76,6 +76,27 @@ final class QuizViewModelTests: XCTestCase {
         XCTAssertEqual(missed.map(\.correct), ["C", "F"])
     }
 
+    func testMissedPairsQuestionsWithResults() {
+        let vm = QuizViewModel(questions: [
+            makeQuestion(correct: "A", choices: ["A", "B", "C"], dict: "1"),
+            makeQuestion(correct: "C", choices: ["C", "D", "E"], dict: "2"),
+            makeQuestion(correct: "F", choices: ["F", "G", "H"], dict: "3"),
+        ])
+        vm.choose("A"); vm.advance()      // right
+        vm.choose("D"); vm.advance()      // wrong
+        vm.markTimedOut(); vm.advance()   // timed out
+        let missed = vm.missed
+        XCTAssertEqual(missed.map(\.question.verb.dict), ["2", "3"])
+        XCTAssertEqual(missed[0].result.chosen, "D")
+        XCTAssertFalse(missed[0].result.timedOut)
+        XCTAssertTrue(missed[1].result.timedOut)
+        XCTAssertEqual(missed[0].question.choices, ["C", "D", "E"])
+
+        let perfect = QuizViewModel(questions: [makeQuestion(correct: "A", choices: ["A", "B"])])
+        perfect.choose("A"); perfect.advance()
+        XCTAssertTrue(perfect.missed.isEmpty)
+    }
+
     func testNothingMissedWhenAllCorrect() {
         let vm = QuizViewModel(questions: [makeQuestion(correct: "A", choices: ["A", "B"])])
         vm.choose("A"); vm.advance()

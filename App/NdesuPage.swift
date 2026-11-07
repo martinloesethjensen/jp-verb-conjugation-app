@@ -18,11 +18,12 @@ struct NdesuPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                VerbSubPageHeader(verb: verb, title: VerbSubPage.nDesu.title)
                 FormTable(columns: ["Polite", "Casual"], rows: rows, dict: verb.dict)
                 LessonLinks(ids: [GrammarPoint.nDesuID])
             }
             .padding()
         }
-        .navigationTitle(VerbSubPage.nDesu.title)
+        .verbSubPage(title: VerbSubPage.nDesu.title)
     }
 }

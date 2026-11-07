@@ -1,57 +1,24 @@
 import SwiftUI
 import VerbKit
 
+/// Every example of a verb, on one ruled paper card, in a sheet.
 struct ExamplesView: View {
     let verb: Verb
     @Environment(\.dismiss) private var dismiss
-    @Environment(FormCatalogueStore.self) private var formCatalogueStore
 
     var body: some View {
         NavigationStack {
-            List(verb.examples, id: \.self) { example in
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(formLabel(example.form))
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.secondary)
-                            .textCase(.uppercase)
-                        JapaneseText(example.jp)
-                            .font(.title3)
-                        Text(example.en)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .textActions(example.jp, translate: true)
-                    SpeakButton(text: example.jp)
-                }
+            ScrollView {
+                VerbExampleCard(examples: verb.examples, verb: verb)
+                    .padding()
             }
+            .paperBackground()
             .navigationTitle("\(verb.dict) — Examples")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
             }
-        }
-    }
-
-    /// The nine basic forms keep their short labels; any other form uses the catalogue's.
-    private func formLabel(_ id: FormID) -> String {
-        guard let key = FormKey(rawValue: id.rawValue) else {
-            return formCatalogueStore.catalogue.label(for: id)
-        }
-        switch key {
-        case .masuPos: return "ます (polite +)"
-        case .masuNeg: return "ません (polite −)"
-        case .masuPast: return "ました (polite past +)"
-        case .masuPastNeg: return "ませんでした (polite past −)"
-        case .te: return "て-form"
-        case .shortPos: return "short (present +)"
-        case .shortNeg: return "short (present −)"
-        case .shortPast: return "short (past +)"
-        case .shortPastNeg: return "short (past −)"
         }
     }
 }

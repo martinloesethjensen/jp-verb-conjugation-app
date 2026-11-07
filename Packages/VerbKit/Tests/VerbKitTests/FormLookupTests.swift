@@ -121,6 +121,20 @@ final class FormLookupTests: XCTestCase {
         XCTAssertEqual(try verb("する").dictionaryUnits, [TextUnit(text: "する")])
     }
 
+    func testUnitsSpellFormWithKanjiStem() throws {
+        XCTAssertEqual(try verb("たべる").units(for: "たべられる"),
+                       [TextUnit(text: "食", reading: "た"), TextUnit(text: "べられる")])
+    }
+
+    func testUnitsUseKuruChangedReading() throws {
+        XCTAssertEqual(try verb("くる").units(for: "こられる"),
+                       [TextUnit(text: "来", reading: "こ"), TextUnit(text: "られる")])
+    }
+
+    func testUnitsFallBackToKana() throws {
+        XCTAssertEqual(try verb("する").units(for: "できる"), [TextUnit(text: "できる")])
+    }
+
     func testTheSuggestAVerbLinkPrefillsTheGuess() {
         XCTAssertEqual(IssueReportURL.suggestVerb().absoluteString,
                        "https://github.com/martinloesethjensen/jp-verb-conjugation-app/issues/new?template=add-verb.yml")

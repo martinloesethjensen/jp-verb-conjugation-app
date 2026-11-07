@@ -83,6 +83,12 @@ public final class QuizViewModel {
         record(question, .timedOut)
     }
 
+    /// The wrong and timed-out answers in quiz order, each with the question as it was asked
+    /// (choices unshuffled), for the results screen's "Marked wrong" list.
+    public var missed: [(question: QuizQuestion, result: QuizResult)] {
+        zip(questions, results).filter { !$0.1.ok }.map { (question: $0.0, result: $0.1) }
+    }
+
     /// The questions answered wrongly or timed out, with fresh choice order, for
     /// "Practise missed". Meaningful once the quiz has finished, when every question
     /// has exactly one result in order.

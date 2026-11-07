@@ -43,10 +43,13 @@ struct AdvancedPage: View {
 
     var body: some View {
         ScrollView {
-            FormTable(columns: ["Form"], rows: rows, dict: verb.dict)
-                .padding()
+            VStack(alignment: .leading, spacing: 16) {
+                VerbSubPageHeader(verb: verb, title: VerbSubPage.advanced.title)
+                FormTable(columns: ["Form"], rows: rows, dict: verb.dict)
+            }
+            .padding()
         }
-        .navigationTitle(VerbSubPage.advanced.title)
+        .verbSubPage(title: VerbSubPage.advanced.title)
     }
 }
 

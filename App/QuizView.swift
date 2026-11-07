@@ -44,7 +44,7 @@ struct QuizView: View {
     var body: some View {
         Group {
             if viewModel.finished {
-                QuizResultsView(viewModel: viewModel, onDone: end) { missed in
+                QuizResultsView(viewModel: viewModel, topicTitle: topic.title, onDone: end) { missed in
                     viewModel = QuizViewModel(questions: missed, recorder: recorder)
                     attempt += 1
                     save()

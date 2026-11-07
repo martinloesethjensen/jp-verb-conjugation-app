@@ -136,8 +136,7 @@ struct QuizMissedCard<Content: View>: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+            .paperCard()
     }
 }
 
@@ -167,22 +166,13 @@ struct QuizResultsSummary<Missed: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                Text("\(score) / \(count)")
-                    .font(.system(size: 56, weight: .heavy))
-                Text(subtitle)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 20) {
+                QuizScoreCard(score: score, count: count, lines: [subtitle])
                 missed
-                if hasMissed {
-                    Button("Practise missed", systemImage: "arrow.counterclockwise", action: onPractiseMissed)
-                        .buttonStyle(.glass)
-                        .controlSize(.large)
-                }
-                Button("Done", action: onDone)
-                    .buttonStyle(.glassProminent)
-                    .controlSize(.large)
             }
             .padding()
         }
+        .paperBackground()
+        .quizResultsActions(practise: hasMissed ? "Practise missed" : nil, onPractise: onPractiseMissed, onDone: onDone)
     }
 }

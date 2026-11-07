@@ -25,9 +25,11 @@ onboarding.
    `circle.fill`, U ▲ `triangle.fill`) and quiz marks add the words "Your answer" / "Correct".
 8. **Contrast**: text tokens ≥ 4.5:1 on `paper` and `card` in every palette (checked below). Increase
    Contrast darkens `muted` and `rule` (see Increase Contrast).
-9. **Type**: SF Pro with Dynamic Type for Latin text. Japanese headwords and example sentences use
-   Hiragino Mincho ProN (`HiraMinProN-W6`, ships with iOS), scaled `relativeTo:` a text style. Dense
-   form tables keep the system Japanese font.
+9. **Type**: SF Pro with Dynamic Type for Latin text. Japanese headwords use Hiragino Mincho ProN
+   W6 (`HiraMinProN-W6`, ships with iOS); example sentences and common phrases use the lighter W3
+   (`HiraMinProN-W3`), with the example's verb form underlined (and bold where the face allows), as
+   the boards draw them. Both scale `relativeTo:` a text style. Dense form tables keep the system
+   Japanese font.
 10. **No in-app colour-blind themes**: iOS Color Filters cover that. The app honours Differentiate
     Without Color and Increase Contrast.
 
@@ -101,7 +103,7 @@ Ice cream set `fillsTypePills`.
 | Plan | Scope | Canvas boards |
 |---|---|---|
 | 1. Theme foundation | `ThemeID`/`ThemeChoice`, palettes, root wiring and migration, paper surfaces, type label, Mincho headword in verb rows, level badge, filter chip, quiz marking, theme picker, widget palette | Style map, Proposed list/page/quiz/dark, Settings, Theme picker v2, Themes across screens, Colour-blind and contrast |
-| 2. Verb page and examples | Mincho headwords on detail pages, Plain/Polite table, More forms rows, genkō example cards, results stamp | Verb page full length, potential, quiz results |
+| 2. Verb page and examples (built) | Mincho headwords on detail pages, Plain/Polite table, More forms rows, genkō example cards, results stamp | Verb page full length, potential, quiz results |
 | 3. Kanji stroke order | KanjiVG subset as a signed `data/` file + schema + spec, a seventh concrete sync service, path parser, Watch/Trace sheet, entry points | Kanji stroke order, trace, opening it |
 | 4. Global search | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
 | 5. Onboarding | Levels, furigana, theme, first verb | Onboarding |

@@ -24,10 +24,8 @@ struct LessonLinks: View {
                 } icon: {
                     Image(systemName: "arrow.right.circle")
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.glass)
-            .font(.subheadline)
+            .buttonStyle(.paperSecondary)
         }
     }
 }

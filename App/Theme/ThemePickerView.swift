@@ -61,11 +61,8 @@ struct ThemePickerView: View {
                 JapaneseText("食べる")
                     .font(.headword(.largeTitle))
                     .foregroundStyle(palette.ink)
-                Text("Test this verb")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(palette.onButton)
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(palette.button, in: Capsule())
+                Button("Test this verb") {}
+                    .buttonStyle(.paper)
             }
             VStack(spacing: 6) {
                 QuizChoiceButton(choice: "たべって", index: 0, isCorrect: false, isSelected: true, isAnswered: true) {}

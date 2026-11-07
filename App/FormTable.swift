@@ -11,29 +11,30 @@ struct FormTableRow: Identifiable {
 
 /// The table every group of forms is drawn with: bold column headers, then a row
 /// per form with a caption on the left, the values on the right and hairline
-/// separators, on a quiet system-secondary card.
+/// separators in `rule`, on the paper card.
 struct FormTable: View {
     let columns: [String]
     let rows: [FormTableRow]
     /// The verb's kana dictionary form, which the cells compare each form with.
     let dict: String
+    @Environment(\.palette) private var palette
 
     var body: some View {
-        Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+        Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
             GridRow {
                 Text("")
                 ForEach(columns, id: \.self) { column in
                     Text(column)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(palette.muted)
                 }
             }
             ForEach(rows) { row in
-                Divider()
+                Divider().overlay(palette.rule)
                 GridRow {
                     Text(row.label)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                        .foregroundStyle(palette.muted)
                     ForEach(Array(row.values.enumerated()), id: \.offset) { _, value in
                         if let value {
                             FormCell(form: value, dict: dict)

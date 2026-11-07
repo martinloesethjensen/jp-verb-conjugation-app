@@ -39,6 +39,7 @@ struct AuxiliariesPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                VerbSubPageHeader(verb: verb, title: VerbSubPage.auxiliaries.title)
                 if !teiruRows.isEmpty {
                     Text("ている")
                         .font(.headline)
@@ -51,6 +52,6 @@ struct AuxiliariesPage: View {
             }
             .padding()
         }
-        .navigationTitle(VerbSubPage.auxiliaries.title)
+        .verbSubPage(title: VerbSubPage.auxiliaries.title)
     }
 }
