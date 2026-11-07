@@ -5,14 +5,15 @@ import VerbKit
 /// (シャワーを浴びる, "take a shower"). Draws nothing when the verb has none.
 struct CommonPhrasesCard: View {
     let collocations: [VerbCollocation]
+    @Environment(\.palette) private var palette
 
     var body: some View {
         if !collocations.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader("Common phrases", systemImage: "text.bubble")
+                SectionHeader("Common phrases")
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(collocations.enumerated()), id: \.offset) { index, collocation in
-                        if index > 0 { Divider() }
+                        if index > 0 { Divider().overlay(palette.rule) }
                         row(collocation)
                     }
                 }
@@ -25,10 +26,11 @@ struct CommonPhrasesCard: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 JapaneseText(collocation.jp)
-                    .font(.body)
+                    .font(.sentence(.title3))
+                    .foregroundStyle(palette.ink)
                 Text(collocation.en)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())

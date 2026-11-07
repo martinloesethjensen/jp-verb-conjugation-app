@@ -30,6 +30,7 @@ struct VerbDetailView: View {
                     actions
                     formGroups
                     CommonPhrasesCard(collocations: verb.collocations)
+                    examples
                     if let notes = verb.notes {
                         notesBox(notes)
                     }
@@ -130,9 +131,25 @@ struct VerbDetailView: View {
     private func notesBox(_ notes: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "lightbulb")
-            JapaneseText(notes).font(.footnote)
+            JapaneseText(notes).font(.subheadline)
         }
+        .foregroundStyle(palette.ink)
         .paperCard(fillsWidth: false)
+    }
+
+    /// The first three examples on genkō paper; "See all" opens the sheet with every one.
+    @ViewBuilder private var examples: some View {
+        if !verb.examples.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionHeader("Examples") {
+                    if verb.examples.count > 3 {
+                        Button("See all", action: onExamples)
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+                VerbExampleCard(examples: Array(verb.examples.prefix(3)), verb: verb)
+            }
+        }
     }
 
     private var formGroups: some View {

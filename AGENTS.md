@@ -93,6 +93,8 @@ Run `make` for the full list. Common ones:
 | `Romaji.toHiragana(_:)` | Convert romaji queries to hiragana (Hepburn/Nihon-shiki) |
 | `JapaneseNormalizer.key/looseKey/tagKey/kanaForm` | Canonical Japanese comparison (NFKC, katakana→hiragana, long vowels, tags) |
 | `KanjiExtraction.kanji(in:)` | Distinct kanji for lookup chips |
+| `FormHighlight.range(of:for:in:)` | Where a kana form sits in an example sentence, spelled with the verb's kanji or in kana |
+| `TextUnit.emphasizing(_:characters:)` | Marks a character range of furigana units emphasised, splitting plain units and keeping ruby whole |
 | `Verb.displayTitle` / `Word.displayTitle` | `"dict (kanji)"` title for widgets, Spotlight, intents and pickers |
 | `LevelSettings` + `Leveled` | Hidden-JLPT-level filtering, summaries and visibility checks |
 | `SpeechText.spoken/clipName` | Clean text for TTS and the recorded-clip filename contract |
@@ -116,6 +118,8 @@ Run `make` for the full list. Common ones:
 | Symbol | Use |
 |---|---|
 | `JapaneseText` | Any Japanese text that may need furigana. Use instead of `Text`; it styles like `Text` |
+| `JapaneseText(_:emphasizing:)` | The same with a character range underlined (and bold where the font has a bold face), furigana on or off |
+| `VerbExampleRow`, `VerbExampleCard` | A verb's example sentence with its form tag and the form underlined; the card puts rows on ruled paper |
 | `WrappingFlowLayout` | Wrapping row layout for chips, tags and pills |
 | `FilterChip` / `chipBackground(isOn:)` | Filter-row capsule: outlined in ink while off, filled with `button` while on; an accent adds a dot |
 | `LevelBadge(level:emphasis:)` | Outlined JLPT pill beside a row title or in a detail header; nil draws nothing |
