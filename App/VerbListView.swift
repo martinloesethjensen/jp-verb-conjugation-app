@@ -156,6 +156,9 @@ struct VerbListView: View {
                     if !filtered.isEmpty && hiddenMatchCount > 0 {
                         HiddenMatchesRow(count: hiddenMatchCount)
                     }
+                    if search.isEmpty {
+                        ReviewSummaryLine(noun: "verbs", summary: ReviewSummary(verbStore.verbs.visible(in: settings)))
+                    }
                 } footer: {
                     Link("Suggest a verb", destination: githubSuggestVerbURL)
                         .font(.caption)

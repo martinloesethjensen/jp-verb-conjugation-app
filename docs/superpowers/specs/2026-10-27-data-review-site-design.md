@@ -221,7 +221,9 @@ The review site (plan 5) stores a suggested addition as a suggestion with `actio
 
 - **Reviewer names:** `REVIEWERS` is `("owner", "teacher")`. Native-speaker friends need a value too.
 - **Scope:** stamps exist on counters and grammar points only. Verbs and words have no stamp, and individual
-  example sentences have none.
+  example sentences have none. *Closed in plan 7 (owner, 2026-11-08):* verbs, words and each verb example take a
+  stamp; a verb's covers its meaning, notes and common phrases, and its examples are stamped one by one. The
+  site's "Ready to stamp" lists verb examples grouped under their verb.
 
 ## The site
 

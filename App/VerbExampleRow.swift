@@ -9,6 +9,7 @@ struct VerbExampleRow: View {
     let verb: Verb
     @Environment(\.palette) private var palette
     @Environment(FormCatalogueStore.self) private var formCatalogueStore
+    @AppStorage(showReviewStatusKey, store: .appGroup) private var showReviewStatus = true
 
     private var emphasis: Range<Int>? {
         verb.forms[id: example.form].flatMap { FormHighlight.range(of: $0, for: verb, in: example.jp) }
@@ -17,11 +18,19 @@ struct VerbExampleRow: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(Self.formLabel(example.form, catalogue: formCatalogueStore.catalogue))
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(palette.muted)
-                    .padding(.horizontal, 8).padding(.vertical, 2)
-                    .overlay(Capsule().strokeBorder(palette.rule, lineWidth: 1))
+                HStack(spacing: 6) {
+                    Text(Self.formLabel(example.form, catalogue: formCatalogueStore.catalogue))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(palette.muted)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .overlay(Capsule().strokeBorder(palette.rule, lineWidth: 1))
+                    if showReviewStatus, let review = example.review {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(palette.good)
+                            .accessibilityLabel("Reviewed by \(review.by.displayName) on \(review.on)")
+                    }
+                }
                 JapaneseText(example.jp, emphasizing: emphasis)
                     .font(.sentence(.title3))
                     .foregroundStyle(palette.ink)

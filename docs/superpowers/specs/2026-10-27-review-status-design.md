@@ -115,6 +115,15 @@ Plan: `docs/superpowers/plans/2026-10-27-review-status.md`.
   Show review status switch (on by default); off hides the capsule and the lines.
 - **Unchanged.** The "unreviewed" label on numbers above 10 stays: it is about generated number readings, not an
   entry's prose. No entry carries a stamp yet.
+- **Verbs, words and examples (review site plan 7, owner decisions 2026-11-08).** Stamps also go on verbs, words
+  and each verb example sentence. A verb's hash leaves out its generated `forms` and its `examples`, so it covers
+  the meaning, description, notes and common phrases; each verb example has its own stamp; a word's hash leaves
+  out its `forms`. Grammar and counter examples stay covered by their entry's stamp, and the schema allows a
+  `review` nowhere else. `mark_reviewed.py verbs|words|examples <id>…` writes them (a verb by its id, a word as
+  `<class>:<dict>`, an example by its stable id). The verb page has the capsule, with a note that examples are
+  reviewed one by one; a reviewed example shows a small check (nothing on an unreviewed one); the verb list ends
+  with the quiet line; Settings > Content review adds Verbs, Example sentences and Words. Words have no page of
+  their own, so only the Settings count shows theirs.
 
 **To review entries:** read them, run `mark_reviewed.py`, then `make data` and `make sign-commit`. The stamp is
 part of `data/`, so it is re-signed like any data change.

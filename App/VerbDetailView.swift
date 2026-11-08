@@ -86,9 +86,14 @@ struct VerbDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
                 // Wraps the level onto its own line at large text sizes instead of breaking the type name.
-                WrappingFlowLayout(spacing: 8) {
+                WrappingFlowLayout(spacing: 8, centersRows: true) {
                     TypeLabel(verb.type, teGroup: verb.teGroup, emphasis: .header)
                     LevelBadge(level: verb.jlpt, emphasis: .header)
+                    ReviewStatusPill(
+                        item: "Verb: \(verb.displayTitle)", review: verb.review,
+                        checked: ["The conjugated forms, generated from the dictionary form", "That every kanji has a reading"],
+                        unchecked: ["The meaning, description and notes", "The common phrases"],
+                        note: "Example sentences are reviewed one by one; a reviewed one shows a check.")
                 }
                 // The meaning sits beside the headword while it fits, and wraps under it when
                 // it is long or the text size is large.

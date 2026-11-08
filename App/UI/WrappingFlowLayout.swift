@@ -4,6 +4,9 @@ import SwiftUI
 /// Shared by chip rows, tags, kanji buttons and the form-lookup pills.
 struct WrappingFlowLayout: Layout {
     var spacing: CGFloat = 8
+    /// Centres each item vertically in its line instead of aligning tops: for a row that mixes a tall
+    /// tap target (a 44 pt pill) with short labels.
+    var centersRows = false
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         arrange(width: proposal.width ?? .infinity, subviews: subviews).size
@@ -22,12 +25,21 @@ struct WrappingFlowLayout: Layout {
     private func arrange(width: CGFloat, subviews: Subviews) -> (frames: [CGRect], size: CGSize) {
         var frames: [CGRect] = []
         var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0, maxX: CGFloat = 0
+        var lineStart = 0
+        func centreLine() {
+            guard centersRows else { return }
+            for i in lineStart..<frames.count {
+                frames[i].origin.y += (lineHeight - frames[i].height) / 2
+            }
+            lineStart = frames.count
+        }
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
             // The slack absorbs rounding: placement gets back exactly the width measured
             // here, and re-adding the item widths can exceed it by a hair, which would wrap
             // an item onto a line the row never made room for.
             if x > 0, x + size.width > width + 0.5 {
+                centreLine()
                 x = 0
                 y += lineHeight + spacing
                 lineHeight = 0
@@ -37,6 +49,7 @@ struct WrappingFlowLayout: Layout {
             lineHeight = max(lineHeight, size.height)
             maxX = max(maxX, x - spacing)
         }
+        centreLine()
         return (frames, CGSize(width: maxX, height: y + lineHeight))
     }
 }

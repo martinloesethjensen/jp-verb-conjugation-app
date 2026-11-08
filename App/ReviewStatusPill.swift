@@ -4,7 +4,7 @@ import VerbKit
 /// Whether the owner switched review markers on in Settings (on by default).
 let showReviewStatusKey = "showReviewStatus"
 
-/// A small capsule on a counter or grammar page: "Not yet reviewed" (outlined, amber) or "Reviewed" (a check).
+/// A small capsule on a counter, grammar or verb page: "Not yet reviewed" (outlined, amber) or "Reviewed" (a check).
 /// Tapping opens a sheet that says what the data pipeline checks by itself and what nobody has checked yet.
 struct ReviewStatusPill: View {
     /// What Report a problem names, "Counter: 本 (hon)".
@@ -13,6 +13,8 @@ struct ReviewStatusPill: View {
     /// What the pipeline verifies by itself for this kind of entry, and what no one has checked.
     let checked: [String]
     let unchecked: [String]
+    /// A line shown under the headline whatever the state ("Example sentences are reviewed one by one…").
+    var note: String? = nil
     @AppStorage(showReviewStatusKey, store: .appGroup) private var showReviewStatus = true
     @State private var showingSheet = false
 
@@ -33,7 +35,7 @@ struct ReviewStatusPill: View {
             .buttonStyle(.plain)
             .accessibilityHint("Shows what has been checked")
             .sheet(isPresented: $showingSheet) {
-                ReviewStatusSheet(item: item, review: review, checked: checked, unchecked: unchecked)
+                ReviewStatusSheet(item: item, review: review, checked: checked, unchecked: unchecked, note: note)
             }
             .dismissOnLink { showingSheet = false }
         }
@@ -45,6 +47,7 @@ private struct ReviewStatusSheet: View {
     let review: ReviewStamp?
     let checked: [String]
     let unchecked: [String]
+    let note: String?
     @Environment(\.dismiss) private var dismiss
 
     private var headline: String {
@@ -59,6 +62,11 @@ private struct ReviewStatusSheet: View {
                     Text(headline)
                     if review != nil {
                         Text("The text has not changed since then. If it is edited, it goes back to not yet reviewed.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let note {
+                        Text(note)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -110,6 +118,7 @@ struct ReviewSummaryLine: View {
 struct ContentReviewSection: View {
     @Environment(CountersStore.self) private var counters
     @Environment(VerbStore.self) private var verbs
+    @Environment(WordsStore.self) private var words
     @AppStorage(showReviewStatusKey, store: .appGroup) private var showReviewStatus = true
 
     private func row(_ title: String, _ summary: ReviewSummary) -> some View {
@@ -131,12 +140,15 @@ struct ContentReviewSection: View {
         Section {
             row("Counters", ReviewSummary(counters.counters))
             row("Grammar", ReviewSummary(verbs.grammarPoints))
+            row("Verbs", ReviewSummary(verbs.verbs))
+            row("Example sentences", ReviewSummary(verbs.verbs.flatMap(\.examples)))
+            row("Words", ReviewSummary(words.words))
             Toggle("Show review status", isOn: $showReviewStatus)
                 .paperSwitch()
         } header: {
             Text("Content review")
         } footer: {
-            Text("Readings and sound changes are checked automatically. Examples, pitfalls and questions are marked once a person has read them.")
+            Text("Readings, sound changes and conjugated forms are checked automatically. Meanings, examples, pitfalls and questions are marked once a person has read them.")
         }
     }
 }
