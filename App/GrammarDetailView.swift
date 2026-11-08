@@ -156,7 +156,7 @@ struct GrammarDetailView: View {
                 card {
                     JapaneseText(pitfall.heading).font(.headline)
                     if let wrong = pitfall.wrong {
-                        WrongForm(text: wrong, right: pitfall.examples.first?.jp)
+                        WrongForm(text: wrong, candidates: point.mistakeCandidates(for: pitfall))
                         if let right = pitfall.examples.first?.jp { RightForm(text: right) }
                     }
                     JapaneseText(pitfall.explanation).font(.subheadline)

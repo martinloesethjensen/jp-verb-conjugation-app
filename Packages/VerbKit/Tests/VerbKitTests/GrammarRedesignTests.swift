@@ -74,6 +74,40 @@ final class GrammarRedesignTests: XCTestCase {
         XCTAssertEqual(formula.examples["はず"], "行くはず")
     }
 
+    func testFormulaNeverShowsPartOfALesson() {
+        // Each of these lessons' first rule covers only part of the lesson (ichidan only, one of
+        // two patterns, a fragment), so the header must not present it as the whole pattern.
+        for id in ["potential", "imperative", "teiru", "nakereba", "sugiru"] {
+            XCTAssertNil(point(id).formula, id)
+        }
+    }
+
+    func testFormulaStripsNotesFromEndings() throws {
+        let formula = try XCTUnwrap(point("appearance").formula)
+        XCTAssertEqual(formula.endings, ["ようだ", "みたいだ", "らしい", "そうだ"])
+        XCTAssertEqual(formula.examples["そうだ"], "行くそうだ")
+    }
+
+    func testFormulaMergesTheSlotsOfEveryRule() throws {
+        let formula = try XCTUnwrap(point("hou-ga-ii").formula)
+        XCTAssertEqual(Set(formula.slots), [.plainPast, .plainNeg])
+        XCTAssertTrue(formula.isPlainForm)
+    }
+
+    // MARK: Real mistakes
+
+    func testTheRealCertaintyMistakeMarksOnlyDa() throws {
+        let lesson = point("certainty")
+        let pitfall = try XCTUnwrap(lesson.pitfalls.first { $0.wrong == "学生だかもしれない" })
+        XCTAssertEqual(MistakeMark.wrongRange(wrong: "学生だかもしれない", candidates: lesson.mistakeCandidates(for: pitfall)), 2..<3)
+    }
+
+    func testTheRealNodeMistakeMarksOnlyDa() throws {
+        let lesson = point("node")
+        let pitfall = try XCTUnwrap(lesson.pitfalls.first { $0.wrong == "静かだので" })
+        XCTAssertEqual(MistakeMark.wrongRange(wrong: "静かだので", candidates: lesson.mistakeCandidates(for: pitfall)), 2..<3)
+    }
+
     // MARK: Attachment example
 
     func testExampleBuildsFromTheRule() throws {

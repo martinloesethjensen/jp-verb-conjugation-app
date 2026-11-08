@@ -13,6 +13,7 @@ struct FormulaCard: View {
     @Environment(WordsStore.self) private var wordsStore
     @State private var selected: String?
     @State private var showingBlocks = false
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var ending: String { selected.flatMap { formula.endings.contains($0) ? $0 : nil } ?? formula.endings[0] }
 
@@ -37,6 +38,23 @@ struct FormulaCard: View {
         return formula.examples[ending]
     }
 
+    /// The base, +, and the ending: in a row, stacked at accessibility sizes so nothing overflows.
+    @ViewBuilder
+    private var formulaRow: some View {
+        let base = Text(baseTitle)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(palette.ink)
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .overlay(Capsule().stroke(palette.muted, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+        let plus = Text("+").font(.title3).foregroundStyle(palette.muted)
+        let end = JapaneseText(ending).font(.headword(.title)).foregroundStyle(palette.ink)
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 6) { base; plus; end }
+        } else {
+            WrappingFlowLayout(spacing: 10) { base; plus; end }
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if formula.endings.count > 1 {
@@ -52,20 +70,8 @@ struct FormulaCard: View {
                     }
                 }
             }
-            WrappingFlowLayout(spacing: 10) {
-                Text(baseTitle)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(palette.ink)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .overlay(Capsule().stroke(palette.muted, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
-                Text("+")
-                    .font(.title3)
-                    .foregroundStyle(palette.muted)
-                JapaneseText(ending)
-                    .font(.headword(.title))
-                    .foregroundStyle(palette.ink)
-            }
-            .accessibilityElement(children: .combine)
+            formulaRow
+                .accessibilityElement(children: .combine)
             if let example {
                 JapaneseText(example, emphasizing: GrammarHighlight.range(in: example, patterns: [ending]))
                     .font(.sentence(.title3))
