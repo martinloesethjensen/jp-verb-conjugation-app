@@ -4,7 +4,7 @@ import os
 
 /// One of the published data files the app syncs.
 public enum DataFile: String, CaseIterable, Identifiable, Sendable {
-    case verbs, grammar, furigana, words, counters, forms
+    case verbs, grammar, furigana, words, counters, forms, kanji
 
     public var id: String { rawValue }
 
@@ -16,6 +16,7 @@ public enum DataFile: String, CaseIterable, Identifiable, Sendable {
         case .words: return "Words"
         case .counters: return "Counters"
         case .forms: return "Forms"
+        case .kanji: return "Kanji"
         }
     }
 }
@@ -31,11 +32,11 @@ public enum DataSyncProblem: Equatable, Sendable {
     case untrusted
     /// The download was fine but saving it on the device failed.
     case couldNotSave
-    /// Verified, but made for a newer app (a form catalogue with a newer major schema).
+    /// Verified, but made for a newer app (a form catalogue or kanji file with a newer major schema).
     case needsAppUpdate
 
     public init(syncError error: Error) {
-        if error is FormCatalogue.LoadError {
+        if error is FormCatalogue.LoadError || error is KanjiDataFile.LoadError {
             self = .needsAppUpdate
             return
         }

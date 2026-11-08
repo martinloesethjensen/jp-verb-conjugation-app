@@ -1315,6 +1315,65 @@ class BundledDataTests(unittest.TestCase):
         self.assertFalse((d / "bundle").exists())
 
 
+class KanjiDataTests(unittest.TestCase):
+    make_dir = RunTests.make_dir
+
+    def write_kanji(self, d, drop=(), stroke="M10,10c1,1,2,2,3,3"):
+        """A kanji.json covering every kanji the test data uses, less `drop`."""
+        import build_kanji
+        kanji = {k: {"strokes": [stroke], "on": [], "kun": [], "meanings": ["m"]}
+                 for k in sorted(build_kanji.app_kanji(d) | {"人"}) if k not in drop}
+        doc = {"schema": 1, "sources": {"kanjivg": "20260714", "kanjidic2": "2026-11-07"}, "license": "l",
+               "kanji": kanji}
+        (d / "kanji.json").write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+    def test_kanji_gets_a_manifest_entry_and_bundled_copy(self):
+        d = self.make_dir()
+        self.write_kanji(d)
+        bundle = d / "bundle"
+        self.assertEqual(ud.run(d, bundled_data_dir=bundle)[0], 0)
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["kanji"]["version"], "1.0.0")
+        self.assertEqual(manifest["kanji"]["sha256"], ud.sha256_hex((d / "kanji.json").read_bytes()))
+        self.assertEqual((bundle / "kanji.json").read_bytes(), (d / "kanji.json").read_bytes())
+        sidecar = json.loads((bundle / "kanji.manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(sidecar, {"version": "1.0.0", "sha256": manifest["kanji"]["sha256"]})
+        self.assertEqual(ud.run(d, check=True, bundled_data_dir=bundle), (0, ["data is up to date"]))
+
+    def test_kanji_version_bumps_only_when_content_changes(self):
+        d = self.make_dir()
+        self.write_kanji(d)
+        ud.run(d)
+        ud.run(d)
+        self.assertEqual(json.loads((d / "manifest.json").read_text(encoding="utf-8"))["kanji"]["version"], "1.0.0")
+        self.write_kanji(d, stroke="M20,20c1,1,2,2,3,3")
+        self.assertEqual(ud.run(d, check=True)[0], 1)
+        ud.run(d)
+        self.assertEqual(json.loads((d / "manifest.json").read_text(encoding="utf-8"))["kanji"]["version"], "1.1.0")
+
+    def test_kanji_missing_a_kanji_used_in_data_fails(self):
+        d = self.make_dir()
+        import build_kanji
+        used = sorted(build_kanji.app_kanji(d))
+        self.assertTrue(used, "the test data should use some kanji")
+        self.write_kanji(d, drop={used[0]})
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertIn(used[0], "\n".join(messages))
+
+    def test_kanji_schema_violation_fails(self):
+        d = self.make_dir()
+        self.write_kanji(d, stroke="x")
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertIn("kanji.json", messages[0])
+
+    def test_no_kanji_file_is_allowed(self):
+        d = self.make_dir()
+        self.assertEqual(ud.run(d)[0], 0)
+        self.assertNotIn("kanji", json.loads((d / "manifest.json").read_text(encoding="utf-8")))
+
+
 class OtherFormsTests(unittest.TestCase):
     def forms(self, dict_form, vtype, short_past):
         return ud.other_forms({"type": vtype, "dict": dict_form, "forms": {"short_past": short_past}})
@@ -2053,7 +2112,7 @@ class VerbIdTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             data_dir = Path(tmp)
             for name in ("verbs.json", "grammar.json", "furigana.json", "manifest.json", "words.json",
-                         "counters.json", "forms.json"):
+                         "counters.json", "forms.json", "kanji.json"):
                 (data_dir / name).write_bytes((Path(__file__).resolve().parent.parent / "data" / name).read_bytes())
             published = json.loads((data_dir / "verbs.json").read_text(encoding="utf-8"))
             published["verbs"].append({"dict": "ぬく", "id": "ぬく:抜く"})

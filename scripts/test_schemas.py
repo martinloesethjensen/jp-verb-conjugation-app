@@ -10,7 +10,7 @@ import update_data
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = ROOT / "schema"
-NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms")
+NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms", "kanji")
 
 
 def load_schema(name):

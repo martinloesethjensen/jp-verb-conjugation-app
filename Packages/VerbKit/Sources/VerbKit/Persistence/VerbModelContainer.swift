@@ -14,7 +14,7 @@ public enum VerbModelContainer {
     /// added later; SwiftData adds a table to an existing store without a migration.
     static let verbModels: [any PersistentModel.Type] = [
         VerbEntity.self, GrammarEntity.self, FuriganaEntity.self, QuizAttemptEntity.self, WordsEntity.self,
-        CountersEntity.self, TextbookEntity.self, FormCatalogueEntity.self,
+        CountersEntity.self, TextbookEntity.self, FormCatalogueEntity.self, KanjiDataEntity.self,
     ]
 
     /// The user's Word Bank: its own file, WordBank.sqlite, so a data re-sync can never touch it.

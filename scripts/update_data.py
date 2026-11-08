@@ -49,6 +49,11 @@ It does nine things:
  10. Validates each verb's optional `pair` (its transitive/intransitive partner, #58): the partner
      exists and points back with the other transitivity, and the phrase uses を or が. See
      docs/superpowers/specs/2026-11-05-verb-pairs-design.md.
+ 11. Publishes data/kanji.json (stroke order, readings and meanings), which scripts/build_kanji.py
+     builds from KanjiVG and KANJIDIC2 (`make kanji`). It is an input here, never rewritten: it must
+     match schema/kanji.schema.json and have an entry for every kanji the other files use. It gets a
+     manifest entry and a bundled copy like the others. See
+     docs/superpowers/specs/2026-11-07-kanji-stroke-order-design.md.
 
 Every manifest change must be re-signed (scripts/sign_manifest.py sign): the app
 refuses a manifest whose signature does not match its exact bytes. --ref TAG pins the
@@ -65,6 +70,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import build_kanji
 import form_catalogue
 import json_schema
 import stable_ids
@@ -1879,7 +1885,8 @@ def optional_entry(existing, name, data, forced_version, ref):
 
 def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, grammar_version=None,
                    furigana_bytes=None, furigana_version=None, ref=None, words_bytes=None, words_version=None,
-                   counters_bytes=None, counters_version=None, forms_bytes=None, forms_version=None):
+                   counters_bytes=None, counters_version=None, forms_bytes=None, forms_version=None,
+                   kanji_bytes=None, kanji_version=None):
     """New manifest dict. A file's version is kept when its hash is
     unchanged, bumped (minor) when it changed, or forced by an explicit
     version. A grammar or furigana block that did not exist yet starts at
@@ -1956,6 +1963,8 @@ def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, gra
         )
     if forms_bytes is not None:
         manifest["forms"] = optional_entry(existing, "forms", forms_bytes, forms_version, ref)
+    if kanji_bytes is not None:
+        manifest["kanji"] = optional_entry(existing, "kanji", kanji_bytes, kanji_version, ref)
     return manifest
 
 
@@ -2004,7 +2013,7 @@ def bundled_forms_manifest_path(bundled_forms_path):
 # One JSON Schema per published file (schema/README.md). They are checked against the files as they will be
 # written, so a generated field the schema doesn't know fails here rather than in a client.
 SCHEMA_DIR = Path(__file__).resolve().parent.parent / "schema"
-SCHEMA_NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms")
+SCHEMA_NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms", "kanji")
 
 
 def schema_problems(name, doc, schema_dir=SCHEMA_DIR):
@@ -2021,7 +2030,8 @@ def check_schemas(docs, schema_dir=SCHEMA_DIR):
 
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
         bundled_forms_path=None, ref=None, words_version=None, counters_version=None, published_verbs=None,
-        forms_version=None, bundled_counters_path=None, bundled_data_dir=None, schema_dir=SCHEMA_DIR):
+        forms_version=None, bundled_counters_path=None, bundled_data_dir=None, schema_dir=SCHEMA_DIR,
+        kanji_version=None):
     """Returns (exit_code, messages). data/forms.json is always written and checked;
     `bundled_forms_path` is where the app's bundled copy (and forms.manifest.json beside it) is
     written and checked, and None leaves them alone; `bundled_counters_path` does the same for
@@ -2145,13 +2155,25 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     forms_path = data_dir / "forms.json"
     forms_bytes = dump_forms().encode("utf-8")
 
+    # data/kanji.json is built by scripts/build_kanji.py from sources that are not committed, so it is an
+    # input here: checked against its schema and for covering the kanji the other files use, never rewritten.
+    kanji_path = data_dir / "kanji.json"
+    kanji_bytes = kanji_path.read_bytes() if kanji_path.exists() else None
+
     written = {"verbs": verbs_bytes, "words": words_bytes, "counters": counters_bytes, "grammar": grammar_bytes,
-               "furigana": furigana_bytes, "forms": forms_bytes}
+               "furigana": furigana_bytes, "forms": forms_bytes, "kanji": kanji_bytes}
     for name in SCHEMA_NAMES:
         if written[name] is not None:
             problems = schema_problems(name, json.loads(written[name]), schema_dir)
             if problems:
                 return 1, capped(f"{name}.json does not match schema/{name}.schema.json:", problems)
+    if kanji_bytes is not None:
+        covered = json.loads(kanji_bytes)["kanji"]
+        used = build_kanji.kanji_in(content.decode("utf-8") for name, content in written.items()
+                                    if name != "kanji" and content is not None)
+        missing = sorted(used - set(covered))
+        if missing:
+            return 1, capped("kanji.json lacks kanji the data uses (run make kanji):", missing)
 
     existing = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest = build_manifest(
@@ -2160,6 +2182,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         words_bytes=words_bytes, words_version=words_version,
         counters_bytes=counters_bytes, counters_version=counters_version,
         forms_bytes=forms_bytes, forms_version=forms_version,
+        kanji_bytes=kanji_bytes, kanji_version=kanji_version,
     )
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
     # The bundled copy's entry: version and hash only (no ref), since the app never fetches it.
@@ -2195,7 +2218,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     bundled_data = {}
     if bundled_data_dir is not None:
         entries = {"verbs": ({"version": manifest["version"], "sha256": manifest["sha256"]}, verbs_bytes)}
-        for name, content in (("grammar", grammar_bytes), ("furigana", furigana_bytes), ("words", words_bytes)):
+        for name, content in (("grammar", grammar_bytes), ("furigana", furigana_bytes), ("words", words_bytes),
+                              ("kanji", kanji_bytes)):
             if name in manifest and content is not None:
                 entries[name] = ({"version": manifest[name]["version"], "sha256": manifest[name]["sha256"]}, content)
         for name, (entry, content) in entries.items():
@@ -2247,7 +2271,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
             f"furigana {manifest['furigana']['version']}"
             + (f", words {manifest['words']['version']}" if "words" in manifest else "")
             + (f", counters {manifest['counters']['version']}" if "counters" in manifest else "")
-            + f", forms {manifest['forms']['version']})"
+            + f", forms {manifest['forms']['version']}"
+            + (f", kanji {manifest['kanji']['version']}" if "kanji" in manifest else "") + ")"
         )
         messages.append("the manifest changed: re-sign it with scripts/sign_manifest.py sign")
     if not stale:

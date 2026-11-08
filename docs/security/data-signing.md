@@ -22,11 +22,12 @@ Anyone who can push to `main` but does not hold the signing key can still change
 the app will reject it. They cannot sign a manifest.
 
 These rules cover every file with a manifest entry: `verbs.json` (the top-level entry), `grammar`,
-`furigana`, `words`, `counters` and `forms` (the form catalogue, #100). `forms.json` is generated
+`furigana`, `words`, `counters`, `forms` (the form catalogue, #100) and `kanji` (stroke order, readings and
+meanings; built by `scripts/build_kanji.py`, see `docs/superpowers/specs/2026-11-07-kanji-stroke-order-design.md`). `forms.json` is generated
 from `scripts/form_catalogue.py`; the app also bundles a byte-identical copy (with its version and
 hash in `forms.manifest.json`) as the offline fallback, and only replaces it with a synced copy
 that passed all four checks and is newer. A synced catalogue with a newer major `schema` than the
-app reads is refused and the current one kept.
+app reads is refused and the current one kept. `kanji.json` is bundled and synced the same way.
 
 ## First-time setup (the app syncs nothing until this is done)
 

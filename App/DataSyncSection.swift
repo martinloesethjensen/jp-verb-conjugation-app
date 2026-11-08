@@ -33,7 +33,10 @@ struct DataSyncSection: View {
         } header: {
             Text("Data")
         } footer: {
-            Text(footer)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(footer)
+                Text(KanjiDisplay.settingsCredit)
+            }
         }
     }
 
