@@ -111,6 +111,7 @@ Run `make` for the full list. Common ones:
 | `TagSuggester`, `RecentSearches`, `DialectCatalogue` | Word Bank tag and search supporting logic |
 | `WordBankDates.day/timestamp` | Fixed, locale-independent date stamps in Word Bank file names and notes |
 | `matchesSearch`, `matchesGrammarSearch`, `searchCounters`, `WordBankSearchIndex` | Search implementations |
+| `GlobalSearch.results`, `SearchScope`, `GlobalSearchResults` | The Search tab's one search over all four, with the level setting, hidden-match count and the romaji reading line |
 | `ParticleBlank`, `ParticleQuiz`, `buildParticleQuestions` | Marked `particle_blanks` on examples and the particle quiz built from them (spec: `docs/superpowers/specs/2026-10-29-particle-blanks-design.md`) |
 | `DataSyncStatus` | Per-file sync status shown in Settings |
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
