@@ -70,13 +70,12 @@ struct GrammarDetailView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                header
+                LessonHeader(point: point, lesson: lessonTag, onPractise: point.hasConnections ? practise : nil)
                 if !point.attachment.isEmpty { AttachmentSection(rules: point.attachment) }
                 usagesSection
                 if !point.contrasts.isEmpty { contrastsSection }
                 if !point.conjugations.isEmpty { conjugationsSection }
                 if !point.pitfalls.isEmpty { pitfallsSection }
-                if point.hasConnections { practiseSection }
                 if !relatedPoints.isEmpty { relatedSection }
             }
             .padding()
@@ -109,32 +108,6 @@ struct GrammarDetailView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            LevelBadge(range: point.levelRange, emphasis: .header)
-            if let lesson = lessonTag {
-                HStack(spacing: 8) {
-                    Text(lesson.name)
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .glassEffect(in: Capsule())
-                    if lesson.unreviewed {
-                        Text("unreviewed").font(.caption2).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            ReviewStatusPill(
-                item: "Lesson: \(point.title) (\(point.id))", review: point.review,
-                checked: ["That every kanji has a reading", "That related lessons exist"],
-                unchecked: ["The explanations and example sentences", "The attachment rules", "The pitfalls"])
-            JapaneseText(point.title)
-                .font(.largeTitle.weight(.heavy))
-            JapaneseText(point.summary)
-                .font(.headline)
-                .foregroundStyle(.secondary)
-        }
     }
 
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
@@ -236,18 +209,11 @@ struct GrammarDetailView: View {
 
     // MARK: Practise
 
-    private var practiseSection: some View {
-        Button {
-            let levels = LevelSettings.load()
-            let verbs = verbStore.verbs.visible(in: levels)
-            let questions = buildConnectionQuestions(points: [point], verbs: verbs, words: wordsStore.words.visible(in: levels), count: quizQuestionCount)
-            if !questions.isEmpty { connectionQuestions = questions }
-        } label: {
-            Label("Practise this pattern", systemImage: "arrow.right")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.paper)
-        .controlSize(.large)
+    private func practise() {
+        let levels = LevelSettings.load()
+        let verbs = verbStore.verbs.visible(in: levels)
+        let questions = buildConnectionQuestions(points: [point], verbs: verbs, words: wordsStore.words.visible(in: levels), count: quizQuestionCount)
+        if !questions.isEmpty { connectionQuestions = questions }
     }
 
     private var connectionBinding: Binding<Bool> {
