@@ -147,6 +147,7 @@ Run `make` for the full list. Common ones:
 | `KanjiStrokeCanvas`, `KanjiStrokeShape` | A kanji's strokes up to a step in the 109-unit box (ink, red current stroke, faint rest, numbers, start dot), scaled to any square |
 | `Path(svg:)` | A SwiftUI `Path` from `SVGPathData.parse` elements (the seal and the kanji strokes) |
 | `SearchTab` | The Search tab (`Tab(role: .search)` in `MainTabView`): `GlobalSearch` over all four parts, scope chips, recents (`search.recentQueries`), the hidden-levels row |
+| `LessonHeader`, `FormulaCard`, `LessonUsages`, `ExampleList`, `FormsTable`, `WrongForm(text:right:)`, `RightForm` | Grammar lesson pieces: header with formula and Practise; numbered usages; examples on a ruled card with the pattern underlined; Polite/Casual table; a wrong form marking only its wrong part |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |

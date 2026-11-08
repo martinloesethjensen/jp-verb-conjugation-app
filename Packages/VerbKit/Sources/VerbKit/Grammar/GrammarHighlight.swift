@@ -3,12 +3,13 @@ import Foundation
 /// Where a lesson's pattern sits in an example sentence, so the page can underline it.
 public enum GrammarHighlight {
     /// The lesson's patterns, longest first: its endings (rules' `then` and the formula's endings),
-    /// then its title split on ・ without 〜. Single characters are left out: a lone な would
-    /// underline every な.
+    /// its title split on ・, and its forms (〜かもしれません, かも), each without 〜. Single characters
+    /// are left out: a lone な would underline every な.
     public static func patterns(of point: GrammarPoint) -> [String] {
         var candidates = point.attachment.compactMap(\.then)
         candidates += point.formula?.endings ?? []
         candidates += point.title.components(separatedBy: "・")
+        candidates += point.conjugations.flatMap { $0.form.components(separatedBy: CharacterSet(charactersIn: "·/")) }
         var seen = Set<String>()
         return candidates
             .map { $0.replacingOccurrences(of: "〜", with: "").trimmingCharacters(in: .whitespaces) }

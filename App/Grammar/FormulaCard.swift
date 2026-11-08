@@ -18,7 +18,7 @@ struct FormulaCard: View {
 
     private var baseTitle: String {
         switch formula.base {
-        case let .slot(slot): slot.title
+        case let .slot(slot): formula.isPlainForm ? "plain form" : slot.title
         case let .text(text): text
         }
     }

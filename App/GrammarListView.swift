@@ -3,18 +3,20 @@ import VerbKit
 
 struct GrammarRow: View {
     let point: GrammarPoint
+    @Environment(\.palette) private var palette
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 JapaneseText(point.title)
-                    .font(.title3.weight(.bold))
+                    .font(.headword(.title3))
+                    .foregroundStyle(palette.ink)
                 LevelBadge(range: point.levelRange)
             }
             JapaneseText(point.summary)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+                .font(.subheadline)
+                .foregroundStyle(palette.muted)
+                .lineLimit(1)
         }
         .padding(.vertical, 4)
     }
@@ -23,7 +25,7 @@ struct GrammarRow: View {
 enum GrammarListMode: String, CaseIterable, Identifiable {
     case byLevel, byLesson
     var id: String { rawValue }
-    var title: String { self == .byLevel ? "By level" : "By lesson" }
+    var title: String { self == .byLevel ? "By level" : "My course" }
 }
 
 struct GrammarListView: View {
@@ -42,6 +44,7 @@ struct GrammarListView: View {
     @AppStorage("grammarListMode", store: .appGroup) private var modeRaw = GrammarListMode.byLevel.rawValue
     @FocusState private var searchFocused: Bool
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
+    @Environment(\.palette) private var palette
 
     private var settings: LevelSettings { LevelSettings(rawValue: hiddenLevelsRaw) }
     private var availableLevels: Set<JLPTLevel> {
@@ -94,6 +97,37 @@ struct GrammarListView: View {
         return all - filtered.count
     }
 
+    /// Lessons grouped by their lowest level, N5 first; lessons without a level last.
+    private var levelGroups: [(title: String, points: [GrammarPoint])] {
+        let grouped = Dictionary(grouping: filtered) { $0.levelRange?.lowerBound }
+        var groups = JLPTLevel.allCases.compactMap { level in
+            grouped[level].map { (level.displayName, $0) }
+        }
+        if let other = grouped[nil] { groups.append(("Other", other)) }
+        return groups
+    }
+
+    private var mistakeCount: Int {
+        CommonMistakes.build(grammar: verbStore.grammarPoints, counters: countersStore.counters)
+            .visible(in: currentLevels).count
+    }
+
+    private func shortcut(_ title: String, detail: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 4) {
+                Label(title, systemImage: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(palette.ink)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(palette.muted)
+            }
+            .paperCard(cornerRadius: 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     // Same row pattern as VerbListView: an explicit Button
     // sets the selection, and .tag keeps List's own selection
     // in sync (List(selection:) alone matches the row's id,
@@ -112,28 +146,35 @@ struct GrammarListView: View {
     var body: some View {
         List(selection: $selection) {
             if search.isEmpty && verbStore.hasGrammar {
-                Section {
-                    Button {
-                        showingBlocks = true
-                    } label: {
-                        Label("Building blocks", systemImage: "square.stack.3d.up")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 10) {
+                        shortcut("Building blocks", detail: "Forms lessons attach to", systemImage: "square.stack.3d.up") {
+                            showingBlocks = true
+                        }
+                        shortcut("Common mistakes", detail: "\(mistakeCount) slips, by theme", systemImage: "exclamationmark.triangle") {
+                            showingMistakes = true
+                        }
                     }
-                    .buttonStyle(.plain)
-                    Button {
-                        showingMistakes = true
-                    } label: {
-                        Label("Common mistakes", systemImage: "exclamationmark.triangle")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
+                    VStack(spacing: 10) {
+                        shortcut("Building blocks", detail: "Forms lessons attach to", systemImage: "square.stack.3d.up") {
+                            showingBlocks = true
+                        }
+                        shortcut("Common mistakes", detail: "\(mistakeCount) slips, by theme", systemImage: "exclamationmark.triangle") {
+                            showingMistakes = true
+                        }
                     }
-                    .buttonStyle(.plain)
-                } footer: {
-                    Text("The forms every lesson attaches to, and the slips learners make most.")
                 }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
             }
-            if mode == .byLevel {
+            if mode == .byLevel && search.isEmpty {
+                ForEach(levelGroups, id: \.title) { group in
+                    Section(group.title) {
+                        ForEach(group.points) { point in pointRow(point) }
+                    }
+                }
+            } else if mode == .byLevel {
                 ForEach(filtered) { point in pointRow(point) }
             } else {
                 ForEach(sections, id: \.lesson.id) { section in
@@ -166,11 +207,18 @@ struct GrammarListView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             if verbStore.hasGrammar {
-                Picker("Group by", selection: modeBinding) {
-                    ForEach(GrammarListMode.allCases) { Text($0.title).tag($0) }
+                HStack(spacing: 8) {
+                    ForEach(GrammarListMode.allCases) { option in
+                        Button {
+                            modeBinding.wrappedValue = option
+                        } label: {
+                            FilterChip(option.title, isOn: mode == option)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(mode == option ? .isSelected : [])
+                    }
+                    Spacer(minLength: 0)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             }

@@ -11,14 +11,23 @@ public struct GrammarFormula: Equatable, Sendable {
     }
 
     public var base: Base
+    /// Every slot of the rule the base comes from (empty for a written pattern).
+    public var slots: [GrammarSlot]
     /// The endings, distinct, in rule order.
     public var endings: [String]
     /// For a written pattern, the first written example using each ending ("はず": "行くはず").
     /// Slotted formulas build theirs live (`AttachmentRule.example`).
     public var examples: [String: String]
 
-    public init(base: Base, endings: [String], examples: [String: String] = [:]) {
+    /// The rule takes several plain forms (now, not, past, past not): the header says "plain form"
+    /// rather than the first one's name.
+    public var isPlainForm: Bool {
+        slots.count > 1 && slots.allSatisfy { [.plain, .plainNeg, .plainPast, .plainPastNeg].contains($0) }
+    }
+
+    public init(base: Base, slots: [GrammarSlot] = [], endings: [String], examples: [String: String] = [:]) {
         self.base = base
+        self.slots = slots
         self.endings = endings
         self.examples = examples
     }
@@ -33,7 +42,7 @@ public extension GrammarPoint {
         if let first = slotted.first, let slot = first.slots.first {
             var endings: [String] = []
             for rule in slotted where !endings.contains(rule.then!) { endings.append(rule.then!) }
-            return GrammarFormula(base: .slot(slot), endings: endings)
+            return GrammarFormula(base: .slot(slot), slots: first.slots, endings: endings)
         }
         guard let rule = attachment.first, !rule.pattern.contains(";") else { return nil }
         let parts = rule.pattern.components(separatedBy: " + ")

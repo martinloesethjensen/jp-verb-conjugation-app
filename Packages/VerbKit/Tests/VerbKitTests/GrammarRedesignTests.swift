@@ -25,6 +25,12 @@ final class GrammarRedesignTests: XCTestCase {
         XCTAssertTrue(GrammarHighlight.patterns(of: point("te-mo-ii")).contains("もいい"))
     }
 
+    func testPatternsIncludeTheLessonsForms() {
+        // The polite form 〜かもしれません comes from the lesson's conjugations, not its title.
+        let patterns = GrammarHighlight.patterns(of: point("certainty"))
+        XCTAssertEqual(GrammarHighlight.range(in: "山田さんは来ないかもしれません。", patterns: patterns), 8..<15)
+    }
+
     func testPatternsSkipSingleCharacters() {
         // 命令形・〜な・〜なさい: a lone な would underline every な in a sentence.
         XCTAssertFalse(GrammarHighlight.patterns(of: point("imperative")).contains("な"))
@@ -52,6 +58,13 @@ final class GrammarRedesignTests: XCTestCase {
         let formula = try XCTUnwrap(point("te-mo-ii").formula)
         XCTAssertEqual(formula.base, .slot(.te))
         XCTAssertEqual(formula.endings, ["もいい", "はいけない"])
+    }
+
+    func testFormulaKeepsEverySlotOfItsRule() throws {
+        let formula = try XCTUnwrap(point("node").formula)
+        XCTAssertEqual(formula.slots, [.plain, .plainNeg, .plainPast, .plainPastNeg])
+        XCTAssertTrue(formula.isPlainForm)
+        XCTAssertFalse(try XCTUnwrap(point("te-mo-ii").formula).isPlainForm)
     }
 
     func testFormulaFallsBackToTheWrittenPattern() throws {
