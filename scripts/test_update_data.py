@@ -2550,3 +2550,95 @@ class PublicNameStampTests(unittest.TestCase):
         grammar = json.loads((ud.SCHEMA_DIR.parent / "data" / "grammar.json").read_text(encoding="utf-8"))
         grammar["grammar"][0]["review"] = {"by": "native", "on": "2026-11-07", "sha256": "a" * 64, "name": "Aiko"}
         self.assertEqual(ud.schema_problems("grammar", grammar), [])
+
+
+STAMP_EXAMPLE = {"id": "e1aaaa", "form": "te", "jp": "食べて", "en": "Eat."}
+STAMP_VERB = {"dict": "たべる", "kanji": "食べる", "type": "ru", "label": "Ru-verb", "meaning": "to eat",
+              "description": "d", "jlpt": "N5", "forms": {"te": "たべて"}, "examples": [STAMP_EXAMPLE],
+              "collocations": [{"id": "c1aaaa", "jp": "ご飯を食べる", "en": "eat a meal"}]}
+STAMP_WORD = {"class": "i-adjective", "dict": "たかい", "kanji": "高い", "meaning": "tall", "forms": {"te": "たかくて"}}
+
+
+def stamp_for(obj, generated=()):
+    return {"by": "teacher", "on": "2026-11-08", "sha256": ud.review_hash(obj, generated)}
+
+
+class VerbWordExampleStampTests(unittest.TestCase):
+    """Plan 7: stamps on verbs, words and verb examples. The three hashes are pinned in the Worker's
+    tests too (review/api/tests/items.rs), so both languages agree byte for byte."""
+
+    def test_hashes_match_the_worker_fixtures(self):
+        self.assertEqual(ud.review_hash(STAMP_VERB, ud.VERB_GENERATED),
+                         "e7e1cd2a49f854625d9fdf52100d4c3f1a1014768b4c2dccc1335652c408c523")
+        self.assertEqual(ud.review_hash(STAMP_EXAMPLE, ud.STAMP_GENERATED["example"]),
+                         "e316230c9cf4bc0d9f4c69d6c77de773435cc87c768c71f2252c5a6880d28bdd")
+        self.assertEqual(ud.review_hash(STAMP_WORD, ud.WORD_GENERATED),
+                         "43f0eecce12700845c151b6550a1faeaf8c9fce9d047bc2202c31b18febeca99")
+
+    def test_example_stamp_keeps_the_verb_stamp_valid(self):
+        verb = copy.deepcopy(STAMP_VERB)
+        verb["review"] = stamp_for(verb, ud.VERB_GENERATED)
+        example = verb["examples"][0]
+        example["review"] = stamp_for(example)
+        self.assertEqual(ud.check_reviews([verb], ud.VERB_GENERATED, key=ud.verb_id), [])
+        self.assertEqual(ud.check_reviews([example]), [])
+
+    def test_a_collocation_edit_makes_the_verb_stamp_stale(self):
+        verb = copy.deepcopy(STAMP_VERB)
+        verb["review"] = stamp_for(verb, ud.VERB_GENERATED)
+        verb["collocations"][0]["en"] = "have a meal"
+        problems = ud.check_reviews([verb], ud.VERB_GENERATED, key=ud.verb_id)
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(problems[0].startswith("たべる was edited after review"), problems[0])
+
+    def test_word_ids_are_class_and_dict(self):
+        self.assertEqual(ud.word_id(STAMP_WORD), "i-adjective:たかい")
+
+    def real_copy(self):
+        d = Path(tempfile.mkdtemp())
+        for f in REAL_DATA.glob("*.json"):
+            (d / f.name).write_bytes(f.read_bytes())
+        return d
+
+    def test_run_rejects_a_stale_example_stamp(self):
+        d = self.real_copy()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        example = doc["verbs"][0]["examples"][0]
+        example["review"] = {"by": "teacher", "on": "2026-11-08", "sha256": "0" * 64}
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        text = "\n".join(messages)
+        self.assertIn(example["id"], text)
+        self.assertIn("was edited after review", text)
+
+    def test_run_accepts_valid_stamps_on_a_verb_an_example_and_a_word(self):
+        d = self.real_copy()
+        doc = json.loads((d / "verbs.json").read_text(encoding="utf-8"))
+        verb = doc["verbs"][0]
+        verb["review"] = stamp_for(verb, ud.VERB_GENERATED)
+        example = verb["examples"][0]
+        example["review"] = stamp_for(example)
+        (d / "verbs.json").write_text(ud.dump_verbs(doc), encoding="utf-8")
+        words = json.loads((d / "words.json").read_text(encoding="utf-8"))
+        words["words"][0]["review"] = stamp_for(words["words"][0], ud.WORD_GENERATED)
+        (d / "words.json").write_text(ud.dump_words(words), encoding="utf-8")
+        code, messages = ud.run(d)
+        self.assertEqual(code, 0, messages)
+        written = (d / "verbs.json").read_text(encoding="utf-8")
+        line = next(l for l in written.splitlines() if f'"id": "{example["id"]}"' in l)
+        self.assertIn('"review": { "by": "teacher"', line)
+
+    def test_dump_verbs_round_trips_and_keeps_a_stamped_example_on_one_line(self):
+        published = (REAL_DATA / "verbs.json").read_text(encoding="utf-8")
+        doc = json.loads(published)
+        self.assertEqual(ud.dump_verbs(doc), published)
+        example = doc["verbs"][0]["examples"][0]
+        example["review"] = stamp_for(example)
+        line = next(l for l in ud.dump_verbs(doc).splitlines() if f'"id": "{example["id"]}"' in l)
+        expected = ("{ " + ", ".join(f"{json.dumps(k)}: {json.dumps(example[k], ensure_ascii=False)}"
+                                     for k in ("id", "form", "jp", "en"))
+                    + ', "review": { "by": "teacher", "on": "2026-11-08", "sha256": "'
+                    + example["review"]["sha256"] + '" }')
+        self.assertTrue(line.strip().startswith(expected), line)
+        self.assertTrue(line.rstrip(",").endswith("}"), line)

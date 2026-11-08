@@ -36,10 +36,6 @@ def stamp(entry, by, on, generated=(), name=None):
     return result
 
 
-def _inline(stamp_value):
-    return "{ " + ", ".join(f"{json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}" for k, v in stamp_value.items()) + " }"
-
-
 def stamp_counters(doc, ids, by, on, name=None):
     """Sets the stamp on each counter in `ids` (mutates `doc`); a missing id is a ValueError."""
     _check_args(by, on)
@@ -64,7 +60,7 @@ def stamp_grammar_text(text, ids, by, on, name=None):
         if match is None:
             raise ValueError(f"cannot find the id line of {grammar_id!r} in grammar.json")
         indent = match.group("indent")
-        line = f'{indent}"review": {_inline(made)},\n'
+        line = f'{indent}"review": {ud.inline_object(made)},\n'
         rest = text[match.end():]
         existing = re.match(rf'{re.escape(indent)}"review": .*\n', rest)
         text = text[:match.end()] + line + (rest[existing.end():] if existing else rest)

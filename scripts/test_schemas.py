@@ -77,3 +77,26 @@ class SchemaTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReviewStampPlacementTests(unittest.TestCase):
+    STAMP = {"by": "teacher", "on": "2026-11-08", "sha256": "a" * 64}
+
+    def stamped(self, name, pick):
+        doc = load_data(name)
+        pick(doc)["review"] = dict(self.STAMP)
+        return json_schema.validate(doc, load_schema(name))
+
+    def test_review_stamps_are_allowed_only_where_the_pipeline_checks_them(self):
+        self.assertEqual(self.stamped("verbs", lambda d: d["verbs"][0]), [])
+        self.assertEqual(self.stamped("verbs", lambda d: d["verbs"][0]["examples"][0]), [])
+        self.assertEqual(self.stamped("words", lambda d: d["words"][0]), [])
+        grammar_example = lambda d: next(p for p in d["grammar"] if p.get("usages"))["usages"][0]["examples"][0]
+        self.assertNotEqual(self.stamped("grammar", grammar_example), [])
+        counter_example = lambda d: next(c for c in d["counters"] if c.get("examples"))["examples"][0]
+        self.assertNotEqual(self.stamped("counters", counter_example), [])
+
+    def test_review_stamp_reviewers_match_the_pipeline_everywhere(self):
+        for name in ("verbs", "words"):
+            self.assertEqual(load_schema(name)["$defs"]["reviewStamp"]["properties"]["by"]["enum"],
+                             list(update_data.REVIEWERS))

@@ -35,6 +35,10 @@ by data (forms, readings, overrides) use `propertyNames` and an `additionalPrope
 `scripts/stable_ids.py`), `jlpt`, `example` and `reviewStamp` (the `review` stamp from
 `docs/superpowers/specs/2026-10-27-review-status-design.md`).
 
+A `review` stamp may sit on a counter, a grammar point, a verb, a word and a verb example, and nowhere else:
+grammar and counter examples are covered by their entry's stamp. A verb's stamp hashes the verb without its
+`forms` and `examples` (each example has its own); a word's without its `forms`.
+
 ## Fixtures
 
 `fixtures/invalid.json` is a list of small documents, each breaking exactly one rule:

@@ -71,6 +71,9 @@
           "items": {
             "$ref": "#/$defs/particleBlank"
           }
+        },
+        "review": {
+          "$ref": "#/$defs/reviewStamp"
         }
       }
     },
@@ -273,6 +276,39 @@
             "shite",
             "tte"
           ]
+        },
+        "review": {
+          "$ref": "#/$defs/reviewStamp"
+        }
+      }
+    },
+    "reviewStamp": {
+      "type": "object",
+      "required": [
+        "by",
+        "on",
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "by": {
+          "enum": [
+            "owner",
+            "teacher",
+            "native"
+          ]
+        },
+        "on": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }

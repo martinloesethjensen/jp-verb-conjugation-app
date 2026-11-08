@@ -62,6 +62,7 @@ entries to that release tag; see docs/security/data-signing.md for the release s
 Standard library only.
 """
 import argparse
+import copy
 import datetime
 import hashlib
 import json
@@ -665,6 +666,11 @@ PUBLISHED_REF = "origin/main"
 
 def verb_id(verb):
     return verb.get("id") or verb.get("dict")
+
+
+def word_id(word):
+    """A words.json entry's id, as the review site and the export use it: "i-adjective:たかい"."""
+    return f"{word['class']}:{word['dict']}"
 
 
 def check_verb_ids(verbs_doc):
@@ -1560,15 +1566,34 @@ def dump_forms():
     return json.dumps(form_catalogue.to_json_doc(), ensure_ascii=False, indent=2) + "\n"
 
 
+def inline_object(obj):
+    """A flat object on one line, `{ "by": "teacher", "on": … }`: how a review stamp is written in a file."""
+    return "{ " + ", ".join(f"{json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}" for k, v in obj.items()) + " }"
+
+
+_REVIEW_MARK = "@@review-{}@@"
+
+
 def dump_verbs(doc):
     """Serialize verbs.json in the repo's style: 2-space indent, non-ASCII
-    kept, and each example and collocation object on a single line."""
-    text = json.dumps(doc, ensure_ascii=False, indent=2)
+    kept, and each example and collocation object on a single line. An example's review stamp is
+    written inline, so a stamped example stays on one line."""
+    stamps = []
+    marked = copy.deepcopy(doc)
+    for verb in marked.get("verbs", []):
+        for example in verb.get("examples", []):
+            if isinstance(example, dict) and isinstance(example.get("review"), dict):
+                stamps.append(example["review"])
+                example["review"] = _REVIEW_MARK.format(len(stamps) - 1)
+    text = json.dumps(marked, ensure_ascii=False, indent=2)
     text = re.sub(
-        r'\{\n(?:\s+("id": [^\n]+),\n)?(?:\s+("form": [^\n]+),\n)?\s+("jp": [^\n]+),\n\s+("en": [^\n]+)\n\s+\}',
+        r'\{\n(?:\s+("id": [^\n]+),\n)?(?:\s+("form": [^\n]+),\n)?\s+("jp": [^\n]+),\n\s+("en": [^\n]+?)'
+        r'(?:,\n\s+("review": "@@review-\d+@@"))?\n\s+\}',
         lambda m: "{ " + ", ".join(part for part in m.groups() if part) + " }",
         text,
     )
+    for index, stamp_value in enumerate(stamps):
+        text = text.replace(json.dumps(_REVIEW_MARK.format(index)), inline_object(stamp_value), 1)
     return text + "\n"
 
 
@@ -1782,6 +1807,14 @@ REVIEWERS = ("owner", "teacher", "native")
 REVIEWER_RANK = {"owner": 0, "teacher": 1, "native": 2}
 MAX_REVIEW_NAME = 40
 COUNTER_GENERATED = ("readings", "changed", "distractors")
+# A verb's stamp covers its authored fields and collocations; each example carries its own stamp.
+VERB_GENERATED = ("forms", "examples")
+WORD_GENERATED = ("forms",)
+# What each kind of stamp's hash leaves out, besides the stamp itself. "example" is a verb example's own
+# stamp; grammar and counter examples are covered by their entry's. Mirrored by the review site's
+# `items::excluded_from_entry_hash`.
+STAMP_GENERATED = {"counters": COUNTER_GENERATED, "grammar": (), "verbs": VERB_GENERATED,
+                   "words": WORD_GENERATED, "example": ()}
 ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
@@ -1802,13 +1835,15 @@ def valid_iso_date(text):
     return True
 
 
-def check_reviews(entries, generated=()):
-    """Problems with the `review` stamps in `entries`: a bad shape, or a stamp whose hash no longer matches."""
+def check_reviews(entries, generated=(), key=None):
+    """Problems with the `review` stamps in `entries`: a bad shape, or a stamp whose hash no longer matches.
+    `key` names an entry in messages (default: its "id")."""
     problems = []
     for entry in entries:
         if "review" not in entry:
             continue
-        name, stamp = entry.get("id", "<no id>"), entry["review"]
+        name = key(entry) if key else entry.get("id", "<no id>")
+        stamp = entry["review"]
         if not isinstance(stamp, dict):
             problems.append(f"{name}: review must be an object with by, on and sha256")
             continue
@@ -2083,6 +2118,11 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     problems = check_stable_ids("verbs", verbs_doc)
     if problems:
         return 1, capped("verbs.json has items without a valid stable id:", problems)
+    problems = (check_reviews(verbs_doc["verbs"], VERB_GENERATED, key=verb_id)
+                + check_reviews([example for verb in verbs_doc["verbs"] for example in verb.get("examples", [])],
+                                STAMP_GENERATED["example"]))
+    if problems:
+        return 1, capped("verbs.json has invalid review stamps:", problems)
     problems = check_verb_forms(verbs_doc) + check_particle_blanks("verbs", verbs_doc)
     if problems:
         return 1, capped("verbs.json has invalid forms:", problems)
@@ -2112,7 +2152,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     words_doc = json.loads(words_path.read_text(encoding="utf-8")) if words_path.exists() else None
     words_bytes = None
     if words_doc is not None:
-        problems = check_words(words_doc, readings)
+        problems = check_words(words_doc, readings) + check_reviews(words_doc["words"], WORD_GENERATED, key=word_id)
         if problems:
             return 1, capped("words.json is invalid:", problems)
         try:
