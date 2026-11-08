@@ -40,7 +40,8 @@ struct SearchEmptyState: View {
                     Text("Search")
                         .font(.largeTitle.bold())
                         .foregroundStyle(palette.ink)
-                    JapaneseText("検索")
+                    // furigana.json has no reading for 検索, so it is given here.
+                    JapaneseText(units: [TextUnit(text: "検索", reading: "けんさく")])
                         .font(.headword(.title3))
                         .foregroundStyle(palette.muted)
                         .accessibilityHidden(true)

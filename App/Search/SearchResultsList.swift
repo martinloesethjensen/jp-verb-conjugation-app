@@ -100,7 +100,7 @@ struct SearchResultsList: View {
                 JapaneseText(point.title)
                     .font(.headword(.body))
                     .foregroundStyle(palette.ink)
-                Text(point.summary)
+                JapaneseText(point.summary)
                     .font(.subheadline)
                     .foregroundStyle(palette.muted)
                     .lineLimit(1)
@@ -114,8 +114,8 @@ struct SearchResultsList: View {
         ForEach(results.counters.groups) { group in
             row(.route(.counterGroup(group.id))) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(group.title).foregroundStyle(palette.ink)
-                    Text(group.summary).font(.subheadline).foregroundStyle(palette.muted).lineLimit(1)
+                    JapaneseText(group.title).foregroundStyle(palette.ink)
+                    JapaneseText(group.summary).font(.subheadline).foregroundStyle(palette.muted).lineLimit(1)
                 }
             }
         }

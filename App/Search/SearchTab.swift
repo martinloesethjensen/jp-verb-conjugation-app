@@ -44,7 +44,9 @@ struct SearchTab: View {
                 .paperBackground()
                 .navigationTitle("Search")
                 #if os(iOS)
-                .toolbar(.hidden, for: .navigationBar)
+                // The empty state draws the title with 検索 and its furigana; the bar stays for the field.
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar(removing: .title)
                 #endif
         }
         .searchable(text: $query, prompt: "Search everything")

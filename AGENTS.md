@@ -139,6 +139,7 @@ Run `make` for the full list. Common ones:
 | `TypeLabel(_:teGroup:emphasis:title:)` | A verb type as a dot + ink label (shapes with Differentiate Without Color; filled pill in Pastel/Ice cream) |
 | `Font.headword(_:scale:)` / `Font.sentence(_:)` | Hiragino Mincho W6 for Japanese headwords, W3 for example sentences and phrases; both scale with Dynamic Type |
 | `themedRoot()`, `ThemePickerView` | Root palette/appearance wiring (once, in `RootView`) and Settings › Theme |
+| `SearchTab` | The Search tab (`Tab(role: .search)` in `MainTabView`): `GlobalSearch` over all four parts, scope chips, recents (`search.recentQueries`), the hidden-levels row |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |
