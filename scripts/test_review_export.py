@@ -307,3 +307,13 @@ class VerbWordExampleStampTests(unittest.TestCase):
         self.assertEqual(report.stamp_ids, [])
         self.assertNotIn("review", example)
         self.assertTrue(any("can't be stamped" in l.text for l in report.skipped))
+
+    def test_an_example_stamp_is_skipped_when_the_batch_removes_its_verb(self):
+        d = docs()
+        verb = d["verbs"]["verbs"][0]
+        request = part_stamp(14, "verbs", "example", verb["examples"][0], "たべる")
+        removal = suggestion(6, "delete", "verbs", "entry", "たべる", "たべる", title="たべる")
+        report = rx.apply_batch(batch([removal], [request]), d, TODAY)
+        self.assertEqual(d["verbs"]["verbs"], [])
+        self.assertEqual(report.stamp_ids, [])
+        self.assertTrue(any("this batch removes its verb" in l.text for l in report.skipped), report.skipped)

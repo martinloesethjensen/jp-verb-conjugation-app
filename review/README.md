@@ -33,6 +33,11 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
 - **Worker** (`review/api`) uses Workers Builds: Cloudflare builds and deploys pushes that touch `review/api/`.
 - **Database migrations** are manual. When a PR adds a file under `review/api/migrations/`, run
   `npm run migrate` in `review/api` after it merges.
+- **Hash changes reset approvals.** Plan 7 (2026-11-08) made a verb's entry hash include its common phrases,
+  so the first data load after that deploy gives every verb entry a new hash. Approvals of verb entries made
+  before it stop counting (approve them again), and open or accepted-but-unexported changes to verb entries
+  show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
+  are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
 
 ## Loading data
 

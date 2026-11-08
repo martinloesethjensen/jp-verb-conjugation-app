@@ -154,6 +154,7 @@ def apply_batch(batch, docs, today):
     parts = {(s["dataset"], s["entry_id"], s["kind"], s["item_id"])
              for s in suggestions if s["action"] in ("change", "add", "delete")}
     touched = {(dataset, entry) for dataset, entry, _, _ in parts}
+    removed = {(s["dataset"], s["entry_id"]) for s in suggestions if s["action"] == "delete" and s["kind"] == "entry"}
 
     # 1. Stamps vouch for what the reviewers saw: check them before anything changes.
     stamps = []
@@ -166,6 +167,8 @@ def apply_batch(batch, docs, today):
             report.skipped.append(Line(f"{title}: {gone}"))
         elif ud.review_hash(*found) != t["content_hash"]:
             report.skipped.append(Line(f"{title}: changed since it was stamped"))
+        elif t["kind"] == "example" and (t["dataset"], t["entry_id"]) in removed:
+            report.skipped.append(Line(f"{title}: this batch removes its verb"))
         elif any(covers(t, part) for part in parts):
             report.skipped.append(Line(f"{title}: this batch also changes it; stamp it again after the next load"))
         else:
