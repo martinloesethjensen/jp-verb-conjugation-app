@@ -5,6 +5,7 @@ import WidgetKit
 /// The connection quiz: a word plus a pattern's ending; pick the joined form. Every answer
 /// shows the building block the pattern needed. No timer: building the form takes thought.
 struct ConnectionQuizView: View {
+    @Environment(\.palette) private var palette
     @State private var model: ConnectionQuizModel
     @State private var confirmingQuit = false
     private let recorder: (QuizAttempt) -> Void
@@ -82,7 +83,7 @@ struct ConnectionQuizView: View {
                         .font(.subheadline.weight(.semibold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                        .background(palette.button.opacity(0.15), in: Capsule())
                 }
             }
         }

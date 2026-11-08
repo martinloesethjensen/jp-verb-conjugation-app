@@ -49,7 +49,7 @@ struct TagManagerView: View {
                     } description: {
                         Text("Tag entries with a dialect, like 関西弁, or anything else you like.")
                     } actions: {
-                        Button("Add a tag") { adding = true }.buttonStyle(.glassProminent)
+                        Button("Add a tag") { adding = true }.buttonStyle(.paper)
                     }
                 }
             }

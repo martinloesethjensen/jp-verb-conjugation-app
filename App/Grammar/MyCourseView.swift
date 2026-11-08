@@ -38,6 +38,7 @@ struct MyCourseView: View {
                         get: { selectedBooks.contains(book.id) },
                         set: { on in if on { selectedBooks.insert(book.id) } else { selectedBooks.remove(book.id) } }
                     ))
+                    .paperSwitch()
                 }
             } header: {
                 Text("Start from")

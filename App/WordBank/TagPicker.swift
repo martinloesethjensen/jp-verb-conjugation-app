@@ -6,6 +6,7 @@ import VerbKit
 /// then dialects from the bundled catalogue, then custom tag ideas, then "Create". With
 /// the field empty it shows recently used tags and dialects related to the ones you have.
 struct TagPicker: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(WordBankStore.self) private var store
     var dialectIDs: Binding<[UUID]>?
@@ -173,7 +174,7 @@ struct TagPicker: View {
                     }
                 }
                 Spacer()
-                if applied { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
+                if applied { Image(systemName: "checkmark").foregroundStyle(palette.button) }
             }
             .contentShape(Rectangle())
         }

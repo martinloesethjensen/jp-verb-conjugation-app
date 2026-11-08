@@ -117,7 +117,7 @@ struct CounterSearchResultsView: View {
                     HStack {
                         ForEach(match.counters) { counter in
                             Button(counter.counter) { open(.counter(counter, focus: nil)) }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.paperSecondaryInline)
                         }
                     }
                 }

@@ -5,6 +5,7 @@ import VerbKit
 /// the app's words. "Try another word" steps through the words of each class. A rule
 /// without slots shows its written pattern and examples as before.
 struct AttachmentSection: View {
+    @Environment(\.palette) private var palette
     @Environment(VerbStore.self) private var verbStore
     @Environment(WordsStore.self) private var wordsStore
     let rules: [AttachmentRule]
@@ -96,7 +97,7 @@ struct AttachmentSection: View {
                         .font(.caption.weight(.bold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                        .background(palette.button.opacity(0.15), in: Capsule())
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint("Shows the building blocks")

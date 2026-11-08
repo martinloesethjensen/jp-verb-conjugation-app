@@ -5,6 +5,7 @@ import VerbKit
 /// the item (a folder itself and its descendants). Picking "Top level" files an entry as
 /// Unfiled, or makes a folder top-level.
 struct FolderPicker: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(WordBankStore.self) private var store
     var title: String = "Move to…"
@@ -61,7 +62,7 @@ struct FolderPicker: View {
                     Image(systemName: systemImage)
                 }
                 Spacer()
-                if current == id { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
+                if current == id { Image(systemName: "checkmark").foregroundStyle(palette.button) }
             }
             .padding(.leading, CGFloat(depth) * 20)
             .contentShape(Rectangle())

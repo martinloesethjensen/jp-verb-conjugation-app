@@ -132,6 +132,7 @@ struct ContentReviewSection: View {
             row("Counters", ReviewSummary(counters.counters))
             row("Grammar", ReviewSummary(verbs.grammarPoints))
             Toggle("Show review status", isOn: $showReviewStatus)
+                .paperSwitch()
         } header: {
             Text("Content review")
         } footer: {
