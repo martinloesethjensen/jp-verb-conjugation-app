@@ -36,11 +36,9 @@ struct ThemedRoot: ViewModifier {
         return content
             .environment(\.palette, palette)
             // Text buttons, links and the selected tab use `button` (≥ 4.5:1 on paper and card in
-            // every palette); the lighter `accent` only fills switches, where it is not text.
+            // every palette). Switches take `accent` through `paperSwitch()` on each Toggle: the
+            // tint is the only way to colour them on iOS 26, and this one is `button`.
             .tint(palette.button)
-            #if os(iOS)
-            .toggleStyle(SwitchToggleStyle(tint: palette.accent))
-            #endif
             .onChange(of: choice.appearance, initial: true) { _, new in
                 ThemeApplier.apply(new)
             }

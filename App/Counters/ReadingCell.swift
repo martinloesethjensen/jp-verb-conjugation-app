@@ -8,6 +8,7 @@ import VerbKit
 /// Readings come straight from counters.json; nothing here asks the furigana dictionary, which
 /// would read 三本 as さん + ほん.
 struct ReadingCell: View {
+    @Environment(\.palette) private var palette
     enum Style {
         case compact, large
     }
@@ -51,7 +52,7 @@ struct ReadingCell: View {
         }
         .overlay {
             if highlighted {
-                RoundedRectangle(cornerRadius: 10).strokeBorder(Color.accentColor, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 10).strokeBorder(palette.button, lineWidth: 2)
             }
         }
         .contentShape(RoundedRectangle(cornerRadius: 10))

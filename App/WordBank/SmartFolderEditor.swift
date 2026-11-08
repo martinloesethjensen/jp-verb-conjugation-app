@@ -20,6 +20,7 @@ extension SmartFolderMatch {
 
 /// Name, tags and Any/All for a smart folder.
 struct SmartFolderEditor: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(WordBankStore.self) private var store
     let request: SmartFolderRequest
@@ -105,7 +106,7 @@ struct SmartFolderEditor: View {
             HStack {
                 pill
                 Spacer()
-                if selected { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
+                if selected { Image(systemName: "checkmark").foregroundStyle(palette.button) }
             }
             .contentShape(Rectangle())
         }

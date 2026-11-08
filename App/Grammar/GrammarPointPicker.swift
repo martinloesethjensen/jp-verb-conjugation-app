@@ -3,6 +3,7 @@ import VerbKit
 
 /// A sheet that picks grammar points to add to a lesson of My course.
 struct GrammarPointPicker: View {
+    @Environment(\.palette) private var palette
     let points: [GrammarPoint]
     /// Ids already in the lesson; shown ticked and not selectable.
     let existing: Set<String>
@@ -33,7 +34,7 @@ struct GrammarPointPicker: View {
                         }
                         Spacer()
                         if isExisting || isSelected {
-                            Image(systemName: "checkmark").foregroundStyle(isExisting ? Color.secondary : Color.accentColor)
+                            Image(systemName: "checkmark").foregroundStyle(isExisting ? Color.secondary : palette.button)
                         }
                     }
                     .contentShape(Rectangle())

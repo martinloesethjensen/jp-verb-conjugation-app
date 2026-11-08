@@ -35,6 +35,7 @@ struct ThemePickerView: View {
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Toggle("Seasonal themes", isOn: changing($seasonal))
+                        .paperSwitch()
                         .padding(.vertical, 10)
                         .paperCard()
                     Text("Seasonal themes switch on by themselves in October and December, then go back.")

@@ -215,7 +215,7 @@ struct GrammarListView: View {
                     Button("Try Again") {
                         Task { await verbStore.retryGrammarSync() }
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.paper)
                 }
             } else if mode == .byLesson && courseStore.course == nil {
                 ContentUnavailableView {
@@ -224,7 +224,7 @@ struct GrammarListView: View {
                     Text("Set up My course to see grammar by lesson.")
                 } actions: {
                     Button("Set Up My Course") { showingCourse = true }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.paper)
                 }
             } else if mode == .byLesson && search.isEmpty && lessonSections(in: LevelSettings()).isEmpty {
                 ContentUnavailableView {
@@ -233,7 +233,7 @@ struct GrammarListView: View {
                     Text("Add lessons in My course.")
                 } actions: {
                     Button("Set Up My Course") { showingCourse = true }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.paper)
                 }
             } else if filtered.isEmpty && matchingMistakes.isEmpty {
                 if hiddenMatchCount > 0 {

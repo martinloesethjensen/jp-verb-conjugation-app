@@ -6,6 +6,7 @@ import VerbKit
 /// says what happens to it and which counters it affects; tapping a column header lists that column's
 /// counters. Tapping a cell speaks it. Irregular counters and one-off exceptions sit below.
 struct SoundPatternsView: View {
+    @Environment(\.palette) private var palette
     @Environment(CountersStore.self) private var store
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -89,7 +90,7 @@ struct SoundPatternsView: View {
             .frame(maxWidth: .infinity, minHeight: 44)
             .frame(minWidth: typeSize.isAccessibilitySize ? columnWidth : 0)
             .overlay {
-                if on { RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor, lineWidth: 2) }
+                if on { RoundedRectangle(cornerRadius: 8).strokeBorder(palette.button, lineWidth: 2) }
             }
             .contentShape(Rectangle())
         }
@@ -105,7 +106,7 @@ struct SoundPatternsView: View {
         } label: {
             Text(label(number))
                 .font(.headline)
-                .foregroundStyle(selected == number && selectedColumn == nil ? Color.accentColor : .secondary)
+                .foregroundStyle(selected == number && selectedColumn == nil ? palette.button : .secondary)
                 .frame(width: numberWidth, height: 44)
                 .contentShape(Rectangle())
         }
@@ -131,7 +132,7 @@ struct SoundPatternsView: View {
                 }
                 .overlay {
                     if selected == number && selectedColumn == nil {
-                        RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 8).strokeBorder(palette.button.opacity(0.5), lineWidth: 1)
                     }
                 }
                 .contentShape(RoundedRectangle(cornerRadius: 8))

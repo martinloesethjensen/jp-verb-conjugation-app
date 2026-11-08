@@ -167,7 +167,7 @@ private struct ConfusionLine: View {
             Text(detail).font(.callout).foregroundStyle(.secondary)
             if confusion.category.opensVerbGuide {
                 Button("See the verb guide", systemImage: "book", action: openGuide)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.paperSecondaryInline)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
