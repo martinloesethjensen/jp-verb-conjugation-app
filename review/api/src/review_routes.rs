@@ -138,10 +138,7 @@ pub async fn review<S: ReviewStore>(
             item_id: id.clone(),
         };
         stamp = tri!(store.pending_stamp(&t).await.map_err(unavailable));
-        stampable = stamp.is_none()
-            && crate::stamp_routes::ready(store, file.name(), &id)
-                .await
-                .is_ok();
+        stampable = stamp.is_none() && crate::stamp_routes::ready(store, &t).await.is_ok();
     }
     ok(
         200,

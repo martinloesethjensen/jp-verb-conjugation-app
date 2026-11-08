@@ -10,42 +10,50 @@ use crate::review_store::{NewStamp, ReviewStore, Target};
 use serde::Deserialize;
 use serde_json::json;
 
-pub const NOT_STAMPABLE: &str = "only counters and grammar points take a stamp for now";
+pub const NOT_STAMPABLE: &str = "this can't take a stamp";
 pub const NEEDS_APPROVALS: &str = "every part needs an approval first";
 pub const OPEN_SUGGESTIONS: &str = "settle its open suggestions first";
 
-/// What the data pipeline stamps today (`update_data.check_reviews`). Plan 7 adds verbs, words and examples.
+/// What the data pipeline stamps (`update_data.STAMP_GENERATED`): entries of four datasets, and verb examples
+/// (grammar and counter examples are covered by their entry's stamp).
 pub fn stampable(file: DataFile, kind: Kind) -> bool {
-    kind == Kind::Entry && matches!(file, DataFile::Counters | DataFile::Grammar)
+    match kind {
+        Kind::Entry => matches!(
+            file,
+            DataFile::Counters | DataFile::Grammar | DataFile::Verbs | DataFile::Words
+        ),
+        Kind::Example => file == DataFile::Verbs,
+        _ => false,
+    }
 }
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct EntryBody {
+struct StampBody {
     dataset: String,
     id: String,
+    /// "entry" when left out.
+    #[serde(default)]
+    kind: Option<String>,
 }
 
-/// The entry's target, refusing what can't be stamped.
+/// The stamp's target, refusing what can't be stamped.
 fn stamp_target(body: &[u8]) -> Result<Target, ApiResponse> {
-    let body: EntryBody = parse(body)?;
-    let (file, kind, t) = target(&body.dataset, "entry", &body.id)?;
+    let body: StampBody = parse(body)?;
+    let kind = body.kind.as_deref().unwrap_or("entry");
+    let (file, kind, t) = target(&body.dataset, kind, &body.id)?;
     if !stampable(file, kind) {
         return Err(error(400, NOT_STAMPABLE));
     }
     Ok(t)
 }
 
-/// Who a stamp of the entry would name, `(email, public role)`, or the 409 that says why it can't be stamped.
+/// Who a stamp of the target would name, `(email, public role)`, or the 409 that says why it can't be stamped.
 pub(crate) async fn ready<S: ReviewStore>(
     store: &S,
-    dataset: &str,
-    entry_id: &str,
+    t: &Target,
 ) -> Result<(String, String), ApiResponse> {
-    let r = store
-        .stamp_readiness(dataset, entry_id)
-        .await
-        .map_err(unavailable)?;
+    let r = store.stamp_readiness(t).await.map_err(unavailable)?;
     let (Some(reviewer), Some(role)) = (r.reviewer, r.reviewer_role) else {
         return Err(error(409, NEEDS_APPROVALS));
     };
@@ -69,7 +77,7 @@ pub async fn stamp<S: ReviewStore>(
     if let Some(existing) = tri!(store.pending_stamp(&t).await.map_err(unavailable)) {
         return ok(200, json!(existing));
     }
-    let (reviewer, by_role) = tri!(ready(store, &t.dataset, &entry_id).await);
+    let (reviewer, by_role) = tri!(ready(store, &t).await);
     let new = NewStamp {
         target: t.clone(),
         entry_id,

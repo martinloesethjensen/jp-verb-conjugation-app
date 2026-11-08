@@ -114,16 +114,157 @@ async fn stamping_waits_for_open_suggestions() {
     );
 }
 
+async fn stamp_kind(s: &SqliteStore, dataset: &str, kind: &str, id: &str) -> Response {
+    post(
+        s,
+        "/api/admin/stamp",
+        json!({"dataset": dataset, "kind": kind, "id": id}),
+        MARTIN,
+    )
+    .await
+}
+
+async fn note_on(s: &SqliteStore, dataset: &str, part: &(String, String, String)) {
+    let note = json!({"dataset": dataset, "kind": part.0, "id": part.1, "base_hash": part.2,
+                      "action": "note", "comment": "Is this natural?"});
+    let r = post(s, "/api/suggest", note, BEN).await;
+    assert_eq!(r.status, 201, "{}", r.body);
+}
+
 #[tokio::test(flavor = "current_thread")]
-async fn verbs_cannot_be_stamped_yet() {
+async fn verb_readiness_skips_examples_and_examples_stand_alone() {
     let s = seeded().await;
+    let parts = parts_of(&s, "verbs", "たべる").await;
+    let of = |kind: &str| -> Vec<(String, String, String)> {
+        parts.iter().filter(|p| p.0 == kind).cloned().collect()
+    };
+    let (examples, phrases) = (of("example"), of("collocation"));
+    assert!(examples.len() >= 2 && !phrases.is_empty());
+    for part in of("entry").iter().chain(&phrases) {
+        approve(&s, "verbs", part, AIKO).await;
+    }
+    // An open suggestion on an example doesn't hold the verb back.
+    note_on(&s, "verbs", &examples[0]).await;
+    let r = stamp(&s, "verbs", "たべる", MARTIN).await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    assert_eq!(r.body["kind"], "entry");
+    let r = post(
+        &s,
+        "/api/admin/stamp/withdraw",
+        json!({"dataset": "verbs", "id": "たべる"}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    // One on a collocation does.
+    note_on(&s, "verbs", &phrases[0]).await;
     let r = stamp(&s, "verbs", "たべる", MARTIN).await;
     assert_eq!(
         (r.status, r.body["error"].as_str()),
-        (
-            400,
-            Some("only counters and grammar points take a stamp for now")
-        )
+        (409, Some("settle its open suggestions first"))
+    );
+    // An example stands alone: its own approval, named by its approver.
+    approve(&s, "verbs", &examples[1], BEN).await;
+    let r = stamp_kind(&s, "verbs", "example", &examples[1].1).await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    assert_eq!(
+        (r.body["kind"].as_str(), r.body["reviewer_name"].as_str()),
+        (Some("example"), Some("Ben"))
+    );
+    assert_eq!(r.body["content_hash"], examples[1].2);
+    assert_eq!(r.body["entry_id"], "たべる");
+    let r = stamp_kind(&s, "verbs", "example", &examples[0].1).await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str()),
+        (409, Some("every part needs an approval first"))
+    );
+    let r = post(
+        &s,
+        "/api/admin/stamp/withdraw",
+        json!({"dataset": "verbs", "kind": "example", "id": examples[1].1}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn words_take_a_stamp() {
+    let s = seeded().await;
+    approve_all(&s, "words", "i-adjective:いい", AIKO).await;
+    let r = stamp(&s, "words", "i-adjective:いい", MARTIN).await;
+    assert_eq!(r.status, 201, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn grammar_examples_cannot_be_stamped_alone() {
+    let s = seeded().await;
+    let parts = parts_of(&s, "grammar", POINT).await;
+    let example = parts.iter().find(|p| p.0 == "example").unwrap();
+    let r = stamp_kind(&s, "grammar", "example", &example.1).await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str()),
+        (400, Some("this can't take a stamp"))
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn ready_list_includes_verbs_words_and_verb_examples() {
+    let s = seeded().await;
+    let parts = parts_of(&s, "verbs", "たべる").await;
+    for part in parts.iter().filter(|p| p.0 != "example") {
+        approve(&s, "verbs", part, AIKO).await;
+    }
+    let example = parts.iter().find(|p| p.0 == "example").unwrap().clone();
+    approve(&s, "verbs", &example, AIKO).await;
+    approve_all(&s, "words", "i-adjective:いい", AIKO).await;
+    let r = get(&s, "/api/admin/stampable", MARTIN).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let rows: Vec<(String, String, String, String, String)> = r.body["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| {
+            let t = |k: &str| e[k].as_str().unwrap().to_string();
+            (
+                t("dataset"),
+                t("kind"),
+                t("item_id"),
+                t("entry_id"),
+                t("entry_title"),
+            )
+        })
+        .collect();
+    let title = rows
+        .iter()
+        .find(|r| r.2 == "たべる")
+        .map(|r| r.4.clone())
+        .unwrap();
+    assert_eq!(
+        rows,
+        vec![
+            (
+                "verbs".into(),
+                "entry".into(),
+                "たべる".into(),
+                "たべる".into(),
+                title.clone()
+            ),
+            (
+                "verbs".into(),
+                "example".into(),
+                example.1.clone(),
+                "たべる".into(),
+                title
+            ),
+            (
+                "words".into(),
+                "entry".into(),
+                "i-adjective:いい".into(),
+                "i-adjective:いい".into(),
+                rows.last().unwrap().4.clone()
+            ),
+        ]
     );
 }
 
@@ -201,7 +342,6 @@ async fn the_owner_sees_what_is_ready_to_stamp() {
         Vec::<String>::new()
     );
     approve_all(&s, "grammar", POINT, AIKO).await;
-    approve_all(&s, "verbs", "たべる", AIKO).await;
     let r = get(&s, "/api/admin/stampable", MARTIN).await;
     assert_eq!(r.status, 200, "{}", r.body);
     assert_eq!(ready(&r), vec![format!("grammar/{POINT}")]);

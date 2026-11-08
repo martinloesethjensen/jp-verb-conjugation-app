@@ -810,14 +810,13 @@ impl ReviewStore for SqliteStore {
         tx.commit().map_err(backend)
     }
 
-    async fn stamp_readiness(
-        &self,
-        dataset: &str,
-        entry_id: &str,
-    ) -> Result<StampReadiness, StoreError> {
+    async fn stamp_readiness(&self, t: &Target) -> Result<StampReadiness, StoreError> {
         let conn = self.conn.borrow();
-        let rows: Vec<StampReadiness> =
-            query(&conn, SELECT_STAMP_READINESS, params![dataset, entry_id])?;
+        let rows: Vec<StampReadiness> = query(
+            &conn,
+            SELECT_STAMP_READINESS,
+            params![t.dataset, t.kind, t.item_id],
+        )?;
         rows.into_iter()
             .next()
             .ok_or_else(|| StoreError::Backend("no readiness row".into()))

@@ -868,13 +868,9 @@ impl ReviewStore for D1Store {
         ))
     }
 
-    async fn stamp_readiness(
-        &self,
-        dataset: &str,
-        entry_id: &str,
-    ) -> Result<StampReadiness, StoreError> {
+    async fn stamp_readiness(&self, t: &Target) -> Result<StampReadiness, StoreError> {
         let rows = self
-            .rows(SELECT_STAMP_READINESS, &[text(dataset), text(entry_id)])
+            .rows(SELECT_STAMP_READINESS, &Self::target_binds(t))
             .await?;
         rows.into_iter()
             .next()

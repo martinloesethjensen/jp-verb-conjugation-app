@@ -397,28 +397,56 @@ pub const SELECT_PENDING_STAMP: &str = concat!(
     stamp_columns!(),
     "WHERE s.dataset = ?1 AND s.kind = ?2 AND s.item_id = ?3 AND s.exported_at IS NULL"
 );
-/// The current approvals of an entry's parts, most senior reviewer first. ?1 dataset, ?2 entry id.
-macro_rules! senior_approval {
-    () => {
-        "FROM approvals a \
-     JOIN items i ON i.dataset = a.dataset AND i.kind = a.kind AND i.item_id = a.item_id AND i.content_hash = a.content_hash \
-     JOIN users u ON u.email = a.reviewer WHERE a.dataset = ?1 AND i.entry_id = ?2 \
-     ORDER BY CASE u.public_role WHEN 'owner' THEN 0 WHEN 'teacher' THEN 1 ELSE 2 END, a.created_at, a.reviewer LIMIT 1"
+/// What a stamp on the target (?1 dataset, ?2 kind, ?3 item id) vouches for, as a condition on the row alias
+/// given: an entry's stamp covers the whole entry except a verb's examples, which carry their own stamps; any
+/// other stamp (a verb example's) covers just that item. Mirrors `scripts/review_export.covers`.
+macro_rules! covered {
+    ($a:literal) => {
+        concat!(
+            $a,
+            ".dataset = ?1 AND ((?2 = 'entry' AND ",
+            $a,
+            ".entry_id = ?3 AND NOT (",
+            $a,
+            ".dataset = 'verbs' AND ",
+            $a,
+            ".kind = 'example')) OR (?2 <> 'entry' AND ",
+            $a,
+            ".kind = ?2 AND ",
+            $a,
+            ".item_id = ?3))"
+        )
     };
 }
-/// ?1 dataset, ?2 entry id.
+/// The current approvals of what a stamp covers, most senior reviewer first. ?1–?3 the target.
+macro_rules! senior_approval {
+    () => {
+        concat!(
+            "FROM approvals a \
+     JOIN items i ON i.dataset = a.dataset AND i.kind = a.kind AND i.item_id = a.item_id AND i.content_hash = a.content_hash \
+     JOIN users u ON u.email = a.reviewer WHERE ",
+            covered!("i"),
+            " ORDER BY CASE u.public_role WHEN 'owner' THEN 0 WHEN 'teacher' THEN 1 ELSE 2 END, a.created_at, a.reviewer LIMIT 1"
+        )
+    };
+}
+/// ?1–?3 the target.
 pub const SELECT_STAMP_READINESS: &str = concat!(
-    "SELECT (SELECT COUNT(*) FROM items i WHERE i.dataset = ?1 AND i.entry_id = ?2 AND NOT EXISTS \
+    "SELECT (SELECT COUNT(*) FROM items i WHERE ",
+    covered!("i"),
+    " AND NOT EXISTS \
      (SELECT 1 FROM approvals a WHERE a.dataset = i.dataset AND a.kind = i.kind AND a.item_id = i.item_id \
      AND a.content_hash = i.content_hash)) AS missing, \
-     (SELECT COUNT(*) FROM suggestions WHERE dataset = ?1 AND entry_id = ?2 AND status = 'open') AS open, \
+     (SELECT COUNT(*) FROM suggestions s WHERE ",
+    covered!("s"),
+    " AND s.status = 'open') AS open, \
      (SELECT a.reviewer ",
     senior_approval!(),
     ") AS reviewer, (SELECT u.public_role ",
     senior_approval!(),
     ") AS reviewer_role, \
-     (SELECT content_hash FROM items WHERE dataset = ?1 AND kind = 'entry' AND item_id = ?2) AS content_hash, \
-     (SELECT title FROM items WHERE dataset = ?1 AND kind = 'entry' AND item_id = ?2) AS title"
+     (SELECT content_hash FROM items WHERE dataset = ?1 AND kind = ?2 AND item_id = ?3) AS content_hash, \
+     (SELECT title FROM items WHERE dataset = ?1 AND kind = ?2 AND item_id = ?3) AS title"
 );
 /// An accepted suggestion as export reads it: the item to write (the owner's edit, else the reviewer's),
 /// and how its author is credited. Never the author's email.
@@ -461,25 +489,44 @@ pub const MARK_SUGGESTIONS_EXPORTED: &str = "UPDATE suggestions SET exported_at 
 pub const MARK_STAMPS_EXPORTED: &str = "UPDATE stamps SET exported_at = ?2 \
      WHERE id IN (SELECT value FROM json_each(?1)) AND exported_at IS NULL";
 
+/// Something ready for the owner's stamp: an entry, or a verb example (`kind`), with the entry it belongs to.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ReadyEntry {
     pub dataset: String,
+    pub kind: String,
     pub item_id: String,
+    pub entry_id: String,
+    pub entry_title: String,
     pub title: String,
 }
 
-/// Counters and grammar points ready for the owner's stamp: every part approved at its current hash,
-/// nothing open, no pending stamp, and no stamp in the published data already.
-pub const SELECT_READY_TO_STAMP: &str = "SELECT e.dataset, e.item_id, e.title FROM items e \
-     WHERE e.kind = 'entry' AND e.dataset IN ('counters', 'grammar') AND json_extract(e.json, '$.review') IS NULL \
-     AND NOT EXISTS (SELECT 1 FROM items i WHERE i.dataset = e.dataset AND i.entry_id = e.item_id AND NOT EXISTS \
+/// Entries of the stamped datasets, and verb examples, ready for the owner's stamp: everything the stamp
+/// covers (`covered!`) approved at its current hash, nothing open, no pending stamp, and no stamp in the
+/// published data already.
+pub const SELECT_READY_TO_STAMP: &str = "SELECT dataset, kind, item_id, entry_id, entry_title, title FROM ( \
+     SELECT e.dataset, e.kind, e.item_id, e.entry_id, e.title AS entry_title, e.title, e.position AS entry_pos, \
+       e.position FROM items e \
+     WHERE e.kind = 'entry' AND e.dataset IN ('counters', 'grammar', 'verbs', 'words') \
+     AND json_extract(e.json, '$.review') IS NULL \
+     AND NOT EXISTS (SELECT 1 FROM items i WHERE i.dataset = e.dataset AND i.entry_id = e.item_id \
+       AND NOT (i.dataset = 'verbs' AND i.kind = 'example') AND NOT EXISTS \
        (SELECT 1 FROM approvals a WHERE a.dataset = i.dataset AND a.kind = i.kind AND a.item_id = i.item_id \
         AND a.content_hash = i.content_hash)) \
      AND NOT EXISTS (SELECT 1 FROM suggestions s WHERE s.dataset = e.dataset AND s.entry_id = e.item_id \
-       AND s.status = 'open') \
+       AND NOT (s.dataset = 'verbs' AND s.kind = 'example') AND s.status = 'open') \
      AND NOT EXISTS (SELECT 1 FROM stamps t WHERE t.dataset = e.dataset AND t.kind = 'entry' \
        AND t.item_id = e.item_id AND t.exported_at IS NULL) \
-     ORDER BY e.dataset, e.position";
+     UNION ALL \
+     SELECT x.dataset, x.kind, x.item_id, x.entry_id, p.title AS entry_title, x.title, p.position AS entry_pos, \
+       x.position FROM items x JOIN items p ON p.dataset = x.dataset AND p.kind = 'entry' AND p.item_id = x.entry_id \
+     WHERE x.dataset = 'verbs' AND x.kind = 'example' AND json_extract(x.json, '$.review') IS NULL \
+     AND EXISTS (SELECT 1 FROM approvals a WHERE a.dataset = x.dataset AND a.kind = x.kind \
+       AND a.item_id = x.item_id AND a.content_hash = x.content_hash) \
+     AND NOT EXISTS (SELECT 1 FROM suggestions s WHERE s.dataset = x.dataset AND s.kind = 'example' \
+       AND s.item_id = x.item_id AND s.status = 'open') \
+     AND NOT EXISTS (SELECT 1 FROM stamps t WHERE t.dataset = x.dataset AND t.kind = 'example' \
+       AND t.item_id = x.item_id AND t.exported_at IS NULL) \
+     ) ORDER BY dataset, entry_pos, position";
 /// ?1–?3 target, ?4 entry id, ?5 title, ?6 hash, ?7 role, ?8 reviewer, ?9 by, ?10 now.
 pub const INSERT_STAMP: &str =
     "INSERT INTO stamps (dataset, kind, item_id, entry_id, item_title, content_hash, \
@@ -819,11 +866,7 @@ pub trait ReviewStore {
         entry_id: &str,
         viewer: &str,
     ) -> Result<(Vec<Approval>, Vec<Suggestion>), StoreError>;
-    async fn stamp_readiness(
-        &self,
-        dataset: &str,
-        entry_id: &str,
-    ) -> Result<StampReadiness, StoreError>;
+    async fn stamp_readiness(&self, t: &Target) -> Result<StampReadiness, StoreError>;
     async fn pending_stamp(&self, t: &Target) -> Result<Option<Stamp>, StoreError>;
     async fn ready_to_stamp(&self) -> Result<Vec<ReadyEntry>, StoreError>;
     /// Accepted suggestions and stamps not yet exported, oldest first.
