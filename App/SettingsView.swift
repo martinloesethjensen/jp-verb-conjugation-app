@@ -106,6 +106,7 @@ struct SettingsView: View {
             .paperRow()
             Section("Reading") {
                 Toggle("Show furigana", isOn: $showFurigana)
+                    .paperSwitch()
             }
             .paperRow()
             if !availableLevels.isEmpty {
@@ -115,6 +116,7 @@ struct SettingsView: View {
                     ForEach(availableLevels, id: \.self) { level in
                         Toggle(level.displayName, isOn: visibleBinding(for: level))
                             .disabled(settings.isVisible(level) && !settings.canHide(level, amongEach: datasets))
+                            .paperSwitch()
                     }
                 } header: {
                     Text("Levels")
@@ -149,6 +151,7 @@ struct SettingsView: View {
             .paperRow()
             Section {
                 Toggle("Verb of the day", isOn: reminderToggle)
+                    .paperSwitch()
                 if reminderEnabled {
                     DatePicker("Time", selection: reminderTime, displayedComponents: .hourAndMinute)
                 }
@@ -162,6 +165,7 @@ struct SettingsView: View {
             .paperRow()
             Section {
                 Toggle("Suggest while typing", isOn: $wordBankSuggestions)
+                    .paperSwitch()
                 Button("Restore Backup…") { showingBackups = true }
             } header: {
                 Text("Word Bank")
@@ -172,6 +176,7 @@ struct SettingsView: View {
             .paperRow()
             Section {
                 Toggle("Speak after quiz answers", isOn: $speakQuizAnswers)
+                    .paperSwitch()
                 Picker("Speed", selection: $speechSpeedRaw) {
                     ForEach(SpeechSpeed.allCases) { speed in
                         Text(speed.label).tag(speed.rawValue)

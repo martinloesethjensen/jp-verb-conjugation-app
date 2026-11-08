@@ -6,6 +6,7 @@ import VerbKit
 /// reading differs), so they get a grid of all eleven readings instead. At accessibility text sizes the
 /// strip scrolls sideways.
 struct NumberStrip: View {
+    @Environment(\.palette) private var palette
     let counter: Counter
     @Binding var selection: CounterNumber
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -55,7 +56,7 @@ struct NumberStrip: View {
                         }
                         .overlay {
                             if selection == number {
-                                RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor, lineWidth: 2)
+                                RoundedRectangle(cornerRadius: 8).strokeBorder(palette.button, lineWidth: 2)
                             }
                         }
                         .contentShape(RoundedRectangle(cornerRadius: 8))

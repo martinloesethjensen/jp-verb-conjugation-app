@@ -64,7 +64,7 @@ extension View {
             if isVisible {
                 Button(title, systemImage: "arrow.right", action: action)
                     .labelStyle(.titleAndIcon)
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.paper)
                     .controlSize(.large)
                     .padding(.horizontal)
                     .padding(.bottom, 8)

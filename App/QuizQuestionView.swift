@@ -118,7 +118,7 @@ struct QuizQuestionView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if result.error?.opensVerbGuide == true {
                     Button("See the verb guide", systemImage: "book") { showGuide = true }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.paperSecondaryInline)
                 }
             }
         }

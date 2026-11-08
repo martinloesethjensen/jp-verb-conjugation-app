@@ -111,6 +111,7 @@ Run `make` for the full list. Common ones:
 | `TagSuggester`, `RecentSearches`, `DialectCatalogue` | Word Bank tag and search supporting logic |
 | `WordBankDates.day/timestamp` | Fixed, locale-independent date stamps in Word Bank file names and notes |
 | `matchesSearch`, `matchesGrammarSearch`, `searchCounters`, `WordBankSearchIndex` | Search implementations |
+| `GlobalSearch.results`, `SearchScope`, `GlobalSearchResults` | The Search tab's one search over all four, with the level setting, hidden-match count and the romaji reading line |
 | `ParticleBlank`, `ParticleQuiz`, `buildParticleQuestions` | Marked `particle_blanks` on examples and the particle quiz built from them (spec: `docs/superpowers/specs/2026-10-29-particle-blanks-design.md`) |
 | `DataSyncStatus` | Per-file sync status shown in Settings |
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
@@ -135,7 +136,8 @@ Run `make` for the full list. Common ones:
 | `LevelBadge(level:emphasis:)` | Outlined JLPT pill beside a row title or in a detail header; nil draws nothing |
 | `\.palette` / `ThemePalette` | The current theme's colours (paper, card, ink, muted, rule, mark, good, button, accent). Read these, not `.secondary`/`.white`, in restyled views |
 | `paperCard(cornerRadius:fillsWidth:ruled:)` | Card for detail sections: `card` fill, `rule` outline. Glass stays on bars and toolbars. `ruled: true` adds the genkō grid, for example sentences and results |
-| `PaperButtonStyle` (`.paper` / `.paperSecondary`) | Ink-filled or outlined full-width capsule for content buttons, instead of glass |
+| `PaperButtonStyle` (`.paper` / `.paperSecondary` / `.paperSecondaryInline`) | Ink-filled or outlined full-width capsule for content buttons, instead of glass (`.glassProminent` draws a white label on the root tint, unreadable in dark halves); the inline one hugs its label |
+| `paperSwitch()` | Put on every switch `Toggle`: colours its "on" track with `accent` (the root tint is `button`) |
 | `paperBackground()`, `paperRow()` | Paper behind a screen's List/ScrollView/Form; card-coloured list rows |
 | `TypeLabel(_:teGroup:emphasis:title:)` | A verb type as a dot + ink label (shapes with Differentiate Without Color; filled pill in Pastel/Ice cream) |
 | `Font.headword(_:scale:)` / `Font.sentence(_:)` | Hiragino Mincho W6 for Japanese headwords, W3 for example sentences and phrases; both scale with Dynamic Type |
@@ -143,6 +145,7 @@ Run `make` for the full list. Common ones:
 | `kanjiSheet(_:)`, `KanjiSheetRequest` | The kanji stroke-order sheet (Watch/Trace); the text menus, the verb page's Kanji section and Word Bank kanji chips open it |
 | `KanjiStrokeCanvas`, `KanjiStrokeShape` | A kanji's strokes up to a step in the 109-unit box (ink, red current stroke, faint rest, numbers, start dot), scaled to any square |
 | `Path(svg:)` | A SwiftUI `Path` from `SVGPathData.parse` elements (the seal and the kanji strokes) |
+| `SearchTab` | The Search tab (`Tab(role: .search)` in `MainTabView`): `GlobalSearch` over all four parts, scope chips, recents (`search.recentQueries`), the hidden-levels row |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |

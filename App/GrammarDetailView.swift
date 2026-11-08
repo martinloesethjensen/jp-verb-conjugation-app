@@ -246,7 +246,7 @@ struct GrammarDetailView: View {
             Label("Practise this pattern", systemImage: "arrow.right")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glassProminent)
+        .buttonStyle(.paper)
         .controlSize(.large)
     }
 

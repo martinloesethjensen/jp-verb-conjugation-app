@@ -9,6 +9,7 @@ enum CounterQuizSelection {
 /// Asks what to practise before a counter quiz starts. A row is disabled when it would build no
 /// question under the current level settings; Weak spots comes first.
 struct CounterQuizSheet: View {
+    @Environment(\.palette) private var palette
     /// How many questions each row can build, and how many weak reading pairs there are.
     let whichCounterAvailable: Bool
     let readItAvailable: Bool
@@ -79,7 +80,7 @@ struct CounterQuizSheet: View {
                 Spacer()
                 Text(detail).foregroundStyle(.secondary)
                 Image(systemName: choice == value ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(choice == value ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(choice == value ? palette.button : Color.secondary)
             }
             // On the label, so the gap between title and detail is tappable too.
             .contentShape(Rectangle())

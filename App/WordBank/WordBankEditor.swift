@@ -13,6 +13,7 @@ struct WordBankEditorRequest: Identifiable {
 /// Adds or edits an entry. Only the text is required. The reading is filled from the
 /// furigana dictionary when the text has kanji and the reading hasn't been typed by hand.
 struct WordBankEditor: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(\.furiganaDictionary) private var dictionary
     @Environment(WordBankStore.self) private var store
@@ -223,7 +224,7 @@ struct WordBankEditor: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color.accentColor.opacity(0.12), in: Capsule())
+            .background(palette.button.opacity(0.12), in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(label): \(value). Tap to add.")

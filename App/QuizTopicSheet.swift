@@ -27,6 +27,7 @@ extension QuizSessionTopic {
 /// Asks what to practise before a quiz starts. Rows are the topics the verbs in
 /// play have forms in, plus Everything and, first, Weak spots.
 struct QuizTopicSheet: View {
+    @Environment(\.palette) private var palette
     let verbs: [Verb]
     let connectionPatterns: Int
     /// How many Spot the mistake questions the level settings allow; the row is off at zero.
@@ -106,7 +107,7 @@ struct QuizTopicSheet: View {
                                 }
                                 Spacer()
                                 Image(systemName: "play.circle.fill")
-                                    .foregroundStyle(Color.accentColor)
+                                    .foregroundStyle(palette.button)
                             }
                             .contentShape(Rectangle())
                         }
@@ -153,6 +154,7 @@ struct QuizTopicSheet: View {
                 if !favouriteVerbs.isEmpty && favouriteVerbs.count < verbs.count {
                     Section {
                         Toggle("Favourites only (\(favouriteVerbs.count))", isOn: $favouritesOnly)
+                            .paperSwitch()
                     }
                 }
             }
@@ -188,7 +190,7 @@ struct QuizTopicSheet: View {
                 Spacer()
                 Text(detail).foregroundStyle(.secondary)
                 Image(systemName: choice == value ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(choice == value ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(choice == value ? palette.button : Color.secondary)
             }
             // On the label, so the gap between title and detail is tappable too.
             .contentShape(Rectangle())

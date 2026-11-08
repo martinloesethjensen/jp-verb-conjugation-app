@@ -631,7 +631,7 @@ struct WordBankListView: View {
                 Button("Add “\(trimmedSearch)” as a new entry") {
                     editorRequest = WordBankEditorRequest(folderID: folderID, text: trimmedSearch)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.paper)
             }
         }
     }
@@ -647,7 +647,7 @@ struct WordBankListView: View {
                 Text("Save dialect words, phrases and sentences you learn outside the app.")
             } actions: {
                 Button("Add your first entry") { editorRequest = WordBankEditorRequest(folderID: folderID) }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.paper)
             }
         } else if let folder = smartFolder, entries.isEmpty {
             ContentUnavailableView {
