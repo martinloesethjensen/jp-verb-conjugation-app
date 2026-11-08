@@ -1,5 +1,5 @@
 use review_api::data::DataFile;
-use review_api::items::{canonical_json, content_hash, entry_hash, extract, Kind};
+use review_api::items::{canonical_json, content_hash, entry_hash, extract, item_hash, Kind};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 
@@ -234,17 +234,19 @@ fn entry_hashes_match_pythons_review_hash() {
 
 #[test]
 fn a_verb_or_word_hash_covers_only_its_authored_fields() {
-    // Generated forms, examples and collocations (which carry their own hashes) don't change it;
-    // the meaning does. A review stamp never does.
+    // Generated forms and the examples (each carries its own stamp) don't change it; the meaning and the
+    // collocations (part of the verb's stamp, plan 7) do. A review stamp never does.
     let verbs = doc(DataFile::Verbs);
     let verb = &verbs["verbs"][0];
     let base = entry_hash(DataFile::Verbs, verb);
     let mut changed = verb.clone();
     changed["forms"]["te"] = json!("x");
     changed["examples"] = json!([]);
-    changed["collocations"] = json!([]);
     changed["review"] = json!({"by": "owner", "on": "2026-11-01", "sha256": "z"});
     assert_eq!(entry_hash(DataFile::Verbs, &changed), base);
+    let mut phrase = changed.clone();
+    phrase["collocations"] = json!([]);
+    assert_ne!(entry_hash(DataFile::Verbs, &phrase), base);
     changed["meaning"] = json!("something else");
     assert_ne!(entry_hash(DataFile::Verbs, &changed), base);
     let words = doc(DataFile::Words);
@@ -263,7 +265,7 @@ fn entry_rows_carry_the_entry_hash_and_sub_items_their_own() {
             let expected = if row.kind == Kind::Entry {
                 entry_hash(file, &value)
             } else {
-                content_hash(&value)
+                item_hash(&value)
             };
             assert_eq!(
                 row.content_hash,
@@ -274,4 +276,44 @@ fn entry_rows_carry_the_entry_hash_and_sub_items_their_own() {
             );
         }
     }
+}
+
+fn stamp_fixtures() -> (Value, Value, Value) {
+    // The same objects as scripts/test_update_data.py's VerbWordExampleStampTests.
+    let example = json!({"id": "e1aaaa", "form": "te", "jp": "食べて", "en": "Eat."});
+    let verb = json!({"dict": "たべる", "kanji": "食べる", "type": "ru", "label": "Ru-verb", "meaning": "to eat",
+        "description": "d", "jlpt": "N5", "forms": {"te": "たべて"}, "examples": [example.clone()],
+        "collocations": [{"id": "c1aaaa", "jp": "ご飯を食べる", "en": "eat a meal"}]});
+    let word = json!({"class": "i-adjective", "dict": "たかい", "kanji": "高い", "meaning": "tall",
+        "forms": {"te": "たかくて"}});
+    (verb, example, word)
+}
+
+#[test]
+fn verb_word_and_example_hashes_match_pythons() {
+    let (verb, example, word) = stamp_fixtures();
+    assert_eq!(
+        entry_hash(DataFile::Verbs, &verb),
+        "e7e1cd2a49f854625d9fdf52100d4c3f1a1014768b4c2dccc1335652c408c523"
+    );
+    assert_eq!(
+        item_hash(&example),
+        "e316230c9cf4bc0d9f4c69d6c77de773435cc87c768c71f2252c5a6880d28bdd"
+    );
+    assert_eq!(
+        entry_hash(DataFile::Words, &word),
+        "43f0eecce12700845c151b6550a1faeaf8c9fce9d047bc2202c31b18febeca99"
+    );
+}
+
+#[test]
+fn an_example_hash_ignores_its_review() {
+    let (mut verb, example, _) = stamp_fixtures();
+    let stamp = json!({"by": "teacher", "on": "2026-11-08", "sha256": "a"});
+    let mut stamped = example.clone();
+    stamped["review"] = stamp.clone();
+    assert_eq!(item_hash(&stamped), item_hash(&example));
+    let before = entry_hash(DataFile::Verbs, &verb);
+    verb["examples"][0]["review"] = stamp;
+    assert_eq!(entry_hash(DataFile::Verbs, &verb), before);
 }

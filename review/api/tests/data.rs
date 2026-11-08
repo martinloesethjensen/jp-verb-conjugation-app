@@ -98,3 +98,17 @@ fn a_native_stamp_with_a_name_parses() {
     });
     assert!(parse(DataFile::Counters, doc.to_string().as_bytes()).is_ok());
 }
+
+#[test]
+fn stamps_parse_on_verbs_examples_and_words() {
+    let stamp = serde_json::json!({"by": "native", "on": "2026-11-08", "sha256": "a".repeat(64), "name": "Aiko"});
+    let mut verbs: serde_json::Value = serde_json::from_slice(&real(DataFile::Verbs)).unwrap();
+    verbs["verbs"][0]["review"] = stamp.clone();
+    verbs["verbs"][0]["examples"][0]["review"] = stamp.clone();
+    parse(DataFile::Verbs, verbs.to_string().as_bytes()).unwrap();
+    let mut words: serde_json::Value = serde_json::from_slice(&real(DataFile::Words)).unwrap();
+    words["words"][0]["review"] = stamp.clone();
+    parse(DataFile::Words, words.to_string().as_bytes()).unwrap();
+    words["words"][0]["review"]["extra"] = serde_json::json!(1);
+    assert!(parse(DataFile::Words, words.to_string().as_bytes()).is_err());
+}

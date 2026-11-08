@@ -122,14 +122,13 @@ fn sha256_hex(bytes: &[u8]) -> String {
 }
 
 /// Keys an entry's hash leaves out: the `review` stamp itself, fields `update_data.py` generates, and
-/// sub-items that carry their own hashes. Counters and grammar match `update_data.review_hash`
-/// (with `COUNTER_GENERATED`); verbs and words follow the review-site design (authored fields only,
-/// not their examples).
+/// sub-items that carry their own stamps. Each matches `update_data.STAMP_GENERATED`: a verb's stamp
+/// covers its authored fields and collocations, not its forms or examples (each example has its own).
 fn excluded_from_entry_hash(file: DataFile) -> &'static [&'static str] {
     match file {
         DataFile::Counters => &["review", "readings", "changed", "distractors"],
         DataFile::Grammar => &["review"],
-        DataFile::Verbs => &["review", "forms", "examples", "collocations"],
+        DataFile::Verbs => &["review", "forms", "examples"],
         DataFile::Words => &["review", "forms"],
         DataFile::Furigana | DataFile::Forms => &["review"],
     }
@@ -139,6 +138,14 @@ fn excluded_from_entry_hash(file: DataFile) -> &'static [&'static str] {
 pub fn entry_hash(file: DataFile, entry: &Value) -> String {
     let mut out = String::new();
     write_canonical(entry, excluded_from_entry_hash(file), &mut out);
+    sha256_hex(out.as_bytes())
+}
+
+/// The hash of a sub-item: its canonical JSON without its own `review` stamp, so writing a verb example's
+/// stamp never makes the site think it changed (`update_data.review_hash(example)`).
+pub fn item_hash(value: &Value) -> String {
+    let mut out = String::new();
+    write_canonical(value, &["review"], &mut out);
     sha256_hex(out.as_bytes())
 }
 
@@ -191,12 +198,12 @@ impl Rows {
         jlpt: Option<String>,
         value: &Value,
     ) {
-        // The canonical JSON is built once: stored as-is, and hashed for a sub-item.
+        // The canonical JSON is stored as-is (with any stamp, for `$.review` checks); the hash leaves the stamp out.
         let json = canonical_json(value);
         let content_hash = if kind == Kind::Entry {
             entry_hash(self.file, value)
         } else {
-            sha256_hex(json.as_bytes())
+            item_hash(value)
         };
         self.rows.push(ItemRow {
             kind,

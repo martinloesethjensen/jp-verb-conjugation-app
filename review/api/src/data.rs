@@ -209,6 +209,8 @@ pub struct Verb {
     pub kanji: Option<String>,
     #[serde(default, rename = "teGroup")]
     pub te_group: Option<TeGroup>,
+    #[serde(default)]
+    pub review: Option<ReviewStamp>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -220,6 +222,9 @@ pub struct VerbExample {
     pub en: String,
     #[serde(default)]
     pub particle_blanks: Option<Vec<ParticleBlank>>,
+    /// A verb example's own stamp (plan 7); grammar and counter examples are covered by their entry's.
+    #[serde(default)]
+    pub review: Option<ReviewStamp>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -275,6 +280,8 @@ pub struct Word {
     pub forms: BTreeMap<String, String>,
     #[serde(default)]
     pub kanji: Option<String>,
+    #[serde(default)]
+    pub review: Option<ReviewStamp>,
 }
 
 // --- counters.json ------------------------------------------------------------------------------
