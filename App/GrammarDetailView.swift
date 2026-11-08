@@ -8,6 +8,7 @@ struct GrammarDetailView: View {
     @Binding var focusedPitfall: Int?
     @State private var highlightedPitfall: Int?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.palette) private var palette
     @Environment(VerbStore.self) private var verbStore
     @Environment(\.openRoute) private var openRoute
     @Environment(WordsStore.self) private var wordsStore
@@ -121,9 +122,9 @@ struct GrammarDetailView: View {
                 card {
                     JapaneseText(contrast.pattern).font(.headline)
                     JapaneseText(contrast.explanation).font(.subheadline)
-                    ForEach(Array(contrast.examples.enumerated()), id: \.offset) { _, example in
-                        Divider()
-                        ExampleRow(example: example)
+                    if !contrast.examples.isEmpty {
+                        ExampleList(examples: contrast.examples,
+                                    patterns: [contrast.pattern] + GrammarHighlight.patterns(of: point))
                     }
                 }
             }
@@ -146,24 +147,27 @@ struct GrammarDetailView: View {
         )
     }
 
-    // MARK: Watch out
+    // MARK: Common mistakes
 
     private var pitfallsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Watch out", systemImage: "exclamationmark.triangle")
+            SectionHeader("Common mistakes")
             ForEach(Array(point.pitfalls.enumerated()), id: \.offset) { index, pitfall in
                 card {
                     JapaneseText(pitfall.heading).font(.headline)
-                    if let wrong = pitfall.wrong { WrongForm(text: wrong) }
+                    if let wrong = pitfall.wrong {
+                        WrongForm(text: wrong, right: pitfall.examples.first?.jp)
+                        if let right = pitfall.examples.first?.jp { RightForm(text: right) }
+                    }
                     JapaneseText(pitfall.explanation).font(.subheadline)
-                    ForEach(Array(pitfall.examples.enumerated()), id: \.offset) { _, example in
-                        Divider()
-                        ExampleRow(example: example)
+                    let rest = pitfall.wrong == nil ? pitfall.examples : Array(pitfall.examples.dropFirst())
+                    if !rest.isEmpty {
+                        ExampleList(examples: rest, patterns: GrammarHighlight.patterns(of: point))
                     }
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(.tint, lineWidth: 3)
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(palette.button, lineWidth: 3)
                         .opacity(highlightedPitfall == index ? 1 : 0)
                         .allowsHitTesting(false)
                 }
@@ -177,18 +181,23 @@ struct GrammarDetailView: View {
     private var relatedSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader("Related")
-            ForEach(relatedPoints) { related in
-                Button {
-                    openRoute(.grammar(related.id))
-                } label: {
-                    Label {
-                        JapaneseText(related.title)
-                    } icon: {
-                        Image(systemName: "arrow.right.circle")
+            VStack(spacing: 0) {
+                ForEach(Array(relatedPoints.enumerated()), id: \.element.id) { index, related in
+                    if index > 0 { Divider().overlay(palette.rule) }
+                    Button {
+                        openRoute(.grammar(related.id))
+                    } label: {
+                        HStack(spacing: 10) {
+                            GrammarRow(point: related)
+                            Spacer(minLength: 0)
+                            RowChevron()
+                        }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.glass)
             }
+            .paperCard(cornerRadius: 14)
         }
     }
 }
