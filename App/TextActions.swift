@@ -3,7 +3,8 @@ import Translation
 import VerbKit
 
 /// A long-press (right-click) menu that acts on one piece of Japanese text:
-/// Copy, Open in Jisho, Look up form (when the text has a verb the matcher finds),
+/// Copy, Open in Jisho, Look up form (when the text has a verb the matcher finds), stroke order for
+/// its kanji,
 /// and, for sentences, a Translate submenu with Apple Translate, DeepL and Google
 /// Translate. The actions always use `text` exactly
 /// as given, so they work the same with furigana on or off. Nothing leaves the
@@ -12,7 +13,9 @@ private struct TextActions: ViewModifier {
     let text: String
     @Environment(\.openURL) private var openURL
     @Environment(FormLookupStore.self) private var formLookup: FormLookupStore?
+    @Environment(KanjiStore.self) private var kanjiStore: KanjiStore?
     @State private var lookup: FormLookupRequest?
+    @State private var kanjiRequest: KanjiSheetRequest?
 
     func body(content: Content) -> some View {
         content
@@ -30,9 +33,14 @@ private struct TextActions: ViewModifier {
                         lookup = FormLookupRequest(text: text)
                     }
                 }
+                KanjiStrokeMenuItems(characters: kanjiStore?.kanji(in: [text]) ?? []) { kanjiRequest = $0 }
             }
             .formLookupSheet($lookup)
-            .dismissOnLink { lookup = nil }
+            .kanjiSheet($kanjiRequest)
+            .dismissOnLink {
+                lookup = nil
+                kanjiRequest = nil
+            }
     }
 }
 
@@ -42,7 +50,9 @@ private struct TranslatableTextActions: ViewModifier {
     let text: String
     @Environment(\.openURL) private var openURL
     @Environment(FormLookupStore.self) private var formLookup: FormLookupStore?
+    @Environment(KanjiStore.self) private var kanjiStore: KanjiStore?
     @State private var lookup: FormLookupRequest?
+    @State private var kanjiRequest: KanjiSheetRequest?
     @State private var showingAppleTranslation = false
 
     func body(content: Content) -> some View {
@@ -61,6 +71,7 @@ private struct TranslatableTextActions: ViewModifier {
                         lookup = FormLookupRequest(text: text)
                     }
                 }
+                KanjiStrokeMenuItems(characters: kanjiStore?.kanji(in: [text]) ?? []) { kanjiRequest = $0 }
                 Menu("Translate", systemImage: "translate") {
                     Button("Apple Translate") {
                         showingAppleTranslation = true
@@ -75,10 +86,36 @@ private struct TranslatableTextActions: ViewModifier {
             }
             .translationPresentation(isPresented: $showingAppleTranslation, text: text)
             .formLookupSheet($lookup)
+            .kanjiSheet($kanjiRequest)
             .dismissOnLink {
                 showingAppleTranslation = false
                 lookup = nil
+                kanjiRequest = nil
             }
+    }
+}
+
+/// The text menu's stroke-order items: for one kanji, "Stroke order of 食" and "Practise writing it";
+/// for several, a "Stroke order" submenu with one item per kanji. Nothing without kanji data.
+private struct KanjiStrokeMenuItems: View {
+    let characters: [Character]
+    let open: (KanjiSheetRequest) -> Void
+
+    var body: some View {
+        if characters.count == 1, let character = characters.first {
+            Button("Stroke order of \(String(character))", systemImage: "paintbrush.pointed") {
+                open(KanjiSheetRequest(character: character))
+            }
+            Button("Practise writing it", systemImage: "pencil.and.scribble") {
+                open(KanjiSheetRequest(character: character, mode: .trace))
+            }
+        } else if characters.count > 1 {
+            Menu("Stroke order", systemImage: "paintbrush.pointed") {
+                ForEach(characters, id: \.self) { character in
+                    Button(String(character)) { open(KanjiSheetRequest(character: character)) }
+                }
+            }
+        }
     }
 }
 

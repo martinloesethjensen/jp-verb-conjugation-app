@@ -147,8 +147,9 @@ struct KanjiWatchView: View {
 
     private func circleButton(_ label: String, systemImage: String, filled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
+            // The circles are a fixed 48 pt, so the glyph does not grow with Dynamic Type.
             Image(systemName: systemImage)
-                .font(.body.weight(.semibold))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(filled ? palette.onButton : palette.ink)
                 .frame(width: 48, height: 48)
                 .background(filled ? palette.button : palette.card, in: Circle())

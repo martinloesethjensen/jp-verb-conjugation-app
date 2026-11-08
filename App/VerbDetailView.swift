@@ -8,6 +8,8 @@ struct VerbDetailView: View {
     @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
     @Environment(\.palette) private var palette
     @Environment(VerbStore.self) private var verbStore
+    @Environment(KanjiStore.self) private var kanjiStore: KanjiStore?
+    @State private var kanjiRequest: KanjiSheetRequest?
 
     private var isFavourite: Bool { FavouriteVerbs(rawValue: favouritesRaw).contains(verb) }
 
@@ -35,6 +37,7 @@ struct VerbDetailView: View {
                     if let notes = verb.notes {
                         notesBox(notes)
                     }
+                    kanjiSection
                 }
                 .padding()
             }
@@ -132,6 +135,38 @@ struct VerbDetailView: View {
             Label("Test this verb", systemImage: "checkmark.circle")
         }
         .buttonStyle(.paper)
+    }
+
+    /// The verb's kanji, each a tile that opens its stroke order; nothing without kanji data.
+    @ViewBuilder
+    private var kanjiSection: some View {
+        let characters = kanjiStore?.kanji(in: [verb.kanji ?? ""]) ?? []
+        if !characters.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                SectionHeader("Kanji", systemImage: "character.book.closed.ja") {
+                    Text("Tap for stroke order")
+                }
+                WrappingFlowLayout(spacing: 8) {
+                    ForEach(characters, id: \.self) { character in
+                        Button {
+                            kanjiRequest = KanjiSheetRequest(character: character)
+                        } label: {
+                            Text(String(character))
+                                .font(.headword(.title))
+                                .foregroundStyle(palette.ink)
+                                .padding(6)
+                                .frame(minWidth: 56, minHeight: 56)
+                                .background(palette.card, in: RoundedRectangle(cornerRadius: 12))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(palette.rule, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(String(character)), stroke order")
+                    }
+                }
+            }
+            .kanjiSheet($kanjiRequest)
+            .dismissOnLink { kanjiRequest = nil }
+        }
     }
 
     private func notesBox(_ notes: String) -> some View {

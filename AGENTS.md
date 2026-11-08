@@ -140,6 +140,9 @@ Run `make` for the full list. Common ones:
 | `TypeLabel(_:teGroup:emphasis:title:)` | A verb type as a dot + ink label (shapes with Differentiate Without Color; filled pill in Pastel/Ice cream) |
 | `Font.headword(_:scale:)` / `Font.sentence(_:)` | Hiragino Mincho W6 for Japanese headwords, W3 for example sentences and phrases; both scale with Dynamic Type |
 | `themedRoot()`, `ThemePickerView` | Root palette/appearance wiring (once, in `RootView`) and Settings › Theme |
+| `kanjiSheet(_:)`, `KanjiSheetRequest` | The kanji stroke-order sheet (Watch/Trace); the text menus, the verb page's Kanji section and Word Bank kanji chips open it |
+| `KanjiStrokeCanvas`, `KanjiStrokeShape` | A kanji's strokes up to a step in the 109-unit box (ink, red current stroke, faint rest, numbers, start dot), scaled to any square |
+| `Path(svg:)` | A SwiftUI `Path` from `SVGPathData.parse` elements (the seal and the kanji strokes) |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |
