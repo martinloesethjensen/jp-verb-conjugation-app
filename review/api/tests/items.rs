@@ -78,7 +78,7 @@ fn sub_item_counts_match_pythons_id_slots() {
     for (file, slots) in [
         (DataFile::Verbs, 690),
         (DataFile::Counters, 325),
-        (DataFile::Grammar, 412),
+        (DataFile::Grammar, 447),
     ] {
         let rows = extract(file, &real(file)).unwrap();
         assert_eq!(
