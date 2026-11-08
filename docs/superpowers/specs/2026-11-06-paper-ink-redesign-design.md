@@ -122,7 +122,7 @@ Ice cream and iceCreamDark set `fillsTypePills`.
 | 2b. Theme halves and Appearance (built) | Every theme light and dark, six new palettes, the Appearance control, ten swatches, migration, widgets | Six new halves, Theme picker, Themes across screens |
 | 2c. Launch screen and first frame (built) | Paper launch screen with the 活 seal (Shippori Mincho B1), the themed first frame that fades to content | Launch screen, Themed first frame |
 | 3. Kanji stroke order (built) | KanjiVG + KANJIDIC2 (all jōyō plus the app's kanji) as a signed `data/` file + schema + spec, a seventh concrete sync service, path parser, Watch/Trace sheet, entry points (spec: `2026-11-07-kanji-stroke-order-design.md`) | Kanji stroke order, trace, opening it |
-| 4. Global search | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
+| 4. Global search (built) | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
 | 5. Onboarding | Levels, furigana, theme, first verb | Onboarding |
 | 6. Theme personality | Alternate app icons, title motifs, results stamps | Theme personality |
 | 7. Word Bank depth | Entry page and editor restyle, suggestion card | Word Bank entry, add a word |

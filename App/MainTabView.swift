@@ -6,9 +6,11 @@ enum AppTab: Hashable {
     case grammar
     case counters
     case wordBank
+    case search
 }
 
-/// Verbs, Grammar, Counters and the Word Bank as four tabs, each its own `NavigationSplitView`
+/// Verbs, Grammar, Counters and the Word Bank as four tabs, each its own `NavigationSplitView`, plus
+/// Search (`Tab(role: .search)`), which finds things in all four and opens them in their own tab
 /// (list/detail at regular width, a stack on iPhone). Also owns the
 /// `openRoute` action, so a verb page can jump to a lesson and a lesson
 /// can jump to a related one.
@@ -55,6 +57,13 @@ struct MainTabView<VerbsTab: View>: View {
             }
             Tab("Word Bank", systemImage: "books.vertical", value: AppTab.wordBank) {
                 WordBankTab(selection: $wordBankSelection, preferredColumn: $wordBankColumn, onSettings: onSettings)
+            }
+            Tab(value: AppTab.search, role: .search) {
+                SearchTab { id in
+                    wordBankSelection = id
+                    wordBankColumn = .detail
+                    tab = .wordBank
+                }
             }
         }
         .tabViewStyle(.sidebarAdaptable)
