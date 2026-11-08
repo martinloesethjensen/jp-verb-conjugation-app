@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""Mark counters or grammar points as reviewed.
+"""Mark counters, grammar points, verbs, words or verb example sentences as reviewed.
 
     python3 scripts/mark_reviewed.py counters hon hai --by teacher --on 2026-10-24
     python3 scripts/mark_reviewed.py grammar n-desu --by owner
+    python3 scripts/mark_reviewed.py verbs たべる きる:切る --by teacher
+    python3 scripts/mark_reviewed.py words i-adjective:たかい --by teacher
+    python3 scripts/mark_reviewed.py examples 8iij9b --by native --name Aiko
+
+A verb's stamp covers its meaning, notes and common phrases; each example sentence is stamped on its own, by
+its stable id.
 
 Writes (or refreshes) a `review` stamp {by, on, sha256} on each named entry. The hash covers the entry's own
 content, so a later edit makes `scripts/update_data.py` fail until the entry is reviewed again. Afterwards run
@@ -36,14 +42,20 @@ def stamp(entry, by, on, generated=(), name=None):
     return result
 
 
+def stamp_entries(entries, ids, key, generated, by, on, name=None, noun="entry"):
+    """Sets the stamp on each of `entries` whose `key` is in `ids` (mutates them); a missing id is a ValueError."""
+    _check_args(by, on)
+    by_id = {key(entry): entry for entry in entries}
+    missing = [wanted for wanted in ids if wanted not in by_id]
+    if missing:
+        raise ValueError(f"no {noun} with id {missing[0]!r}")
+    for wanted in ids:
+        by_id[wanted]["review"] = stamp(by_id[wanted], by, on, generated, name)
+
+
 def stamp_counters(doc, ids, by, on, name=None):
     """Sets the stamp on each counter in `ids` (mutates `doc`); a missing id is a ValueError."""
-    _check_args(by, on)
-    entries = {entry["id"]: entry for entry in doc["counters"]}
-    for counter_id in ids:
-        if counter_id not in entries:
-            raise ValueError(f"no counter with id {counter_id!r}")
-        entries[counter_id]["review"] = stamp(entries[counter_id], by, on, ud.COUNTER_GENERATED, name)
+    stamp_entries(doc["counters"], ids, lambda entry: entry["id"], ud.COUNTER_GENERATED, by, on, name, "counter")
 
 
 def stamp_grammar_text(text, ids, by, on, name=None):
@@ -70,7 +82,7 @@ def stamp_grammar_text(text, ids, by, on, name=None):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("kind", choices=("counters", "grammar"))
+    parser.add_argument("kind", choices=("counters", "grammar", "verbs", "words", "examples"))
     parser.add_argument("ids", nargs="+")
     parser.add_argument("--by", required=True, choices=ud.REVIEWERS)
     parser.add_argument("--name", help="the reviewer's public name (default: credited by role only)")
@@ -84,6 +96,22 @@ def main(argv=None):
             doc = json.loads(path.read_text(encoding="utf-8"))
             stamp_counters(doc, args.ids, args.by, args.on, args.name)
             path.write_text(ud.dump_counters(doc), encoding="utf-8")
+        elif args.kind in ("verbs", "examples"):
+            path = data_dir / "verbs.json"
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            if args.kind == "verbs":
+                stamp_entries(doc["verbs"], args.ids, ud.verb_id, ud.VERB_GENERATED, args.by, args.on, args.name,
+                              "verb")
+            else:
+                examples = [example for verb in doc["verbs"] for example in verb.get("examples", [])]
+                stamp_entries(examples, args.ids, lambda example: example.get("id"), ud.STAMP_GENERATED["example"],
+                              args.by, args.on, args.name, "example")
+            path.write_text(ud.dump_verbs(doc), encoding="utf-8")
+        elif args.kind == "words":
+            path = data_dir / "words.json"
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            stamp_entries(doc["words"], args.ids, ud.word_id, ud.WORD_GENERATED, args.by, args.on, args.name, "word")
+            path.write_text(ud.dump_words(doc), encoding="utf-8")
         else:
             path = data_dir / "grammar.json"
             path.write_text(stamp_grammar_text(path.read_text(encoding="utf-8"), args.ids, args.by, args.on, args.name),

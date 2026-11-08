@@ -97,3 +97,61 @@ class PublicStampTests(unittest.TestCase):
         self.assertEqual(mr.stamp(entry, "native", "2026-11-07", name="Aiko")["name"], "Aiko")
         self.assertNotIn("name", mr.stamp(entry, "teacher", "2026-11-07"))
         self.assertEqual(mr.stamp(entry, "native", "2026-11-07")["by"], "native")
+
+
+def verbs_doc():
+    def one(dict_form, kanji, example_id, **extra):
+        return {"type": "ru", "label": "Ru-verb", "dict": dict_form, "kanji": kanji, "meaning": "m",
+                "description": "d", "forms": {"te": dict_form[:-1] + "て"},
+                "examples": [{"id": example_id, "form": "te", "jp": kanji, "en": "e"}], "collocations": [], **extra}
+    return {"version": "1.0.0", "description": "d",
+            "verbs": [one("きる", "切る", "e1aaaa", id="きる:切る"), one("たべる", "食べる", "e2aaaa")]}
+
+
+class StampVerbsWordsExamplesTests(unittest.TestCase):
+    def test_stamps_a_verb_by_its_id_leaving_others_alone(self):
+        doc = verbs_doc()
+        mr.stamp_entries(doc["verbs"], ["きる:切る"], ud.verb_id, ud.VERB_GENERATED, "teacher", "2026-11-08",
+                         noun="verb")
+        cut, eat = doc["verbs"]
+        self.assertEqual(ud.check_reviews([cut], ud.VERB_GENERATED, key=ud.verb_id), [])
+        self.assertEqual(cut["review"]["by"], "teacher")
+        self.assertNotIn("review", eat)
+        self.assertNotIn("review", cut["examples"][0])
+
+    def test_stamps_an_example_by_its_stable_id(self):
+        doc = verbs_doc()
+        examples = [ex for v in doc["verbs"] for ex in v["examples"]]
+        mr.stamp_entries(examples, ["e2aaaa"], lambda e: e["id"], (), "native", "2026-11-08", name="Aiko",
+                         noun="example")
+        self.assertEqual(doc["verbs"][1]["examples"][0]["review"]["name"], "Aiko")
+        self.assertNotIn("review", doc["verbs"][0]["examples"][0])
+        self.assertNotIn("review", doc["verbs"][1])
+
+    def test_stamps_a_word_by_class_and_dict(self):
+        words = [{"class": "i-adjective", "dict": "たかい", "meaning": "tall", "forms": {"te": "たかくて"}}]
+        mr.stamp_entries(words, ["i-adjective:たかい"], ud.word_id, ud.WORD_GENERATED, "owner", "2026-11-08",
+                         noun="word")
+        self.assertEqual(ud.check_reviews(words, ud.WORD_GENERATED, key=ud.word_id), [])
+
+    def test_unknown_example_id_is_an_error(self):
+        with self.assertRaisesRegex(ValueError, "no example with id 'zzzzzz'"):
+            mr.stamp_entries([], ["zzzzzz"], lambda e: e["id"], (), "teacher", "2026-11-08", noun="example")
+
+    def test_main_writes_verbs_json_that_update_data_accepts(self):
+        import tempfile
+        from pathlib import Path
+        d = Path(tempfile.mkdtemp())
+        for f in mr.DATA_DIR.glob("*.json"):
+            (d / f.name).write_bytes(f.read_bytes())
+        first = json.loads((d / "verbs.json").read_text(encoding="utf-8"))["verbs"][0]
+        self.assertEqual(mr.main(["examples", first["examples"][0]["id"], "--by", "teacher", "--on", "2026-11-08",
+                                  "--data-dir", str(d)]), 0)
+        self.assertEqual(mr.main(["verbs", ud.verb_id(first), "--by", "teacher", "--on", "2026-11-08",
+                                  "--data-dir", str(d)]), 0)
+        self.assertEqual(mr.main(["words", "i-adjective:いい", "--by", "teacher", "--on", "2026-11-08",
+                                  "--data-dir", str(d)]), 0)
+        before = (d / "verbs.json").read_text(encoding="utf-8")
+        code, messages = ud.run(d)  # make data: only the manifest's hashes move
+        self.assertEqual(code, 0, messages)
+        self.assertEqual((d / "verbs.json").read_text(encoding="utf-8"), before)
