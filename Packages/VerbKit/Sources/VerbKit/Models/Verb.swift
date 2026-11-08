@@ -19,6 +19,8 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
     /// (`きる:切る`). Once shipped it never changes, even if the verb's spelling is corrected.
     /// See docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md.
     public var explicitID: String?
+    /// The verb's review stamp: its meaning, notes and common phrases. Each example carries its own.
+    public var review: ReviewStamp?
 
     /// The stable identity that favourites, quiz history, widget configuration and links use:
     /// the explicit id when there is one, otherwise the dictionary form.
@@ -30,6 +32,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case type, label, dict, kanji, meaning, description, notes, teGroup, jlpt, forms, examples, collocations, pair
+        case review
         case explicitID = "id"
     }
 
@@ -47,7 +50,8 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
         examples: [VerbExample],
         collocations: [VerbCollocation] = [],
         pair: VerbPair? = nil,
-        id explicitID: String? = nil
+        id explicitID: String? = nil,
+        review: ReviewStamp? = nil
     ) {
         self.type = type
         self.label = label
@@ -63,6 +67,7 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
         self.collocations = collocations
         self.pair = pair
         self.explicitID = explicitID
+        self.review = review
     }
 
     public init(from decoder: Decoder) throws {
@@ -81,5 +86,6 @@ public struct Verb: Codable, Hashable, Identifiable, Sendable {
         collocations = try container.decodeIfPresent([VerbCollocation].self, forKey: .collocations) ?? []
         pair = try container.decodeIfPresent(VerbPair.self, forKey: .pair)
         explicitID = try container.decodeIfPresent(String.self, forKey: .explicitID)
+        review = try container.decodeIfPresent(ReviewStamp.self, forKey: .review)
     }
 }

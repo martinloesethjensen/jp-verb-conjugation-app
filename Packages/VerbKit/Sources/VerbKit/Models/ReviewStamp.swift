@@ -13,7 +13,7 @@ public enum Reviewer: String, Codable, Hashable, Sendable {
     }
 }
 
-/// A review stamp on a counter or grammar point (`review` in the data). The pipeline hashes the entry's own
+/// A review stamp on a counter, grammar point, verb, word or verb example (`review` in the data). The pipeline hashes the entry's own
 /// content into `sha256` and refuses data whose stamp no longer matches, so a stamp that reaches the app is
 /// current: the app only checks that one is there.
 public struct ReviewStamp: Codable, Hashable, Sendable {
@@ -62,3 +62,6 @@ public struct ReviewSummary: Equatable, Sendable {
 
 extension Counter: Reviewable {}
 extension GrammarPoint: Reviewable {}
+extension Verb: Reviewable {}
+extension VerbExample: Reviewable {}
+extension Word: Reviewable {}

@@ -30,9 +30,10 @@ struct StoredWord: Codable, Equatable, Sendable {
     var forms: Conjugations
     /// Only where `dict` collides with another word of the same class; see `Word.explicitID`.
     var explicitID: String?
+    var review: ReviewStamp?
 
     enum CodingKeys: String, CodingKey {
-        case wordClass = "class", dict, kanji, meaning, jlpt, forms
+        case wordClass = "class", dict, kanji, meaning, jlpt, forms, review
         case explicitID = "id"
     }
 
@@ -44,9 +45,10 @@ struct StoredWord: Codable, Equatable, Sendable {
         jlpt = word.jlpt
         forms = word.forms
         explicitID = word.explicitID
+        review = word.review
     }
 
     var word: Word {
-        Word(wordClass: wordClass, dict: dict, kanji: kanji, meaning: meaning, description: "", jlpt: jlpt, forms: forms, id: explicitID)
+        Word(wordClass: wordClass, dict: dict, kanji: kanji, meaning: meaning, description: "", jlpt: jlpt, forms: forms, id: explicitID, review: review)
     }
 }

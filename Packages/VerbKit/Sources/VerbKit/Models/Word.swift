@@ -47,6 +47,8 @@ public struct Word: Hashable, Identifiable, Sendable {
     /// Set only where `dict` would collide with another word of the same class, as `dict:kanji`.
     /// It never changes once shipped. See docs/superpowers/specs/2026-10-17-verb-id-scheme-design.md.
     public var explicitID: String?
+    /// The word's review stamp, when a person has checked it (words.json; a verb's comes from verbs.json).
+    public var review: ReviewStamp?
 
     /// Unique across classes: the class and the stable id (the explicit id, else the citation form).
     public var id: String { "\(wordClass.rawValue):\(explicitID ?? dict)" }
@@ -71,7 +73,8 @@ public struct Word: Hashable, Identifiable, Sendable {
         alternates: [String: [String]] = [:],
         examples: [WordExample] = [],
         verb: VerbTraits? = nil,
-        id explicitID: String? = nil
+        id explicitID: String? = nil,
+        review: ReviewStamp? = nil
     ) {
         self.wordClass = wordClass
         self.dict = dict
@@ -85,6 +88,7 @@ public struct Word: Hashable, Identifiable, Sendable {
         self.examples = examples
         self.verb = verb
         self.explicitID = explicitID
+        self.review = review
     }
 }
 
@@ -110,7 +114,8 @@ public extension Word {
             forms: encoded ?? Conjugations(),
             examples: verb.examples.map { WordExample(form: $0.form, jp: $0.jp, en: $0.en) },
             verb: VerbTraits(type: verb.type, label: verb.label, teGroup: verb.teGroup),
-            id: verb.explicitID
+            id: verb.explicitID,
+            review: verb.review
         )
     }
 }
@@ -124,7 +129,7 @@ extension Word: Codable {
         case dict, kanji, meaning, description, notes, jlpt, forms
         case alternates = "alt"
         case examples
-        case type, label, teGroup
+        case type, label, teGroup, review
         case explicitID = "id"
     }
 
@@ -141,6 +146,7 @@ extension Word: Codable {
         alternates = try c.decodeIfPresent([String: [String]].self, forKey: .alternates) ?? [:]
         examples = try c.decodeIfPresent([WordExample].self, forKey: .examples) ?? []
         explicitID = try c.decodeIfPresent(String.self, forKey: .explicitID)
+        review = try c.decodeIfPresent(ReviewStamp.self, forKey: .review)
         if wordClass == .verb {
             verb = VerbTraits(
                 type: try c.decode(VerbType.self, forKey: .type),
@@ -165,6 +171,7 @@ extension Word: Codable {
         try c.encode(forms, forKey: .forms)
         if !alternates.isEmpty { try c.encode(alternates, forKey: .alternates) }
         try c.encode(examples, forKey: .examples)
+        try c.encodeIfPresent(review, forKey: .review)
         if let verb {
             try c.encode(verb.type, forKey: .type)
             try c.encode(verb.label, forKey: .label)
