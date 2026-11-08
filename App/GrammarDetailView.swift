@@ -14,9 +14,6 @@ struct GrammarDetailView: View {
     @Environment(QuizHistoryStore.self) private var quizHistory
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @State private var connectionQuestions: [ConnectionQuestion]?
-    @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
-    /// Shows the usages the level setting hides, for this visit only.
-    @State private var showingHiddenUsages = false
 
     @Environment(CourseStore.self) private var courseStore
 
@@ -28,8 +25,6 @@ struct GrammarDetailView: View {
         self.point = point
         _focusedPitfall = focusedPitfall
     }
-
-    private let registerOrder: [GrammarRegister] = [.polite, .casual, .formal]
 
     /// Related points that exist locally; a link to a lesson that hasn't
     /// synced is hidden rather than dead.
@@ -71,10 +66,12 @@ struct GrammarDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 LessonHeader(point: point, lesson: lessonTag, onPractise: point.hasConnections ? practise : nil)
-                if !point.attachment.isEmpty { AttachmentSection(rules: point.attachment) }
-                usagesSection
+                if !point.attachment.isEmpty {
+                    AttachmentSection(rules: point.attachment, patterns: GrammarHighlight.patterns(of: point))
+                }
+                LessonUsages(point: point)
                 if !point.contrasts.isEmpty { contrastsSection }
-                if !point.conjugations.isEmpty { conjugationsSection }
+                if !point.conjugations.isEmpty { FormsTable(conjugations: point.conjugations) }
                 if !point.pitfalls.isEmpty { pitfallsSection }
                 if !relatedPoints.isEmpty { relatedSection }
             }
@@ -127,80 +124,6 @@ struct GrammarDetailView: View {
                     ForEach(Array(contrast.examples.enumerated()), id: \.offset) { _, example in
                         Divider()
                         ExampleRow(example: example)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: Usages
-
-    /// The usages to show: those at visible levels, or all of them once the learner asks.
-    private var shownUsages: [GrammarUsage] {
-        showingHiddenUsages ? point.usages : point.visibleUsages(in: LevelSettings(rawValue: hiddenLevelsRaw))
-    }
-
-    private var hiddenUsageCount: Int {
-        point.usages.count - point.visibleUsages(in: LevelSettings(rawValue: hiddenLevelsRaw)).count
-    }
-
-    private var usagesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Usages")
-            ForEach(Array(shownUsages.enumerated()), id: \.offset) { index, usage in
-                card {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        JapaneseText("\(index + 1). \(usage.heading)").font(.headline)
-                        // Only a lesson that spans levels labels its usages; otherwise the header says it all.
-                        if point.hasMixedLevels {
-                            Spacer(minLength: 0)
-                            LevelBadge(level: point.level(of: usage))
-                        }
-                    }
-                    JapaneseText(usage.explanation).font(.subheadline)
-                    ForEach(Array(usage.examples.enumerated()), id: \.offset) { _, example in
-                        Divider()
-                        ExampleRow(example: example)
-                    }
-                }
-            }
-            if hiddenUsageCount > 0 {
-                Button(showingHiddenUsages ? "Hide usages at hidden levels" : hiddenUsagesLabel) {
-                    withAnimation { showingHiddenUsages.toggle() }
-                }
-                .font(.subheadline)
-            }
-        }
-    }
-
-    private var hiddenUsagesLabel: String {
-        let levels = Set(point.usages.compactMap { point.level(of: $0) })
-            .filter { !LevelSettings(rawValue: hiddenLevelsRaw).isVisible($0) }
-            .sorted().map(\.displayName).joined(separator: ", ")
-        let noun = hiddenUsageCount == 1 ? "usage" : "usages"
-        return "Show \(hiddenUsageCount) more \(noun) (\(levels))"
-    }
-
-    // MARK: Conjugations
-
-    private var conjugationsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Conjugations")
-            ForEach(registerOrder, id: \.self) { register in
-                let forms = point.conjugations.filter { $0.register == register }
-                if !forms.isEmpty {
-                    card {
-                        Text(register.displayName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        ForEach(Array(forms.enumerated()), id: \.offset) { _, conjugation in
-                            VStack(alignment: .leading, spacing: 2) {
-                                JapaneseText(conjugation.form).font(.headline)
-                                if let note = conjugation.note {
-                                    JapaneseText(note).font(.footnote).foregroundStyle(.secondary)
-                                }
-                            }
-                        }
                     }
                 }
             }

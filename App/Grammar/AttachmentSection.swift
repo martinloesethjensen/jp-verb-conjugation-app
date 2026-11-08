@@ -9,6 +9,8 @@ struct AttachmentSection: View {
     @Environment(VerbStore.self) private var verbStore
     @Environment(WordsStore.self) private var wordsStore
     let rules: [AttachmentRule]
+    /// The lesson's patterns (`GrammarHighlight.patterns`), underlined in the examples.
+    var patterns: [String] = []
     @State private var offset = 0
     @State private var showingBlocks = false
 
@@ -32,20 +34,21 @@ struct AttachmentSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("How it attaches").font(.title3.weight(.semibold))
-                Spacer()
+            SectionHeader("How it attaches") {
                 if rules.contains(where: { example($0) != nil }) {
                     Button("Try another word", systemImage: "arrow.triangle.2.circlepath") { offset += 1 }
                         .font(.footnote)
+                        .foregroundStyle(palette.button)
                 }
             }
-            ForEach(Array(rules.enumerated()), id: \.offset) { _, rule in
+            VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(rules.enumerated()), id: \.offset) { index, rule in
+                if index > 0 { Divider().overlay(palette.rule) }
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         Text(rule.wordClass.displayName).font(.subheadline.weight(.semibold))
                         if let condition = rule.condition {
-                            JapaneseText("· \(condition)").font(.subheadline).foregroundStyle(.secondary)
+                            JapaneseText("· \(condition)").font(.subheadline).foregroundStyle(palette.muted)
                         }
                     }
                     if !rule.slots.isEmpty {
@@ -53,24 +56,28 @@ struct AttachmentSection: View {
                     }
                     if let example = example(rule) {
                         HStack(spacing: 8) {
-                            JapaneseText(example.base).foregroundStyle(.secondary)
-                            Image(systemName: "arrow.right").font(.caption).foregroundStyle(.secondary)
+                            JapaneseText(example.base).foregroundStyle(palette.muted)
+                            Image(systemName: "arrow.right").font(.caption).foregroundStyle(palette.muted)
                                 .accessibilityHidden(true)
-                            JapaneseText(example.built).font(.title3.weight(.semibold))
+                            JapaneseText(example.built, emphasizing: GrammarHighlight.range(in: example.built, patterns: [rule.then ?? ""] + patterns))
+                                .font(.sentence(.title3))
                         }
                         .accessibilityElement(children: .combine)
                     } else {
                         JapaneseText(rule.pattern).font(.headline)
                         ForEach(rule.example.components(separatedBy: " / "), id: \.self) { example in
-                            JapaneseText(example).font(.title3)
+                            JapaneseText(example, emphasizing: GrammarHighlight.range(in: example, patterns: patterns))
+                                .font(.sentence(.title3))
                         }
                     }
                     if let note = rule.note {
-                        JapaneseText(note).font(.footnote).foregroundStyle(.secondary)
+                        JapaneseText(note).font(.footnote).foregroundStyle(palette.muted)
                     }
                 }
-                .paperCard()
+                .padding(.vertical, 10)
             }
+            }
+            .paperCard(cornerRadius: 14, ruled: true)
         }
         .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }
         .dismissOnLink { showingBlocks = false }
@@ -92,7 +99,7 @@ struct AttachmentSection: View {
                 .accessibilityHint("Shows the building blocks")
             }
             if rule.daToNa {
-                JapaneseText("だ → な").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                JapaneseText("だ → な").font(.caption.weight(.bold)).foregroundStyle(palette.muted)
             }
             if let then = rule.then {
                 JapaneseText("+ \(then)").font(.subheadline.weight(.semibold))
