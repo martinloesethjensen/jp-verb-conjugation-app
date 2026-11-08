@@ -41,6 +41,12 @@ public enum GlobalSearch {
     /// device only and apart from the Word Bank's own.
     public static let recentsKey = "search.recentQueries"
 
+    /// Whether `query` has anything to search for: a letter, kana or kanji. Blank text, punctuation and
+    /// bare digits are not searched, shown as results or kept as recent searches.
+    public static func isSearchable(_ query: String) -> Bool {
+        query.contains(where: \.isLetter)
+    }
+
     /// - Parameter extraVerbs: verbs found another way, such as a conjugated form the form lookup reads
     ///   (飲んだ → 飲む); added after the text matches, once each.
     public static func results(
@@ -48,8 +54,8 @@ public enum GlobalSearch {
         verbs: [Verb], grammar: [GrammarPoint], counters: [Counter], groups: [CounterGroup],
         wordBank: WordBankSearchIndex?, furigana: FuriganaDictionary?, extraVerbs: [Verb] = []
     ) -> GlobalSearchResults {
+        guard isSearchable(query) else { return .empty }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.contains(where: \.isLetter) else { return .empty }
 
         var results = GlobalSearchResults.empty
         var hidden: [any Leveled] = []

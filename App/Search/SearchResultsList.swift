@@ -81,7 +81,7 @@ struct SearchResultsList: View {
         row(.route(.verb(verb.id))) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    JapaneseText(verb.kanji ?? verb.dict)
+                    JapaneseText(units: verb.dictionaryUnits)
                         .font(.headword(.title3))
                         .foregroundStyle(palette.ink)
                     Text(verb.meaning)
@@ -121,7 +121,7 @@ struct SearchResultsList: View {
         }
         ForEach(results.counters.counters) { counter in
             row(.route(.counter(counter.id))) {
-                JapaneseText(counter.counter)
+                JapaneseText(units: [Self.unit(counter.counter, reading: counter.reading)])
                     .font(.headword(.title2))
                     .foregroundStyle(palette.ink)
                     .frame(minWidth: 36)
@@ -131,7 +131,7 @@ struct SearchResultsList: View {
         }
         ForEach(Array(results.counters.forms.enumerated()), id: \.offset) { _, form in
             row(.route(.counter(form.counter.id))) {
-                JapaneseText(form.counter.written(form.number))
+                JapaneseText(units: [Self.unit(form.counter.written(form.number), reading: form.reading)])
                     .font(.headword(.body))
                     .foregroundStyle(palette.ink)
                 Text(form.reading).foregroundStyle(palette.muted)
@@ -141,11 +141,12 @@ struct SearchResultsList: View {
             if let counter = match.counters.first {
                 row(.route(.counter(counter.id))) {
                     VStack(alignment: .leading, spacing: 2) {
-                        JapaneseText(match.thing.word).foregroundStyle(palette.ink)
+                        JapaneseText(units: [Self.unit(match.thing.word, reading: match.thing.kana)])
+                            .foregroundStyle(palette.ink)
                         Text(match.thing.meaning).font(.subheadline).foregroundStyle(palette.muted)
                     }
                     Spacer(minLength: 8)
-                    JapaneseText(counter.counter)
+                    JapaneseText(units: [Self.unit(counter.counter, reading: counter.reading)])
                         .font(.headword(.title3))
                         .foregroundStyle(palette.ink)
                 }
@@ -165,12 +166,17 @@ struct SearchResultsList: View {
                     }
                 }
                 if let folderID = entry.folderID {
-                    Text("Folder: " + wordBank.tree.path(of: folderID).map(\.name).joined(separator: " › "))
+                    JapaneseText("Folder: " + wordBank.tree.path(of: folderID).map(\.name).joined(separator: " › "))
                         .font(.caption)
                         .foregroundStyle(palette.muted)
                 }
             }
         }
+    }
+
+    /// A whole word with the reading the data already gives (not looked up per kanji); no ruby for kana.
+    private static func unit(_ text: String, reading: String) -> TextUnit {
+        TextUnit(text: text, reading: text.contains(where: FuriganaDictionary.isKanji) ? reading : nil)
     }
 
     private var hiddenRow: some View {

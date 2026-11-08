@@ -71,7 +71,7 @@ struct SearchEmptyState: View {
                         onPick(recent)
                     } label: {
                         Label {
-                            Text(recent).foregroundStyle(palette.ink)
+                            JapaneseText(recent).foregroundStyle(palette.ink)
                         } icon: {
                             Image(systemName: "clock").foregroundStyle(palette.muted)
                         }

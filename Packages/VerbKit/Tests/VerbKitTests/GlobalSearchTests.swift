@@ -74,6 +74,15 @@ final class GlobalSearchTests: XCTestCase {
         }
     }
 
+    func testIsSearchableNeedsALetterKanaOrKanji() {
+        for query in ["nomu", "飲む", "のむ", "drink party", " 本 "] {
+            XCTAssertTrue(GlobalSearch.isSearchable(query), query)
+        }
+        for query in ["", "   ", "?", "!!", "…", "3"] {
+            XCTAssertFalse(GlobalSearch.isSearchable(query), query)
+        }
+    }
+
     func testExtraVerbsAreAddedOnce() {
         XCTAssertEqual(search("飲んだ", extraVerbs: [nomu]).verbs.filter { $0.id == "のむ" }.count, 1)
         XCTAssertEqual(search("nomu", extraVerbs: [nomu]).verbs.filter { $0.id == "のむ" }.count, 1)

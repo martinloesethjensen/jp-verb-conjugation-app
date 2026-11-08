@@ -51,14 +51,14 @@ struct SearchTab: View {
         }
         .searchable(text: $query, prompt: "Search everything")
         .onSubmit(of: .search) { record() }
-        .onChange(of: trimmed.isEmpty) { _, isEmpty in
-            if isEmpty { levelScope = .mine }
+        .onChange(of: GlobalSearch.isSearchable(trimmed)) { _, searchable in
+            if !searchable { levelScope = .mine }
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        if trimmed.isEmpty {
+        if !GlobalSearch.isSearchable(trimmed) {
             SearchEmptyState(
                 scope: $scope,
                 recents: recents.items.map(\.text),
@@ -70,7 +70,9 @@ struct SearchTab: View {
             if results.isEmpty && results.hiddenCount == 0 {
                 VStack(spacing: 12) {
                     SearchScopeChips(scope: $scope).padding(.top, 12)
-                    ContentUnavailableView(SearchDisplay.noResults(trimmed), systemImage: "magnifyingglass")
+                    ContentUnavailableView {
+                        Label { JapaneseText(SearchDisplay.noResults(trimmed)) } icon: { Image(systemName: "magnifyingglass") }
+                    }
                 }
             } else {
                 SearchResultsList(
@@ -91,6 +93,7 @@ struct SearchTab: View {
     }
 
     private func record() {
+        guard GlobalSearch.isSearchable(trimmed) else { return }
         updateRecents { $0.record(WordBankQuery(text: trimmed)) }
     }
 
