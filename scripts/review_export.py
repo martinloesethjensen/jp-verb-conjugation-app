@@ -21,8 +21,8 @@ PART_LISTS = {"example": "examples", "collocation": "collocations", "usage": "us
               "thing": "things"}
 # Where examples can be: the entry's own list, and those of its usages, pitfalls and contrasts.
 EXAMPLE_HOLDERS = ("usages", "pitfalls", "contrasts")
-# The files the pipeline stamps, and the fields each stamp's hash leaves out.
-STAMPED = {"counters": ud.COUNTER_GENERATED, "grammar": ()}
+# What a stamp's hash leaves out, by dataset (an entry's stamp) or "example" (a verb example's own stamp).
+STAMPED = ud.STAMP_GENERATED
 CREDIT_ROLES = {"owner": "the owner", "teacher": "a teacher", "native": "a native speaker"}
 
 
@@ -51,9 +51,9 @@ def credit_of(credit):
 
 def entry_id(dataset, entry):
     if dataset == "verbs":
-        return entry.get("id") or entry["dict"]
+        return ud.verb_id(entry)
     if dataset == "words":
-        return f"{entry['class']}:{entry['dict']}"
+        return ud.word_id(entry)
     return entry["id"]
 
 
@@ -100,6 +100,44 @@ def _parent_list(docs, s):
     return found[0][found[1]].setdefault(PART_LISTS[s["kind"]], []) if found else None
 
 
+def stamp_target(docs, t):
+    """`(object, generated)` a stamp request is about, or None when it's gone or can't take a stamp: entries of
+    the stamped datasets, and verb examples (grammar and counter examples are covered by their entry's stamp)."""
+    dataset, kind = t["dataset"], t["kind"]
+    if kind == "entry" and dataset in STAMPED:
+        entry = entry_of(docs, dataset, t["item_id"])
+        return (entry, STAMPED[dataset]) if entry is not None else None
+    if kind == "example" and dataset == "verbs":
+        entry = entry_of(docs, dataset, t["entry_id"])
+        found = locate(entry, "example", t["item_id"]) if entry is not None else None
+        return (found[0][found[1]], STAMPED["example"]) if found else None
+    return None
+
+
+def stampable(t):
+    return (t["kind"] == "entry" and t["dataset"] in STAMPED) or (t["kind"], t["dataset"]) == ("example", "verbs")
+
+
+def covers(t, part):
+    """Whether a stamp request `t` vouches for the batch part `(dataset, entry id, kind, item id)`: an entry's
+    stamp covers the whole entry, except a verb's examples, which carry their own."""
+    dataset, entry, kind, item = part
+    if dataset != t["dataset"]:
+        return False
+    if t["kind"] == "example":
+        return kind == "example" and item == t["item_id"]
+    return entry == t["item_id"] and not (dataset == "verbs" and kind == "example")
+
+
+def stamped_parts(dataset, entry):
+    """`(object, generated, kind, id)` for every stamp under `entry`: its own, and for a verb each example's."""
+    out = [(entry, STAMPED[dataset], "entry", entry_id(dataset, entry))]
+    if dataset == "verbs":
+        out += [(ex, STAMPED["example"], "example", ex.get("id")) for ex in entry.get("examples", [])
+                if isinstance(ex, dict)]
+    return out
+
+
 def apply_batch(batch, docs, today):
     """Applies `batch` to `docs` (mutated) and reports what happened."""
     report = Report()
@@ -113,18 +151,22 @@ def apply_batch(batch, docs, today):
         report.applied.append(Line(f"{verb} {s['item_title']}", credit_of(s["credit"]), section))
         report.suggestion_ids.append(s["id"])
 
-    touched = {(s["dataset"], s["entry_id"]) for s in suggestions if s["action"] in ("change", "add", "delete")}
+    parts = {(s["dataset"], s["entry_id"], s["kind"], s["item_id"])
+             for s in suggestions if s["action"] in ("change", "add", "delete")}
+    touched = {(dataset, entry) for dataset, entry, _, _ in parts}
 
     # 1. Stamps vouch for what the reviewers saw: check them before anything changes.
     stamps = []
     for t in batch.get("stamps", []):
-        entry = entry_of(docs, t["dataset"], t["item_id"])
         title = f"{t['item_title']} (stamp {t['id']})"
-        if entry is None:
+        found = stamp_target(docs, t)
+        if not stampable(t):
+            report.skipped.append(Line(f"{title}: can't be stamped"))
+        elif found is None:
             report.skipped.append(Line(f"{title}: {gone}"))
-        elif ud.review_hash(entry, STAMPED[t["dataset"]]) != t["content_hash"]:
+        elif ud.review_hash(*found) != t["content_hash"]:
             report.skipped.append(Line(f"{title}: changed since it was stamped"))
-        elif (t["dataset"], t["item_id"]) in touched:
+        elif any(covers(t, part) for part in parts):
             report.skipped.append(Line(f"{title}: this batch also changes it; stamp it again after the next load"))
         else:
             stamps.append(t)
@@ -205,21 +247,20 @@ def apply_batch(batch, docs, today):
 
     # 6. Stamps: write the requested ones; drop old ones this batch made stale.
     for t in stamps:
-        dataset = t["dataset"]
-        entry = entry_of(docs, dataset, t["item_id"])
-        entry["review"] = mr.stamp(entry, t["by"], today, STAMPED[dataset], t.get("name"))
+        target, generated = stamp_target(docs, t)
+        target["review"] = mr.stamp(target, t["by"], today, generated, t.get("name"))
         report.stamps_written.append(Line(t["item_title"], credit_of({"role": t["by"], "name": t.get("name")})))
         report.stamp_ids.append(t["id"])
     for dataset, wanted in sorted(touched):
-        if dataset not in STAMPED:
+        entry = entry_of(docs, dataset, wanted) if dataset in STAMPED else None
+        if entry is None:
             continue
-        entry = entry_of(docs, dataset, wanted)
-        if entry is not None and "review" in entry \
-                and entry["review"].get("sha256") != ud.review_hash(entry, STAMPED[dataset]):
-            title = next((s["item_title"] for s in suggestions
-                          if s["dataset"] == dataset and s["entry_id"] == wanted and s["kind"] == "entry"), wanted)
-            del entry["review"]
-            report.stamps_removed.append(Line(f"{title}: changed, needs a new review"))
+        for obj, generated, kind, item_id in stamped_parts(dataset, entry):
+            if "review" in obj and obj["review"].get("sha256") != ud.review_hash(obj, generated):
+                title = next((s["item_title"] for s in suggestions if s["dataset"] == dataset
+                              and s["kind"] == kind and s["item_id"] == item_id), item_id)
+                del obj["review"]
+                report.stamps_removed.append(Line(f"{title}: changed, needs a new review"))
     report.suggestion_ids.sort()
     return report
 

@@ -220,3 +220,90 @@ class SummaryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def stamped_verb_docs():
+    """docs() with a second example and a collocation on たべる, and stamps on the verb and both examples."""
+    d = docs()
+    verb = d["verbs"]["verbs"][0]
+    verb["examples"].append({"id": "ex4abc", "form": "te", "jp": "食べて。", "en": "Eat."})
+    verb["collocations"] = [{"id": "co1abc", "jp": "ご飯を食べる", "en": "eat a meal"}]
+    verb["review"] = mr.stamp(verb, "teacher", "2026-11-01", ud.VERB_GENERATED)
+    for example in verb["examples"]:
+        example["review"] = mr.stamp(example, "teacher", "2026-11-01")
+    return d
+
+
+def part_stamp(id, dataset, kind, item, entry_id, generated=(), title=None):
+    return {"id": id, "dataset": dataset, "kind": kind, "item_id": item.get("id") or entry_id, "entry_id": entry_id,
+            "item_title": title or item.get("id") or entry_id, "content_hash": ud.review_hash(item, generated),
+            "by": "native", "name": None, "reviewer_name": "Aiko", "created_at": "2026-11-06T10:00:00Z"}
+
+
+class VerbWordExampleStampTests(unittest.TestCase):
+    def test_writes_a_verb_stamp_and_an_example_stamp(self):
+        d = docs()
+        verb = d["verbs"]["verbs"][0]
+        example = verb["examples"][0]
+        report = rx.apply_batch(batch(stamps=[part_stamp(7, "verbs", "entry", verb, "たべる", ud.VERB_GENERATED),
+                                              part_stamp(8, "verbs", "example", example, "たべる")]), d, TODAY)
+        self.assertEqual(report.stamp_ids, [7, 8])
+        self.assertEqual(ud.check_reviews([verb], ud.VERB_GENERATED, key=ud.verb_id), [])
+        self.assertEqual(ud.check_reviews([example]), [])
+        self.assertEqual(example["review"]["on"], TODAY)
+
+    def test_writes_a_word_stamp(self):
+        d = docs()
+        word = d["words"]["words"][0]
+        report = rx.apply_batch(batch(stamps=[part_stamp(9, "words", "entry", word, "noun:いぬ",
+                                                         ud.WORD_GENERATED)]), d, TODAY)
+        self.assertEqual(report.stamp_ids, [9])
+        self.assertEqual(ud.check_reviews([word], ud.WORD_GENERATED, key=ud.word_id), [])
+
+    def test_example_change_removes_only_its_stamp(self):
+        d = stamped_verb_docs()
+        verb = d["verbs"]["verbs"][0]
+        a, b = verb["examples"]
+        old_verb, old_b = dict(verb["review"]), dict(b["review"])
+        request = part_stamp(10, "verbs", "example", a, "たべる")
+        change = suggestion(3, "change", "verbs", "example", "ex3abc", "たべる",
+                            {**{k: v for k, v in a.items() if k != "review"}, "en": "After eating, I sleep."},
+                            editable=["jp", "en"], title="食べてから寝ます。")
+        report = rx.apply_batch(batch([change], [request]), d, TODAY)
+        self.assertNotIn("review", a)
+        self.assertEqual([l.text for l in report.stamps_removed], ["食べてから寝ます。: changed, needs a new review"])
+        self.assertTrue(any("this batch also changes it" in l.text for l in report.skipped))
+        self.assertEqual(report.stamp_ids, [])
+        self.assertEqual(verb["review"], old_verb)
+        self.assertEqual(b["review"], old_b)
+
+    def test_a_collocation_change_makes_the_verb_stamp_go(self):
+        d = stamped_verb_docs()
+        verb = d["verbs"]["verbs"][0]
+        change = suggestion(4, "change", "verbs", "collocation", "co1abc", "たべる",
+                            {"id": "co1abc", "jp": "ご飯を食べる", "en": "have a meal"}, editable=["en"])
+        report = rx.apply_batch(batch([change]), d, TODAY)
+        self.assertNotIn("review", verb)
+        self.assertEqual(len(report.stamps_removed), 1)
+        self.assertTrue(all("review" in ex for ex in verb["examples"]))
+
+    def test_a_meaning_change_skips_a_requested_verb_stamp_but_not_an_example_stamp(self):
+        d = docs()
+        verb = d["verbs"]["verbs"][0]
+        example = verb["examples"][0]
+        stamps = [part_stamp(11, "verbs", "entry", verb, "たべる", ud.VERB_GENERATED),
+                  part_stamp(12, "verbs", "example", example, "たべる")]
+        change = suggestion(5, "change", "verbs", "entry", "たべる", "たべる",
+                            {**verb, "meaning": "to eat (a meal)"}, editable=["meaning"])
+        report = rx.apply_batch(batch([change], stamps), d, TODAY)
+        self.assertEqual(report.stamp_ids, [12])
+        self.assertNotIn("review", verb)
+        self.assertEqual(ud.check_reviews([example]), [])
+
+    def test_a_grammar_example_stamp_is_refused(self):
+        d = docs()
+        example = d["grammar"]["grammar"][0]["usages"][0]["examples"][0]
+        report = rx.apply_batch(batch(stamps=[part_stamp(13, "grammar", "example", example, "n-desu")]), d, TODAY)
+        self.assertEqual(report.stamp_ids, [])
+        self.assertNotIn("review", example)
+        self.assertTrue(any("can't be stamped" in l.text for l in report.skipped))
