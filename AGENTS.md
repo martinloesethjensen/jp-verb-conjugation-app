@@ -114,7 +114,9 @@ Run `make` for the full list. Common ones:
 | `ParticleBlank`, `ParticleQuiz`, `buildParticleQuestions` | Marked `particle_blanks` on examples and the particle quiz built from them (spec: `docs/superpowers/specs/2026-10-29-particle-blanks-design.md`) |
 | `DataSyncStatus` | Per-file sync status shown in Settings |
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
-| `SyncVerification` (internal) | The six sync services' rollback rejection, hash verification and JSON decoding |
+| `SyncVerification` (internal) | The seven sync services' rollback rejection, hash verification and JSON decoding |
+| `KanjiStore`, `KanjiEntry`, `KanjiDataFile` | The stroke-order data (`data/kanji.json`, built by `scripts/build_kanji.py`): `entry(for:)`, and `kanji(in:)` for the kanji in some text that have data (spec: `docs/superpowers/specs/2026-11-07-kanji-stroke-order-design.md`) |
+| `KanjiStroke`, `StrokeMatcher`, `KanjiTraceSession`, `KanjiReading` | A stroke's start, end, direction and number position; judging a traced stroke; tracing progress; kun notation `た.べる` → `た(べる)` |
 | `UserDefaults.verbKitAppGroup` | The App Group defaults (falls back to `.standard`); App code aliases it as `.appGroup` |
 | `ThemeID`, `ThemeGroup`, `ThemeChoice`, `AppearanceSetting` | The ten themes (each with a light and dark half), picker groups, seasonal override, the Appearance setting and the one-time migrations from `appearanceMode` and plan 1's keys (spec: `docs/superpowers/specs/2026-11-06-paper-ink-redesign-design.md`) |
 
@@ -138,6 +140,9 @@ Run `make` for the full list. Common ones:
 | `TypeLabel(_:teGroup:emphasis:title:)` | A verb type as a dot + ink label (shapes with Differentiate Without Color; filled pill in Pastel/Ice cream) |
 | `Font.headword(_:scale:)` / `Font.sentence(_:)` | Hiragino Mincho W6 for Japanese headwords, W3 for example sentences and phrases; both scale with Dynamic Type |
 | `themedRoot()`, `ThemePickerView` | Root palette/appearance wiring (once, in `RootView`) and Settings › Theme |
+| `kanjiSheet(_:)`, `KanjiSheetRequest` | The kanji stroke-order sheet (Watch/Trace); the text menus, the verb page's Kanji section and Word Bank kanji chips open it |
+| `KanjiStrokeCanvas`, `KanjiStrokeShape` | A kanji's strokes up to a step in the 109-unit box (ink, red current stroke, faint rest, numbers, start dot), scaled to any square |
+| `Path(svg:)` | A SwiftUI `Path` from `SVGPathData.parse` elements (the seal and the kanji strokes) |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |
@@ -165,11 +170,11 @@ Run `make` for the full list. Common ones:
 - **Per-file manifest types** (`VerbManifest`, `GrammarManifest`, `FuriganaManifest`,
   `WordsManifest`, `CountersManifest`) are separate on purpose: each file's sync state compares
   independently, so editing grammar does not re-download verbs. Do not merge them.
-- **Six concrete sync services** (`Verb`, `Grammar`, `Furigana`, `Words`, `Counters`, `Forms`) each
+- **Seven concrete sync services** (`Verb`, `Grammar`, `Furigana`, `Words`, `Counters`, `Forms`, `Kanji`) each
   follow the same contract and stay concrete by decision (U12). Each file keeps its own manifest,
   result type and sync-state entry, so syncing one never disturbs another. The rules that must not
   drift — rollback rejection, hash verification, decoding — live once in `SyncVerification`. Do
-  not replace the six with a generic `ManifestSyncService`; revisit only if a file stops fitting
+  not replace the seven with a generic `ManifestSyncService`; revisit only if a file stops fitting
   this shape.
 - **`RubyFlowLayout`** is intentionally specialized (glued punctuation, max lines, baseline
   alignment). Do not fold it into a generic flow layout.

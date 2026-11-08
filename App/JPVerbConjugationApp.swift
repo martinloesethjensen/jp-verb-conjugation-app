@@ -13,6 +13,7 @@ struct JPVerbConjugationApp: App {
     @State private var wordsStore: WordsStore
     @State private var countersStore: CountersStore
     @State private var formCatalogueStore: FormCatalogueStore
+    @State private var kanjiStore: KanjiStore
     @State private var dataSyncStatus: DataSyncStatus
     @State private var quizHistory: QuizHistoryStore
     @State private var quizSessions = QuizSessionStore()
@@ -71,6 +72,13 @@ struct JPVerbConjugationApp: App {
             syncStatus: status
         )
         forms.loadCached()
+        // Stroke order, readings and meanings for the kanji sheet: bundled, or the cached synced
+        // copy when newer. Decoded off the main actor when it starts, after the other data.
+        let kanji = KanjiStore(
+            syncService: KanjiSyncService(fetcher: fetcher, syncState: syncState),
+            persisting: SwiftDataKanjiPersisting(modelContext: context),
+            syncStatus: status
+        )
         // Install every bundled copy now, before any network await, so a slow or captive connection cannot
         // hold the shipped data back behind a sync that may take a minute to time out.
         verbs.installBundled()
@@ -84,12 +92,14 @@ struct JPVerbConjugationApp: App {
             await furigana.refresh()
             await words.refresh()
             await counters.refresh()
+            await kanji.refresh()
         }
         _verbStore = State(initialValue: verbs)
         _furiganaStore = State(initialValue: furigana)
         _wordsStore = State(initialValue: words)
         _countersStore = State(initialValue: counters)
         _formCatalogueStore = State(initialValue: forms)
+        _kanjiStore = State(initialValue: kanji)
         _dataSyncStatus = State(initialValue: status)
         _quizHistory = State(initialValue: QuizHistoryStore(
             persisting: SwiftDataQuizHistoryPersisting(modelContext: context)
@@ -107,6 +117,7 @@ struct JPVerbConjugationApp: App {
                 .environment(wordsStore)
                 .environment(countersStore)
                 .environment(formCatalogueStore)
+                .environment(kanjiStore)
                 .environment(dataSyncStatus)
                 .environment(quizHistory)
                 .environment(quizSessions)
@@ -140,6 +151,8 @@ struct JPVerbConjugationApp: App {
                     await wordsStore.start()
                     // Also an enhancement: the Counters tab.
                     await countersStore.start()
+                    // Also an enhancement: the kanji stroke-order sheet.
+                    await kanjiStore.start()
                 }
         }
         #if os(macOS)

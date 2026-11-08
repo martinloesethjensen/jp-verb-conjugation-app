@@ -7,6 +7,10 @@ const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 /// not patterns (update_data.py enforces those before anything is published).
 const PATTERN_ONLY: &[&str] = &["grammar usage with a malformed id"];
 
+/// Published files the review site does not serve, so it has no Rust type for them: kanji.json is
+/// KanjiVG and KANJIDIC2 data, not content teachers review.
+const NOT_SERVED: &[&str] = &["kanji"];
+
 fn real(file: DataFile) -> Vec<u8> {
     std::fs::read(format!("{ROOT}/data/{}", file.file_name())).unwrap()
 }
@@ -37,7 +41,9 @@ fn the_shared_invalid_fixtures_are_rejected() {
     let fixtures = fixtures();
     assert!(fixtures.len() >= 10);
     for fixture in fixtures {
-        if PATTERN_ONLY.contains(&fixture.name.as_str()) {
+        if PATTERN_ONLY.contains(&fixture.name.as_str())
+            || NOT_SERVED.contains(&fixture.dataset.as_str())
+        {
             continue;
         }
         let file = DataFile::parse_name(&fixture.dataset).unwrap();

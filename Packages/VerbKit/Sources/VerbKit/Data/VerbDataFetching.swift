@@ -23,4 +23,8 @@ public protocol VerbDataFetching: Sendable {
     /// The manifest's `forms` entry (the form catalogue), or `nil` if none is published.
     func fetchFormsManifest() async throws -> FormsManifest?
     func fetchFormsData() async throws -> Data
+
+    /// The manifest's `kanji` entry (stroke order, readings, meanings), or `nil` if none is published.
+    func fetchKanjiManifest() async throws -> KanjiManifest?
+    func fetchKanjiData() async throws -> Data
 }

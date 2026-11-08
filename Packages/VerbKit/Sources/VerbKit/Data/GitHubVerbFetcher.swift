@@ -90,6 +90,15 @@ public struct GitHubVerbFetcher: VerbDataFetching {
         return try await fetchData(named: "forms.json", ref: file.formsRef)
     }
 
+    public func fetchKanjiManifest() async throws -> KanjiManifest? {
+        try await fetchVerifiedManifest().file.kanji
+    }
+
+    public func fetchKanjiData() async throws -> Data {
+        let (_, file) = try await fetchVerifiedManifest()
+        return try await fetchData(named: "kanji.json", ref: file.kanjiRef)
+    }
+
     /// The parts of `manifest.json` beyond the verbs entry. Each entry's `ref` is read
     /// separately from its `GrammarManifest`/`FuriganaManifest`, which stay version + hash only.
     private struct ManifestFile: Decodable {
@@ -100,20 +109,23 @@ public struct GitHubVerbFetcher: VerbDataFetching {
         let words: WordsManifest?
         let counters: CountersManifest?
         let forms: FormsManifest?
+        let kanji: KanjiManifest?
         private let grammarEntry: RefOnly?
         private let furiganaEntry: RefOnly?
         private let wordsEntry: RefOnly?
         private let countersEntry: RefOnly?
         private let formsEntry: RefOnly?
+        private let kanjiEntry: RefOnly?
 
         var grammarRef: String? { grammarEntry?.ref }
         var furiganaRef: String? { furiganaEntry?.ref }
         var wordsRef: String? { wordsEntry?.ref }
         var countersRef: String? { countersEntry?.ref }
         var formsRef: String? { formsEntry?.ref }
+        var kanjiRef: String? { kanjiEntry?.ref }
 
         private enum CodingKeys: String, CodingKey {
-            case ref, grammar, furigana, words, counters, forms
+            case ref, grammar, furigana, words, counters, forms, kanji
         }
 
         init(from decoder: Decoder) throws {
@@ -129,6 +141,8 @@ public struct GitHubVerbFetcher: VerbDataFetching {
             countersEntry = try c.decodeIfPresent(RefOnly.self, forKey: .counters)
             forms = try c.decodeIfPresent(FormsManifest.self, forKey: .forms)
             formsEntry = try c.decodeIfPresent(RefOnly.self, forKey: .forms)
+            kanji = try c.decodeIfPresent(KanjiManifest.self, forKey: .kanji)
+            kanjiEntry = try c.decodeIfPresent(RefOnly.self, forKey: .kanji)
         }
     }
 

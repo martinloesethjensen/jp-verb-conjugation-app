@@ -6,7 +6,7 @@ PYTHON ?= python3
 PUSH   ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help install-deps data data-check data-merge data-release sign verify sign-commit keygen \
+.PHONY: help install-deps data data-check kanji data-merge data-release sign verify sign-commit keygen \
         test test-py test-swift project check-project check audio-dry clean \
         review-test review-build review-pull
 
@@ -23,6 +23,9 @@ data: ## Regenerate the generated forms, data/forms.json (+ bundled copy) and th
 
 data-check: ## Verify the data is generated, valid and up to date (no writes)
 	$(PYTHON) scripts/update_data.py --check
+
+kanji: ## Rebuild data/kanji.json from KanjiVG and KANJIDIC2 (KANJIVG=path KANJIDIC=path; sources are not committed)
+	$(PYTHON) scripts/build_kanji.py --kanjivg "$(KANJIVG)" --kanjidic "$(KANJIDIC)"
 
 data-merge: ## Merge origin/main into a data branch, regenerating the generated files (no key needed)
 	$(PYTHON) scripts/data_merge.py

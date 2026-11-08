@@ -183,6 +183,9 @@ final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
     /// Defaults to "no form catalogue published" so the other tests are unaffected.
     var formsManifestResult: Result<FormsManifest?, Error> = .success(nil)
     var formsDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
+    /// Defaults to "no kanji data published" so the other tests are unaffected.
+    var kanjiManifestResult: Result<KanjiManifest?, Error> = .success(nil)
+    var kanjiDataResult: Result<Data, Error> = .failure(VerbSyncError.offline)
 
     func fetchManifest() async throws -> VerbManifest { try manifestResult.get() }
     func fetchVerbData() async throws -> Data { try verbDataResult.get() }
@@ -198,6 +201,8 @@ final class MockVerbDataFetcher: VerbDataFetching, @unchecked Sendable {
         return try countersDataResult.get()
     }
     func fetchFormsManifest() async throws -> FormsManifest? { try formsManifestResult.get() }
+    func fetchKanjiManifest() async throws -> KanjiManifest? { try kanjiManifestResult.get() }
+    func fetchKanjiData() async throws -> Data { try kanjiDataResult.get() }
     func fetchFormsData() async throws -> Data { try formsDataResult.get() }
 }
 
@@ -220,6 +225,9 @@ final class InMemorySyncStateStore: SyncStateStoring, @unchecked Sendable {
     private var formsManifest: FormsManifest?
     func lastSyncedFormsManifest() -> FormsManifest? { formsManifest }
     func saveLastSyncedFormsManifest(_ manifest: FormsManifest) { formsManifest = manifest }
+    private var kanjiManifest: KanjiManifest?
+    func lastSyncedKanjiManifest() -> KanjiManifest? { kanjiManifest }
+    func saveLastSyncedKanjiManifest(_ manifest: KanjiManifest) { kanjiManifest = manifest }
     private var highest: [String: String] = [:]
     func highestAcceptedVersion(for file: String) -> String? { highest[file] }
     func saveHighestAcceptedVersion(_ version: String, for file: String) { highest[file] = version }

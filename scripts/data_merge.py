@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BUNDLED_DIR = "Packages/VerbKit/Sources/VerbKit/Resources/"
 GENERATED_FILES = {"data/manifest.json", "data/manifest.sig", "data/forms.json"}
 # Bundled copies that update_data.py writes. dialects.json lives there too but is hand-authored.
-BUNDLED_NAMES = {"verbs", "grammar", "furigana", "words", "counters", "forms"}
+BUNDLED_NAMES = {"verbs", "grammar", "furigana", "words", "counters", "forms", "kanji"}
 
 
 def is_generated(path):

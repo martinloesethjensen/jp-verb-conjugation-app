@@ -2,16 +2,18 @@ import SwiftUI
 import VerbKit
 
 /// One entry: the text large (with furigana), a comparison with standard Japanese, its
-/// meanings, a chip per kanji that opens Jisho, tags, where it's filed, notes and dates.
+/// meanings, a chip per kanji that opens its stroke order (Jisho without kanji data), tags, where it's filed, notes and dates.
 struct WordBankDetailView: View {
     @Environment(WordBankStore.self) private var store
     @Environment(\.openURL) private var openURL
+    @Environment(KanjiStore.self) private var kanjiStore: KanjiStore?
     let entry: WordBankEntryValue
     @Binding var selection: UUID?
 
     @State private var editing = false
     @State private var moving = false
     @State private var deleting = false
+    @State private var kanjiRequest: KanjiSheetRequest?
 
     private var dialectTags: [DialectTagValue] { store.dialectTags.filter { entry.dialectTagIDs.contains($0.id) } }
     private var customTags: [CustomTagValue] { store.customTags.filter { entry.customTagIDs.contains($0.id) } }
@@ -161,8 +163,13 @@ struct WordBankDetailView: View {
             SectionHeader("Kanji", systemImage: "character.book.closed.ja")
             WrappingFlowLayout(spacing: 8) {
                 ForEach(kanji, id: \.self) { character in
+                    let hasStrokes = kanjiStore?.entry(for: character) != nil
                     Button {
-                        if let url = TextLookupURL.jishoKanji(character) { openURL(url) }
+                        if hasStrokes {
+                            kanjiRequest = KanjiSheetRequest(character: character)
+                        } else if let url = TextLookupURL.jishoKanji(character) {
+                            openURL(url)
+                        }
                     } label: {
                         Text(String(character))
                             .font(.title2)
@@ -170,11 +177,15 @@ struct WordBankDetailView: View {
                             .glassEffect(in: RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Look up \(character) in Jisho")
+                    .accessibilityLabel(hasStrokes ? "\(String(character)), stroke order" : "Look up \(character) in Jisho")
                 }
             }
-            Text("Tap a kanji to open it in Jisho.").font(.caption).foregroundStyle(.secondary)
+            Text(kanji.contains { kanjiStore?.entry(for: $0) != nil }
+                 ? "Tap a kanji for its stroke order." : "Tap a kanji to open it in Jisho.")
+                .font(.caption).foregroundStyle(.secondary)
         }
+        .kanjiSheet($kanjiRequest)
+        .dismissOnLink { kanjiRequest = nil }
     }
 
     private var tagsSection: some View {
