@@ -3,6 +3,7 @@
 // real contract. Content hashes come from the loaded JSON, so reloading an edited data file makes earlier
 // approvals and suggestions stale, as in production.
 import { createHash } from 'node:crypto';
+import { canStamp } from '../lib/export.ts';
 import { partOf, partsOf } from '../lib/targets.ts';
 import type { Dataset } from '../lib/api.ts';
 
@@ -197,19 +198,23 @@ export function reviewMock(ctx: ReviewContext) {
 	const find = (t: { dataset: string; kind: string; item_id: string }) => targets(t.dataset).find((x) => same(x, t));
 
 	const userOf = (email: string) => ctx.users.find((u) => u.email === email);
-	const pendingStamp = (dataset: string, id: string) =>
-		stamps.find((t) => t.dataset === dataset && t.item_id === id && !t.exported_at);
+	const pendingStamp = (dataset: string, id: string, kind = 'entry') =>
+		stamps.find((t) => t.dataset === dataset && t.kind === kind && t.item_id === id && !t.exported_at);
+	/** What a stamp covers (the Worker's `covered!`): an entry's whole entry except a verb's examples, or one example. */
+	const covers = (dataset: string, kind: string, id: string) => (p: { dataset: string; kind: string; item_id: string; entry_id: string }) =>
+		p.dataset === dataset &&
+		(kind === 'entry' ? p.entry_id === id && !(dataset === 'verbs' && p.kind === 'example') : p.kind === kind && p.item_id === id);
 	const stampOut = (t: StampRow) => ({
 		...t, reviewer: undefined, exported_at: undefined, name: userOf(t.reviewer)?.public_name ?? null,
 		reviewer_name: nameOf(t.reviewer)
 	});
-	/** Who a stamp of the entry would name, or why it can't be stamped (the Worker's rules). */
-	function stampReadiness(dataset: string, id: string): { reviewer: string; role: string } | string {
-		const parts = targets(dataset).filter((t) => t.entry_id === id);
+	/** Who a stamp of the target would name, or why it can't be stamped (the Worker's rules). */
+	function stampReadiness(dataset: string, id: string, kind = 'entry'): { reviewer: string; role: string } | string {
+		const parts = targets(dataset).filter(covers(dataset, kind, id));
 		const current = (p: (typeof parts)[number]) =>
 			approvals.filter((a) => same(a, p) && a.hash === p.hash);
 		if (parts.length === 0 || !parts.every((p) => current(p).length > 0)) return 'every part needs an approval first';
-		if (suggestions.some((s) => s.dataset === dataset && s.entry_id === id && s.status === 'open')) {
+		if (suggestions.some((s) => covers(dataset, kind, id)(s) && s.status === 'open')) {
 			return 'settle its open suggestions first';
 		}
 		const best = parts
@@ -218,7 +223,7 @@ export function reviewMock(ctx: ReviewContext) {
 			.sort((x, y) => RANK[x.role] - RANK[y.role] || x.a.created_at.localeCompare(y.a.created_at))[0];
 		return { reviewer: best.a.reviewer, role: best.role };
 	}
-	const stampsHere = (dataset: string) => dataset === 'counters' || dataset === 'grammar';
+	const stampsHere = (dataset: string) => canStamp(dataset, 'entry');
 
 	const approvalOut = (a: Approval) => ({
 		kind: a.kind, item_id: a.item_id, reviewer_name: nameOf(a.reviewer), mine: a.reviewer === ctx.me.email,
@@ -326,31 +331,34 @@ export function reviewMock(ctx: ReviewContext) {
 			}];
 		}
 		if (path === '/admin/stampable' && method === 'GET') {
-			const entries = ['counters', 'grammar'].flatMap((d) =>
-				targets(d)
-					.filter((t) => t.kind === 'entry' && !t.value.review && !pendingStamp(d, t.item_id))
-					.filter((t) => typeof stampReadiness(d, t.item_id) !== 'string')
-					.map((t) => ({ dataset: d, item_id: t.item_id, title: t.title }))
-			);
+			const entries = ['counters', 'grammar', 'verbs', 'words'].flatMap((d) => {
+				const all = targets(d);
+				const titleOf = (id: string) => all.find((t) => t.kind === 'entry' && t.item_id === id)?.title ?? id;
+				return all
+					.filter((t) => canStamp(d, t.kind) && !t.value.review && !pendingStamp(d, t.item_id, t.kind))
+					.filter((t) => typeof stampReadiness(d, t.item_id, t.kind) !== 'string')
+					.map((t) => ({ dataset: d, kind: t.kind, item_id: t.item_id, entry_id: t.entry_id, entry_title: titleOf(t.entry_id), title: t.title }));
+			});
 			return [200, { entries }];
 		}
 		if (path === '/admin/stamp' || path === '/admin/stamp/withdraw') {
 			const dataset = String(body.dataset ?? '');
 			const id = String(body.id ?? '');
-			if (!stampsHere(dataset)) return [400, { error: 'only counters and grammar points take a stamp for now' }];
-			const pending = pendingStamp(dataset, id);
+			const kind = String(body.kind ?? 'entry');
+			if (!canStamp(dataset, kind)) return [400, { error: "this can't take a stamp" }];
+			const pending = pendingStamp(dataset, id, kind);
 			if (path === '/admin/stamp/withdraw') {
 				if (!pending) return [404, { error: 'there is no stamp waiting for export on that' }];
 				stamps.splice(stamps.indexOf(pending), 1);
 				return [200, { withdrawn: true }];
 			}
 			if (pending) return [200, stampOut(pending)];
-			const entry = find({ dataset, kind: 'entry', item_id: id });
-			if (!entry) return [404, { error: NOT_LOADED }];
-			const ready = stampReadiness(dataset, id);
+			const item = find({ dataset, kind, item_id: id });
+			if (!item) return [404, { error: NOT_LOADED }];
+			const ready = stampReadiness(dataset, id, kind);
 			if (typeof ready === 'string') return [409, { error: ready }];
-			const row: StampRow = { id: nextId++, dataset, kind: 'entry', item_id: id, entry_id: id, item_title: entry.title,
-				content_hash: entry.hash, by: ready.role, reviewer: ready.reviewer, created_at: now(), exported_at: null };
+			const row: StampRow = { id: nextId++, dataset, kind, item_id: id, entry_id: item.entry_id, item_title: item.title,
+				content_hash: item.hash, by: ready.role, reviewer: ready.reviewer, created_at: now(), exported_at: null };
 			stamps.push(row);
 			return [201, stampOut(row)];
 		}

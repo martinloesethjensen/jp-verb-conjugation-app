@@ -190,10 +190,12 @@ your Mac.
 page. A reviewer can choose a public name on their account page; it then appears in stamps and PR summaries
 instead of the role. Emails never leave the site.
 
-**Stamps.** On the Export page, "Ready to stamp" lists the counters and grammar points whose every part has a
-current approval, with nothing open. A stamp names the most senior reviewer who approved (owner, then teacher,
-then native speaker) and becomes a `review` stamp in the data at the next pull. Verbs, words and examples come
-later.
+**Stamps.** On the Export page, "Ready to stamp" lists what can take a stamp now: counters, grammar points,
+verbs and words whose every part has a current approval, with nothing open, and verb example sentences with
+a current approval of their own. A verb's stamp covers its meaning, notes and common phrases; each example
+sentence is stamped on its own, so the list groups a verb's ready examples under it, with "Stamp all". A
+stamp names the most senior reviewer who approved (owner, then teacher, then native speaker) and becomes a
+`review` stamp in the data at the next pull.
 
 **Setting it up (once):**
 

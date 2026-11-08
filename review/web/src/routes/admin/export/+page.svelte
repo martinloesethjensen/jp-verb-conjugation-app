@@ -1,5 +1,5 @@
 <script lang="ts">
-	// The owner's export desk. Above: counters and grammar points ready for a stamp. Below: accepted work and
+	// The owner's export desk. Above: entries and verb examples ready for a stamp. Below: accepted work and
 	// stamps waiting for `make review-pull`; after its PR merges, tick what it carried and mark it exported.
 	import { onMount } from 'svelte';
 	import {
@@ -13,7 +13,7 @@
 		type ReadyEntry
 	} from '#lib/api.ts';
 	import ErrorLine from '#lib/ErrorLine.svelte';
-	import { idsFromSummary } from '#lib/export.ts';
+	import { groupReady, idsFromSummary } from '#lib/export.ts';
 	import { CREDIT_ROLES, DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
@@ -78,15 +78,24 @@
 		}
 	}
 
+	const groups = $derived(ready ? groupReady(ready) : []);
+
 	const stamp = (e: ReadyEntry) =>
 		act(async () => {
-			await stampEntry(e.dataset, e.item_id);
+			await stampEntry(e.dataset, e.item_id, e.kind);
 			return `Stamped ${e.title}.`;
 		});
 
-	const unstamp = (d: string, id: string) =>
+	/** Stamps a group's examples one after another, stopping at the first that fails. */
+	const stampAll = (examples: ReadyEntry[], title: string) =>
 		act(async () => {
-			await withdrawStamp(d, id);
+			for (const e of examples) await stampEntry(e.dataset, e.item_id, e.kind);
+			return `Stamped ${examples.length} examples of ${title}.`;
+		});
+
+	const unstamp = (d: string, id: string, kind: string) =>
+		act(async () => {
+			await withdrawStamp(d, id, kind);
 			return null;
 		});
 
@@ -118,20 +127,39 @@
 	<section aria-labelledby="ready-heading">
 		<h2 id="ready-heading">Ready to stamp</h2>
 		<p class="hint">
-			Counters and grammar points whose every part is approved, with nothing open. A stamp names the most
-			senior reviewer who approved it, and the app shows the entry as reviewed after the next export.
+			Entries and verb example sentences whose every part is approved, with nothing open. A stamp names the
+			most senior reviewer involved, and the app shows it as reviewed after the next export. A verb's stamp
+			covers its meaning, notes and common phrases; each example sentence is stamped on its own.
 		</p>
 		{#if ready.length === 0}
 			<p class="quiet">Nothing is ready to stamp.</p>
 		{:else}
 			<ul class="rows">
-				{#each ready as e (`${e.dataset}/${e.item_id}`)}
+				{#each groups as g (g.key)}
 					<li>
 						<div>
-							<a href={entryHref(e.dataset, e.item_id)} lang="ja">{e.title}</a>
-							<span class="kind">{dataset(e.dataset)}</span>
+							<a href={entryHref(g.key.split('/')[0], g.entry?.item_id ?? g.examples[0].entry_id)} lang="ja">{g.title}</a>
+							<span class="kind">{dataset(g.key.split('/')[0])}{g.entry ? '' : ' · examples only'}</span>
 						</div>
-						<button type="button" class="primary" disabled={busy} onclick={() => stamp(e)}>Stamp as reviewed</button>
+						{#if g.entry}
+							{@const entry = g.entry}
+							<button type="button" class="primary" disabled={busy} onclick={() => stamp(entry)}>Stamp as reviewed</button>
+						{/if}
+						{#if g.examples.length > 0}
+							<ul class="examples">
+								{#each g.examples as e (e.item_id)}
+									<li>
+										<span lang="ja">{e.title}</span>
+										<button type="button" disabled={busy} onclick={() => stamp(e)}>Stamp example</button>
+									</li>
+								{/each}
+							</ul>
+							{#if g.examples.length > 1}
+								<button type="button" disabled={busy} onclick={() => stampAll(g.examples, g.title)}>
+									Stamp all {g.examples.length} examples
+								</button>
+							{/if}
+						{/if}
 					</li>
 				{/each}
 			</ul>
@@ -178,11 +206,11 @@
 							<span class="visually-hidden">Include the stamp on {t.item_title}</span>
 						</label>
 						<div>
-							<a href={entryHref(t.dataset, t.item_id)} lang="ja">{t.item_title}</a>
-							<span class="kind">Stamp · {dataset(t.dataset)}</span>
+							<a href={entryHref(t.dataset, t.entry_id)} lang="ja">{t.item_title}</a>
+							<span class="kind">{t.kind === 'example' ? 'Example stamp' : 'Stamp'} · {dataset(t.dataset)}</span>
 							<p class="credit">Stamp {t.id} · credited as {credit({ role: t.by, name: t.name })}</p>
 						</div>
-						<button type="button" class="link" disabled={busy} onclick={() => unstamp(t.dataset, t.item_id)}>
+						<button type="button" class="link" disabled={busy} onclick={() => unstamp(t.dataset, t.item_id, t.kind)}>
 							Withdraw stamp
 						</button>
 					</li>
@@ -235,6 +263,21 @@
 	.rows li > div {
 		flex: 1 1 12rem;
 		min-width: 0;
+	}
+
+	.examples {
+		display: grid;
+		flex-basis: 100%;
+		gap: 0.25rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.rows .examples li {
+		justify-content: space-between;
+		padding: 0.5rem 0.75rem;
+		border-style: dashed;
 	}
 
 	.kind {

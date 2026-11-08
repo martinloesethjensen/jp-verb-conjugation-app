@@ -238,7 +238,7 @@ export type Review = {
 	parts: ReviewPart[];
 	approvals: Approval[];
 	suggestions: Suggestion[];
-	/** Counters and grammar points: the pending stamp, and whether one can be made now. */
+	/** For an entry that takes a stamp: the pending stamp, and whether one can be made now. */
 	stamp: Stamp | null;
 	stampable: boolean;
 };
@@ -288,13 +288,14 @@ type Edits = { edits?: Record<string, string>; furigana?: Record<string, string>
 
 const body = (target: Target) => ({ dataset: target.dataset, kind: target.kind, id: target.id });
 
-export const stampEntry = (dataset: string, id: string) => request<Stamp>('/api/admin/stamp', { dataset, id });
+export const stampEntry = (dataset: string, id: string, kind = 'entry') =>
+	request<Stamp>('/api/admin/stamp', { dataset, id, kind });
 
-export const withdrawStamp = (dataset: string, id: string) =>
-	request<{ withdrawn: boolean }>('/api/admin/stamp/withdraw', { dataset, id });
+export const withdrawStamp = (dataset: string, id: string, kind = 'entry') =>
+	request<{ withdrawn: boolean }>('/api/admin/stamp/withdraw', { dataset, id, kind });
 
-/** A counter or grammar point whose every part is approved, with nothing open and no stamp yet. */
-export type ReadyEntry = { dataset: string; item_id: string; title: string };
+/** An entry or verb example whose every covered part is approved, with nothing open and no stamp yet. */
+export type ReadyEntry = { dataset: string; kind: string; item_id: string; entry_id: string; entry_title: string; title: string };
 
 export const getStampable = async () =>
 	(await request<{ entries: ReadyEntry[] }>('/api/admin/stampable')).entries;
