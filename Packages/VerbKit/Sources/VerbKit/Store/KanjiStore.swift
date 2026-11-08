@@ -60,6 +60,8 @@ public final class KanjiStore {
         }
         for candidate in candidates {
             if let file = await Self.decodeOffMain(candidate.data) {
+                // A sync (Settings' Refresh data) may have applied a newer file while this decoded.
+                guard DataVersion.isNewer(candidate.version, than: version) else { return }
                 use(file, version: candidate.version)
                 return
             }

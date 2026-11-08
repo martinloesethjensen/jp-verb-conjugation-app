@@ -154,7 +154,11 @@ final class KanjiStoreTests: XCTestCase {
     final class MemoryPersisting: KanjiPersisting {
         var stored: SyncedKanjiData?
         var failSaves = false
-        func loadKanji() throws -> SyncedKanjiData? { stored }
+        var failLoads = false
+        func loadKanji() throws -> SyncedKanjiData? {
+            if failLoads { throw CocoaError(.fileReadUnknown) }
+            return stored
+        }
         func replaceKanji(with synced: SyncedKanjiData) throws {
             if failSaves { throw CocoaError(.fileWriteUnknown) }
             stored = synced
@@ -256,6 +260,25 @@ final class KanjiStoreTests: XCTestCase {
         XCTAssertNil(store.entry(for: "山"))
         XCTAssertNil(state.lastSyncedKanjiManifest())
         XCTAssertEqual(status.status(for: .kanji).problem, .couldNotSave)
+    }
+
+    /// Settings' Refresh data can finish before the launch decode: the older launch copy must not
+    /// replace the newer synced one when it arrives second.
+    func testALaterLaunchDecodeNeverReplacesNewerSyncedData() async {
+        let fetcher = MockVerbDataFetcher()
+        fetcher.kanjiManifestResult = .success(KanjiManifest(version: "1.1.0", sha256: sha256Hex(of: KanjiJSON.newer)))
+        fetcher.kanjiDataResult = .success(KanjiJSON.newer)
+        let persisting = MemoryPersisting()
+        persisting.failLoads = true
+        let store = makeStore(fetcher: fetcher, persisting: persisting)
+
+        await store.refresh()
+        XCTAssertEqual(store.version, "1.1.0")
+        fetcher.kanjiManifestResult = .failure(VerbSyncError.offline)
+        await store.start()
+
+        XCTAssertEqual(store.version, "1.1.0")
+        XCTAssertNotNil(store.entry(for: "山"))
     }
 
     func testKanjiInTextSkipsUnknownAndRepeats() async {
