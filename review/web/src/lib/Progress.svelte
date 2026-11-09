@@ -18,8 +18,8 @@
 	.progress {
 		display: block;
 		width: 100%;
-		height: 0.4rem;
-		border-radius: 0.2rem;
+		height: 8px;
+		border-radius: 4px;
 		overflow: hidden;
 	}
 

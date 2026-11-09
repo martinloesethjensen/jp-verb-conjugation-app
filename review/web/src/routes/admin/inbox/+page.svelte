@@ -115,9 +115,13 @@
 <p class="back"><a href="/admin">Back to admin</a></p>
 <h1>Suggestions</h1>
 
-<div class="tabs" role="group" aria-label="Which suggestions">
+<div class="segmented" role="group" aria-label="Which suggestions">
 	{#each TABS as [value, label] (value)}
-		<button type="button" class={{ on: status === value }} aria-pressed={status === value} onclick={() => show(value)}>{label}</button>
+		<button type="button" aria-pressed={status === value} onclick={() => show(value)}
+			>{label}{#if value === 'open' && status === 'open' && suggestions?.length}<span class="open-count"
+					>{suggestions.length}</span
+				>{/if}</button
+		>
 	{/each}
 </div>
 
@@ -132,8 +136,14 @@
 		{@const first = group.items[0]}
 		<section class="group">
 			<h2>
-				<a href={suggestionHref(first)} lang="ja">{first.item_title}</a>
-				<span class="kind">{groupTitle(first)} · {DATASET_TITLES[first.dataset as Dataset] ?? first.dataset}</span>
+				<span class="on-what"
+					>{groupTitle(first).charAt(0).toUpperCase()}{groupTitle(first).slice(1)} on
+					<a href={suggestionHref(first)} lang="ja">{first.item_title}</a></span
+				>
+				<span class="kind"
+					>{DATASET_TITLES[first.dataset as Dataset] ?? first.dataset} · {group.items.length}
+					{group.items.length === 1 ? 'suggestion' : 'suggestions'}</span
+				>
 			</h2>
 			{#each group.items as s (s.id)}
 				<SuggestionCard
@@ -148,22 +158,22 @@
 						{#if s.status === 'open'}
 							{#if confirming?.id === s.id}
 								<p class="warning">{confirming.warning}</p>
-								<button type="button" class="danger small" disabled={busy} onclick={() => accept(s)}>Accept and remove</button>
+								<button type="button" class="danger" disabled={busy} onclick={() => accept(s)}>Accept and remove</button>
 								<button type="button" class="link" onclick={() => (confirming = null)}>Cancel</button>
 							{:else}
 								<button
 									type="button"
-									class="primary small"
+									class="primary"
 									disabled={busy || ((s.action === 'change' || adding(s)) && (s.stale || s.gone))}
 									title={staleChange(s) ? ACCEPT_STALE : undefined}
 									onclick={() => accept(s)}>Accept</button
 								>
 								{#if canEdit(s)}
-									<button type="button" class="small" aria-expanded={editing === s.id} onclick={() => (editing = editing === s.id ? null : s.id)}
+									<button type="button" aria-expanded={editing === s.id} onclick={() => (editing = editing === s.id ? null : s.id)}
 										>Edit then accept</button
 									>
 								{/if}
-								<button type="button" class="small" disabled={busy} onclick={() => act(s, () => decide(s.id, 'decline'))}>Decline</button>
+								<button type="button" disabled={busy} onclick={() => act(s, () => decide(s.id, 'decline'))}>Decline</button>
 								{#if staleChange(s)}<span class="hint">{ACCEPT_STALE}</span>{/if}
 							{/if}
 						{/if}
@@ -202,26 +212,23 @@
 	}
 
 	h1 {
-		margin: 0 0 1rem;
-		font-size: 1.5rem;
-		font-weight: 500;
+		margin: 0 0 1.25rem;
 	}
 
-	.tabs {
-		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 1.25rem;
+	.segmented {
+		margin-bottom: 1.75rem;
 	}
 
-	.tabs .on {
-		background: var(--ink);
-		color: var(--card);
+	.open-count {
+		margin-left: 0.4rem;
+		color: var(--red);
+		font-weight: 700;
 	}
 
 	.group {
-		max-width: 42rem;
-		margin-bottom: 1.25rem;
-		padding: 1rem 1.25rem;
+		max-width: 46rem;
+		margin-bottom: 1.5rem;
+		padding: 1.25rem 1.5rem;
 		background: var(--card);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
@@ -230,11 +237,26 @@
 	h2 {
 		display: flex;
 		flex-wrap: wrap;
+		justify-content: space-between;
 		gap: 0.25rem 0.75rem;
 		align-items: baseline;
-		margin: 0;
+		margin: 0 0 0.5rem;
 		font-size: 1.1rem;
 		font-weight: 500;
+	}
+
+	.on-what {
+		overflow-wrap: anywhere;
+	}
+
+	.on-what a {
+		font-family: var(--mincho);
+	}
+
+	@media (max-width: 720px) {
+		.group {
+			padding: 1rem;
+		}
 	}
 
 	.kind,

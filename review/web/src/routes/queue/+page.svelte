@@ -6,6 +6,7 @@
 	import { getItem, getQueue, problem, skip, type Dataset, type Field, type Queue, type QueueItem } from '#lib/api.ts';
 	import Progress from '#lib/Progress.svelte';
 	import ReviewCard from '#lib/ReviewCard.svelte';
+	import { filterItems, firstUndone, type ItemFilter } from '#lib/queue-items.ts';
 	import { loadReference } from '#lib/reference.ts';
 	import { EntryReview } from '#lib/review.svelte.ts';
 
@@ -16,13 +17,14 @@
 	let data = $state<Queue | null>(null);
 	let failure = $state<string | null>(null);
 	let selected = $state<string | null>(null);
+	let filter = $state<ItemFilter>('all');
 	let readings = $state<Record<string, string>>({});
 	let forms = $state<Record<string, string>>({});
 	let fieldTable = $state<Record<string, Field[]>>({});
 
 	const keyOf = (i: QueueItem) => `${i.dataset}/${i.kind}/${i.item_id}`;
 	const current = $derived(
-		data ? (data.items.find((i) => keyOf(i) === selected) ?? data.items.find((i) => !i.mine && !i.gone)) : undefined
+		data ? (data.items.find((i) => keyOf(i) === selected) ?? firstUndone(data.items)) : undefined
 	);
 
 	// Entries fetched in this visit, so moving between parts of one entry doesn't fetch it again.
@@ -76,6 +78,13 @@
 		selected = null;
 	}
 
+	const shown = $derived(data ? filterItems(data.items, filter) : []);
+	const FILTERS: [ItemFilter, string][] = [
+		['all', 'All'],
+		['todo', 'To do'],
+		['done', 'Done']
+	];
+
 	const mark = (i: QueueItem) =>
 		i.gone ? 'No longer in the data' : i.mine === 'approved' ? 'Approved' : i.mine === 'suggested' ? 'Suggested' : i.mine === 'skipped' ? 'Skipped' : '';
 </script>
@@ -90,31 +99,68 @@
 	<p class="quiet">Loading…</p>
 {:else}
 	<header class="queue-header">
-		<p class="back"><a href="/">Home</a></p>
-		<h1>{data.queue.title}</h1>
-		{#if data.queue.description}<p class="quiet">{data.queue.description}</p>{/if}
-		<p class="count">{data.queue.done} of {data.queue.total} done</p>
-		<Progress total={data.queue.total} done={data.queue.done} flagged={data.queue.with_suggestion} />
+		<div class="heading">
+			<p class="back">
+				<a href="/"
+					><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" /></svg>Home</a
+				>
+			</p>
+			<h1>{data.queue.title}</h1>
+			{#if data.queue.description}<p class="quiet">{data.queue.description}</p>{/if}
+		</div>
+		<div class="progress-block">
+			<p class="count"><strong>{data.queue.done}</strong> of {data.queue.total} done</p>
+			<Progress total={data.queue.total} done={data.queue.done} flagged={data.queue.with_suggestion} />
+			{#if data.queue.with_suggestion}
+				<p class="flagged"><span class="red-dot" aria-hidden="true"></span>{data.queue.with_suggestion} with suggestions</p>
+			{/if}
+		</div>
 	</header>
 
 	<div class="layout">
-		<nav class="list" aria-label="Items in this queue">
-			<ol>
-				{#each data.items as i (keyOf(i))}
-					<li>
-						<button
-							type="button"
-							class={['entry', { current: current && keyOf(current) === keyOf(i), done: i.mine || i.gone }]}
-							aria-current={current && keyOf(current) === keyOf(i) ? 'true' : undefined}
-							onclick={() => (selected = keyOf(i))}
-						>
-							<span class="title" lang="ja">{i.title}</span>
-							{#if i.mine === 'approved'}<span class="dot" aria-hidden="true"></span>{/if}
-							<span class="mark">{mark(i)}</span>
-						</button>
-					</li>
+		<nav class="list card" aria-label="Items in this queue">
+			<div class="filters" role="group" aria-label="Show">
+				{#each FILTERS as [value, label] (value)}
+					<button type="button" class="chip" aria-pressed={filter === value} onclick={() => (filter = value)}>{label}</button>
 				{/each}
-			</ol>
+			</div>
+			{#if shown.length}
+				<ol>
+					{#each shown as i (keyOf(i))}
+						{@const isCurrent = current !== undefined && keyOf(current) === keyOf(i)}
+						<li>
+							<button
+								type="button"
+								class={['entry', { current: isCurrent, done: i.mine || i.gone }]}
+								aria-current={isCurrent ? 'true' : undefined}
+								onclick={() => (selected = keyOf(i))}
+							>
+								<span class="status" aria-hidden="true">
+									{#if i.mine === 'approved'}
+										<svg class="approved-icon" viewBox="0 0 16 16"
+											><rect x="3" y="3" width="10" height="10" rx="1.5" transform="rotate(-8 8 8)" /><path
+												d="M5.5 8.2l1.8 1.8 3.3-3.6"
+											/></svg
+										>
+									{:else if i.mine === 'suggested'}
+										<svg class="pencil-icon" viewBox="0 0 16 16"><path d="M10.5 2.5l3 3-8 8H2.5v-3z" /></svg>
+									{:else if isCurrent}
+										<span class="current-dot"></span>
+									{:else if !i.mine && !i.gone}
+										<span class="todo-ring"></span>
+									{/if}
+								</span>
+								<span class="title" lang="ja">{i.title}</span>
+								<span class="mark">{mark(i)}</span>
+							</button>
+						</li>
+					{/each}
+				</ol>
+			{:else}
+				<p class="empty-filter quiet">
+					{filter === 'todo' ? 'Nothing left to do in this queue.' : 'Nothing done in this queue yet.'}
+				</p>
+			{/if}
 		</nav>
 
 		<div class="card-pane">
@@ -149,23 +195,82 @@
 
 <style>
 	.queue-header {
-		max-width: 42rem;
-		margin-bottom: 1.25rem;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: 1rem 3rem;
+		margin-bottom: 2rem;
+	}
+
+	.heading {
+		flex: 1 1 28rem;
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 
 	.back {
-		margin: 0 0 0.5rem;
+		margin: 0 0 0.75rem;
+	}
+
+	.back a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		min-height: 44px;
+		color: var(--muted);
+		text-decoration: none;
+	}
+
+	.back a:hover {
+		color: var(--ink);
+	}
+
+	.chevron {
+		width: 16px;
+		height: 16px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.8;
+		stroke-linecap: round;
+		stroke-linejoin: round;
 	}
 
 	h1 {
 		margin: 0;
-		font-size: 1.5rem;
-		font-weight: 500;
 	}
 
-	.count {
-		margin: 0.5rem 0 0.35rem;
+	.heading .quiet {
+		margin: 0.5rem 0 0;
+	}
+
+	.progress-block {
+		flex: 0 1 16rem;
+		display: grid;
+		gap: 0.4rem;
+	}
+
+	.progress-block p {
+		margin: 0;
+	}
+
+	.count strong {
+		font-size: 1.4rem;
+	}
+
+	.flagged {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
 		font-size: 0.9rem;
+		color: var(--muted);
+	}
+
+	.red-dot {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		background: var(--red);
 	}
 
 	.quiet {
@@ -175,7 +280,7 @@
 	.layout {
 		display: grid;
 		gap: 1.5rem;
-		max-width: 42rem;
+		max-width: 46rem;
 	}
 
 	/* Phones get the card alone; laptops get the list beside it. */
@@ -185,7 +290,7 @@
 
 	@media (min-width: 960px) {
 		.layout {
-			grid-template-columns: 17rem minmax(0, 42rem);
+			grid-template-columns: 19rem minmax(0, 1fr);
 			max-width: none;
 			align-items: start;
 		}
@@ -196,36 +301,44 @@
 			top: 1rem;
 			max-height: calc(100vh - 2rem);
 			overflow-y: auto;
+			padding: 0.75rem;
 		}
+	}
+
+	.filters {
+		display: flex;
+		gap: 0.4rem;
+		padding: 0.25rem 0.25rem 0.75rem;
 	}
 
 	ol {
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		background: var(--card);
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
-	}
-
-	li + li {
-		border-top: 1px solid var(--rule);
 	}
 
 	.entry {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		gap: 0 0.5rem;
+		grid-template-columns: 20px minmax(0, 1fr);
+		gap: 0 0.6rem;
 		align-items: center;
+		justify-content: stretch;
 		width: 100%;
-		padding: 0.5rem 0.75rem;
+		min-height: 44px;
+		padding: 0.45rem 0.65rem;
 		border: none;
-		border-radius: 0;
+		border-radius: var(--radius-input);
 		background: none;
+		font-weight: 400;
 		text-align: left;
 	}
 
+	.entry:hover {
+		background: var(--paper);
+	}
+
 	.entry .title {
+		font-family: var(--mincho);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -237,24 +350,68 @@
 
 	.entry.current {
 		background: var(--paper);
-		box-shadow: inset 3px 0 0 var(--ink);
+		box-shadow: inset 0 0 0 1.5px var(--ink);
 	}
 
-	.dot {
-		width: 0.5rem;
-		height: 0.5rem;
+	.status {
+		display: grid;
+		place-items: center;
+		width: 20px;
+		height: 20px;
+	}
+
+	.approved-icon,
+	.pencil-icon {
+		width: 18px;
+		height: 18px;
+		fill: none;
+		stroke-width: 1.6;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.approved-icon {
+		stroke: var(--red);
+	}
+
+	.pencil-icon {
+		stroke: var(--muted);
+	}
+
+	.current-dot {
+		width: 10px;
+		height: 10px;
 		border-radius: 50%;
-		background: var(--red);
+		background: var(--ink);
+	}
+
+	.todo-ring {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		border: 1.5px solid var(--muted);
 	}
 
 	.mark {
-		grid-column: 1 / -1;
+		grid-column: 2;
 		font-size: 0.8rem;
 		color: var(--muted);
 	}
 
 	.mark:empty {
 		display: none;
+	}
+
+	/* The next card slides in from the right; clip it so a phone never scrolls sideways meanwhile. */
+	.card-pane {
+		min-width: 0;
+		overflow-x: clip;
+		overflow-clip-margin: 8px;
+	}
+
+	.empty-filter {
+		margin: 0;
+		padding: 1rem 0.65rem;
 	}
 
 	.finished {

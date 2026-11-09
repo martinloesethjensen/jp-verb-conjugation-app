@@ -45,7 +45,9 @@
 		note: 'left a note for Martin',
 		add: 'suggests adding this'
 	};
-	const heading = $derived(`${s.author_name} ${HEADINGS[s.action] ?? HEADINGS.note}`);
+	const heading = $derived(HEADINGS[s.action] ?? HEADINGS.note);
+	const initial = $derived((Array.from(s.author_name.trim())[0] ?? '?').toUpperCase());
+	const when = $derived(s.created_at ? new Date(s.created_at.replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(s.created_at) ? '' : 'Z')) : null);
 	const adding = $derived(s.action === 'add');
 	const extra = (item: Json): Record<string, string> => ({ ...(item.readings ?? {}), ...(s.furigana ?? {}) });
 	const fieldNames = $derived(names.length ? names : Object.keys(s.proposed ?? {}));
@@ -76,7 +78,11 @@
 
 <article class={['suggestion', { decided: s.status !== 'open' }]}>
 	<header>
-		<span class="who">{heading}</span>
+		<span class="avatar" aria-hidden="true">{initial}</span>
+		<span class="who">{s.author_name} {heading}</span>
+		{#if when && !Number.isNaN(when.getTime())}<time class="when" datetime={when.toISOString()}
+				>{when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</time
+			>{/if}
 		{#if adding}<span class="status new">New</span>{/if}
 		{#if status}<span class="status">{status}</span>{/if}
 		{#if adding && s.landed}<span class="status">Now in the data</span>{/if}
@@ -129,7 +135,7 @@
 				<form class="reply" onsubmit={send}>
 					<label class="visually-hidden" for="{uid}-reply">Reply</label>
 					<textarea id="{uid}-reply" rows="1" maxlength="2000" placeholder="Reply" bind:value={reply}></textarea>
-					<button class="small" disabled={busy || !reply.trim()}>Reply</button>
+					<button disabled={busy || !reply.trim()}>Reply</button>
 				</form>
 			{/if}
 			<div class="actions">
@@ -145,11 +151,12 @@
 
 <style>
 	.suggestion {
-		margin-top: 0.6rem;
-		padding: 0.6rem 0.85rem;
+		margin-top: 0.75rem;
+		padding: 18px 20px;
+		border: 1px solid var(--rule);
 		border-left: 3px solid var(--red);
-		background: var(--red-soft);
-		border-radius: 0 var(--radius) var(--radius) 0;
+		background: var(--card);
+		border-radius: var(--radius);
 	}
 
 	.decided {
@@ -161,13 +168,33 @@
 	header {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 0.75rem;
-		align-items: baseline;
-		margin-bottom: 0.35rem;
+		gap: 0.25rem 0.6rem;
+		align-items: center;
+		margin-bottom: 0.6rem;
+	}
+
+	.avatar {
+		display: inline-grid;
+		place-items: center;
+		flex: none;
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		background: var(--ink);
+		color: var(--card);
+		font-size: 0.8rem;
+		font-weight: 700;
 	}
 
 	.who {
-		font-weight: 500;
+		min-width: 0;
+		font-weight: 700;
+		overflow-wrap: anywhere;
+	}
+
+	.when {
+		font-size: 0.85rem;
+		color: var(--muted);
 	}
 
 	.status,
@@ -188,10 +215,10 @@
 
 	.added {
 		margin: 0.25rem 0;
-		padding: 0 0.6rem;
-		background: var(--card);
+		padding: 0 0.75rem;
+		background: var(--paper);
 		border-left: 2px solid var(--green);
-		border-radius: var(--radius);
+		border-radius: var(--radius-input);
 	}
 
 	.remove {
@@ -201,10 +228,10 @@
 	}
 
 	.note {
-		margin: 0.4rem 0;
-		padding: 0.4rem 0.6rem;
-		background: var(--card);
-		border-radius: var(--radius);
+		margin: 0.6rem 0;
+		padding: 0.6rem 0.85rem;
+		background: var(--paper);
+		border-radius: var(--radius-input);
 		white-space: pre-line;
 	}
 
@@ -251,6 +278,13 @@
 		flex-wrap: wrap;
 		gap: 0.5rem;
 		align-items: center;
+	}
+
+	@media (max-width: 720px) {
+		.actions :global(button:not(.link)) {
+			flex: 1 1 0;
+			padding: 0 0.75rem;
+		}
 	}
 
 	.actions:empty {

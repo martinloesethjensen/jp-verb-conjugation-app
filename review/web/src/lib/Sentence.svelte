@@ -39,13 +39,19 @@
 
 	/* The sentence sits on a faint genkō (manuscript) grid, like a page being marked. */
 	.jp {
-		font-size: 1.35rem;
-		line-height: 2.4;
+		font-size: 2rem;
+		line-height: 2.5;
 		background-image:
-			linear-gradient(to right, color-mix(in srgb, var(--grid) 22%, transparent) 1px, transparent 1px),
-			linear-gradient(to bottom, color-mix(in srgb, var(--grid) 22%, transparent) 1px, transparent 1px);
+			linear-gradient(to right, color-mix(in srgb, var(--grid) 38%, transparent) 1px, transparent 1px),
+			linear-gradient(to bottom, color-mix(in srgb, var(--grid) 38%, transparent) 1px, transparent 1px);
 		background-size: 1.6em 1.6em;
-		background-position: 0 0.4em;
+		background-position: 0 0.45em;
+	}
+
+	@media (max-width: 720px) {
+		.jp {
+			font-size: 1.6rem;
+		}
 	}
 
 	.jp :global(rt) {
@@ -58,8 +64,11 @@
 	}
 
 	.label {
-		margin-top: 0.25rem;
+		display: inline-block;
+		margin-top: 0.5rem;
+		padding: 0.1rem 0.7rem;
+		border: 1px solid var(--ink);
+		border-radius: 999px;
 		font-size: 0.85rem;
-		color: var(--muted);
 	}
 </style>

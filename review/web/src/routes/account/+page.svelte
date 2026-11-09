@@ -138,8 +138,11 @@
 	h1,
 	h2 {
 		margin-top: 0;
-		font-size: 1.5rem;
 		font-weight: 500;
+	}
+
+	h2 {
+		font-size: 1.35rem;
 	}
 
 	.hint,

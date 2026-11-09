@@ -263,10 +263,6 @@
 		font-weight: 500;
 	}
 
-	h1 {
-		font-size: 1.5rem;
-	}
-
 	h2 {
 		font-size: 1.15rem;
 	}

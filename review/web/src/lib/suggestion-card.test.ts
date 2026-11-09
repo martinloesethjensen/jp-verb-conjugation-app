@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import SuggestionCard from './SuggestionCard.svelte';
@@ -24,5 +25,21 @@ describe('SuggestionCard for an addition', () => {
 			props: { suggestion: { ...addition, status: 'accepted', landed: true }, current: null, names: [] }
 		});
 		expect(body).toContain('Now in the data');
+	});
+});
+
+describe('the restyled card and inbox', () => {
+	const change: Suggestion = { ...addition, id: 2, action: 'change', author_name: 'aiko', proposed: { en: 'I eat, then I sleep.' } };
+
+	test("the author line has the author's initial in an avatar", () => {
+		const { body } = render(SuggestionCard, { props: { suggestion: change, current: { en: 'I eat, then sleep.' }, names: ['en'] } });
+		expect(body).toMatch(/class="avatar[^"]*"[^>]*>A</);
+		expect(body).toContain('suggests a change');
+	});
+
+	test('the inbox tabs are a segmented control and its buttons are pills', () => {
+		const page = readFileSync(new URL('../routes/admin/inbox/+page.svelte', import.meta.url), 'utf8');
+		expect(page).toMatch(/class="segmented"[^>]*role="group"|role="group"[^>]*class="segmented"/);
+		expect(page).not.toMatch(/class="[^"]*\bsmall\b[^"]*"/);
 	});
 });
