@@ -15,7 +15,9 @@ struct SearchResultsList: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            // Lazy, as is each section's card: a short query can match nearly everything (every verb
+            // meaning has "to", every verb a た form), and only the rows on screen should be built.
+            LazyVStack(alignment: .leading, spacing: 18) {
                 SearchScopeChips(scope: $scope)
                 Text(SearchDisplay.resultsLine(query: query, readingAs: results.readingAs, count: results.count))
                     .font(.subheadline)
@@ -48,7 +50,7 @@ struct SearchResultsList: View {
     private func section(_ title: String, @ViewBuilder rows: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader(title)
-            VStack(spacing: 0) {
+            LazyVStack(spacing: 0) {
                 Group(subviews: rows()) { subviews in
                     ForEach(Array(subviews.enumerated()), id: \.offset) { index, subview in
                         if index > 0 { Divider().overlay(palette.rule) }
