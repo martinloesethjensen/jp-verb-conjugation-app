@@ -2,9 +2,9 @@ import Foundation
 
 /// The date strings the Word Bank puts in file names and import notes. Fixed and
 /// locale-independent: an exported file's name must not change with the device's region.
-enum WordBankDates {
-    /// `yyyy-MM-dd`, for export names and the day an import was merged.
-    static func day(_ date: Date) -> String {
+public enum WordBankDates {
+    /// `yyyy-MM-dd`, for export names, the day an import was merged and an entry's dates.
+    public static func day(_ date: Date) -> String {
         string(from: date, format: "yyyy-MM-dd")
     }
 

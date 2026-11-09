@@ -93,7 +93,7 @@ Run `make` for the full list. Common ones:
 |---|---|
 | `Romaji.toHiragana(_:)` | Convert romaji queries to hiragana (Hepburn/Nihon-shiki) |
 | `JapaneseNormalizer.key/looseKey/tagKey/kanaForm` | Canonical Japanese comparison (NFKC, katakana→hiragana, long vowels, tags) |
-| `KanjiExtraction.kanji(in:)` | Distinct kanji for lookup chips |
+| `KanjiExtraction.kanji(in:)`, `KanjiExtraction.chips(text:spelling:standard:)` | Distinct kanji for lookup chips; an entry's chips and the one field they come from |
 | `SVGPathData.parse(_:)`, `SVGPoint` | SVG `d` strings to path elements (arcs as cubics), Foundation-only |
 | `StampShape`, `StampStroke` | The twelve results/icon stamps as path data in the seal's 120-unit box |
 | `FormHighlight.range(of:for:in:)` | Where a kana form sits in an example sentence, spelled with the verb's kanji or in kana |
@@ -112,7 +112,7 @@ Run `make` for the full list. Common ones:
 | `FolderTree` | Word Bank folder queries (descendants, paths, moves) |
 | `WordBankArchive`, `WordBankImportPlanner`, `WordBankTransfer`, `WordBankEntryCombiner`, `WordBankSmartFolder`, `WordBankBackupStore` | Import/export/merge/backup logic |
 | `TagSuggester`, `RecentSearches`, `DialectCatalogue` | Word Bank tag and search supporting logic |
-| `WordBankDates.day/timestamp` | Fixed, locale-independent date stamps in Word Bank file names and notes |
+| `WordBankDates.day/timestamp` (public) | Fixed, locale-independent date stamps in Word Bank file names and notes |
 | `matchesSearch`, `matchesGrammarSearch`, `searchCounters`, `WordBankSearchIndex` | Search implementations |
 | `GlobalSearch.results`, `SearchScope`, `GlobalSearchResults` | The Search tab's one search over all four, with the level setting, hidden-match count and the romaji reading line |
 | `GrammarHighlight`, `MistakeMark`, `GrammarPoint.formula`, `AttachmentRule.example`, `ConjugationTable` | Grammar page helpers: where a lesson's pattern sits in an example, which part of a wrong form is wrong, the formula header, a rule's live example, polite/casual rows |
