@@ -113,6 +113,18 @@ of `rule` and `muted`; card outlines draw at 1.5 pt.
 `accent` fills switches only. Text buttons, links and the selected tab use `button`. Pastel, pastelDark,
 Ice cream and iceCreamDark set `fillsTypePills`.
 
+## Onboarding
+
+A first-run flow of five pages (welcome, levels, furigana, theme, first verb), shown once on a new
+install after the launch seal. An install that has ever accepted verb data, or has a stored level or
+furigana setting, skips it for good; a flow left unfinished shows again on the next launch
+(`OnboardingProgress`). The pages start with N5 and N4 picked, furigana on and Light. The theme page
+offers Light, Pastel, Matcha, Latte, Northern lights and Nocturnal (Pastel takes the board's Dark
+swatch, now the dark half of Light), each drawn in the half that is showing, and repaints the flow
+at once. Finishing writes only the hidden levels, furigana and the theme, never Appearance or
+Seasonal. Studied levels keep every dataset visible: a learner studying only N3 still sees N4 verbs
+(`LevelSettings.studying`).
+
 ## Boards → plans
 
 | Plan | Scope | Canvas boards |
@@ -123,7 +135,7 @@ Ice cream and iceCreamDark set `fillsTypePills`.
 | 2c. Launch screen and first frame (built) | Paper launch screen with the 活 seal (Shippori Mincho B1), the themed first frame that fades to content | Launch screen, Themed first frame |
 | 3. Kanji stroke order (built) | KanjiVG + KANJIDIC2 (all jōyō plus the app's kanji) as a signed `data/` file + schema + spec, a seventh concrete sync service, path parser, Watch/Trace sheet, entry points (spec: `2026-11-07-kanji-stroke-order-design.md`) | Kanji stroke order, trace, opening it |
 | 4. Global search (built) | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
-| 5. Onboarding | Levels, furigana, theme, first verb | Onboarding |
+| 5. Onboarding (built) | Levels, furigana, theme, first verb | Onboarding |
 | 6. Theme personality | Alternate app icons, title motifs, results stamps | Theme personality |
 | 7. Word Bank depth | Entry page and editor restyle, suggestion card | Word Bank entry, add a word |
 
