@@ -283,8 +283,9 @@
 
 	@media (max-width: 720px) {
 		.actions :global(button:not(.link)) {
-			flex: 1 1 0;
+			flex: 1 1 auto;
 			padding: 0 0.75rem;
+			white-space: nowrap;
 		}
 	}
 
