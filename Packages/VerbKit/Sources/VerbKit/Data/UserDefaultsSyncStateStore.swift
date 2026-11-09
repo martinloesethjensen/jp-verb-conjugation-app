@@ -133,6 +133,13 @@ public final class UserDefaultsSyncStateStore: SyncStateStoring, @unchecked Send
         defaults.set(manifest.sha256, forKey: kanjiHashKey)
     }
 
+    /// Whether `defaults` (where the app keeps its sync state) has ever accepted verb data: an
+    /// existing install. Reads the raw keys, so an app update (a new build) still counts.
+    public static func hasAcceptedVerbs(in defaults: UserDefaults) -> Bool {
+        defaults.string(forKey: "VerbKit.lastSyncedManifest.version") != nil
+            || defaults.string(forKey: "VerbKit.highestAcceptedVersion.verbs") != nil
+    }
+
     public func highestAcceptedVersion(for file: String) -> String? {
         defaults.string(forKey: "VerbKit.highestAcceptedVersion.\(file)")
     }

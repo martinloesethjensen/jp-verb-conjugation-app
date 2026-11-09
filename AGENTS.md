@@ -101,7 +101,10 @@ Run `make` for the full list. Common ones:
 | `Verb.units(for:)` / `Verb.dictionaryUnits` | A kana form (or the dictionary form) as ruby units spelled with the verb's kanji stem |
 | `PotentialPattern(verb:)` | How the potential form is built (ru, u, する, くる); nil without one |
 | `Verb.displayTitle` / `Word.displayTitle` | `"dict (kanji)"` title for widgets, Spotlight, intents and pickers |
-| `LevelSettings` + `Leveled` | Hidden-JLPT-level filtering, summaries and visibility checks |
+| `LevelSettings` + `Leveled` | Hidden-JLPT-level filtering, summaries and visibility checks; `LevelSettings.studying(_:amongEach:)` for "levels I study" without emptying a dataset |
+| `OnboardingProgress` | Show-once gate for the first-run flow, with an existing-install skip (`begin` before the stores install data, `finish`) |
+| `OnboardingChoices` | The first-run flow's picks (levels, furigana, theme) and how they are written |
+| `FuriganaSetting.defaultsKey` | The "Show furigana" App Group key |
 | `SpeechText.spoken/clipName` | Clean text for TTS and the recorded-clip filename contract |
 | `DataVersion.isOlder(_:than:)` | Reject replayed/older manifests |
 | `Route`, `Route+URL`, `QuizLink` | Navigation and deep links (`verbtable://`) |
@@ -147,7 +150,9 @@ Run `make` for the full list. Common ones:
 | `KanjiStrokeCanvas`, `KanjiStrokeShape` | A kanji's strokes up to a step in the 109-unit box (ink, red current stroke, faint rest, numbers, start dot), scaled to any square |
 | `Path(svg:)` | A SwiftUI `Path` from `SVGPathData.parse` elements (the seal and the kanji strokes) |
 | `SearchTab` | The Search tab (`Tab(role: .search)` in `MainTabView`): `GlobalSearch` over all four parts, scope chips, recents (`search.recentQueries`), the hidden-levels row |
-| `LessonHeader`, `FormulaCard`, `LessonUsages`, `ExampleList`, `FormsTable`, `WrongForm(text:right:)`, `RightForm` | Grammar lesson pieces: header with formula and Practise; numbered usages; examples on a ruled card with the pattern underlined; Polite/Casual table; a wrong form marking only its wrong part |
+| `LessonHeader`, `FormulaCard`, `LessonUsages`, `ExampleList`, `FormsTable`, `WrongForm(text:candidates:)`, `RightForm` | Grammar lesson pieces: header with formula and Practise; numbered usages; examples on a ruled card with the pattern underlined; Polite/Casual table; a wrong form marking only its wrong part |
+| `ThemeSwatch` | A theme's swatch (its half that is showing, ink ring when selected), for Settings › Theme and onboarding |
+| `OnboardingOption` | A selectable onboarding card: 2 pt ink border and `.isSelected` when chosen |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |

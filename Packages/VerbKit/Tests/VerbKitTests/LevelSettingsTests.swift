@@ -83,4 +83,13 @@ final class LevelSettingsTests: XCTestCase {
         XCTAssertTrue(none.canHide(.n3, amongEach: [[.n5], grammar]))
         XCTAssertFalse(none.canHide(.n5, amongEach: [[.n5], grammar]))
     }
+
+    func testStudyingHidesWhatIsNotPicked() {
+        XCTAssertEqual(LevelSettings.studying([.n5, .n4], amongEach: [[.n5, .n4]]).hidden, [.n3, .n2, .n1])
+    }
+
+    func testStudyingKeepsEveryDatasetVisible() {
+        let settings = LevelSettings.studying([.n3], amongEach: [[.n5, .n4], [.n5, .n4, .n3, .n2], []])
+        XCTAssertEqual(settings.hidden, [.n5, .n2, .n1])   // verbs keep N4; lessons already show N3
+    }
 }
