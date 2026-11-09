@@ -95,6 +95,13 @@ Access roles widen from `admin | reviewer` to `admin | teacher | reviewer` (`use
 One teacher's acceptance is enough; there is no second check. `suggestions.decided_by` already
 records who decided, and the audit log covers every decision.
 
+**As built (step 3, 2026-11-09):** `users.role` gained `teacher` (migration 0007). The inbox and its
+decisions left `/api/admin/*`, which only the owner's GitHub sign-in reaches, for `/api/inbox` and
+`/api/decide`, open to teachers and the owner through either sign-in; the web inbox moved to `/inbox`. The
+owner sets access roles on the Reviewers page (`POST /api/admin/users/access`, teacher or reviewer only; the
+owner's own role never changes there). Deciding one's own suggestion is refused for everyone, the owner
+included.
+
 ## Reply alerts
 
 - **Who is told:** the author of a suggestion or note; anyone who commented in its thread; the author
