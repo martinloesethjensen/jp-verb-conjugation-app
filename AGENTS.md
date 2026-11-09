@@ -157,6 +157,7 @@ Run `make` for the full list. Common ones:
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Paper tag capsule: ink text on `card`, map-pin glyph and ink outline for a dialect tag, number sign, `rule` outline and a colour dot for a custom one |
 | `PaperField`, `PaperFieldSection`, `PaperDivider` | Labelled fields in a paper card, for editors |
+| `EntrySuggestionCard` | The Word Bank editor's on-device suggestion: one dashed card with Use all and Dismiss (`EntrySuggestionModel.dismiss()`) |
 | `QuizChoiceButton` | Shared answer button (colors, shapes, correct/wrong states) |
 | `QuizHeader`, `QuizChoiceGrid` | Quiz progress/score header and two-column answer grid |
 | `QuizPromptCard`, `QuizFeedbackCard`, `QuizMissedCard` | Question, feedback and missed-question card surfaces |

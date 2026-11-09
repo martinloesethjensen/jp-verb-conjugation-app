@@ -99,6 +99,8 @@ public final class EntrySuggestionModel {
         /// content is `ready`, with `isUnsure` set.
         case unsure
         case failed
+        /// The learner dismissed the suggestion; it stays hidden until the text changes.
+        case dismissed
     }
 
     public private(set) var state: State = .idle
@@ -110,6 +112,8 @@ public final class EntrySuggestionModel {
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var lastText = ""
     @ObservationIgnored private var lastAsked: String?
+    /// The normalised text the learner dismissed suggestions for.
+    @ObservationIgnored private var dismissedKey: String?
 
     public init(
         suggester: EntrySuggesting?, pause: Duration = .seconds(1), minimumLength: Int = 2,
@@ -136,8 +140,22 @@ public final class EntrySuggestionModel {
             state = .idle
             return
         }
+        if let dismissedKey {
+            if JapaneseNormalizer.key(trimmed) == dismissedKey {
+                state = .dismissed
+                return
+            }
+            self.dismissedKey = nil
+        }
         guard JapaneseNormalizer.key(trimmed) != lastAsked.map(JapaneseNormalizer.key) else { return }
         run(trimmed, suggester: suggester, waiting: true)
+    }
+
+    /// Hides the suggestion for the current text (stopping a request in flight) until the text changes.
+    public func dismiss() {
+        task?.cancel()
+        dismissedKey = JapaneseNormalizer.key(lastText)
+        state = .dismissed
     }
 
     /// Asks again for the current text, without waiting.

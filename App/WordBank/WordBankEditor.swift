@@ -144,90 +144,34 @@ struct WordBankEditor: View {
         Set(store.dialectTags.filter { draft.dialectTagIDs.contains($0.id) }.compactMap(\.catalogueID))
     }
 
+    private var suggestionRest: EntrySuggestion? {
+        guard case let .ready(full) = suggestions.state else { return nil }
+        return full.removing(whatIsIn: draft, appliedDialectCatalogueIDs: appliedCatalogueIDs)
+    }
+
+    private var suggestionDialectName: String? {
+        suggestionRest?.dialectCatalogueID.flatMap { id in DialectCatalogue.bundled.dialects.first { $0.id == id }?.name }
+    }
+
+    private var suggestionCard: some View {
+        EntrySuggestionCard(
+            state: suggestions.state, rest: suggestionRest, dialectName: suggestionDialectName,
+            onUseAll: { if let rest = suggestionRest { useAll(rest) } },
+            onDismiss: { suggestions.dismiss() },
+            onRetry: { suggestions.retry() }
+        )
+    }
+
     @ViewBuilder
     private var suggestionsSection: some View {
         switch suggestions.state {
-        case .idle, .unavailable:
+        case .idle, .unavailable, .dismissed:
             EmptyView()
-        case .nothing:
-            suggestionNote("No suggestions for this one.")
-        case .unsure:
-            suggestionNote("The on-device model wasn't sure about this one and had nothing to suggest.")
-        case .loading:
-            Section {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("Looking for suggestions…").font(.footnote).foregroundStyle(.secondary)
-                }
-            }
-        case .failed:
-            Section {
-                HStack {
-                    Label("Couldn't get suggestions", systemImage: "exclamationmark.circle").font(.footnote)
-                    Spacer()
-                    Button("Try again") { suggestions.retry() }.font(.footnote.weight(.semibold)).buttonStyle(.borderless)
-                }
-            }
-        case .ready(let full):
-            let rest = full.removing(whatIsIn: draft, appliedDialectCatalogueIDs: appliedCatalogueIDs)
-            if rest.isEmpty {
-                suggestionNote("Nothing new to suggest: the entry already has it.")
-            } else {
-                Section {
-                    WrappingFlowLayout(spacing: 8) { suggestionChips(rest) }
-                        .padding(.vertical, 4)
-                    Button("Use all", systemImage: "wand.and.stars") { useAll(rest) }
-                } header: {
-                    Text(rest.isUnsure ? "Guesses" : "Suggestions")
-                } footer: {
-                    Text(rest.isUnsure
-                         ? "The on-device model wasn't sure about these. Check them before adding."
-                         : "Suggested on this device. Check them: dialect words are often wrong.")
-                }
-            }
+        default:
+            Section { suggestionCard }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
         }
-    }
-
-    /// A one-line note in place of the chips, so a finished request never ends in silence.
-    private func suggestionNote(_ text: String) -> some View {
-        Section {
-            Label(text, systemImage: "sparkles")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder
-    private func suggestionChips(_ rest: EntrySuggestion) -> some View {
-        if let reading = rest.reading {
-            chip("Reading", reading) { draft.apply(reading: reading) }
-        }
-        ForEach(rest.standardForms, id: \.written) { form in
-            chip("Standard", form.written) { draft.apply(standardForm: form) }
-        }
-        ForEach(rest.meanings, id: \.self) { meaning in
-            chip("Meaning", meaning) { draft.apply(meaning: meaning) }
-        }
-        if let kind = rest.kind {
-            chip("Kind", kind.rawValue.capitalized) { draft.apply(kind: kind) }
-        }
-        if let id = rest.dialectCatalogueID, let record = DialectCatalogue.bundled.dialects.first(where: { $0.id == id }) {
-            chip("Dialect", record.name) { applyDialect(record) }
-        }
-    }
-
-    private func chip(_ label: String, _ value: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                Text(value).font(.callout)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(palette.button.opacity(0.12), in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(label): \(value). Tap to add.")
     }
 
     private func useAll(_ rest: EntrySuggestion) {

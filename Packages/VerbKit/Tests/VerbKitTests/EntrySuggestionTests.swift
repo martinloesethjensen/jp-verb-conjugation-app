@@ -35,6 +35,31 @@ final class EntrySuggestionModelTests: XCTestCase {
         for _ in 0..<20 { await Task.yield() }
     }
 
+    func testDismissHidesUntilTheTextChanges() async {
+        let fake = FakeSuggester()
+        let model = model(fake)
+        model.textChanged("ほんま"); await settle()
+        model.dismiss()
+        XCTAssertEqual(model.state, .dismissed)
+        model.textChanged("ほんま "); await settle()
+        XCTAssertEqual(model.state, .dismissed)
+        XCTAssertEqual(fake.calls, ["ほんま"])
+        model.textChanged("めっちゃ"); await settle()
+        XCTAssertEqual(model.state, .ready(EntrySuggestion(meanings: ["x"])))
+        XCTAssertEqual(fake.calls, ["ほんま", "めっちゃ"])
+    }
+
+    func testDismissWhileLoadingStopsTheRequest() async {
+        let fake = FakeSuggester()
+        fake.holding = true
+        let model = model(fake)
+        model.textChanged("ほんま"); await settle()
+        XCTAssertEqual(model.state, .loading)
+        model.dismiss()
+        fake.release(); await settle()
+        XCTAssertEqual(model.state, .dismissed)
+    }
+
     func testNoSuggesterOrAnUnavailableOneMeansUnavailable() async {
         let none = model(nil)
         none.textChanged("おおきに")
