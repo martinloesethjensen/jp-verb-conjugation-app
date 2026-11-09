@@ -1,19 +1,41 @@
 import SwiftUI
 import VerbKit
 
-/// A form learners get wrong. Not colour alone: a ✗, strikethrough and a spoken "wrong".
+/// A form learners get wrong. Not colour alone: a ✗, strikethrough and a spoken "wrong". With
+/// `candidates` (correct sentences, `GrammarPoint.mistakeCandidates(for:)`), only the part that
+/// differs (`MistakeMark`) is red and struck through; without them, the whole form is.
 struct WrongForm: View {
     let text: String
+    var candidates: [String] = []
+
+    @Environment(\.palette) private var palette
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "xmark").font(.caption.weight(.bold)).accessibilityHidden(true)
-            JapaneseText(text)
-                .strikethrough()
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(palette.mark)
+                .accessibilityHidden(true)
+            JapaneseText(text, marking: MistakeMark.wrongRange(wrong: text, candidates: candidates))
+                .foregroundStyle(palette.ink)
         }
-        .foregroundStyle(.red)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Wrong: \(text)")
+    }
+}
+
+/// The correct counterpart to a `WrongForm`: a ✓ in `good` and the sentence in ink.
+struct RightForm: View {
+    let text: String
+
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Image(systemName: "checkmark").font(.caption.weight(.bold)).foregroundStyle(palette.good)
+                .accessibilityHidden(true)
+            JapaneseText(text).font(.sentence(.body)).foregroundStyle(palette.ink)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Right: \(text)")
     }
 }
 

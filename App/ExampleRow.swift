@@ -8,6 +8,8 @@ struct ExampleRow: View {
     /// What the speaker says when it should not be the written sentence (a counter example that
     /// overrides a reading, so the voice cannot choose the wrong one). Defaults to the sentence.
     var speech: String?
+    /// The part of the sentence to underline (the lesson's pattern), in characters.
+    var highlight: Range<Int>?
     @State private var revealed = false
 
     var body: some View {
@@ -16,8 +18,8 @@ struct ExampleRow: View {
                 revealed.toggle()
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
-                    JapaneseText(example.jp)
-                        .font(.body)
+                    JapaneseText(example.jp, emphasizing: highlight)
+                        .font(.sentence(.body))
                         .multilineTextAlignment(.leading)
                     Text(revealed ? example.en : "Tap to show English")
                         .font(.caption)
