@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import HomeView from './HomeView.svelte';
@@ -44,4 +45,11 @@ test('the Continue card previews the next item with furigana', () => {
 	const { body } = render(HomeView, { props: { name: 'Aiko', queues: [q(2, 18, 40)], files: [], next, readings: { 食: 'た' } } });
 	expect(body).toContain('Next up');
 	expect(body).toMatch(/<ruby[^>]*>食<rt>た<\/rt><\/ruby>/);
+});
+
+test('a long unbroken name wraps instead of widening the page', () => {
+	const source = readFileSync(new URL('./HomeView.svelte', import.meta.url), 'utf8');
+	expect(source).toMatch(/\.intro h1 \{[^}]*overflow-wrap: anywhere/);
+	const card = readFileSync(new URL('./SuggestionCard.svelte', import.meta.url), 'utf8');
+	expect(card).toMatch(/\.who \{[^}]*overflow-wrap: anywhere/);
 });

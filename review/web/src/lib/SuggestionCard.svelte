@@ -187,7 +187,9 @@
 	}
 
 	.who {
+		min-width: 0;
 		font-weight: 700;
+		overflow-wrap: anywhere;
 	}
 
 	.when {

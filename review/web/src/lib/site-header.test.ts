@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import SiteHeader from './SiteHeader.svelte';
@@ -26,4 +27,11 @@ test('admins see Reviewers; everyone sees their initial, name and Sign out', () 
 test('the phone account menu holds the same links', () => {
 	const { body } = render(SiteHeader, { props: { me: admin } });
 	expect(body).toMatch(/<details class="account-menu[^"]*"[\s\S]*href="\/account"[\s\S]*Sign out[\s\S]*<\/details>/);
+});
+
+test('the phone account menu closes after navigating, on Escape and on an outside tap', () => {
+	const source = readFileSync(new URL('./SiteHeader.svelte', import.meta.url), 'utf8');
+	expect(source).toMatch(/afterNavigate\(\s*\(\)\s*=>\s*\(?menuOpen = false/);
+	expect(source).toMatch(/key === 'Escape'/);
+	expect(source).toMatch(/bind:open=\{menuOpen\}/);
 });

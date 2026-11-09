@@ -88,8 +88,9 @@
 		margin-bottom: 2rem;
 	}
 
-	h1 {
+	.intro h1 {
 		margin: 0.35rem 0 0.5rem;
+		overflow-wrap: anywhere;
 	}
 
 	.lead {

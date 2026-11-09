@@ -1,10 +1,26 @@
 <script lang="ts">
+	import { afterNavigate } from '$app/navigation';
 	import type { Me } from './api.ts';
 
 	let { me }: { me: Me | null } = $props();
 
+	// The phone menu sits in the layout, which stays put between pages, so it closes itself.
+	let menuOpen = $state(false);
+	let menu = $state<HTMLDetailsElement>();
+	afterNavigate(() => (menuOpen = false));
+
+	function onkeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && menuOpen) menuOpen = false;
+	}
+
+	function onpointerdown(event: PointerEvent) {
+		if (menuOpen && menu && !menu.contains(event.target as Node)) menuOpen = false;
+	}
+
 	const initial = $derived(me ? (Array.from(me.display_name.trim())[0] ?? '?').toUpperCase() : '');
 </script>
+
+<svelte:window {onkeydown} {onpointerdown} />
 
 <header class="bar">
 	<div class="inner">
@@ -25,7 +41,7 @@
 				<!-- Cloudflare Access's own endpoint: ends the sign-in for this hostname (reviewer and admin). -->
 				<a href="/cdn-cgi/access/logout" data-sveltekit-reload>Sign out</a>
 			</nav>
-			<details class="account-menu">
+			<details class="account-menu" bind:open={menuOpen} bind:this={menu}>
 				<summary aria-label="Account: {me.display_name}">
 					<span class="initial" aria-hidden="true">{initial}</span>
 				</summary>
