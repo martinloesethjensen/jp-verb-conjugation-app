@@ -107,6 +107,14 @@ Six forms a pattern attaches to, per word class (model words たべる, たか�
 - `pattern` and `example` stay as the human-readable line.
 - `update_data.py` rejects unknown slots, `stem` on a noun rule, `da_to_na` where it
   cannot apply, and `then` without `slots`.
+- `kana_row` (added 2026-11-10, optional, verb rules only): `"a"`, `"i"`, `"u"`, `"e"` or `"o"`,
+  the kana row a u-verb's last kana moves to (`"e"` for the potential, `"o"` for the
+  volitional). Clients show a kana-row table built from the rule's `example`, one row per
+  `A → B` pair whose `A` ends in a u-verb ending and whose `B` starts with `A`'s stem plus that
+  ending moved to the row (飲む → 飲め…). Each row shows the ending in all five rows, あ to
+  お, with the target row marked; う takes わ in the あ-row. Pairs that do not fit (する, a
+  ru-verb) are left out of the table. `update_data.py` rejects other values, a non-verb rule,
+  and a rule with no fitting pair. VerbKit: `KanaRow`, `GodanEnding`, `KanaRowTable`.
 
 **Grammar card field** `contrasts` (optional list):
 

@@ -237,12 +237,11 @@ public struct VerbMatcher: Sendable {
         )
     }
 
-    private static let iRow: [Character: Character] = [
-        "い": "う", "き": "く", "ぎ": "ぐ", "し": "す", "ち": "つ", "に": "ぬ", "び": "ぶ", "み": "む", "り": "る",
-    ]
-    private static let aRow: [Character: Character] = [
-        "わ": "う", "か": "く", "が": "ぐ", "さ": "す", "た": "つ", "な": "ぬ", "ば": "ぶ", "ま": "む", "ら": "る",
-    ]
+    /// The dictionary ending for a kana in `row` (み in .i → む), from the kana table.
+    private static func godanEnding(of kana: Character, in row: KanaRow) -> Character? {
+        guard let position = GodanEnding.position(of: kana), position.row == row else { return nil }
+        return position.ending
+    }
 
     /// Probable dictionary forms of a verb from the token before its ending, best first:
     /// 降っ → 降る, 降う, 降つ; 遅れ → 遅れる; 思い + ます → 思う; 守ら + ない → 守る.
@@ -257,12 +256,12 @@ public struct VerbMatcher: Sendable {
         case "い": return [base + (ending.hasPrefix("で") || ending.hasPrefix("だ") ? "ぐ" : "く")]
         case "し": return [base + "す"]
         default:
-            if let u = iRow[last] {
+            if let u = godanEnding(of: last, in: .i) {
                 // A godan masu stem (思い, 置き), or a ru-verb stem (起き): only a ru-verb's
                 // stem takes た and て directly.
                 return masu ? [base + String(u), stem + "る"] : [stem + "る"]
             }
-            if let u = aRow[last], ending.hasPrefix("な") { return [base + String(u)] }
+            if let u = godanEnding(of: last, in: .a), ending.hasPrefix("な") { return [base + String(u)] }
             return [stem + "る"]
         }
     }

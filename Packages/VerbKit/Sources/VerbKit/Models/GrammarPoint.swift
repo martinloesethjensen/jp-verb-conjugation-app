@@ -73,10 +73,13 @@ public struct AttachmentRule: Codable, Hashable, Sendable {
     public var daToNa: Bool
     /// What follows the slot (ので, すぎる). Nil when the rule only tags its slots.
     public var then: String?
+    /// The kana row a u-verb's ending moves to (.e for the potential): the lesson shows the
+    /// kana-row table for the rule's examples (`KanaRowTable`). Nil for most rules.
+    public var kanaRow: KanaRow?
 
     public init(
         wordClass: WordClass, condition: String? = nil, pattern: String, example: String, note: String? = nil,
-        slots: [GrammarSlot] = [], daToNa: Bool = false, then: String? = nil
+        slots: [GrammarSlot] = [], daToNa: Bool = false, then: String? = nil, kanaRow: KanaRow? = nil
     ) {
         self.wordClass = wordClass
         self.condition = condition
@@ -86,6 +89,7 @@ public struct AttachmentRule: Codable, Hashable, Sendable {
         self.slots = slots
         self.daToNa = daToNa
         self.then = then
+        self.kanaRow = kanaRow
     }
 
     enum CodingKeys: String, CodingKey {
@@ -97,6 +101,7 @@ public struct AttachmentRule: Codable, Hashable, Sendable {
         case slots
         case daToNa = "da_to_na"
         case then
+        case kanaRow = "kana_row"
     }
 
     /// The new fields may be absent, so lessons published before slots still decode.
@@ -110,6 +115,7 @@ public struct AttachmentRule: Codable, Hashable, Sendable {
         slots = try c.decodeIfPresent([GrammarSlot].self, forKey: .slots) ?? []
         daToNa = try c.decodeIfPresent(Bool.self, forKey: .daToNa) ?? false
         then = try c.decodeIfPresent(String.self, forKey: .then)
+        kanaRow = try c.decodeIfPresent(KanaRow.self, forKey: .kanaRow)
     }
 
     /// The pattern built for `word` in `slot` (しずか + なので), or nil when the rule is for

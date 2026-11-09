@@ -1672,6 +1672,36 @@ def check_keywords(pid, point):
     return errors
 
 
+GODAN_ROWS = {
+    "う": "わいうえお", "く": "かきくけこ", "ぐ": "がぎぐげご", "す": "さしすせそ", "つ": "たちつてと",
+    "ぬ": "なにぬねの", "ぶ": "ばびぶべぼ", "む": "まみむめも", "る": "らりるれろ",
+}
+KANA_ROWS = "aiueo"
+
+
+def kana_row_errors(rule):
+    """Problems with an attachment rule's kana_row: it must be a vowel row on a verb rule, and every
+    'A → B' example whose A ends in a u-verb ending must move that ending to the row (飲む → 飲め…).
+    Pairs for する or ru-verbs may share the rule; at least one pair must fit."""
+    row = rule.get("kana_row")
+    if row not in tuple(KANA_ROWS):
+        return [f"attachment kana_row must be one of {list(KANA_ROWS)}"]
+    if rule.get("word_class") != "verb":
+        return ["attachment kana_row needs a verb rule"]
+    fits = 0
+    for pair in str(rule.get("example", "")).split(" / "):
+        sides = pair.split(" → ")
+        if len(sides) != 2 or not sides[0] or sides[0][-1] not in GODAN_ROWS:
+            continue
+        base, built = sides
+        moved = GODAN_ROWS[base[-1]][KANA_ROWS.index(row)]
+        if built.startswith(base[:-1] + moved):
+            fits += 1
+    if not fits:
+        return ["attachment kana_row needs at least one u-verb example pair that moves to that row"]
+    return []
+
+
 def validate_grammar(doc):
     """Returns a list of human-readable problems (empty when valid)."""
     errors = []
@@ -1743,6 +1773,8 @@ def validate_grammar(doc):
                     errors.append(f"{pid}: attachment then must be a non-empty string")
                 if slots is None:
                     errors.append(f"{pid}: attachment then needs slots")
+            if "kana_row" in a:
+                errors.extend(f"{pid}: {e}" for e in kana_row_errors(a))
 
         pitfalls = p.get("pitfalls")
         if not isinstance(pitfalls, list):
