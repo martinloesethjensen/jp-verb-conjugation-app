@@ -222,9 +222,9 @@ button.small {
 	font-size: 0.9rem;
 }
 
-/* Filter chips in a list toolbar: outlined while off, ink while on. 36px is accepted here, as on the canvas. */
+/* Filter chips in a list toolbar: outlined while off, ink while on. */
 .chip {
-	min-height: 36px;
+	min-height: 44px;
 	padding: 0 0.95rem;
 	border: 1px solid var(--ink);
 	border-radius: 999px;

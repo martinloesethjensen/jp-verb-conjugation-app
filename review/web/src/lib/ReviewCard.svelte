@@ -94,7 +94,12 @@
 		color: var(--muted);
 	}
 
+	/* A 44px target; the negative margin keeps the row as tall as its text. */
 	.what a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		margin: -10px 0;
 		color: var(--muted);
 	}
 

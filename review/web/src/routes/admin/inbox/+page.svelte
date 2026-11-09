@@ -118,9 +118,7 @@
 <div class="segmented" role="group" aria-label="Which suggestions">
 	{#each TABS as [value, label] (value)}
 		<button type="button" aria-pressed={status === value} onclick={() => show(value)}
-			>{label}{#if value === 'open' && status === 'open' && suggestions?.length}<span class="open-count"
-					>{suggestions.length}</span
-				>{/if}</button
+			>{label}{#if value === 'open' && status === 'open' && suggestions?.length}<span class="open-count"><span class="visually-hidden">{', '}</span>{suggestions.length}<span class="visually-hidden">{' open'}</span></span>{/if}</button
 		>
 	{/each}
 </div>

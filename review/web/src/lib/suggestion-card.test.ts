@@ -42,4 +42,17 @@ describe('the restyled card and inbox', () => {
 		expect(page).toMatch(/class="segmented"[^>]*role="group"|role="group"[^>]*class="segmented"/);
 		expect(page).not.toMatch(/class="[^"]*\bsmall\b[^"]*"/);
 	});
+
+	test('the Open tab reads its count as words, not "Open1"', () => {
+		// Svelte trims whitespace at the edges of an element's children, so the spaces are string expressions.
+		const page = readFileSync(new URL('../routes/admin/inbox/+page.svelte', import.meta.url), 'utf8');
+		expect(page).toContain(
+			`<span class="open-count"><span class="visually-hidden">{', '}</span>{suggestions.length}<span class="visually-hidden">{' open'}</span></span>`
+		);
+	});
+
+	test('the date goes through shortDate, which adds the year when it is not this year', () => {
+		const card = readFileSync(new URL('./SuggestionCard.svelte', import.meta.url), 'utf8');
+		expect(card).toContain('{shortDate(when)}');
+	});
 });

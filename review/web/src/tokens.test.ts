@@ -48,9 +48,10 @@ test('every text token passes 4.5:1 on paper and card', () => {
 			expect(contrastRatio(cssVar(fg), cssVar(bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
 });
 
-test('buttons are pills with 44px targets', () => {
+test('buttons and chips are pills with 44px targets', () => {
 	expect(ruleBody('button')).toMatch(/min-height:\s*44px/);
 	expect(ruleBody('button')).toMatch(/border-radius:\s*999px/);
+	expect(ruleBody('.chip')).toMatch(/min-height:\s*44px/);
 	expect(ruleBody('.chip')).toMatch(/border-radius:\s*999px/);
 });
 
