@@ -149,6 +149,7 @@
 							{readings}
 							{forms}
 							onaction={next}
+							onnext={next}
 							onskip={() => skipCurrent(current)}
 						/>
 					{:catch error}

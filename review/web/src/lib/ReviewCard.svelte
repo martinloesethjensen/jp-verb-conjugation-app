@@ -18,7 +18,8 @@
 		readings,
 		forms,
 		onaction,
-		onskip
+		onskip,
+		onnext
 	}: {
 		item: QueueItem;
 		/** The item's entry, or null when it left the data. */
@@ -29,6 +30,8 @@
 		forms: Record<string, string>;
 		onaction: () => void;
 		onskip: () => Promise<void>;
+		/** Approving stays on the item; "Next item" calls this. */
+		onnext?: () => void;
 	} = $props();
 
 	const value = $derived(entry ? partOf(entry, item.kind, item.item_id) : undefined);
@@ -69,6 +72,7 @@
 			extra={value.readings ?? {}}
 			{onaction}
 			{onskip}
+			{onnext}
 		/>
 	{:else}
 		<p class="gone">No longer in the data: {item.title}</p>

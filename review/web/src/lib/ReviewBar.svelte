@@ -20,7 +20,8 @@
 		forms,
 		extra = {},
 		onaction,
-		onskip
+		onskip,
+		onnext
 	}: {
 		review: EntryReview;
 		kind: string;
@@ -35,6 +36,8 @@
 		onaction?: () => void;
 		/** Offers "Not sure, skip" (queues only). */
 		onskip?: () => Promise<void>;
+		/** In a queue: approving stays on the item and offers "Next item", which calls this. */
+		onnext?: () => void;
 	} = $props();
 
 	const uid = $props.id();
@@ -99,11 +102,15 @@
 
 	{#if loaded}
 		<div class="actions">
-			{#if approved}
+			{#if approved && onnext}
+				<button type="button" class="primary" onclick={onnext}>Next item <span aria-hidden="true">→</span></button>
+				<span class="approved-note">You approved this.</span>
+				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
+			{:else if approved}
 				<button type="button" class="approved" disabled>Approved</button>
 				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
 			{:else}
-				<button type="button" class="primary" disabled={busy} onclick={() => run(() => review.approve(kind, id), onaction)}
+				<button type="button" class="primary" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? undefined : onaction)}
 					><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>Looks right</button
 				>
 			{/if}
@@ -189,6 +196,10 @@
 		margin-top: 1.25rem;
 		padding-top: 1.25rem;
 		border-top: 1px solid var(--rule);
+	}
+
+	.approved-note {
+		color: var(--muted);
 	}
 
 	.spacer {
