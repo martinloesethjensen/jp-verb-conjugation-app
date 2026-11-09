@@ -44,7 +44,7 @@ async fn the_export_token_reads_export_only() {
     for (method, path) in [
         ("GET", "/api/items"),
         ("GET", "/api/me"),
-        ("GET", "/api/admin/inbox"),
+        ("GET", "/api/inbox"),
         ("GET", "/api/admin/export"),
         ("POST", "/api/admin/exported"),
     ] {
@@ -86,7 +86,7 @@ async fn first_example(s: &SqliteStore, verb: &str) -> (String, String) {
 async fn decide(s: &SqliteStore, id: &Value, body: Value) {
     let mut body = body;
     body["id"] = id.clone();
-    let r = post(s, "/api/admin/decide", body, MARTIN).await;
+    let r = post(s, "/api/decide", body, MARTIN).await;
     assert_eq!(r.status, 200, "{}", r.body);
 }
 

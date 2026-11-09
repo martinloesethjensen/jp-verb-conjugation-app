@@ -54,13 +54,13 @@ async fn suggest_en(s: &SqliteStore, who: &str, en: &str) -> Value {
 }
 
 async fn inbox(s: &SqliteStore, status: &str) -> Vec<Value> {
-    let r = get(s, &format!("/api/admin/inbox?status={status}"), MARTIN).await;
+    let r = get(s, &format!("/api/inbox?status={status}"), MARTIN).await;
     assert_eq!(r.status, 200, "{}", r.body);
     r.body["suggestions"].as_array().unwrap().clone()
 }
 
 async fn decide(s: &SqliteStore, body: Value) -> support::review::Response {
-    post(s, "/api/admin/decide", body, MARTIN).await
+    post(s, "/api/decide", body, MARTIN).await
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -72,13 +72,13 @@ async fn the_owner_sees_open_suggestions_with_the_current_text() {
     assert_eq!(open.len(), 1);
     assert_eq!(open[0]["current"], current);
     assert_eq!(open[0]["author_name"], "Aiko");
-    let r = get(&s, "/api/admin/inbox", MARTIN).await;
+    let r = get(&s, "/api/inbox", MARTIN).await;
     assert_eq!(
         r.body["suggestions"].as_array().unwrap().len(),
         1,
         "open is the default"
     );
-    let r = get(&s, "/api/admin/inbox?status=nope", MARTIN).await;
+    let r = get(&s, "/api/inbox?status=nope", MARTIN).await;
     assert_eq!(r.status, 400);
 }
 
@@ -218,16 +218,88 @@ async fn deciding_twice_is_refused() {
 #[tokio::test(flavor = "current_thread")]
 async fn reviewers_cannot_use_the_inbox() {
     let s = seeded().await;
-    let r = get(&s, "/api/admin/inbox", AIKO).await;
+    for aud in ["reviewer-aud", "admin-aud"] {
+        let jwt = jwt_via(AIKO, aud);
+        let r = call_via(&s, "GET", "/api/inbox", None, &jwt).await;
+        assert_eq!(r.status, 403, "{aud}");
+        let body = json!({"id": 1, "decision": "accept"});
+        let r = call_via(&s, "POST", "/api/decide", Some(body), &jwt).await;
+        assert_eq!(r.status, 403, "{aud}");
+    }
+}
+
+fn decided_by(s: &SqliteStore, id: &Value) -> String {
+    s.conn
+        .borrow()
+        .query_row(
+            "SELECT decided_by FROM suggestions WHERE id = ?1",
+            [id.as_i64().unwrap()],
+            |r| r.get(0),
+        )
+        .unwrap()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_teacher_sees_the_inbox_and_accepts_someone_elses_suggestion() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, "Keiko accepts this.").await;
+    let r = get(&s, "/api/inbox?status=open", KEIKO).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["suggestions"].as_array().unwrap().len(), 1);
+    let r = post(&s, "/api/decide", json!({"id": id, "decision": "accept"}), KEIKO).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["status"], "accepted");
+    assert_eq!(decided_by(&s, &id), KEIKO);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn nobody_decides_their_own_suggestion() {
+    let s = seeded().await;
+    let own = suggest_en(&s, KEIKO, "Mine.").await;
+    for decision in ["accept", "decline"] {
+        let r = post(&s, "/api/decide", json!({"id": own, "decision": decision}), KEIKO).await;
+        assert_eq!(r.status, 403, "{decision}");
+        assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
+    }
+    let martins = suggest_en(&s, MARTIN, "The owner's.").await;
+    let r = decide(&s, json!({"id": martins, "decision": "accept"})).await;
     assert_eq!(r.status, 403);
-    let r = post(
-        &s,
-        "/api/admin/decide",
-        json!({"id": 1, "decision": "accept"}),
-        AIKO,
-    )
-    .await;
-    assert_eq!(r.status, 403);
+    assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
+    let r = post(&s, "/api/decide", json!({"id": martins, "decision": "accept"}), KEIKO).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let r = decide(&s, json!({"id": own, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_own_addition_is_guarded_too() {
+    let s = seeded().await;
+    let r = post(&s, "/api/add", json!({"dataset": "words", "kind": "entry",
+        "fields": {"class": "noun", "dict": "ねこ", "kanji": "猫", "meaning": "cat", "jlpt": "N5"}}), KEIKO).await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    let r = post(&s, "/api/decide", json!({"id": r.body["id"], "decision": "accept"}), KEIKO).await;
+    assert_eq!(r.status, 403, "{}", r.body);
+    assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_owner_decides_through_the_reviewer_sign_in() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, "Through the PIN sign-in.").await;
+    let jwt = jwt_via(MARTIN, "reviewer-aud");
+    let r = call_via(&s, "GET", "/api/inbox", None, &jwt).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let body = json!({"id": id, "decision": "decline"});
+    let r = call_via(&s, "POST", "/api/decide", Some(body), &jwt).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_old_admin_inbox_routes_are_gone() {
+    let s = seeded().await;
+    assert_eq!(get(&s, "/api/admin/inbox", MARTIN).await.status, 404);
+    let r = post(&s, "/api/admin/decide", json!({"id": 1, "decision": "accept"}), MARTIN).await;
+    assert_eq!(r.status, 404);
 }
 
 #[tokio::test(flavor = "current_thread")]

@@ -270,14 +270,14 @@ const ROUTES: &[Route] = &[
     },
     Route {
         method: "GET",
-        path: "/api/admin/inbox",
-        need: Need::Admin,
+        path: "/api/inbox",
+        need: Need::Teacher,
         handler: Handler::Inbox,
     },
     Route {
         method: "POST",
-        path: "/api/admin/decide",
-        need: Need::Admin,
+        path: "/api/decide",
+        need: Need::Teacher,
         handler: Handler::Decide,
     },
     Route {

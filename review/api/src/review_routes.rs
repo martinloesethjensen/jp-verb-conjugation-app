@@ -610,7 +610,10 @@ pub async fn queue_item<S: ReviewStore>(
     }
 }
 
-// --- The owner's inbox ---------------------------------------------------------------------------
+// --- The inbox (teachers and the owner) -----------------------------------------------------------
+
+/// Teachers and the owner decide other people's suggestions, never their own.
+pub const OWN_SUGGESTION: &str = "someone else decides your own suggestion; withdraw it instead";
 
 pub const ACCEPT_STALE: &str = "the data changed since this was suggested; use Edit then accept";
 
@@ -709,6 +712,9 @@ pub async fn decide<S: Store + ReviewStore>(
         Ok(None) => return error(404, "no such suggestion"),
         Err(e) => return unavailable(e),
     };
+    if s.mine {
+        return error(403, OWN_SUGGESTION);
+    }
     if s.status != "open" {
         return error(409, DECIDED);
     }
