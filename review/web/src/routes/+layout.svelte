@@ -4,6 +4,7 @@
 	import favicon from '#lib/assets/favicon.svg';
 	import { ApiError, getMe, type Me } from '#lib/api.ts';
 	import { setSession } from '#lib/session.ts';
+	import SiteHeader from '#lib/SiteHeader.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
@@ -33,23 +34,7 @@
 	<title>Kotoba Table review</title>
 </svelte:head>
 
-<header class="bar">
-	<!-- Full page loads between the reviewer and admin pages: they sit behind different Access sign-ins. -->
-	<a class="name" href="/" data-sveltekit-reload>
-		<span class="mark" lang="ja">添削</span>
-		<span>Kotoba Table review</span>
-	</a>
-	{#if me}
-		<nav>
-			{#if me.role === 'admin'}
-				<a href="/admin" data-sveltekit-reload>Reviewers</a>
-			{/if}
-			<a class="who" href="/account" title="Change your name">{me.display_name}</a>
-			<!-- Cloudflare Access's own endpoint: ends the sign-in for this hostname (reviewer and admin). -->
-			<a href="/cdn-cgi/access/logout" data-sveltekit-reload>Sign out</a>
-		</nav>
-	{/if}
-</header>
+<SiteHeader {me} />
 
 <main>
 	{#if failure}
@@ -62,52 +47,10 @@
 </main>
 
 <style>
-	.bar {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.5rem 1.5rem;
-		max-width: 60rem;
-		margin: 0 auto;
-		padding: 1.25rem var(--space);
-		border-bottom: 1px solid var(--rule);
-	}
-
-	.name {
-		display: flex;
-		align-items: baseline;
-		gap: 0.6rem;
-		text-decoration: none;
-		font-weight: 500;
-	}
-
-	.mark {
-		font-size: 1.4rem;
-		font-weight: 700;
-		letter-spacing: 0.05em;
-	}
-
-	nav {
-		display: flex;
-		align-items: baseline;
-		gap: 1.25rem;
-	}
-
-	.who {
-		color: var(--muted);
-		text-decoration: none;
-	}
-
-	.who:hover {
-		color: var(--ink);
-		text-decoration: underline;
-	}
-
 	main {
-		max-width: 60rem;
+		max-width: 1120px;
 		margin: 0 auto;
-		padding: 2rem var(--space) 4rem;
+		padding: 3rem 1rem 4.5rem;
 	}
 
 	.quiet {
