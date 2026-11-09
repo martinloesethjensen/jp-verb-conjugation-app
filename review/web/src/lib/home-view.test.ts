@@ -38,3 +38,10 @@ test('browse cards have Japanese labels with furigana, and survive a failed snap
 	expect(body).toContain('<ruby>助数詞<rt>じょすうし</rt></ruby>');
 	expect(body.match(/Not loaded yet/g)).toHaveLength(4);
 });
+
+test('the Continue card previews the next item with furigana', () => {
+	const next = { dataset: 'verbs', kind: 'entry', item_id: 'taberu', entry_id: 'taberu', title: '食べる', note: '', position: 0, gone: false, mine: null };
+	const { body } = render(HomeView, { props: { name: 'Aiko', queues: [q(2, 18, 40)], files: [], next, readings: { 食: 'た' } } });
+	expect(body).toContain('Next up');
+	expect(body).toMatch(/<ruby[^>]*>食<rt>た<\/rt><\/ruby>/);
+});

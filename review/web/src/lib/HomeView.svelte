@@ -2,6 +2,7 @@
 	// Home: the greeting, the queue to continue, the other queues, and the four datasets to browse.
 	import { DATASETS, type QueueItem, type QueueSummary, type SnapshotFile } from './api.ts';
 	import { DATASET_JAPANESE, DATASET_TITLES } from './labels.ts';
+	import Japanese from './Japanese.svelte';
 	import QueueStack from './QueueStack.svelte';
 
 	let {
@@ -39,7 +40,14 @@
 {#if queues.length}
 	<section class="waiting" aria-label="Your queues">
 		{#if featured}
-			<QueueStack queue={featured} featured />
+			<QueueStack queue={featured} featured>
+				{#if next}
+					<span class="next">
+						<span class="eyebrow">Next up</span>
+						<span class="next-title"><Japanese text={next.title} {readings} /></span>
+					</span>
+				{/if}
+			</QueueStack>
 		{/if}
 		{#if others.length}
 			<ul class="queues">
@@ -192,7 +200,34 @@
 		color: var(--muted);
 	}
 
+	/* The next item on a strip of genkō paper. Hidden on phones to keep the card short. */
+	.next {
+		display: grid;
+		align-content: center;
+		gap: 0.5rem;
+		min-width: 14rem;
+		max-width: 22rem;
+		padding: 1.25rem 1.5rem;
+		border-radius: var(--radius-input);
+		background:
+			repeating-linear-gradient(
+				to bottom,
+				transparent 0 calc(2.5rem - 1px),
+				color-mix(in srgb, var(--grid) 38%, transparent) calc(2.5rem - 1px) 2.5rem
+			),
+			var(--paper);
+	}
+
+	.next-title {
+		font-size: 1.6rem;
+		line-height: 2.5rem;
+	}
+
 	@media (max-width: 720px) {
+		.next {
+			display: none;
+		}
+
 		.datasets {
 			grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 		}

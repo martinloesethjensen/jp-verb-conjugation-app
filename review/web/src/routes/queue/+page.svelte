@@ -6,6 +6,7 @@
 	import { getItem, getQueue, problem, skip, type Dataset, type Field, type Queue, type QueueItem } from '#lib/api.ts';
 	import Progress from '#lib/Progress.svelte';
 	import ReviewCard from '#lib/ReviewCard.svelte';
+	import { firstUndone } from '#lib/queue-items.ts';
 	import { loadReference } from '#lib/reference.ts';
 	import { EntryReview } from '#lib/review.svelte.ts';
 
@@ -22,7 +23,7 @@
 
 	const keyOf = (i: QueueItem) => `${i.dataset}/${i.kind}/${i.item_id}`;
 	const current = $derived(
-		data ? (data.items.find((i) => keyOf(i) === selected) ?? data.items.find((i) => !i.mine && !i.gone)) : undefined
+		data ? (data.items.find((i) => keyOf(i) === selected) ?? firstUndone(data.items)) : undefined
 	);
 
 	// Entries fetched in this visit, so moving between parts of one entry doesn't fetch it again.
