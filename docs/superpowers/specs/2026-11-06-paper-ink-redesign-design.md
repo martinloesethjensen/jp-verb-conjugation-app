@@ -135,6 +135,7 @@ Seasonal. Studied levels keep every dataset visible: a learner studying only N3 
 | 2c. Launch screen and first frame (built) | Paper launch screen with the 活 seal (Shippori Mincho B1), the themed first frame that fades to content | Launch screen, Themed first frame |
 | 3. Kanji stroke order (built) | KanjiVG + KANJIDIC2 (all jōyō plus the app's kanji) as a signed `data/` file + schema + spec, a seventh concrete sync service, path parser, Watch/Trace sheet, entry points (spec: `2026-11-07-kanji-stroke-order-design.md`) | Kanji stroke order, trace, opening it |
 | 4. Global search (built) | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
+| Grammar list and lesson (built) | Lesson layout with a formula header (endings as chips, a live example), Practise under it, genkō examples with the pattern underlined, common mistakes marking only the wrong part, a Polite / Casual forms table; the list as chips, two cards and level groups (owner's choice of mockups, 2026-11-08) | Grammar list, lesson (design-subagent mockups) |
 | 5. Onboarding (built) | Levels, furigana, theme, first verb | Onboarding |
 | 6. Theme personality | Alternate app icons, title motifs, results stamps | Theme personality |
 | 7. Word Bank depth | Entry page and editor restyle, suggestion card | Word Bank entry, add a word |
