@@ -149,6 +149,8 @@ Run `make` for the full list. Common ones:
 | `KanjiStrokeCanvas`, `KanjiStrokeShape` | A kanji's strokes up to a step in the 109-unit box (ink, red current stroke, faint rest, numbers, start dot), scaled to any square |
 | `Path(svg:)` | A SwiftUI `Path` from `SVGPathData.parse` elements (the seal and the kanji strokes) |
 | `SearchTab` | The Search tab (`Tab(role: .search)` in `MainTabView`): `GlobalSearch` over all four parts, scope chips, recents (`search.recentQueries`), the hidden-levels row |
+| `ThemeSwatch` | A theme's swatch (its half that is showing, ink ring when selected), for Settings › Theme and onboarding |
+| `OnboardingOption` | A selectable onboarding card: 2 pt ink border and `.isSelected` when chosen |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Dialect/custom tag capsule |

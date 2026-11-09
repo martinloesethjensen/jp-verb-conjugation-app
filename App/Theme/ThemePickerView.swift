@@ -104,36 +104,10 @@ struct ThemePickerView: View {
     }
 
     private func swatch(_ theme: ThemeID) -> some View {
-        let face = ThemePalette.resolve(theme, isDark: isDark, contrast: .standard)
-        let isSelected = theme == selected
-        return Button {
+        ThemeSwatch(theme: theme, isSelected: theme == selected, caption: seasonMonth(theme)) {
             themeRaw = theme.rawValue
             reloadWidgets()
-        } label: {
-            VStack(spacing: 4) {
-                ZStack(alignment: .topTrailing) {
-                    face.paper
-                    face.ink.frame(height: 22).frame(maxHeight: .infinity, alignment: .bottom)
-                    Circle().fill(face.mark).frame(width: 8, height: 8).padding(9)
-                }
-                .frame(width: 50, height: 50)
-                .clipShape(Circle())
-                .overlay(Circle().strokeBorder(face.rule, lineWidth: 1))
-                .padding(3)
-                .overlay(Circle().strokeBorder(isSelected ? palette.ink : .clear, lineWidth: 3))
-                Text(theme.displayName(isDark: isDark))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(palette.ink)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let month = seasonMonth(theme) {
-                    Text(month).font(.caption2).foregroundStyle(palette.muted)
-                }
-            }
-            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func seasonMonth(_ theme: ThemeID) -> String? {
