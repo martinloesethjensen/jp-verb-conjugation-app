@@ -402,6 +402,13 @@
 		display: none;
 	}
 
+	/* The next card slides in from the right; clip it so a phone never scrolls sideways meanwhile. */
+	.card-pane {
+		min-width: 0;
+		overflow-x: clip;
+		overflow-clip-margin: 8px;
+	}
+
 	.empty-filter {
 		margin: 0;
 		padding: 1rem 0.65rem;
