@@ -44,8 +44,18 @@
 </script>
 
 <article class="review-card">
-	<p class="what">{what}<span lang="ja">{owner}</span> · <a {href}>Open the whole entry</a></p>
-	{#if item.note}<p class="asks">Martin asks: {item.note}</p>{/if}
+	<p class="what">
+		<span>{what}<span lang="ja">{owner}</span></span>
+		<a {href}>Open the whole entry <span aria-hidden="true">↗</span></a>
+	</p>
+	{#if item.note}
+		<p class="asks">
+			<svg class="bubble" viewBox="0 0 20 20" aria-hidden="true"
+				><path d="M4 4h12a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 16 14H9l-4 3v-3H4a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 4 4z" /></svg
+			>
+			<span><strong>Martin asks:</strong> {item.note}</span>
+		</p>
+	{/if}
 	{#if value}
 		<PartView dataset={item.dataset} kind={item.kind} {value} {readings} {forms} />
 		<ReviewBar
@@ -67,7 +77,7 @@
 
 <style>
 	.review-card {
-		padding: 1.25rem 1.5rem;
+		padding: 28px 32px;
 		background: var(--card);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
@@ -75,7 +85,11 @@
 	}
 
 	.what {
-		margin: 0 0 0.75rem;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.25rem 1rem;
+		margin: 0 0 1rem;
 		font-size: 0.9rem;
 		color: var(--muted);
 	}
@@ -85,10 +99,30 @@
 	}
 
 	.asks {
-		margin: 0 0 0.75rem;
-		padding: 0.5rem 0.75rem;
+		display: flex;
+		gap: 0.6rem;
+		align-items: flex-start;
+		margin: 0 0 1rem;
+		padding: 0.75rem 1rem;
 		background: var(--paper);
-		border-radius: var(--radius);
+		border-radius: var(--radius-input);
+	}
+
+	.bubble {
+		flex: none;
+		width: 20px;
+		height: 20px;
+		margin-top: 0.15rem;
+		fill: none;
+		stroke: var(--muted);
+		stroke-width: 1.5;
+		stroke-linejoin: round;
+	}
+
+	@media (max-width: 720px) {
+		.review-card {
+			padding: 20px;
+		}
 	}
 
 	.gone {
