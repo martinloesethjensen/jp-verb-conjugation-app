@@ -101,7 +101,10 @@ Run `make` for the full list. Common ones:
 | `Verb.units(for:)` / `Verb.dictionaryUnits` | A kana form (or the dictionary form) as ruby units spelled with the verb's kanji stem |
 | `PotentialPattern(verb:)` | How the potential form is built (ru, u, する, くる); nil without one |
 | `Verb.displayTitle` / `Word.displayTitle` | `"dict (kanji)"` title for widgets, Spotlight, intents and pickers |
-| `LevelSettings` + `Leveled` | Hidden-JLPT-level filtering, summaries and visibility checks |
+| `LevelSettings` + `Leveled` | Hidden-JLPT-level filtering, summaries and visibility checks; `LevelSettings.studying(_:amongEach:)` for "levels I study" without emptying a dataset |
+| `OnboardingProgress` | Show-once gate for the first-run flow, with an existing-install skip (`begin` before the stores install data, `finish`) |
+| `OnboardingChoices` | The first-run flow's picks (levels, furigana, theme) and how they are written |
+| `FuriganaSetting.defaultsKey` | The "Show furigana" App Group key |
 | `SpeechText.spoken/clipName` | Clean text for TTS and the recorded-clip filename contract |
 | `DataVersion.isOlder(_:than:)` | Reject replayed/older manifests |
 | `Route`, `Route+URL`, `QuizLink` | Navigation and deep links (`verbtable://`) |

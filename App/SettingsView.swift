@@ -12,7 +12,7 @@ struct SettingsView: View {
     @AppStorage(ThemeChoice.seasonalKey, store: .appGroup) private var seasonalThemes = false
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
-    @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
+    @AppStorage(FuriganaSetting.defaultsKey, store: .appGroup) private var showFurigana = true
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
     @AppStorage(Speaker.voiceDefaultsKey, store: .appGroup) private var speechVoiceID = ""
     @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true

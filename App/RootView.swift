@@ -11,7 +11,7 @@ struct RootView: View {
     @Environment(DataSyncStatus.self) private var dataSyncStatus
     @Environment(FormCatalogueStore.self) private var formCatalogueStore
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
-    @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
+    @AppStorage(FuriganaSetting.defaultsKey, store: .appGroup) private var showFurigana = true
     @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
     @AppStorage(ReminderScheduler.minutesKey, store: .appGroup) private var reminderMinutes = ReminderScheduler.defaultMinutes
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
