@@ -85,14 +85,18 @@ struct GrammarListView: View {
     private var currentLevels: LevelSettings { scope == .mine ? settings : LevelSettings() }
     private var sections: [(lesson: CourseLesson, points: [GrammarPoint])] { lessonSections(in: currentLevels) }
 
+    /// My course groups lessons by course lesson, but only while not searching: a search looks
+    /// through every lesson, best match first, whichever chip is on.
+    private var showsCourse: Bool { mode == .byLesson && search.isEmpty }
+
     private var filtered: [GrammarPoint] {
-        mode == .byLevel ? matching(in: currentLevels) : sections.flatMap(\.points)
+        showsCourse ? sections.flatMap(\.points) : matching(in: currentLevels)
     }
 
     /// Matches hidden by the level setting, for the current search.
     private var hiddenMatchCount: Int {
-        guard scope == .mine, levelsHidden, mode == .byLesson || !search.isEmpty else { return 0 }
-        let all = mode == .byLevel ? matching(in: LevelSettings()).count
+        guard scope == .mine, levelsHidden, showsCourse || !search.isEmpty else { return 0 }
+        let all = !showsCourse ? matching(in: LevelSettings()).count
             : lessonSections(in: LevelSettings()).reduce(0) { $0 + $1.points.count }
         return all - filtered.count
     }
@@ -128,6 +132,34 @@ struct GrammarListView: View {
         .buttonStyle(.plain)
     }
 
+    /// Whether the overlay shows a message (nothing downloaded, no course, no lessons, no match);
+    /// the shortcut cards then stay out of the way so the two never overlap.
+    private var showsEmptyState: Bool {
+        !verbStore.hasGrammar
+            || (showsCourse && courseStore.course == nil)
+            || (showsCourse && lessonSections(in: LevelSettings()).isEmpty)
+            || (filtered.isEmpty && matchingMistakes.isEmpty)
+    }
+
+    /// "By level" / "My course": the first row, so it scrolls with the list instead of floating over it.
+    private var modeChips: some View {
+        HStack(spacing: 8) {
+            ForEach(GrammarListMode.allCases) { option in
+                Button {
+                    modeBinding.wrappedValue = option
+                } label: {
+                    FilterChip(option.title, isOn: mode == option)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(mode == option ? .isSelected : [])
+            }
+            Spacer(minLength: 0)
+        }
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+    }
+
     // Same row pattern as VerbListView: an explicit Button
     // sets the selection, and .tag keeps List's own selection
     // in sync (List(selection:) alone matches the row's id,
@@ -145,7 +177,9 @@ struct GrammarListView: View {
 
     var body: some View {
         List(selection: $selection) {
-            if search.isEmpty && verbStore.hasGrammar {
+            // Their own section, so the first card below keeps its rounded top.
+            if verbStore.hasGrammar { Section { modeChips } }
+            if search.isEmpty && verbStore.hasGrammar && !showsEmptyState {
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .top, spacing: 10) {
                         shortcut("Building blocks", detail: "Forms lessons attach to", systemImage: "square.stack.3d.up") {
@@ -174,7 +208,7 @@ struct GrammarListView: View {
                         ForEach(group.points) { point in pointRow(point) }
                     }
                 }
-            } else if mode == .byLevel {
+            } else if !showsCourse {
                 ForEach(filtered) { point in pointRow(point) }
             } else {
                 ForEach(sections, id: \.lesson.id) { section in
@@ -201,29 +235,12 @@ struct GrammarListView: View {
             if !filtered.isEmpty && hiddenMatchCount > 0 {
                 HiddenMatchesRow(count: hiddenMatchCount)
             }
-            if search.isEmpty && verbStore.hasGrammar {
+            if search.isEmpty && verbStore.hasGrammar && !showsEmptyState {
                 ReviewSummaryLine(noun: "lessons", summary: ReviewSummary(verbStore.grammarPoints.visible(in: currentLevels)))
             }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if verbStore.hasGrammar {
-                HStack(spacing: 8) {
-                    ForEach(GrammarListMode.allCases) { option in
-                        Button {
-                            modeBinding.wrappedValue = option
-                        } label: {
-                            FilterChip(option.title, isOn: mode == option)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(mode == option ? .isSelected : [])
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-            }
-        }
-        .inlineSearch(text: $search, prompt: "Search grammar…", focused: $searchFocused)
+        // Always shown: with only the chips in the list (no course yet) the drawer would hide it.
+        .inlineSearch(text: $search, prompt: "Search grammar…", focused: $searchFocused, alwaysVisible: true)
         .levelScopeBar(isActive: levelsHidden, scope: $scope)
         .onChange(of: search) { if search.isEmpty { scope = .mine } }
         .paperBackground()
@@ -265,7 +282,7 @@ struct GrammarListView: View {
                     }
                     .buttonStyle(.paper)
                 }
-            } else if mode == .byLesson && courseStore.course == nil {
+            } else if showsCourse && courseStore.course == nil {
                 ContentUnavailableView {
                     Label("No course yet", systemImage: "books.vertical")
                 } description: {
@@ -274,7 +291,7 @@ struct GrammarListView: View {
                     Button("Set Up My Course") { showingCourse = true }
                         .buttonStyle(.paper)
                 }
-            } else if mode == .byLesson && search.isEmpty && lessonSections(in: LevelSettings()).isEmpty {
+            } else if showsCourse && lessonSections(in: LevelSettings()).isEmpty {
                 ContentUnavailableView {
                     Label("No lessons yet", systemImage: "books.vertical")
                 } description: {
