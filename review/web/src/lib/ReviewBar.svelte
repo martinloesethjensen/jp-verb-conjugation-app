@@ -214,8 +214,13 @@
 			{readings}
 			{forms}
 			{extra}
-			onsubmit={async (edits, furigana) => {
-				await review.suggest(kind, id, 'change', { edits, furigana: Object.keys(furigana).length ? furigana : undefined });
+			askWhy
+			onsubmit={async (edits, furigana, why) => {
+				await review.suggest(kind, id, 'change', {
+					edits,
+					furigana: Object.keys(furigana).length ? furigana : undefined,
+					comment: why || undefined
+				});
 				done();
 			}}
 			oncancel={() => (mode = null)}
