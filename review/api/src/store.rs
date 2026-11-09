@@ -135,6 +135,7 @@ pub const UPDATE_ACTIVE: &str = "UPDATE users SET active = ?1 WHERE email = ?2";
 pub const UPDATE_DISPLAY_NAME: &str = "UPDATE users SET display_name = ?1 WHERE email = ?2";
 pub const UPDATE_PUBLIC_NAME: &str = "UPDATE users SET public_name = ?1 WHERE email = ?2";
 pub const UPDATE_PUBLIC_ROLE: &str = "UPDATE users SET public_role = ?1 WHERE email = ?2";
+pub const UPDATE_ROLE: &str = "UPDATE users SET role = ?1 WHERE email = ?2";
 pub const DELETE_ITEMS: &str = "DELETE FROM items WHERE dataset = ?1";
 /// All of a dataset's rows in one statement: ?2 is a JSON array of `ItemRow`s.
 pub const INSERT_ITEMS: &str = "INSERT INTO items (dataset, kind, item_id, parent_id, entry_id, position, title, subtitle, jlpt, content_hash, json) \
@@ -215,6 +216,14 @@ pub trait Store {
         &self,
         email: &str,
         display_name: &str,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError>;
+    /// What they may do on the site (the owner sets it). Audit row `user.role` with `role=<role>`.
+    async fn set_role(
+        &self,
+        email: &str,
+        role: Role,
         actor: &str,
         now: &str,
     ) -> Result<(), StoreError>;

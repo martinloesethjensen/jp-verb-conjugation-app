@@ -221,6 +221,25 @@ impl Store for SqliteStore {
         )
     }
 
+    async fn set_role(
+        &self,
+        email: &str,
+        role: Role,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let detail = format!("role={}", role.as_str());
+        let value = role.as_str();
+        self.update_user(
+            UPDATE_ROLE,
+            &value,
+            email,
+            (actor, now),
+            "user.role",
+            &detail,
+        )
+    }
+
     async fn set_public_role(
         &self,
         email: &str,

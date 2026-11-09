@@ -246,7 +246,13 @@ async fn a_teacher_sees_the_inbox_and_accepts_someone_elses_suggestion() {
     let r = get(&s, "/api/inbox?status=open", KEIKO).await;
     assert_eq!(r.status, 200, "{}", r.body);
     assert_eq!(r.body["suggestions"].as_array().unwrap().len(), 1);
-    let r = post(&s, "/api/decide", json!({"id": id, "decision": "accept"}), KEIKO).await;
+    let r = post(
+        &s,
+        "/api/decide",
+        json!({"id": id, "decision": "accept"}),
+        KEIKO,
+    )
+    .await;
     assert_eq!(r.status, 200, "{}", r.body);
     assert_eq!(r.body["status"], "accepted");
     assert_eq!(decided_by(&s, &id), KEIKO);
@@ -257,7 +263,13 @@ async fn nobody_decides_their_own_suggestion() {
     let s = seeded().await;
     let own = suggest_en(&s, KEIKO, "Mine.").await;
     for decision in ["accept", "decline"] {
-        let r = post(&s, "/api/decide", json!({"id": own, "decision": decision}), KEIKO).await;
+        let r = post(
+            &s,
+            "/api/decide",
+            json!({"id": own, "decision": decision}),
+            KEIKO,
+        )
+        .await;
         assert_eq!(r.status, 403, "{decision}");
         assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
     }
@@ -265,7 +277,13 @@ async fn nobody_decides_their_own_suggestion() {
     let r = decide(&s, json!({"id": martins, "decision": "accept"})).await;
     assert_eq!(r.status, 403);
     assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
-    let r = post(&s, "/api/decide", json!({"id": martins, "decision": "accept"}), KEIKO).await;
+    let r = post(
+        &s,
+        "/api/decide",
+        json!({"id": martins, "decision": "accept"}),
+        KEIKO,
+    )
+    .await;
     assert_eq!(r.status, 200, "{}", r.body);
     let r = decide(&s, json!({"id": own, "decision": "accept"})).await;
     assert_eq!(r.status, 200, "{}", r.body);
@@ -277,7 +295,13 @@ async fn an_own_addition_is_guarded_too() {
     let r = post(&s, "/api/add", json!({"dataset": "words", "kind": "entry",
         "fields": {"class": "noun", "dict": "ねこ", "kanji": "猫", "meaning": "cat", "jlpt": "N5"}}), KEIKO).await;
     assert_eq!(r.status, 201, "{}", r.body);
-    let r = post(&s, "/api/decide", json!({"id": r.body["id"], "decision": "accept"}), KEIKO).await;
+    let r = post(
+        &s,
+        "/api/decide",
+        json!({"id": r.body["id"], "decision": "accept"}),
+        KEIKO,
+    )
+    .await;
     assert_eq!(r.status, 403, "{}", r.body);
     assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
 }
@@ -298,7 +322,13 @@ async fn the_owner_decides_through_the_reviewer_sign_in() {
 async fn the_old_admin_inbox_routes_are_gone() {
     let s = seeded().await;
     assert_eq!(get(&s, "/api/admin/inbox", MARTIN).await.status, 404);
-    let r = post(&s, "/api/admin/decide", json!({"id": 1, "decision": "accept"}), MARTIN).await;
+    let r = post(
+        &s,
+        "/api/admin/decide",
+        json!({"id": 1, "decision": "accept"}),
+        MARTIN,
+    )
+    .await;
     assert_eq!(r.status, 404);
 }
 
@@ -326,4 +356,27 @@ async fn a_removal_cannot_be_edited_then_accepted() {
         "a removal can't be edited; decline it and suggest a change instead"
     );
     assert_eq!(inbox(&s, "open").await.len(), 1, "still open");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_demoted_teacher_can_no_longer_decide() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, "Decided after a demotion?").await;
+    assert_eq!(get(&s, "/api/inbox", KEIKO).await.status, 200);
+    let r = post(
+        &s,
+        "/api/admin/users/access",
+        json!({"email": KEIKO, "role": "reviewer"}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let r = post(
+        &s,
+        "/api/decide",
+        json!({"id": id, "decision": "accept"}),
+        KEIKO,
+    )
+    .await;
+    assert_eq!(r.status, 403);
 }

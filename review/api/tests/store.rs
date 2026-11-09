@@ -348,13 +348,22 @@ async fn migration_0007_keeps_every_user_and_allows_teacher() {
         .collect();
     assert_eq!(created, ["t1", "t2", "t3"]);
     let conn = s.conn.borrow();
-    conn.execute("UPDATE users SET role = 'teacher' WHERE email = 'aiko@example.com'", [])
-        .unwrap();
+    conn.execute(
+        "UPDATE users SET role = 'teacher' WHERE email = 'aiko@example.com'",
+        [],
+    )
+    .unwrap();
     assert!(conn
-        .execute("UPDATE users SET role = 'boss' WHERE email = 'ken@example.com'", [])
+        .execute(
+            "UPDATE users SET role = 'boss' WHERE email = 'ken@example.com'",
+            []
+        )
         .is_err());
     drop(conn);
-    assert_eq!(s.user("aiko@example.com").await.unwrap().unwrap().role, Role::Teacher);
+    assert_eq!(
+        s.user("aiko@example.com").await.unwrap().unwrap().role,
+        Role::Teacher
+    );
 }
 
 #[test]
@@ -391,7 +400,10 @@ async fn teacher_routes_need_a_teacher_or_the_admin_on_either_application() {
         );
         let old = claims(Some("old@example.com"));
         for need in [Need::Reviewer, Need::Teacher, Need::Admin] {
-            assert_eq!(authorize(&old, audience, need, &s).await, Err(Denied::Forbidden));
+            assert_eq!(
+                authorize(&old, audience, need, &s).await,
+                Err(Denied::Forbidden)
+            );
         }
     }
     let owner = claims(Some(OWNER));
