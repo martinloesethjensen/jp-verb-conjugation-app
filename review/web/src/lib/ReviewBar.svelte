@@ -120,7 +120,7 @@
 				>Suggest removing it</button
 			>
 			<button type="button" class="link" aria-expanded={mode === 'note'} onclick={() => open('note')}
-				>Leave a note for Martin</button
+				>Leave a note</button
 			>
 		</div>
 	{/if}
@@ -140,7 +140,7 @@
 		/>
 	{:else if mode === 'delete' || mode === 'note'}
 		<form class="comment" onsubmit={sendComment}>
-			<label for="{uid}-comment">{mode === 'delete' ? 'Why? (optional)' : 'Your note for Martin'}</label>
+			<label for="{uid}-comment">{mode === 'delete' ? 'Why? (optional)' : 'Your note'}</label>
 			<textarea id="{uid}-comment" rows="3" maxlength="2000" bind:value={comment}></textarea>
 			<div class="buttons">
 				<button class="primary small" disabled={busy || (mode === 'note' && !comment.trim())}>

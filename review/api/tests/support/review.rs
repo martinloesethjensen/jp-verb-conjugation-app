@@ -15,6 +15,8 @@ pub const SITE: &str = "https://review.martinloeseth.dev";
 pub const AIKO: &str = "aiko@example.com";
 pub const BEN: &str = "ben@example.com";
 pub const MARTIN: &str = "martin@example.com";
+/// A teacher: accepts and declines other people's suggestions.
+pub const KEIKO: &str = "keiko@example.com";
 const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 
 pub fn real(file: DataFile) -> Vec<u8> {
@@ -43,7 +45,7 @@ pub async fn load_bytes(s: &SqliteStore, file: DataFile, bytes: &[u8]) {
         .unwrap();
 }
 
-/// Aiko and Ben (reviewers), Martin (admin), and every real data file loaded.
+/// Aiko and Ben (reviewers), Keiko (teacher), Martin (admin), and every real data file loaded.
 pub async fn seeded() -> SqliteStore {
     let s = SqliteStore::new();
     s.conn
@@ -61,6 +63,12 @@ pub async fn seeded() -> SqliteStore {
         };
         s.add_user(&user, MARTIN, T0).await.unwrap();
     }
+    let keiko = NewUser {
+        email: KEIKO.into(),
+        display_name: "Keiko".into(),
+        role: Role::Teacher,
+    };
+    s.add_user(&keiko, MARTIN, T0).await.unwrap();
     for file in DataFile::ALL {
         load_bytes(&s, file, &real(file)).await;
     }
@@ -74,6 +82,11 @@ pub fn jwt(email: &str) -> String {
     } else {
         "reviewer-aud"
     };
+    jwt_via(email, aud)
+}
+
+/// Who is asking, through the application with this AUD (`"reviewer-aud"` or `"admin-aud"`).
+pub fn jwt_via(email: &str, aud: &str) -> String {
     token(rs_header(), claims_for(Some(email), aud))
 }
 
@@ -84,6 +97,17 @@ pub async fn call(
     body: Option<Value>,
     who: &str,
 ) -> ApiResponse {
+    call_via(s, method, path_and_query, body, &jwt(who)).await
+}
+
+/// `call` with a ready-made token, for asking through a particular application.
+pub async fn call_via(
+    s: &SqliteStore,
+    method: &str,
+    path_and_query: &str,
+    body: Option<Value>,
+    jwt: &str,
+) -> ApiResponse {
     let (path, query) = path_and_query
         .split_once('?')
         .unwrap_or((path_and_query, ""));
@@ -92,7 +116,7 @@ pub async fn call(
         path: path.into(),
         query: query.into(),
         origin: Some(SITE.into()),
-        jwt: Some(jwt(who)),
+        jwt: Some(jwt.into()),
         body: body.map(|b| b.to_string().into_bytes()).unwrap_or_default(),
     };
     let cfg = AppConfig {

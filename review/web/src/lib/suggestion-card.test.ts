@@ -38,14 +38,14 @@ describe('the restyled card and inbox', () => {
 	});
 
 	test('the inbox tabs are a segmented control and its buttons are pills', () => {
-		const page = readFileSync(new URL('../routes/admin/inbox/+page.svelte', import.meta.url), 'utf8');
+		const page = readFileSync(new URL('../routes/inbox/+page.svelte', import.meta.url), 'utf8');
 		expect(page).toMatch(/class="segmented"[^>]*role="group"|role="group"[^>]*class="segmented"/);
 		expect(page).not.toMatch(/class="[^"]*\bsmall\b[^"]*"/);
 	});
 
 	test('the Open tab reads its count as words, not "Open1"', () => {
 		// Svelte trims whitespace at the edges of an element's children, so the spaces are string expressions.
-		const page = readFileSync(new URL('../routes/admin/inbox/+page.svelte', import.meta.url), 'utf8');
+		const page = readFileSync(new URL('../routes/inbox/+page.svelte', import.meta.url), 'utf8');
 		expect(page).toContain(
 			`<span class="open-count"><span class="visually-hidden">{', '}</span>{suggestions.length}<span class="visually-hidden">{' open'}</span></span>`
 		);

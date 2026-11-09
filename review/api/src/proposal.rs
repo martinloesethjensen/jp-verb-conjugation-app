@@ -301,7 +301,7 @@ pub(crate) fn check_verb_form(
 }
 
 pub fn locked_message(key: &str) -> String {
-    format!("{key} can't be changed here; leave a note for Martin instead")
+    format!("{key} can't be changed here; leave a note instead")
 }
 
 /// The proposed item for `item_id` (the entry itself for `Kind::Entry`) with `edits` applied, checked.

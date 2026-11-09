@@ -51,7 +51,7 @@
 	<h1>{heading}</h1>
 	{#if sent}
 		<section class="card sent" role="status">
-			<p class="lead">Sent. Martin will look at it.</p>
+			<p class="lead">Sent. A teacher or Martin will look at it.</p>
 			<p><span lang="ja">{sent.item_title}</span> is listed under the suggested additions.</p>
 			<p class="links">
 				<a href="/browse/{dataset}">Back to {DATASET_TITLES[dataset].toLowerCase()}</a>

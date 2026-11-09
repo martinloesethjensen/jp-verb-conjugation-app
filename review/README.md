@@ -38,6 +38,12 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   before it stop counting (approve them again), and open or accepted-but-unexported changes to verb entries
   show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
   are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
+- **Roles (2026-11-09)** need migration `0007_teacher_role.sql` (`npm run migrate`), which rebuilds `users`
+  with every row kept. Run it just before or right after merging: either order is safe, but until it runs,
+  making someone a teacher fails with "the database is unavailable". The
+  inbox moved from `/admin/inbox` to `/inbox` and its API from `/api/admin/inbox` and `/api/admin/decide` to
+  `/api/inbox` and `/api/decide`, so teachers reach it through the email-PIN sign-in. You decide through that
+  sign-in too now. Open suggestions you wrote yourself wait for a teacher.
 
 ## Loading data
 
@@ -111,6 +117,13 @@ Each step says what to do and what you should see.
   needed: Access lets them reach the site, the Reviewers page lets them use it.
 - **Remove:** Deactivate them on the Reviewers page, remove them from the policy, and revoke their session
   under Zero Trust → Users. Deactivating takes effect immediately, even before the session ends.
+- **Teachers:** on the Reviewers page, set **Can** to "also accept suggestions". A teacher accepts and
+  declines other people's suggestions in the inbox, exactly as you do; one teacher's acceptance is enough.
+  Teachers sign in like every reviewer (email PIN, the "Reviewers" policy): the admin application (step 4)
+  stays yours alone, so reviewers, queues, stamps and export are still owner-only. "Credited as" (how the app
+  and the public repo name them) is separate; set it to "a teacher" too if that's how they should be credited.
+- **Nobody decides their own suggestion**, you included: a teacher decides yours, and you or another teacher
+  decide a teacher's. Each can still withdraw their own.
 
 ## Reviewing
 
@@ -124,18 +137,19 @@ one (each example, common phrase, usage, pitfall and thing counted) they can:
   (a verb's dictionary form and kanji, a word's class and dictionary form), never change here. Kanji with no
   furigana ask for a reading. Editing a sentence keeps the particle blanks that still line up and drops the
   others; the suggestion says how many to mark again at export.
-- **Suggest removing it** (with an optional reason) or **Leave a note for Martin** (for anything the form
-  can't change).
+- **Suggest removing it** (with an optional reason) or **Leave a note** (for anything the form can't
+  change).
 - **Not sure, skip** (in a queue only).
 
 Everyone sees everyone's seals and suggestions, by display name. A suggestion made against data that has since
 changed shows "Changed since"; one whose item left the data shows "No longer in the data".
 
-**Your inbox** (Reviewers → Suggestions) shows each change as a red-pen correction, grouped by item so
+**The inbox** (Inbox in the header, for teachers and you) shows each change as a red-pen correction, grouped by item so
 counter-suggestions sit side by side. For each one: **Accept**, **Edit then accept** (fix it before accepting;
 this is the only way to accept a change made against older data), **Reply**, or **Decline**. Accepting the
 removal of a whole verb or word asks you to confirm, because saved favourites, quiz history and widgets that
-point at it are dropped when it is exported. Accepting only marks a suggestion accepted: nothing reaches
+point at it are dropped when it is exported. Your own suggestions show without these buttons: someone else decides them.
+Accepting only marks a suggestion accepted: nothing reaches
 `data/` until the export step (plan 6), and then only through your normal signed data PRs.
 
 ## Queues

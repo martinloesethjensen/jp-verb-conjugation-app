@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { afterNavigate } from '$app/navigation';
 	import type { Me } from './api.ts';
+	import { canDecide } from './roles.ts';
 
 	let { me }: { me: Me | null } = $props();
 
@@ -31,6 +32,9 @@
 		</a>
 		{#if me}
 			<nav class="links" aria-label="Account">
+				{#if canDecide(me.role)}
+					<a href="/inbox" data-sveltekit-reload>Inbox</a>
+				{/if}
 				{#if me.role === 'admin'}
 					<a href="/admin" data-sveltekit-reload>Reviewers</a>
 				{/if}
@@ -48,6 +52,9 @@
 				<div class="panel">
 					<p class="panel-name">{me.display_name}</p>
 					<a href="/account">Your name</a>
+					{#if canDecide(me.role)}
+						<a href="/inbox" data-sveltekit-reload>Inbox</a>
+					{/if}
 					{#if me.role === 'admin'}
 						<a href="/admin" data-sveltekit-reload>Reviewers</a>
 					{/if}

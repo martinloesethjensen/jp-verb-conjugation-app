@@ -159,7 +159,7 @@ async fn the_owner_edits_then_accepts_an_addition() {
     let made = post(&s, "/api/add", example_add("食べてから寝ます。"), AIKO).await;
     let r = post(
         &s,
-        "/api/admin/decide",
+        "/api/decide",
         json!({"id": made.body["id"], "decision": "accept",
         "edits": {"en": "First I eat, then I sleep."}}),
         MARTIN,
@@ -178,7 +178,7 @@ async fn the_owner_edits_then_accepts_an_addition() {
     load_bytes(&s, DataFile::Verbs, d.to_string().as_bytes()).await;
     let r = post(
         &s,
-        "/api/admin/decide",
+        "/api/decide",
         json!({"id": gone.body["id"], "decision": "accept"}),
         MARTIN,
     )
@@ -190,7 +190,7 @@ async fn the_owner_edits_then_accepts_an_addition() {
             Some("the place this was added to isn't in the loaded data")
         )
     );
-    let inbox = get(&s, "/api/admin/inbox", MARTIN).await;
+    let inbox = get(&s, "/api/inbox", MARTIN).await;
     let listed = inbox.body["suggestions"]
         .as_array()
         .unwrap()
@@ -224,7 +224,7 @@ async fn edit_then_accept_keeps_a_new_verbs_kanji_id() {
     assert_eq!(made.body["item_id"], "きる:斬る");
     let r = post(
         &s,
-        "/api/admin/decide",
+        "/api/decide",
         json!({"id": made.body["id"], "decision": "accept",
         "edits": {"meaning": "to cut down (with a sword)"}}),
         MARTIN,
@@ -296,7 +296,7 @@ async fn edit_then_accept_cannot_change_a_new_entrys_id() {
     let made = post(&s, "/api/add", new_word("ねこ", "noun"), AIKO).await;
     let r = post(
         &s,
-        "/api/admin/decide",
+        "/api/decide",
         json!({"id": made.body["id"], "decision": "accept",
         "edits": {"dict": "ねご"}}),
         MARTIN,
@@ -309,7 +309,7 @@ async fn edit_then_accept_cannot_change_a_new_entrys_id() {
     );
     let r = post(
         &s,
-        "/api/admin/decide",
+        "/api/decide",
         json!({"id": made.body["id"], "decision": "accept",
         "edits": {"meaning": "cat (the animal)"}}),
         MARTIN,

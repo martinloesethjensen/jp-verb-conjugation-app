@@ -8,6 +8,8 @@ use crate::store::{Role, Store};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Need {
     Reviewer,
+    /// A teacher or the owner, through either application: the inbox and its decisions.
+    Teacher,
     Admin,
     /// The export service token, and nobody else.
     Export,
@@ -62,6 +64,9 @@ pub async fn authorize<S: Store>(
         _ => return Err(Denied::Forbidden),
     };
     if need == Need::Admin && (audience != Audience::Admin || user.role != Role::Admin) {
+        return Err(Denied::Forbidden);
+    }
+    if need == Need::Teacher && !user.role.can_decide() {
         return Err(Denied::Forbidden);
     }
     Ok(Principal {

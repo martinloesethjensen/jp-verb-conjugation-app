@@ -5,7 +5,7 @@ import { expect, test } from 'vitest';
 const pages = [
 	'index.html',
 	'admin.html',
-	'admin/inbox.html',
+	'inbox.html',
 	'admin/queues.html',
 	'admin/export.html',
 	'account.html',

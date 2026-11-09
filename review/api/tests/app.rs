@@ -629,3 +629,86 @@ async fn the_owner_sets_a_reviewers_public_role() {
     .await;
     assert_eq!(unknown.status, 404);
 }
+
+fn role_audit(s: &SqliteStore) -> Vec<String> {
+    s.conn
+        .borrow()
+        .prepare("SELECT detail FROM audit_log WHERE action = 'user.role' ORDER BY id")
+        .unwrap()
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_owner_makes_a_reviewer_a_teacher_and_back() {
+    let s = seeded().await;
+    let body = json!({"email": "aiko@example.com", "role": "teacher"});
+    let r = post_admin(&s, "/api/admin/users/access", body).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["role"], "teacher");
+    assert_eq!(r.body["public_role"], "native");
+    let body = json!({"email": "aiko@example.com", "role": "reviewer"});
+    let r = post_admin(&s, "/api/admin/users/access", body).await;
+    assert_eq!(r.body["role"], "reviewer");
+    assert_eq!(role_audit(&s), ["role=teacher", "role=reviewer"]);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_access_role_cannot_be_admin_or_touch_the_owner() {
+    let s = seeded().await;
+    let r = post_admin(
+        &s,
+        "/api/admin/users/access",
+        json!({"email": "aiko@example.com", "role": "admin"}),
+    )
+    .await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str()),
+        (400, Some("there is only one owner"))
+    );
+    let r = post_admin(
+        &s,
+        "/api/admin/users/access",
+        json!({"email": OWNER, "role": "teacher"}),
+    )
+    .await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str()),
+        (400, Some("the owner's role can't change here"))
+    );
+    let r = post_admin(
+        &s,
+        "/api/admin/users/access",
+        json!({"email": "nobody@example.com", "role": "teacher"}),
+    )
+    .await;
+    assert_eq!(r.status, 404);
+    let r = post_admin(
+        &s,
+        "/api/admin/users/access",
+        json!({"email": "aiko@example.com", "role": "boss"}),
+    )
+    .await;
+    assert_eq!(r.status, 400);
+    assert!(role_audit(&s).is_empty());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_reviewer_cannot_set_roles() {
+    let s = seeded().await;
+    let body = json!({"email": "aiko@example.com", "role": "teacher"});
+    let r = call(
+        &s,
+        req(
+            "POST",
+            "/api/admin/users/access",
+            Some(reviewer_token("aiko@example.com")),
+            Some(SITE),
+            &body.to_string(),
+        ),
+    )
+    .await;
+    assert_eq!(r.status, 403);
+}

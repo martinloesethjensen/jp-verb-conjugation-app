@@ -62,10 +62,7 @@ impl SqliteStore {
 }
 
 fn role(text: String) -> Role {
-    match text.as_str() {
-        "admin" => Role::Admin,
-        _ => Role::Reviewer,
-    }
+    Role::parse(&text).unwrap_or_else(|| panic!("unknown role {text:?}"))
 }
 
 fn row_to_user(row: &rusqlite::Row) -> rusqlite::Result<User> {
@@ -220,6 +217,25 @@ impl Store for SqliteStore {
             email,
             (actor, now),
             "user.public_name",
+            &detail,
+        )
+    }
+
+    async fn set_role(
+        &self,
+        email: &str,
+        role: Role,
+        actor: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let detail = format!("role={}", role.as_str());
+        let value = role.as_str();
+        self.update_user(
+            UPDATE_ROLE,
+            &value,
+            email,
+            (actor, now),
+            "user.role",
             &detail,
         )
     }

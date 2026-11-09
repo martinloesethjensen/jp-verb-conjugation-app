@@ -20,7 +20,7 @@
 		forms,
 		extra = {},
 		submitLabel = 'Send suggestion',
-		hint = "Spelling and ids can't change here. Leave a note for Martin if they're wrong.",
+		hint = "Spelling and ids can't change here. Leave a note if they're wrong.",
 		conflictIsStale = true,
 		onsubmit,
 		oncancel

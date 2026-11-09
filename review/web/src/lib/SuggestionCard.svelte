@@ -43,7 +43,7 @@
 	const HEADINGS: Record<string, string> = {
 		change: 'suggests a change',
 		delete: 'suggests removing it',
-		note: 'left a note for Martin',
+		note: 'left a note',
 		add: 'suggests adding this'
 	};
 	const heading = $derived(HEADINGS[s.action] ?? HEADINGS.note);
@@ -101,7 +101,7 @@
 		<p class="remove">Remove this {KINDS[s.kind] ?? s.kind}</p>
 	{/if}
 	{#if s.admin_edit}
-		<p class="quiet">Martin's version:</p>
+		<p class="quiet">Edited when accepted:</p>
 		{#if adding}
 			<RedPen before={s.proposed ?? {}} after={s.admin_edit} names={Object.keys(s.admin_edit).filter((k) => typeof s.admin_edit?.[k] === 'string')} />
 		{:else}

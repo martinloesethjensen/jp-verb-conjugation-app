@@ -10,6 +10,7 @@
 		finishLoad,
 		loadSlice,
 		setActive,
+		setAccessRole,
 		setPublicRole,
 		type DataFileName,
 		type PublicRole,
@@ -112,6 +113,19 @@
 		}
 	}
 
+	async function access(user: User, role: 'teacher' | 'reviewer') {
+		busy = true;
+		notice = null;
+		try {
+			const updated = await setAccessRole(user.email, role);
+			users = users.map((u) => (u.email === updated.email ? updated : u));
+		} catch (error) {
+			notice = text(error);
+		} finally {
+			busy = false;
+		}
+	}
+
 	async function toggle(user: User) {
 		busy = true;
 		notice = null;
@@ -134,7 +148,7 @@
 	<p class="notice" role="alert">{failure}</p>
 {:else}
 	<nav class="review-links" aria-label="Reviews">
-		<a href="/admin/inbox">Suggestions{openSuggestions === null ? '' : ` (${openSuggestions} open)`}</a>
+		<a href="/inbox" data-sveltekit-reload>Suggestions{openSuggestions === null ? '' : ` (${openSuggestions} open)`}</a>
 		<a href="/admin/queues">Queues</a>
 		<a href="/admin/export">Export</a>
 	</nav>
@@ -150,6 +164,21 @@
 							<div>
 								<p class="person">{user.display_name}</p>
 								<p class="email">{user.email}</p>
+								{#if user.role === 'admin'}
+									<p class="credit">Owner</p>
+								{:else}
+									<label class="credit">
+										<span>Can</span>
+										<select
+											value={user.role}
+											disabled={busy}
+											onchange={(e) => access(user, e.currentTarget.value as 'teacher' | 'reviewer')}
+										>
+											<option value="reviewer">review and suggest</option>
+											<option value="teacher">also accept suggestions</option>
+										</select>
+									</label>
+								{/if}
 								{#if user.public_role === 'owner'}
 									<p class="credit">Credited as the owner</p>
 								{:else}

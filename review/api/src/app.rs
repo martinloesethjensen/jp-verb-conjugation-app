@@ -55,6 +55,7 @@ enum Handler {
     Rename,
     PublicName,
     PublicRole,
+    AccessRole,
     ListUsers,
     AddUser,
     SetActive,
@@ -159,6 +160,12 @@ const ROUTES: &[Route] = &[
         path: "/api/admin/users/role",
         need: Need::Admin,
         handler: Handler::PublicRole,
+    },
+    Route {
+        method: "POST",
+        path: "/api/admin/users/access",
+        need: Need::Admin,
+        handler: Handler::AccessRole,
     },
     Route {
         method: "GET",
@@ -270,14 +277,14 @@ const ROUTES: &[Route] = &[
     },
     Route {
         method: "GET",
-        path: "/api/admin/inbox",
-        need: Need::Admin,
+        path: "/api/inbox",
+        need: Need::Teacher,
         handler: Handler::Inbox,
     },
     Route {
         method: "POST",
-        path: "/api/admin/decide",
-        need: Need::Admin,
+        path: "/api/decide",
+        need: Need::Teacher,
         handler: Handler::Decide,
     },
     Route {
@@ -394,6 +401,7 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
         Handler::Rename => rename(&req.body, &principal, store, today).await,
         Handler::PublicName => public_name(&req.body, &principal, store, today).await,
         Handler::PublicRole => public_role(&req.body, &principal, store, today).await,
+        Handler::AccessRole => access_role(&req.body, &principal, store, today).await,
         Handler::ListUsers => match store.users().await {
             Ok(users) => ApiResponse {
                 status: 200,
@@ -479,6 +487,13 @@ struct RenameBody {
 #[serde(deny_unknown_fields)]
 struct PublicNameBody {
     public_name: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AccessRoleBody {
+    email: String,
+    role: Role,
 }
 
 #[derive(Deserialize)]
@@ -589,6 +604,27 @@ async fn public_role<S: Store>(body: &[u8], by: &Principal, store: &S, today: &s
         .set_public_role(&email, body.public_role, &by.email, today)
         .await
     {
+        Ok(()) => user_response(store, &email, 200).await,
+        Err(e) => store_error(e),
+    }
+}
+
+/// Reviewer or teacher. There is one owner, set by hand at setup, and this never changes them.
+async fn access_role<S: Store>(body: &[u8], by: &Principal, store: &S, today: &str) -> ApiResponse {
+    let body: AccessRoleBody = tri!(parse(body));
+    let email = tri!(email_field(&body.email));
+    if body.role == Role::Admin {
+        return error(400, "there is only one owner");
+    }
+    let user = match store.user(&email).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return store_error(StoreError::NotFound),
+        Err(e) => return store_error(e),
+    };
+    if user.role == Role::Admin {
+        return error(400, "the owner's role can't change here");
+    }
+    match store.set_role(&email, body.role, &by.email, today).await {
         Ok(()) => user_response(store, &email, 200).await,
         Err(e) => store_error(e),
     }

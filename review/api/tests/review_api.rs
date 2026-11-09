@@ -225,7 +225,7 @@ async fn locked_and_unknown_fields_come_back_as_400() {
     assert_eq!(r.status, 400);
     assert_eq!(
         r.body["error"],
-        "dict can't be changed here; leave a note for Martin instead"
+        "dict can't be changed here; leave a note instead"
     );
     let body = json!({"dataset": "verbs", "kind": "entry", "id": "たべる", "base_hash": p[0].2,
                       "action": "change", "edits": {"meaning": "to eat"}});

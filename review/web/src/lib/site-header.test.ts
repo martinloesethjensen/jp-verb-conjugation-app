@@ -40,3 +40,12 @@ test('the brand link is a 44px target', () => {
 	const source = readFileSync(new URL('./SiteHeader.svelte', import.meta.url), 'utf8');
 	expect(source).toMatch(/\.name \{[^}]*min-height: 44px/);
 });
+
+test('teachers and the owner get an Inbox link; reviewers do not', () => {
+	const teacher: Me = { ...reviewer, display_name: 'Keiko', role: 'teacher' };
+	for (const me of [admin, teacher]) {
+		const { body } = render(SiteHeader, { props: { me } });
+		expect(body.match(/href="\/inbox"/g)?.length, me.role).toBe(2);
+	}
+	expect(render(SiteHeader, { props: { me: reviewer } }).body).not.toContain('href="/inbox"');
+});
