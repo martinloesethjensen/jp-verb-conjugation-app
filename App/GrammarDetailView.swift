@@ -8,15 +8,13 @@ struct GrammarDetailView: View {
     @Binding var focusedPitfall: Int?
     @State private var highlightedPitfall: Int?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.palette) private var palette
     @Environment(VerbStore.self) private var verbStore
     @Environment(\.openRoute) private var openRoute
     @Environment(WordsStore.self) private var wordsStore
     @Environment(QuizHistoryStore.self) private var quizHistory
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @State private var connectionQuestions: [ConnectionQuestion]?
-    @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
-    /// Shows the usages the level setting hides, for this visit only.
-    @State private var showingHiddenUsages = false
 
     @Environment(CourseStore.self) private var courseStore
 
@@ -28,8 +26,6 @@ struct GrammarDetailView: View {
         self.point = point
         _focusedPitfall = focusedPitfall
     }
-
-    private let registerOrder: [GrammarRegister] = [.polite, .casual, .formal]
 
     /// Related points that exist locally; a link to a lesson that hasn't
     /// synced is hidden rather than dead.
@@ -70,13 +66,14 @@ struct GrammarDetailView: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                header
-                if !point.attachment.isEmpty { AttachmentSection(rules: point.attachment) }
-                usagesSection
+                LessonHeader(point: point, lesson: lessonTag, onPractise: point.hasConnections ? practise : nil)
+                if !point.attachment.isEmpty {
+                    AttachmentSection(rules: point.attachment, patterns: GrammarHighlight.patterns(of: point))
+                }
+                LessonUsages(point: point)
                 if !point.contrasts.isEmpty { contrastsSection }
-                if !point.conjugations.isEmpty { conjugationsSection }
+                if !point.conjugations.isEmpty { FormsTable(conjugations: point.conjugations) }
                 if !point.pitfalls.isEmpty { pitfallsSection }
-                if point.hasConnections { practiseSection }
                 if !relatedPoints.isEmpty { relatedSection }
             }
             .padding()
@@ -111,32 +108,6 @@ struct GrammarDetailView: View {
         #endif
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            LevelBadge(range: point.levelRange, emphasis: .header)
-            if let lesson = lessonTag {
-                HStack(spacing: 8) {
-                    Text(lesson.name)
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .glassEffect(in: Capsule())
-                    if lesson.unreviewed {
-                        Text("unreviewed").font(.caption2).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            ReviewStatusPill(
-                item: "Lesson: \(point.title) (\(point.id))", review: point.review,
-                checked: ["That every kanji has a reading", "That related lessons exist"],
-                unchecked: ["The explanations and example sentences", "The attachment rules", "The pitfalls"])
-            JapaneseText(point.title)
-                .font(.largeTitle.weight(.heavy))
-            JapaneseText(point.summary)
-                .font(.headline)
-                .foregroundStyle(.secondary)
-        }
-    }
-
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8, content: content)
             .paperCard()
@@ -151,83 +122,9 @@ struct GrammarDetailView: View {
                 card {
                     JapaneseText(contrast.pattern).font(.headline)
                     JapaneseText(contrast.explanation).font(.subheadline)
-                    ForEach(Array(contrast.examples.enumerated()), id: \.offset) { _, example in
-                        Divider()
-                        ExampleRow(example: example)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: Usages
-
-    /// The usages to show: those at visible levels, or all of them once the learner asks.
-    private var shownUsages: [GrammarUsage] {
-        showingHiddenUsages ? point.usages : point.visibleUsages(in: LevelSettings(rawValue: hiddenLevelsRaw))
-    }
-
-    private var hiddenUsageCount: Int {
-        point.usages.count - point.visibleUsages(in: LevelSettings(rawValue: hiddenLevelsRaw)).count
-    }
-
-    private var usagesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Usages")
-            ForEach(Array(shownUsages.enumerated()), id: \.offset) { index, usage in
-                card {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        JapaneseText("\(index + 1). \(usage.heading)").font(.headline)
-                        // Only a lesson that spans levels labels its usages; otherwise the header says it all.
-                        if point.hasMixedLevels {
-                            Spacer(minLength: 0)
-                            LevelBadge(level: point.level(of: usage))
-                        }
-                    }
-                    JapaneseText(usage.explanation).font(.subheadline)
-                    ForEach(Array(usage.examples.enumerated()), id: \.offset) { _, example in
-                        Divider()
-                        ExampleRow(example: example)
-                    }
-                }
-            }
-            if hiddenUsageCount > 0 {
-                Button(showingHiddenUsages ? "Hide usages at hidden levels" : hiddenUsagesLabel) {
-                    withAnimation { showingHiddenUsages.toggle() }
-                }
-                .font(.subheadline)
-            }
-        }
-    }
-
-    private var hiddenUsagesLabel: String {
-        let levels = Set(point.usages.compactMap { point.level(of: $0) })
-            .filter { !LevelSettings(rawValue: hiddenLevelsRaw).isVisible($0) }
-            .sorted().map(\.displayName).joined(separator: ", ")
-        let noun = hiddenUsageCount == 1 ? "usage" : "usages"
-        return "Show \(hiddenUsageCount) more \(noun) (\(levels))"
-    }
-
-    // MARK: Conjugations
-
-    private var conjugationsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Conjugations")
-            ForEach(registerOrder, id: \.self) { register in
-                let forms = point.conjugations.filter { $0.register == register }
-                if !forms.isEmpty {
-                    card {
-                        Text(register.displayName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        ForEach(Array(forms.enumerated()), id: \.offset) { _, conjugation in
-                            VStack(alignment: .leading, spacing: 2) {
-                                JapaneseText(conjugation.form).font(.headline)
-                                if let note = conjugation.note {
-                                    JapaneseText(note).font(.footnote).foregroundStyle(.secondary)
-                                }
-                            }
-                        }
+                    if !contrast.examples.isEmpty {
+                        ExampleList(examples: contrast.examples,
+                                    patterns: [contrast.pattern] + GrammarHighlight.patterns(of: point))
                     }
                 }
             }
@@ -236,18 +133,11 @@ struct GrammarDetailView: View {
 
     // MARK: Practise
 
-    private var practiseSection: some View {
-        Button {
-            let levels = LevelSettings.load()
-            let verbs = verbStore.verbs.visible(in: levels)
-            let questions = buildConnectionQuestions(points: [point], verbs: verbs, words: wordsStore.words.visible(in: levels), count: quizQuestionCount)
-            if !questions.isEmpty { connectionQuestions = questions }
-        } label: {
-            Label("Practise this pattern", systemImage: "arrow.right")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.paper)
-        .controlSize(.large)
+    private func practise() {
+        let levels = LevelSettings.load()
+        let verbs = verbStore.verbs.visible(in: levels)
+        let questions = buildConnectionQuestions(points: [point], verbs: verbs, words: wordsStore.words.visible(in: levels), count: quizQuestionCount)
+        if !questions.isEmpty { connectionQuestions = questions }
     }
 
     private var connectionBinding: Binding<Bool> {
@@ -257,24 +147,27 @@ struct GrammarDetailView: View {
         )
     }
 
-    // MARK: Watch out
+    // MARK: Common mistakes
 
     private var pitfallsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Watch out", systemImage: "exclamationmark.triangle")
+            SectionHeader("Common mistakes")
             ForEach(Array(point.pitfalls.enumerated()), id: \.offset) { index, pitfall in
                 card {
                     JapaneseText(pitfall.heading).font(.headline)
-                    if let wrong = pitfall.wrong { WrongForm(text: wrong) }
+                    if let wrong = pitfall.wrong {
+                        WrongForm(text: wrong, candidates: point.mistakeCandidates(for: pitfall))
+                        if let right = pitfall.examples.first?.jp { RightForm(text: right) }
+                    }
                     JapaneseText(pitfall.explanation).font(.subheadline)
-                    ForEach(Array(pitfall.examples.enumerated()), id: \.offset) { _, example in
-                        Divider()
-                        ExampleRow(example: example)
+                    let rest = pitfall.wrong == nil ? pitfall.examples : Array(pitfall.examples.dropFirst())
+                    if !rest.isEmpty {
+                        ExampleList(examples: rest, patterns: GrammarHighlight.patterns(of: point))
                     }
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(.tint, lineWidth: 3)
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(palette.button, lineWidth: 3)
                         .opacity(highlightedPitfall == index ? 1 : 0)
                         .allowsHitTesting(false)
                 }
@@ -288,18 +181,23 @@ struct GrammarDetailView: View {
     private var relatedSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader("Related")
-            ForEach(relatedPoints) { related in
-                Button {
-                    openRoute(.grammar(related.id))
-                } label: {
-                    Label {
-                        JapaneseText(related.title)
-                    } icon: {
-                        Image(systemName: "arrow.right.circle")
+            VStack(spacing: 0) {
+                ForEach(Array(relatedPoints.enumerated()), id: \.element.id) { index, related in
+                    if index > 0 { Divider().overlay(palette.rule) }
+                    Button {
+                        openRoute(.grammar(related.id))
+                    } label: {
+                        HStack(spacing: 10) {
+                            GrammarRow(point: related)
+                            Spacer(minLength: 0)
+                            RowChevron()
+                        }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.glass)
             }
+            .paperCard(cornerRadius: 14)
         }
     }
 }
