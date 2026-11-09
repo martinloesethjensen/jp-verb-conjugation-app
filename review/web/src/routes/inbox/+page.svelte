@@ -8,7 +8,7 @@
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
-	import { canDecide, OWN_SUGGESTION_LINE } from '#lib/roles.ts';
+	import { canDecide, ownSuggestionLine } from '#lib/roles.ts';
 	import { getSession } from '#lib/session.ts';
 	import { editForm, suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
@@ -166,7 +166,7 @@
 					{#snippet actions()}
 						{#if s.status === 'open'}
 							{#if s.mine}
-								<p class="hint">{OWN_SUGGESTION_LINE}</p>
+								<p class="hint">{ownSuggestionLine(me().role)}</p>
 							{:else if confirming?.id === s.id}
 								<p class="warning">{confirming.warning}</p>
 								<button type="button" class="danger" disabled={busy} onclick={() => accept(s)}>Accept and remove</button>

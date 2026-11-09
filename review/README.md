@@ -38,8 +38,9 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   before it stop counting (approve them again), and open or accepted-but-unexported changes to verb entries
   show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
   are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
-- **Roles (2026-11-09)** need migration `0007_teacher_role.sql` (`npm run migrate`) **before** the Worker
-  deploys: the Worker reads the `teacher` role, and the migration rebuilds `users` with every row kept. The
+- **Roles (2026-11-09)** need migration `0007_teacher_role.sql` (`npm run migrate`), which rebuilds `users`
+  with every row kept. Run it just before or right after merging: either order is safe, but until it runs,
+  making someone a teacher fails with "the database is unavailable". The
   inbox moved from `/admin/inbox` to `/inbox` and its API from `/api/admin/inbox` and `/api/admin/decide` to
   `/api/inbox` and `/api/decide`, so teachers reach it through the email-PIN sign-in. You decide through that
   sign-in too now. Open suggestions you wrote yourself wait for a teacher.

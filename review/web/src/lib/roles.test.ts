@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { canDecide, OWN_SUGGESTION_LINE } from './roles.ts';
+import { canDecide, ownSuggestionLine } from './roles.ts';
 
 test('teachers and the owner decide; reviewers do not', () => {
 	expect(canDecide('teacher')).toBe(true);
@@ -24,8 +24,12 @@ test('the inbox lives at /inbox for teachers, and own suggestions get no decisio
 	expect(existsSync(join(SRC, 'routes/admin/inbox'))).toBe(false);
 	const page = readFileSync(join(SRC, 'routes/inbox/+page.svelte'), 'utf8');
 	expect(page).toContain('canDecide(');
-	expect(page).toMatch(/\{#if s\.mine\}[\s\S]*OWN_SUGGESTION_LINE[\s\S]*\{:else/);
-	expect(OWN_SUGGESTION_LINE).toBe('Yours. Another teacher or Martin accepts it.');
+	expect(page).toMatch(/\{#if s\.mine\}[\s\S]*ownSuggestionLine\(/);
+});
+
+test("the owner's own suggestion waits for a teacher, so the line says so", () => {
+	expect(ownSuggestionLine('teacher')).toBe('Yours. Another teacher or Martin accepts it.');
+	expect(ownSuggestionLine('admin')).toBe('Yours. A teacher accepts it.');
 });
 
 test('no page still calls the admin inbox or says Martin decides', () => {
