@@ -3,18 +3,20 @@
 	--paper: #f6f7f4;
 	--card: #ffffff;
 	--ink: #1e2633;
-	--muted: #7c8390;
+	--muted: #5f6673;
 	--grid: #b9cbb8;
 	--rule: #dce0d8;
 	--red: #c2372b;
 	--red-soft: #fbeceb;
 	--green: #2e6b45;
 	--green-soft: #e2f0e6;
+	--well: #eceee9;
 
 	--sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
 	--mincho: 'Shippori Mincho', 'Hiragino Mincho ProN', serif;
 	--space: 1rem;
-	--radius: 6px;
+	--radius: 16px;
+	--radius-input: 12px;
 	color-scheme: light;
 }
 
@@ -47,6 +49,18 @@ a {
 	text-underline-offset: 0.2em;
 }
 
+h1 {
+	font-size: 2rem;
+	font-weight: 500;
+	line-height: 1.25;
+}
+
+@media (max-width: 720px) {
+	h1 {
+		font-size: 1.65rem;
+	}
+}
+
 :focus-visible {
 	outline: 2px solid var(--ink);
 	outline-offset: 2px;
@@ -59,10 +73,16 @@ input {
 }
 
 button {
-	border: 1px solid var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	min-height: 44px;
+	padding: 0 1.3rem;
+	border: 1.5px solid var(--ink);
 	background: var(--card);
-	border-radius: var(--radius);
-	padding: 0.35rem 0.9rem;
+	border-radius: 999px;
+	font-weight: 500;
 	cursor: pointer;
 }
 
@@ -89,8 +109,9 @@ button:disabled {
 
 input {
 	width: 100%;
+	min-height: 44px;
 	border: 1px solid var(--rule);
-	border-radius: var(--radius);
+	border-radius: var(--radius-input);
 	padding: 0.45rem 0.6rem;
 	background: var(--card);
 }
@@ -98,6 +119,7 @@ input {
 input[type='checkbox'],
 input[type='radio'] {
 	width: auto;
+	min-height: 0;
 }
 
 input:focus-visible {
@@ -167,8 +189,9 @@ select {
 	font: inherit;
 	color: inherit;
 	width: 100%;
+	min-height: 44px;
 	border: 1px solid var(--rule);
-	border-radius: var(--radius);
+	border-radius: var(--radius-input);
 	padding: 0.45rem 0.6rem;
 	background: var(--card);
 }
@@ -180,9 +203,11 @@ select:focus-visible {
 
 /* A link-looking button for quieter actions. */
 button.link {
+	min-height: 44px;
 	border: none;
 	background: none;
-	padding: 0.35rem 0.25rem;
+	padding: 0 0.25rem;
+	font-weight: 400;
 	color: var(--muted);
 	text-decoration: underline;
 	text-underline-offset: 0.2em;
@@ -193,6 +218,63 @@ button.link:hover:not(:disabled) {
 }
 
 button.small {
-	padding: 0.2rem 0.65rem;
+	padding: 0 1rem;
 	font-size: 0.9rem;
+}
+
+/* Filter chips in a list toolbar: outlined while off, ink while on. 36px is accepted here, as on the canvas. */
+.chip {
+	min-height: 36px;
+	padding: 0 0.95rem;
+	border: 1px solid var(--ink);
+	border-radius: 999px;
+	background: var(--card);
+	font-size: 0.9rem;
+	font-weight: 500;
+}
+
+.chip[aria-pressed='true'] {
+	background: var(--ink);
+	color: var(--card);
+}
+
+/* Segmented control: a well with the chosen segment raised onto a card. */
+.segmented {
+	display: inline-flex;
+	gap: 2px;
+	padding: 4px;
+	background: var(--well);
+	border-radius: 999px;
+}
+
+.segmented button {
+	border: none;
+	background: none;
+	padding: 0 1.1rem;
+	font-weight: 500;
+}
+
+.segmented button[aria-pressed='true'] {
+	background: var(--card);
+	box-shadow: 0 0 0 1px var(--rule);
+	font-weight: 700;
+}
+
+.card {
+	background: var(--card);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+
+.eyebrow {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.quiet {
+	color: var(--muted);
 }

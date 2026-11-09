@@ -226,7 +226,6 @@
 <style>
 	h1 {
 		margin-top: 0;
-		font-size: 1.5rem;
 		font-weight: 500;
 	}
 

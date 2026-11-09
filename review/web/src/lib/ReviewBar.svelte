@@ -100,18 +100,19 @@
 	{#if loaded}
 		<div class="actions">
 			{#if approved}
-				<button type="button" class="small approved" disabled>Approved</button>
+				<button type="button" class="approved" disabled>Approved</button>
 				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
 			{:else}
-				<button type="button" class="small" disabled={busy} onclick={() => run(() => review.approve(kind, id), onaction)}
-					>Looks right</button
+				<button type="button" class="primary" disabled={busy} onclick={() => run(() => review.approve(kind, id), onaction)}
+					><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>Looks right</button
 				>
 			{/if}
 			{#if fields.length}
-				<button type="button" class="small" aria-expanded={mode === 'change'} onclick={() => open('change')}
-					>Suggest a change</button
+				<button type="button" aria-expanded={mode === 'change'} onclick={() => open('change')}
+					><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5l3 3-8 8H2.5v-3z" /></svg>Suggest a change</button
 				>
 			{/if}
+			<span class="spacer"></span>
 			{#if onskip}
 				<button type="button" class="link" disabled={busy} onclick={() => run(onskip)}>Not sure, skip</button>
 			{/if}
@@ -183,12 +184,30 @@
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 0.5rem;
+		gap: 0.5rem 0.75rem;
 		align-items: center;
+		margin-top: 1.25rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--rule);
+	}
+
+	.spacer {
+		flex: 1 1 0;
+	}
+
+	.icon {
+		width: 16px;
+		height: 16px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.8;
+		stroke-linecap: round;
+		stroke-linejoin: round;
 	}
 
 	.approved:disabled {
 		opacity: 1;
+		background: var(--red-soft);
 		border-color: var(--red);
 		color: var(--red);
 	}

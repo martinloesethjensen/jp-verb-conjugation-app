@@ -8,6 +8,14 @@ export const DATASET_TITLES: Record<Dataset, string> = {
 	grammar: 'Grammar'
 };
 
+/** The Japanese label on each Browse card, shown with its reading as furigana. */
+export const DATASET_JAPANESE: Record<Dataset, { kanji: string; reading: string }> = {
+	verbs: { kanji: '動詞', reading: 'どうし' },
+	words: { kanji: '単語', reading: 'たんご' },
+	counters: { kanji: '助数詞', reading: 'じょすうし' },
+	grammar: { kanji: '文法', reading: 'ぶんぽう' }
+};
+
 export const WORD_CLASSES: Record<string, string> = {
 	'i-adjective': 'い-adjective',
 	'na-adjective': 'な-adjective',

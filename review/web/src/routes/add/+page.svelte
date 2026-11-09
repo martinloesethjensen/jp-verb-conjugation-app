@@ -94,7 +94,6 @@
 
 	h1 {
 		margin: 0 0 1rem;
-		font-size: 1.5rem;
 		font-weight: 500;
 	}
 
