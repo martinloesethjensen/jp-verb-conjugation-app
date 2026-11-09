@@ -15,7 +15,7 @@ struct TagPicker: View {
     @State private var message: String?
     @State private var newDialect: NewDialectRequest?
     /// The last eight tag ids used, newest first, one per line. This device only.
-    @AppStorage("wordBank.recentTags") private var recentRaw = ""
+    @AppStorage(RecentTags.key) private var recentRaw = ""
     private let suggester = TagSuggester()
 
     private var applying: Bool { dialectIDs != nil }
@@ -24,7 +24,7 @@ struct TagPicker: View {
         Set((dialectIDs?.wrappedValue ?? []) + (customIDs?.wrappedValue ?? []))
     }
 
-    private var recent: [UUID] { recentRaw.split(separator: "\n").compactMap { UUID(uuidString: String($0)) } }
+    private var recent: [UUID] { RecentTags.ids(from: recentRaw) }
 
     private var appliedDialects: [DialectTagValue] {
         let ids = dialectIDs?.wrappedValue ?? []
@@ -243,7 +243,6 @@ struct TagPicker: View {
     }
 
     private func remember(_ id: UUID) {
-        let ids = ([id] + recent.filter { $0 != id }).prefix(8)
-        recentRaw = ids.map(\.uuidString).joined(separator: "\n")
+        recentRaw = RecentTags.recording(id, in: recentRaw)
     }
 }

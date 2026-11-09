@@ -111,7 +111,7 @@ Run `make` for the full list. Common ones:
 | `FavouriteVerbs` | Persisted favourite ids |
 | `FolderTree` | Word Bank folder queries (descendants, paths, moves) |
 | `WordBankArchive`, `WordBankImportPlanner`, `WordBankTransfer`, `WordBankEntryCombiner`, `WordBankSmartFolder`, `WordBankBackupStore` | Import/export/merge/backup logic |
-| `TagSuggester`, `RecentSearches`, `DialectCatalogue` | Word Bank tag and search supporting logic |
+| `TagSuggester`, `RecentSearches`, `DialectCatalogue` | Word Bank tag and search supporting logic; `TagSuggester.quickPicks` for the editor's tag chips |
 | `WordBankDates.day/timestamp` (public) | Fixed, locale-independent date stamps in Word Bank file names and notes |
 | `matchesSearch`, `matchesGrammarSearch`, `searchCounters`, `WordBankSearchIndex` | Search implementations |
 | `GlobalSearch.results`, `SearchScope`, `GlobalSearchResults` | The Search tab's one search over all four, with the level setting, hidden-match count and the romaji reading line |
@@ -157,6 +157,7 @@ Run `make` for the full list. Common ones:
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
 | `TagPill` | Paper tag capsule: ink text on `card`, map-pin glyph and ink outline for a dialect tag, number sign, `rule` outline and a colour dot for a custom one |
 | `PaperField`, `PaperFieldSection`, `PaperDivider` | Labelled fields in a paper card, for editors |
+| `RecentTags` | The Word Bank's recently used tag ids (this device, `wordBank.recentTags`), shared by the tag picker and the editor |
 | `EntrySuggestionCard` | The Word Bank editor's on-device suggestion: one dashed card with Use all and Dismiss (`EntrySuggestionModel.dismiss()`) |
 | `QuizChoiceButton` | Shared answer button (colors, shapes, correct/wrong states) |
 | `QuizHeader`, `QuizChoiceGrid` | Quiz progress/score header and two-column answer grid |
@@ -211,6 +212,7 @@ formatter, App Group defaults helper, date formatter or widget theme.
   `swift scripts/generate-icon.swift --font <ShipporiMinchoB1-Bold.ttf>`. Don't hand-edit them; the font
   (SIL OFL) is a generation-time input and is never committed. iOS caches launch screens: uninstall the app to see a new one.
 
+- The Word Bank editor is a `ScrollView` of `PaperFieldSection`s, not a `Form`; add fields as `PaperField`.
 - Adding a Swift file under `App/` is automatically part of the app target, but **not** the widget
   target. Widgets only see files named in `project.yml`.
 - `project.yml` repeats `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` per target; change both
