@@ -172,6 +172,26 @@ input:focus-visible {
 	}
 }
 
+/* A sheet rising from the bottom edge (Sheet.svelte). */
+@keyframes sheet-up {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: none;
+	}
+}
+
+/* The next queue card arriving on a phone: no movement, so the fixed action bar stays put. */
+@keyframes card-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
 /* The next queue card arriving (queue page). */
 @keyframes card-in {
 	from {
@@ -222,9 +242,9 @@ button.small {
 	font-size: 0.9rem;
 }
 
-/* Filter chips in a list toolbar: outlined while off, ink while on. 36px is accepted here, as on the canvas. */
+/* Filter chips in a list toolbar: outlined while off, ink while on. */
 .chip {
-	min-height: 36px;
+	min-height: 44px;
 	padding: 0 0.95rem;
 	border: 1px solid var(--ink);
 	border-radius: 999px;

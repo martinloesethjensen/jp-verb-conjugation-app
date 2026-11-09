@@ -177,7 +177,7 @@
 				center / 100% 1px no-repeat,
 			var(--paper);
 		font-size: 1rem;
-		font-weight: 600;
+		font-weight: 700;
 		line-height: 1.4;
 	}
 

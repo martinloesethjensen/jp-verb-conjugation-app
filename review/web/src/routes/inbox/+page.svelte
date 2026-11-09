@@ -5,6 +5,7 @@
 	import { comment, decide, getInbox, problem, type Field, type InboxSuggestion } from '#lib/api.ts';
 	import ErrorLine from '#lib/ErrorLine.svelte';
 	import SuggestForm from '#lib/SuggestForm.svelte';
+	import InboxGroupHeader from '#lib/InboxGroupHeader.svelte';
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
@@ -124,14 +125,14 @@
 	<p class="notice">Only teachers and Martin can open the inbox.</p>
 {:else}
 
+<div class="tabs-scroll">
 <div class="segmented" role="group" aria-label="Which suggestions">
 	{#each TABS as [value, label] (value)}
 		<button type="button" aria-pressed={status === value} onclick={() => show(value)}
-			>{label}{#if value === 'open' && status === 'open' && suggestions?.length}<span class="open-count"
-					>{suggestions.length}</span
-				>{/if}</button
+			>{label}{#if value === 'open' && status === 'open' && suggestions?.length}<span class="open-count"><span class="visually-hidden">{', '}</span>{suggestions.length}<span class="visually-hidden">{' open'}</span></span>{/if}</button
 		>
 	{/each}
+</div>
 </div>
 
 {#if failure}
@@ -144,16 +145,7 @@
 	{#each groups as group (group.key)}
 		{@const first = group.items[0]}
 		<section class="group">
-			<h2>
-				<span class="on-what"
-					>{groupTitle(first).charAt(0).toUpperCase()}{groupTitle(first).slice(1)} on
-					<a href={suggestionHref(first)} lang="ja">{first.item_title}</a></span
-				>
-				<span class="kind"
-					>{DATASET_TITLES[first.dataset as Dataset] ?? first.dataset} · {group.items.length}
-					{group.items.length === 1 ? 'suggestion' : 'suggestions'}</span
-				>
-			</h2>
+			<InboxGroupHeader {first} count={group.items.length} {readings} {forms} />
 			{#each group.items as s (s.id)}
 				<SuggestionCard
 					suggestion={s}
@@ -223,8 +215,16 @@
 		margin: 0 0 1.25rem;
 	}
 
-	.segmented {
+	/* On a narrow phone the tabs scroll inside their own box rather than widening the page. */
+	.tabs-scroll {
+		max-width: 100%;
 		margin-bottom: 1.75rem;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
+	.segmented {
+		white-space: nowrap;
 	}
 
 	.open-count {
@@ -242,24 +242,8 @@
 		border-radius: var(--radius);
 	}
 
-	h2 {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: space-between;
-		gap: 0.25rem 0.75rem;
-		align-items: baseline;
-		margin: 0 0 0.5rem;
-		font-size: 1.1rem;
-		font-weight: 500;
-	}
 
-	.on-what {
-		overflow-wrap: anywhere;
-	}
 
-	.on-what a {
-		font-family: var(--mincho);
-	}
 
 	@media (max-width: 720px) {
 		.group {
@@ -267,7 +251,6 @@
 		}
 	}
 
-	.kind,
 	.hint,
 	.quiet {
 		font-size: 0.85rem;

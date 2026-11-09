@@ -36,6 +36,11 @@ test('the phone account menu closes after navigating, on Escape and on an outsid
 	expect(source).toMatch(/bind:open=\{menuOpen\}/);
 });
 
+test('the brand link is a 44px target', () => {
+	const source = readFileSync(new URL('./SiteHeader.svelte', import.meta.url), 'utf8');
+	expect(source).toMatch(/\.name \{[^}]*min-height: 44px/);
+});
+
 test('teachers and the owner get an Inbox link; reviewers do not', () => {
 	const teacher: Me = { ...reviewer, display_name: 'Keiko', role: 'teacher' };
 	for (const me of [admin, teacher]) {

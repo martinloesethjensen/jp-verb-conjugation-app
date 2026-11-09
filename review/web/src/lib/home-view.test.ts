@@ -53,3 +53,16 @@ test('a long unbroken name wraps instead of widening the page', () => {
 	const card = readFileSync(new URL('./SuggestionCard.svelte', import.meta.url), 'utf8');
 	expect(card).toMatch(/\.who \{[^}]*overflow-wrap: anywhere/);
 });
+
+test('Home skips the Next up fetch on phones, where the preview is hidden', () => {
+	const view = readFileSync(new URL('./HomeView.svelte', import.meta.url), 'utf8');
+	expect(view).toMatch(/@media \(max-width: 720px\) \{\s*\.next \{\s*display: none;/);
+	const page = readFileSync(new URL('../routes/+page.svelte', import.meta.url), 'utf8');
+	expect(page).toMatch(/if \(!featured \|\| window\.matchMedia\('\(max-width: 720px\)'\)\.matches\) return;/);
+});
+
+test('the Browse tiles use a weight Shippori Mincho loads (500 or 700)', () => {
+	const source = readFileSync(new URL('./HomeView.svelte', import.meta.url), 'utf8');
+	expect(source).toMatch(/\.tile \{[^}]*font-weight: 700/);
+	expect(source).not.toMatch(/font-weight: 600/);
+});

@@ -1,13 +1,14 @@
 <script lang="ts">
 	// The red 確認 seal a reviewer stamps on an item. It presses (a short stamp animation) only when the
 	// viewer's own approval has just appeared, never on load, and never with reduced motion.
-	import { untrack } from 'svelte';
 	import { prefersReducedMotion, shouldPress } from './seal.ts';
 
 	let { name, pressed = false }: { name: string; pressed?: boolean } = $props();
 
 	let press = $state(false);
-	let was = untrack(() => pressed);
+	// Start from "not pressed": `pressed` is only true right after the viewer approves in this visit, and
+	// their seal is created at that moment, so it must press on its first run.
+	let was = false;
 
 	// A latch on the prop's history (pressed went false → true), which $derived can't express.
 	$effect(() => {

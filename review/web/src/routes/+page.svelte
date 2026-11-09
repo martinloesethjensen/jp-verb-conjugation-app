@@ -13,10 +13,11 @@
 	let next = $state<QueueItem | undefined>(undefined);
 	let readings = $state<Record<string, string>>({});
 
-	/** The Continue card's preview: without it the card simply shows no "Next up". */
+	/** The Continue card's preview: without it the card simply shows no "Next up". Phones hide the preview
+	 * (HomeView's 720px breakpoint), so they skip the fetch. */
 	async function loadNext(list: QueueSummary[]) {
 		const featured = list.find((q) => q.done < q.total);
-		if (!featured) return;
+		if (!featured || window.matchMedia('(max-width: 720px)').matches) return;
 		try {
 			const [queue, reference] = await Promise.all([getQueue(featured.id), loadReference()]);
 			readings = reference.readings;
