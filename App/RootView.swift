@@ -11,7 +11,7 @@ struct RootView: View {
     @Environment(DataSyncStatus.self) private var dataSyncStatus
     @Environment(FormCatalogueStore.self) private var formCatalogueStore
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
-    @AppStorage("showFurigana", store: .appGroup) private var showFurigana = true
+    @AppStorage(FuriganaSetting.defaultsKey, store: .appGroup) private var showFurigana = true
     @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
     @AppStorage(ReminderScheduler.minutesKey, store: .appGroup) private var reminderMinutes = ReminderScheduler.defaultMinutes
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
@@ -19,6 +19,12 @@ struct RootView: View {
     @State private var reminderRouter = ReminderRouter.shared
     /// The first-frame hand-off from the launch screen, once per cold launch (iOS).
     @State private var showsLaunchHandoff = true
+    /// The first-run flow, on a new install only (`OnboardingProgress.begin` at launch).
+    @State private var onboarding: Bool
+
+    init(showsOnboarding: Bool = false) {
+        _onboarding = State(initialValue: showsOnboarding)
+    }
     /// "What form is this?" (#110): its index is built here once the verbs are in, not per lookup.
     @State private var formLookup = FormLookupStore()
     @State private var selection: Verb?
@@ -94,7 +100,15 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if verbStore.hasLocalData {
+            if onboarding {
+                OnboardingView(
+                    firstVerb: verbStore.verbs.first { $0.id == "たべる" },
+                    datasets: [verbStore.verbs.levels(), verbStore.grammarPoints.levels()]
+                ) { route in
+                    withAnimation(.smooth) { onboarding = false }
+                    incomingRoute = route
+                }
+            } else if verbStore.hasLocalData {
                 MainTabView(verbSelection: $selection, incomingRoute: $incomingRoute, onSettings: { showingSettings = true }) {
                     verbsTab
                 }

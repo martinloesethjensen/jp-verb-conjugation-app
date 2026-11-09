@@ -22,7 +22,12 @@ struct JPVerbConjugationApp: App {
     @State private var courseStore = CourseStore(defaults: .appGroup)
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
+    /// Whether this launch shows the first-run flow (a new install that has not finished it).
+    private let firstRun: Bool
+
     init() {
+        // First, before any store installs bundled data (which would look like an existing install).
+        firstRun = OnboardingProgress.begin(appGroup: .appGroup, standard: .standard)
         // Before any scene: migrates the old Appearance setting into the theme keys that
         // `themedRoot()` reads, so a dark-mode user never sees a light first frame.
         _ = ThemeChoice.load(from: .appGroup)
@@ -111,7 +116,7 @@ struct JPVerbConjugationApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            RootView(showsOnboarding: firstRun)
                 .environment(verbStore)
                 .environment(furiganaStore)
                 .environment(wordsStore)

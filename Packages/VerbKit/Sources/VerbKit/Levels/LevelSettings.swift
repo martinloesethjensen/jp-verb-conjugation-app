@@ -61,6 +61,17 @@ public struct LevelSettings: Equatable, Sendable {
         return visible.map(\.rawValue).joined(separator: ", ")
     }
 
+    /// The setting for someone studying `picked`: every other level hidden, except that each
+    /// non-empty dataset keeps at least one level visible (its hardest), so a learner studying only
+    /// N3 still has verbs (which exist at N5 and N4) to look at.
+    public static func studying(_ picked: Set<JLPTLevel>, amongEach datasets: [Set<JLPTLevel>]) -> LevelSettings {
+        var hidden = Set(JLPTLevel.allCases).subtracting(picked)
+        for dataset in datasets where !dataset.isEmpty && dataset.isSubset(of: hidden) {
+            if let hardest = dataset.max() { hidden.remove(hardest) }
+        }
+        return LevelSettings(hidden: hidden)
+    }
+
     public static func load(from defaults: UserDefaults? = nil) -> LevelSettings {
         LevelSettings(rawValue: (defaults ?? .verbKitAppGroup).string(forKey: defaultsKey))
     }
