@@ -5,7 +5,7 @@ use serde_json::{json, Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
 const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
-const LOCKED: &str = "can't be changed here; leave a note for Martin instead";
+const LOCKED: &str = "can't be changed here; leave a note instead";
 
 fn doc(file: DataFile) -> Value {
     serde_json::from_slice(&std::fs::read(format!("{ROOT}/data/{}", file.file_name())).unwrap())

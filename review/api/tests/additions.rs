@@ -373,10 +373,7 @@ fn unknown_and_missing_fields() {
         json!({"class": "noun", "dict": "ねこ", "meaning": "cat", "jlpt": "N5", "forms": "x"}),
         &free,
     ));
-    assert_eq!(
-        e,
-        "forms can't be changed here; leave a note for Martin instead"
-    );
+    assert_eq!(e, "forms can't be changed here; leave a note instead");
     let e = invalid(add(
         DataFile::Words,
         Kind::Entry,

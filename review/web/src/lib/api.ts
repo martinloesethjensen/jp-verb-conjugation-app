@@ -1,7 +1,7 @@
 // The Worker's API (review/api). Same origin, behind Cloudflare Access: the browser's Access cookie is the
 // only credential, so every request just sends same-origin credentials.
 
-export type Role = 'admin' | 'reviewer';
+export type Role = 'admin' | 'teacher' | 'reviewer';
 /** How someone is credited in the public repo. */
 export type PublicRole = 'owner' | 'teacher' | 'native';
 export type Me = {
@@ -72,6 +72,10 @@ export const setMyName = (displayName: string) =>
 /** Null or blank: anonymous, credited by role only. */
 export const setPublicName = (publicName: string | null) =>
 	request<Me>('/api/me/public-name', { public_name: publicName });
+
+/** Reviewer or teacher; the owner's own role never changes here. */
+export const setAccessRole = (email: string, role: 'teacher' | 'reviewer') =>
+	request<User>('/api/admin/users/access', { email, role });
 
 export const setPublicRole = (email: string, publicRole: PublicRole) =>
 	request<User>('/api/admin/users/role', { email, public_role: publicRole });
@@ -377,14 +381,14 @@ export const removeQueueItem = (queueId: number, target: Target) =>
 	request<Queue>('/api/admin/queues/remove', { queue_id: queueId, ...body(target) });
 
 export const getInbox = async (status: 'open' | 'accepted' | 'declined' = 'open') =>
-	(await request<{ suggestions: InboxSuggestion[] }>(`/api/admin/inbox?${new URLSearchParams({ status })}`))
+	(await request<{ suggestions: InboxSuggestion[] }>(`/api/inbox?${new URLSearchParams({ status })}`))
 		.suggestions;
 
 export const decide = (
 	id: number,
 	decision: 'accept' | 'decline',
 	extra: Edits & { reply?: string; confirm?: boolean } = {}
-) => request<Suggestion & { warning?: string }>('/api/admin/decide', { id, decision, ...extra });
+) => request<Suggestion & { warning?: string }>('/api/decide', { id, decision, ...extra });
 
 /** The message to show for a failed request. */
 export function problem(error: unknown): string {

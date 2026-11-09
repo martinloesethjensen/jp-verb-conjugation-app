@@ -1,6 +1,7 @@
 // A stand-in for review/api during `vite dev` and `vite preview` (the built site, with its CSP), so the site
 // can be worked on without Cloudflare. It runs in the local dev server only; nothing here is in the build.
-// `MOCK_ROLE=reviewer npm run dev` signs you in as a reviewer instead of the owner.
+// `MOCK_ROLE=reviewer npm run dev` signs you in as a reviewer instead of the owner; `MOCK_ROLE=teacher` as a
+// teacher.
 import { readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
@@ -9,7 +10,7 @@ import { ADD_FIELDS, ADD_PARENTS, FIELDS, reviewMock } from './mock-review.ts';
 type User = {
 	email: string;
 	display_name: string;
-	role: 'admin' | 'reviewer';
+	role: 'admin' | 'teacher' | 'reviewer';
 	active: boolean;
 	public_role: 'owner' | 'teacher' | 'native';
 	public_name: string | null;
@@ -116,9 +117,10 @@ function publishedData() {
 function handler() {
 	const users: User[] = [
 		{ email: 'aiko@example.com', display_name: 'Aiko', role: 'reviewer', active: true, public_role: 'native', public_name: null },
+		{ email: 'keiko@example.com', display_name: 'Keiko', role: 'teacher', active: true, public_role: 'teacher', public_name: null },
 		{ email: 'owner@example.com', display_name: 'Martin', role: 'admin', active: true, public_role: 'owner', public_name: null }
 	];
-	const me = process.env.MOCK_ROLE === 'reviewer' ? users[0] : users[1];
+	const me = users.find((u) => u.role === (process.env.MOCK_ROLE ?? 'admin')) ?? users[2];
 	const data = publishedData();
 	if (process.env.MOCK_LOADED) for (const f of FILES) data.load(f);
 	const review = reviewMock({
@@ -230,6 +232,17 @@ function handler() {
 					return send(400, { error: 'the request body is not valid' });
 				}
 				user.public_role = role;
+				return send(200, user);
+			}
+			if (path === '/admin/users/access' && req.method === 'POST') {
+				const user = users.find((u) => u.email === body.email);
+				if (!user) return send(404, { error: 'no reviewer has that email' });
+				if (body.role === 'admin') return send(400, { error: 'there is only one owner' });
+				if (user.role === 'admin') return send(400, { error: "the owner's role can't change here" });
+				if (body.role !== 'teacher' && body.role !== 'reviewer') {
+					return send(400, { error: 'the request body is not valid' });
+				}
+				user.role = body.role;
 				return send(200, user);
 			}
 			if (path === '/admin/users/active' && req.method === 'POST') {

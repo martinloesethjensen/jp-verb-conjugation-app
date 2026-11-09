@@ -35,3 +35,12 @@ test('the phone account menu closes after navigating, on Escape and on an outsid
 	expect(source).toMatch(/key === 'Escape'/);
 	expect(source).toMatch(/bind:open=\{menuOpen\}/);
 });
+
+test('teachers and the owner get an Inbox link; reviewers do not', () => {
+	const teacher: Me = { ...reviewer, display_name: 'Keiko', role: 'teacher' };
+	for (const me of [admin, teacher]) {
+		const { body } = render(SiteHeader, { props: { me } });
+		expect(body.match(/href="\/inbox"/g)?.length, me.role).toBe(2);
+	}
+	expect(render(SiteHeader, { props: { me: reviewer } }).body).not.toContain('href="/inbox"');
+});

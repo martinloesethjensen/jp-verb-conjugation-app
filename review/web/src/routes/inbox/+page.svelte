@@ -1,5 +1,5 @@
 <script lang="ts">
-	// The owner's inbox: every suggestion as a red-pen correction, grouped by item so counter-suggestions
+	// The inbox, for teachers and the owner: every suggestion as a red-pen correction, grouped by item so counter-suggestions
 	// sit side by side. Accepting only marks a suggestion accepted; nothing reaches data/ until export.
 	import { onMount } from 'svelte';
 	import { comment, decide, getInbox, problem, type Field, type InboxSuggestion } from '#lib/api.ts';
@@ -8,8 +8,13 @@
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
+	import { canDecide, OWN_SUGGESTION_LINE } from '#lib/roles.ts';
+	import { getSession } from '#lib/session.ts';
 	import { editForm, suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
+
+	const { me } = getSession();
+	const allowed = canDecide(me().role);
 
 	type Status = 'open' | 'accepted' | 'declined';
 	const TABS: [Status, string][] = [
@@ -33,6 +38,7 @@
 	let busy = $state(false);
 
 	onMount(() => {
+		if (!allowed) return;
 		show('open');
 		loadReference().then((reference) => {
 			readings = reference.readings;
@@ -65,7 +71,7 @@
 	});
 
 	const adding = (s: InboxSuggestion) => s.action === 'add';
-	/** The fields the owner edits: an addition's add form, otherwise the change form. */
+	/** The fields a teacher or the owner edits: an addition's add form, otherwise the change form. */
 	const fieldsOf = (s: InboxSuggestion) => (adding(s) ? addFields : fieldTable)[`${s.dataset}/${s.kind}`] ?? [];
 	const canEdit = (s: InboxSuggestion) =>
 		fieldsOf(s).length > 0 && s.action !== 'delete' && (adding(s) ? !s.gone : !!s.current);
@@ -112,8 +118,11 @@
 	<title>Suggestions · Kotoba Table review</title>
 </svelte:head>
 
-<p class="back"><a href="/admin">Back to admin</a></p>
 <h1>Suggestions</h1>
+
+{#if !allowed}
+	<p class="notice">Only teachers and Martin can open the inbox.</p>
+{:else}
 
 <div class="segmented" role="group" aria-label="Which suggestions">
 	{#each TABS as [value, label] (value)}
@@ -156,7 +165,9 @@
 				>
 					{#snippet actions()}
 						{#if s.status === 'open'}
-							{#if confirming?.id === s.id}
+							{#if s.mine}
+								<p class="hint">{OWN_SUGGESTION_LINE}</p>
+							{:else if confirming?.id === s.id}
 								<p class="warning">{confirming.warning}</p>
 								<button type="button" class="danger" disabled={busy} onclick={() => accept(s)}>Accept and remove</button>
 								<button type="button" class="link" onclick={() => (confirming = null)}>Cancel</button>
@@ -205,12 +216,9 @@
 		</section>
 	{/each}
 {/if}
+{/if}
 
 <style>
-	.back {
-		margin: 0 0 1rem;
-	}
-
 	h1 {
 		margin: 0 0 1.25rem;
 	}

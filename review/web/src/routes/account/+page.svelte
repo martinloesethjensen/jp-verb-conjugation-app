@@ -61,7 +61,7 @@
 
 <section class="card" aria-labelledby="name-heading">
 	<h1 id="name-heading">Your name</h1>
-	<p class="hint">This is how Martin and the other reviewers see you on this site.</p>
+	<p class="hint">This is how the other reviewers see you on this site.</p>
 	<form onsubmit={save}>
 		<label>
 			<span>Name</span>

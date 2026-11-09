@@ -13,7 +13,7 @@ type Entry = { item_id: string; title: string; jlpt: string | null; json: Json }
 type User = {
 	email: string;
 	display_name: string;
-	role: 'admin' | 'reviewer';
+	role: 'admin' | 'teacher' | 'reviewer';
 	public_role: 'owner' | 'teacher' | 'native';
 	public_name: string | null;
 };
@@ -284,7 +284,7 @@ export function reviewMock(ctx: ReviewContext) {
 		const proposed: Json = { ...current };
 		for (const [key, raw] of Object.entries(edits)) {
 			const field = fields.find((x) => x.name === key);
-			if (!field) return `${key} can't be changed here; leave a note for Martin instead`;
+			if (!field) return `${key} can't be changed here; leave a note instead`;
 			const value = String(raw ?? '').trim();
 			if (value.length > 2000) return `${key} is too long`;
 			if (!value) {
@@ -313,7 +313,10 @@ export function reviewMock(ctx: ReviewContext) {
 
 	function handle(path: string, method: string, params: URLSearchParams, body: Json): Reply | undefined {
 		const admin = path.startsWith('/admin/');
-		const adminPaths = ['/admin/inbox', '/admin/decide', '/admin/stamp', '/admin/stamp/withdraw', '/admin/stampable', '/admin/export', '/admin/exported'];
+		if ((path === '/inbox' || path === '/decide') && ctx.me.role === 'reviewer') {
+			return [403, { error: "this account can't do that" }];
+		}
+		const adminPaths = ['/admin/stamp', '/admin/stamp/withdraw', '/admin/stampable', '/admin/export', '/admin/exported'];
 		if (admin && (adminPaths.includes(path) || path.startsWith('/admin/queues'))) {
 			if (ctx.me.role !== 'admin') return [403, { error: "this account can't do that" }];
 		}
@@ -523,7 +526,7 @@ export function reviewMock(ctx: ReviewContext) {
 			if (path === '/admin/queues/remove' && item) queueItems.splice(queueItems.indexOf(item), 1);
 			return [200, queueOut(queue)];
 		}
-		if (path === '/admin/inbox') {
+		if (path === '/inbox') {
 			const status = params.get('status') ?? 'open';
 			return [200, {
 				suggestions: suggestions.filter((s) => s.status === status).map((s) => {
@@ -532,8 +535,11 @@ export function reviewMock(ctx: ReviewContext) {
 				})
 			}];
 		}
-		if (path === '/admin/decide') {
+		if (path === '/decide') {
 			if (!suggestion) return [404, { error: 'no such suggestion' }];
+			if (suggestion.author === by) {
+				return [403, { error: 'someone else decides your own suggestion; withdraw it instead' }];
+			}
 			if (suggestion.status !== 'open') return [409, { error: DECIDED }];
 			const out = suggestionOut(suggestion);
 			let warning: string | undefined;

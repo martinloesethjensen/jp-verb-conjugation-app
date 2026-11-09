@@ -38,7 +38,7 @@ describe('the restyled card and inbox', () => {
 	});
 
 	test('the inbox tabs are a segmented control and its buttons are pills', () => {
-		const page = readFileSync(new URL('../routes/admin/inbox/+page.svelte', import.meta.url), 'utf8');
+		const page = readFileSync(new URL('../routes/inbox/+page.svelte', import.meta.url), 'utf8');
 		expect(page).toMatch(/class="segmented"[^>]*role="group"|role="group"[^>]*class="segmented"/);
 		expect(page).not.toMatch(/class="[^"]*\bsmall\b[^"]*"/);
 	});
