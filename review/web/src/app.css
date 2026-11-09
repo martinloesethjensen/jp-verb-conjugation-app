@@ -172,6 +172,16 @@ input:focus-visible {
 	}
 }
 
+/* A sheet rising from the bottom edge (Sheet.svelte). */
+@keyframes sheet-up {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: none;
+	}
+}
+
 /* The next queue card arriving (queue page). */
 @keyframes card-in {
 	from {

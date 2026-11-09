@@ -66,3 +66,8 @@ test('the old muted colour and 6px radius are gone from src', () => {
 		expect(text, file).not.toMatch(/border-radius:\s*6px/);
 	}
 });
+
+test('sheets slide up, and reduced motion still switches animations off', () => {
+	expect(css).toMatch(/@keyframes sheet-up/);
+	expect(css).toMatch(/prefers-reduced-motion: reduce[\s\S]*animation: none !important/);
+});
