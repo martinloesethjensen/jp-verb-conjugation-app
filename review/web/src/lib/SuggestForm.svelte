@@ -218,8 +218,10 @@
 		overflow-wrap: anywhere;
 	}
 
+	/* A full 44px target; the negative margin keeps the line from growing. */
 	.was .link {
-		min-height: 32px;
+		min-height: 44px;
+		margin: -6px 0;
 		font-size: inherit;
 	}
 
