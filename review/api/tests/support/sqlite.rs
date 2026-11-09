@@ -62,10 +62,7 @@ impl SqliteStore {
 }
 
 fn role(text: String) -> Role {
-    match text.as_str() {
-        "admin" => Role::Admin,
-        _ => Role::Reviewer,
-    }
+    Role::parse(&text).unwrap_or_else(|| panic!("unknown role {text:?}"))
 }
 
 fn row_to_user(row: &rusqlite::Row) -> rusqlite::Result<User> {

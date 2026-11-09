@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "lowercase")]
 pub enum Role {
     Admin,
+    /// Accepts and declines other people's suggestions.
+    Teacher,
     Reviewer,
 }
 
@@ -15,6 +17,7 @@ impl Role {
     pub fn as_str(self) -> &'static str {
         match self {
             Role::Admin => "admin",
+            Role::Teacher => "teacher",
             Role::Reviewer => "reviewer",
         }
     }
@@ -22,9 +25,15 @@ impl Role {
     pub fn parse(text: &str) -> Option<Role> {
         match text {
             "admin" => Some(Role::Admin),
+            "teacher" => Some(Role::Teacher),
             "reviewer" => Some(Role::Reviewer),
             _ => None,
         }
+    }
+
+    /// May accept and decline suggestions (never their own): teachers and the owner.
+    pub fn can_decide(self) -> bool {
+        matches!(self, Role::Teacher | Role::Admin)
     }
 }
 

@@ -308,3 +308,94 @@ async fn migration_0006_credits_the_admin_as_owner() {
     assert_eq!(aiko.public_role.as_str(), "native");
     assert_eq!(aiko.public_name, None);
 }
+
+/// Makes `email` a teacher (active unless `active` is false) straight in the table.
+fn add_teacher(s: &SqliteStore, email: &str, active: bool) {
+    s.conn
+        .borrow()
+        .execute(
+            "INSERT INTO users (email, display_name, role, active, created_at) VALUES (?1, 'Keiko', 'teacher', ?2, 't')",
+            rusqlite::params![email, active as i64],
+        )
+        .unwrap();
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn migration_0007_keeps_every_user_and_allows_teacher() {
+    let s = SqliteStore::with_migrations_before("0007");
+    s.conn
+        .borrow()
+        .execute_batch(
+            "INSERT INTO users (email, display_name, role, active, created_at, public_role) VALUES \
+             ('owner@example.com', 'Martin', 'admin', 1, 't1', 'owner'); \
+             INSERT INTO users (email, display_name, role, active, created_at, public_role, public_name) VALUES \
+             ('aiko@example.com', 'Aiko', 'reviewer', 1, 't2', 'teacher', 'Aiko'); \
+             INSERT INTO users (email, display_name, role, active, created_at) VALUES \
+             ('ken@example.com', 'Ken', 'reviewer', 0, 't3');",
+        )
+        .unwrap();
+    let before = s.users().await.unwrap();
+    s.apply_migrations_from("0007");
+    assert_eq!(s.users().await.unwrap(), before);
+    let created: Vec<String> = s
+        .conn
+        .borrow()
+        .prepare("SELECT created_at FROM users ORDER BY created_at")
+        .unwrap()
+        .query_map([], |r| r.get(0))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    assert_eq!(created, ["t1", "t2", "t3"]);
+    let conn = s.conn.borrow();
+    conn.execute("UPDATE users SET role = 'teacher' WHERE email = 'aiko@example.com'", [])
+        .unwrap();
+    assert!(conn
+        .execute("UPDATE users SET role = 'boss' WHERE email = 'ken@example.com'", [])
+        .is_err());
+    drop(conn);
+    assert_eq!(s.user("aiko@example.com").await.unwrap().unwrap().role, Role::Teacher);
+}
+
+#[test]
+fn only_teachers_and_the_admin_can_decide() {
+    assert!(Role::Teacher.can_decide());
+    assert!(Role::Admin.can_decide());
+    assert!(!Role::Reviewer.can_decide());
+    assert_eq!(Role::parse("teacher"), Some(Role::Teacher));
+    assert_eq!(Role::Teacher.as_str(), "teacher");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn teacher_routes_need_a_teacher_or_the_admin_on_either_application() {
+    let s = seeded().await;
+    add_teacher(&s, "keiko@example.com", true);
+    add_teacher(&s, "old@example.com", false);
+    let keiko = claims(Some("keiko@example.com"));
+    for audience in [Audience::Reviewer, Audience::Admin] {
+        for need in [Need::Reviewer, Need::Teacher] {
+            assert_eq!(
+                authorize(&keiko, audience, need, &s).await.unwrap().role,
+                Role::Teacher,
+                "{audience:?} {need:?}"
+            );
+        }
+        assert_eq!(
+            authorize(&keiko, audience, Need::Admin, &s).await,
+            Err(Denied::Forbidden)
+        );
+        let aiko = claims(Some("aiko@example.com"));
+        assert_eq!(
+            authorize(&aiko, audience, Need::Teacher, &s).await,
+            Err(Denied::Forbidden)
+        );
+        let old = claims(Some("old@example.com"));
+        for need in [Need::Reviewer, Need::Teacher, Need::Admin] {
+            assert_eq!(authorize(&old, audience, need, &s).await, Err(Denied::Forbidden));
+        }
+    }
+    let owner = claims(Some(OWNER));
+    assert!(authorize(&owner, Audience::Reviewer, Need::Teacher, &s)
+        .await
+        .is_ok());
+}
