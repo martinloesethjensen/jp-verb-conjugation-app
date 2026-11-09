@@ -25,3 +25,23 @@ test('outside a queue, approved stays as it was', () => {
 	expect(body).toContain('Approved');
 	expect(body).not.toContain('Next item');
 });
+
+const field = (name: string) => ({ name, input: 'text' as const, optional: false, choices: [] });
+
+test('docked on a phone: Looks right, Suggest a change and More in the action bar', () => {
+	const { body } = render(ReviewBar, {
+		props: { ...props, review: stub(false), docked: true, phone: true, fields: [field('en')], onskip: async () => {} }
+	});
+	expect(body).toMatch(/class="action-bar[^"]*"[\s\S]*Looks right[\s\S]*Suggest a change[\s\S]*More/);
+	expect(body).not.toMatch(/class="link[^"]*"[^>]*>Not sure, skip/);
+});
+
+test('docked on a phone after approving: Next item and Undo in the bar', () => {
+	const { body } = render(ReviewBar, { props: { ...props, review: stub(true), docked: true, phone: true, onnext: () => {} } });
+	expect(body).toMatch(/class="action-bar[^"]*"[\s\S]*Next item[\s\S]*Undo/);
+});
+
+test('not docked: no action bar', () => {
+	const { body } = render(ReviewBar, { props: { ...props, review: stub(false), phone: true } });
+	expect(body).not.toContain('action-bar');
+});

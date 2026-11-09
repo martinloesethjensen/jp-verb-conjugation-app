@@ -182,6 +182,16 @@ input:focus-visible {
 	}
 }
 
+/* The next queue card arriving on a phone: no movement, so the fixed action bar stays put. */
+@keyframes card-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
 /* The next queue card arriving (queue page). */
 @keyframes card-in {
 	from {

@@ -19,7 +19,8 @@
 		forms,
 		onaction,
 		onskip,
-		onnext
+		onnext,
+		docked = false
 	}: {
 		item: QueueItem;
 		/** The item's entry, or null when it left the data. */
@@ -32,6 +33,8 @@
 		onskip: () => Promise<void>;
 		/** Approving stays on the item; "Next item" calls this. */
 		onnext?: () => void;
+		/** In a queue: on a phone the actions sit in a fixed bar at the bottom. */
+		docked?: boolean;
 	} = $props();
 
 	const value = $derived(entry ? partOf(entry, item.kind, item.item_id) : undefined);
@@ -73,6 +76,7 @@
 			{onaction}
 			{onskip}
 			{onnext}
+			{docked}
 		/>
 	{:else}
 		<p class="gone">No longer in the data: {item.title}</p>
@@ -131,6 +135,14 @@
 	@media (max-width: 720px) {
 		.review-card {
 			padding: 20px;
+		}
+	}
+
+	/* A transformed ancestor would carry the phone action bar (position: fixed) along with it, so on
+	   phones the card fades in without sliding. */
+	@media (max-width: 959px) {
+		.review-card {
+			animation-name: card-fade;
 		}
 	}
 

@@ -150,6 +150,7 @@
 							{forms}
 							onaction={next}
 							onnext={next}
+							docked
 							onskip={() => skipCurrent(current)}
 						/>
 					{:catch error}
@@ -318,6 +319,13 @@
 		min-width: 0;
 		overflow-x: clip;
 		overflow-clip-margin: 8px;
+	}
+
+	/* Room under the card for the fixed action bar, so it never covers the last suggestion. */
+	@media (max-width: 959px) {
+		.card-pane {
+			padding-bottom: calc(9rem + env(safe-area-inset-bottom));
+		}
 	}
 
 
