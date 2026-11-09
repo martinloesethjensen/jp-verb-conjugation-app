@@ -8,6 +8,12 @@ public struct OnboardingChoices: Equatable, Sendable {
 
     public init() {}
 
+    /// Starts with `theme` picked: a flow reopened after the app was killed keeps the theme it had
+    /// already written (the theme page writes it live).
+    public init(theme: ThemeID) {
+        self.theme = theme
+    }
+
     /// Picks or unpicks `level`; the last picked level stays picked.
     public mutating func toggle(_ level: JLPTLevel) {
         if levels.contains(level) {

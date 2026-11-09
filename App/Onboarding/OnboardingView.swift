@@ -14,7 +14,9 @@ struct OnboardingView: View {
     let onFinish: (Route?) -> Void
 
     @State private var step: OnboardingStep = .welcome
-    @State private var choices = OnboardingChoices()
+    /// Seeded with the stored theme, which the theme page writes live, so a flow reopened after a
+    /// kill rings the theme it is painted in and finishing keeps it.
+    @State private var choices = OnboardingChoices(theme: ThemeChoice.load(from: .appGroup).theme)
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

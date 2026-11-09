@@ -63,6 +63,14 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(choices.theme, .light)
     }
 
+    func testChoicesCanStartFromTheStoredTheme() {
+        // A flow reopened after a kill on page 4 or 5 keeps the theme already picked.
+        let choices = OnboardingChoices(theme: .matcha)
+        XCTAssertEqual(choices.theme, .matcha)
+        XCTAssertEqual(choices.levels, [.n5, .n4])
+        XCTAssertTrue(choices.furigana)
+    }
+
     func testApplyWritesOnlyItsThreeSettings() {
         let group = fresh("g")
         ThemeChoice(theme: .latte, appearance: .dark, seasonal: true).save(to: group)
