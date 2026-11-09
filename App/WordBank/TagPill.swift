@@ -18,13 +18,16 @@ extension CustomTagColor {
     var title: String { rawValue.capitalized }
 }
 
-/// A small capsule for a tag. Dialect tags use the accent colour and a map-pin glyph,
-/// custom tags their own colour and a number sign, so the two kinds read differently
-/// without relying on colour alone.
+/// A small paper capsule for a tag: ink text on `card`, a map-pin glyph and an ink outline for a
+/// dialect tag, a number sign, a `rule` outline and a dot in the tag's colour for a custom one. The
+/// glyph tells the two kinds apart without colour; the colour never carries the text.
 struct TagPill: View {
     let text: String
     let color: Color
     var systemImage: String?
+    var isDialect = false
+
+    @Environment(\.palette) private var palette
 
     init(_ text: String, color: Color, systemImage: String? = nil) {
         self.text = text
@@ -34,6 +37,7 @@ struct TagPill: View {
 
     init(_ tag: DialectTagValue) {
         self.init(tag.name, color: .accentColor, systemImage: "mappin.and.ellipse")
+        isDialect = true
     }
 
     init(_ tag: CustomTagValue) {
@@ -41,16 +45,18 @@ struct TagPill: View {
     }
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 4) {
             if let systemImage {
-                Image(systemName: systemImage).font(.caption2).accessibilityHidden(true)
+                Image(systemName: systemImage).font(.caption2).foregroundStyle(palette.muted).accessibilityHidden(true)
             }
-            Text(text).font(.caption.weight(.medium)).lineLimit(1)
+            if !isDialect {
+                Circle().fill(color).frame(width: 6, height: 6).accessibilityHidden(true)
+            }
+            Text(text).font(.caption.weight(.medium)).foregroundStyle(palette.ink).lineLimit(1)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 9)
         .padding(.vertical, 3)
-        .foregroundStyle(color == .yellow ? Color.primary : color)
-        .background(color.opacity(0.15), in: Capsule())
+        .background(palette.card, in: Capsule())
+        .overlay(Capsule().strokeBorder(isDialect ? palette.ink : palette.rule, lineWidth: 1))
     }
 }
-

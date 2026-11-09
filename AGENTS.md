@@ -140,7 +140,7 @@ Run `make` for the full list. Common ones:
 | `LevelBadge(level:emphasis:)` | Outlined JLPT pill beside a row title or in a detail header; nil draws nothing |
 | `\.palette` / `ThemePalette` | The current theme's colours (paper, card, ink, muted, rule, mark, good, button, accent). Read these, not `.secondary`/`.white`, in restyled views |
 | `paperCard(cornerRadius:fillsWidth:ruled:)` | Card for detail sections: `card` fill, `rule` outline. Glass stays on bars and toolbars. `ruled: true` adds the genkō grid, for example sentences and results |
-| `PaperButtonStyle` (`.paper` / `.paperSecondary` / `.paperSecondaryInline`) | Ink-filled or outlined full-width capsule for content buttons, instead of glass (`.glassProminent` draws a white label on the root tint, unreadable in dark halves); the inline one hugs its label |
+| `PaperButtonStyle` (`.paper` / `.paperSecondary` / `.paperSecondaryInline` / `.paperInline`) | Ink-filled or outlined full-width capsule for content buttons, instead of glass (`.glassProminent` draws a white label on the root tint, unreadable in dark halves); the inline one hugs its label |
 | `paperSwitch()` | Put on every switch `Toggle`: colours its "on" track with `accent` (the root tint is `button`) |
 | `paperBackground()`, `paperRow()` | Paper behind a screen's List/ScrollView/Form; card-coloured list rows |
 | `TypeLabel(_:teGroup:emphasis:title:)` | A verb type as a dot + ink label (shapes with Differentiate Without Color; filled pill in Pastel/Ice cream) |
@@ -155,7 +155,8 @@ Run `make` for the full list. Common ones:
 | `OnboardingOption` | A selectable onboarding card: 2 pt ink border and `.isSelected` when chosen |
 | `RowChevron` | Disclosure chevron at the end of an opening row |
 | `SectionHeader(_:systemImage:trailing:)` | Detail-page section heading, with an optional trailing hint or button |
-| `TagPill` | Dialect/custom tag capsule |
+| `TagPill` | Paper tag capsule: ink text on `card`, map-pin glyph and ink outline for a dialect tag, number sign, `rule` outline and a colour dot for a custom one |
+| `PaperField`, `PaperFieldSection`, `PaperDivider` | Labelled fields in a paper card, for editors |
 | `QuizChoiceButton` | Shared answer button (colors, shapes, correct/wrong states) |
 | `QuizHeader`, `QuizChoiceGrid` | Quiz progress/score header and two-column answer grid |
 | `QuizPromptCard`, `QuizFeedbackCard`, `QuizMissedCard` | Question, feedback and missed-question card surfaces |

@@ -53,4 +53,6 @@ extension ButtonStyle where Self == PaperButtonStyle {
     static var paperSecondary: Self { PaperButtonStyle(.secondary) }
     /// The outlined capsule hugging its label, for small buttons in a row or card.
     static var paperSecondaryInline: Self { PaperButtonStyle(.secondary, fillsWidth: false) }
+    /// The ink-filled capsule hugging its label, for a small primary action in a row or card.
+    static var paperInline: Self { PaperButtonStyle(.primary, fillsWidth: false) }
 }
