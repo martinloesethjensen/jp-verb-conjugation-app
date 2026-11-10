@@ -66,7 +66,9 @@
 		</p>
 	{/if}
 	{#if value}
-		<PartView dataset={item.dataset} kind={item.kind} {value} {readings} {forms} />
+		<div data-tour="item">
+			<PartView dataset={item.dataset} kind={item.kind} {value} {readings} {forms} />
+		</div>
 		<ReviewBar
 			{review}
 			kind={item.kind}

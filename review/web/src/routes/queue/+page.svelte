@@ -15,6 +15,8 @@
 	import { EntryReview } from '#lib/review.svelte.ts';
 	import { settings } from '#lib/settings.svelte.ts';
 	import { isTyping, shortcutFor } from '#lib/shortcuts.ts';
+	import TourGuide from '#lib/TourGuide.svelte';
+	import { availableSteps, shouldTour, type TourStep } from '#lib/tour.ts';
 
 	type Json = { [key: string]: any };
 	type Loaded = { entry: Json | null; review: EntryReview };
@@ -101,6 +103,25 @@
 		selected = null;
 	}
 
+	// The tour's highlighted steps, the first time someone who saw the welcome opens a queue. They wait for the
+	// card to render, then use whichever targets are on the page.
+	let tourSteps = $state<TourStep[] | null>(null);
+	$effect(() => {
+		if (tourSteps || !current || !shouldTour(settings.value, settings.loaded, phone.current)) return;
+		let frames = 0;
+		let handle = requestAnimationFrame(function look() {
+			if (document.querySelector('[data-tour="item"]') || ++frames > 300) {
+				tourSteps = availableSteps((t) => document.querySelector(`[data-tour="${t}"]`) !== null);
+			} else handle = requestAnimationFrame(look);
+		});
+		return () => cancelAnimationFrame(handle);
+	});
+
+	function endTour() {
+		tourSteps = [];
+		settings.change({ tour: 'done' }).catch(() => {});
+	}
+
 	// Keyboard shortcuts (desktop, unless switched off in Settings): a key presses the button that carries its
 	// `data-shortcut` in the current card, so it only ever does what the card offers.
 	let pane = $state<HTMLElement>();
@@ -150,6 +171,9 @@
 </script>
 
 <svelte:window {onkeydown} />
+{#if tourSteps?.length && shouldTour(settings.value, settings.loaded, phone.current)}
+	<TourGuide steps={tourSteps} ondone={endTour} />
+{/if}
 <KeyboardHelp open={helpOpen} onclose={() => (helpOpen = false)} />
 
 <svelte:head>
@@ -189,7 +213,7 @@
 	</Sheet>
 
 	<div class="layout">
-		<nav class="list card" aria-label="Items in this queue">
+		<nav class="list card" aria-label="Items in this queue" data-tour="list">
 			<QueueItemList items={data.items} currentKey={current && keyOf(current)} bind:filter onselect={choose} />
 		</nav>
 
