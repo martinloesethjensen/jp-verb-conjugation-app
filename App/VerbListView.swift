@@ -196,7 +196,7 @@ struct VerbListView: View {
             #endif
         }
         .paperBackground()
-        .navigationTitle("早見表")
+        .motifTitle("早見表")
         .navigationSubtitle(filterSummary)
         .sheet(isPresented: $showGuide) { VerbGuideSheet() }
         .formLookupSheet($formLookupRequest)
