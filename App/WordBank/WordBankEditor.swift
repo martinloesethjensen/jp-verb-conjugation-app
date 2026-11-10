@@ -32,6 +32,10 @@ struct WordBankEditor: View {
     @State private var choosingTags = false
     @State private var failed = false
     @AppStorage(RecentTags.key) private var recentTagsRaw = ""
+    /// The tag chips as first drawn, so ticking or unticking never makes one jump or vanish.
+    @State private var shownTagIDs: [UUID]?
+    /// Any field of the standard-form and meaning rows; cleared before a row is removed.
+    @FocusState private var editingRow: Bool
 
     init(request: WordBankEditorRequest, onOpenExisting: @escaping (UUID) -> Void = { _ in }) {
         self.request = request
@@ -99,6 +103,7 @@ struct WordBankEditor: View {
             }
             .onAppear {
                 if suggestionsOn, !isNew { suggestions.textChanged(draft.text) }
+                if shownTagIDs == nil { shownTagIDs = tagPicks.compactMap(id(of:)) }
             }
         }
     }
@@ -119,9 +124,13 @@ struct WordBankEditor: View {
             }
             if let duplicate {
                 HStack {
-                    Label("You already have “\(duplicate.text)”", systemImage: "exclamationmark.circle")
-                        .font(.footnote)
-                        .foregroundStyle(palette.ink)
+                    Label {
+                        JapaneseText("You already have “\(duplicate.text)”")
+                    } icon: {
+                        Image(systemName: "exclamationmark.circle")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(palette.ink)
                     Spacer(minLength: 8)
                     Button("Open") {
                         dismiss()
@@ -132,9 +141,13 @@ struct WordBankEditor: View {
             }
             ForEach(dictionaryForms) { verb in
                 HStack {
-                    Label("A form of \(verb.jishoQuery)", systemImage: "text.magnifyingglass")
-                        .font(.footnote)
-                        .foregroundStyle(palette.ink)
+                    Label {
+                        JapaneseText("A form of \(verb.jishoQuery)")
+                    } icon: {
+                        Image(systemName: "text.magnifyingglass")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(palette.ink)
                     Spacer(minLength: 8)
                     Button("Use \(verb.jishoQuery)") { useDictionaryForm(verb) }
                         .buttonStyle(.paperSecondaryInline)
@@ -193,13 +206,14 @@ struct WordBankEditor: View {
             ForEach(draft.equivalents.indices, id: \.self) { index in
                 HStack(alignment: .top, spacing: 0) {
                     VStack(spacing: 0) {
-                        PaperField("Written", placeholder: "ありがとう", text: $draft.equivalents[index].written)
+                        PaperField("Written", placeholder: "ありがとう", text: row(\.equivalents, index, \.written))
                             .autocorrectionDisabled()
-                        PaperField("Reading", placeholder: "かな", text: optional($draft.equivalents[index].reading))
+                        PaperField("Reading", placeholder: "かな", text: optional(row(\.equivalents, index, \.reading)))
                             .autocorrectionDisabled()
-                        PaperField("Note", placeholder: "Only in casual speech", text: optional($draft.equivalents[index].note))
+                        PaperField("Note", placeholder: "Only in casual speech", text: optional(row(\.equivalents, index, \.note)))
                     }
-                    removeButton("Remove standard form \(index + 1)") { draft.equivalents.remove(at: index) }
+                    .focused($editingRow)
+                    removeButton("Remove standard form \(index + 1)") { remove(index, from: \.equivalents) }
                 }
                 PaperDivider()
             }
@@ -212,14 +226,35 @@ struct WordBankEditor: View {
             ForEach(draft.senses.indices, id: \.self) { index in
                 HStack(alignment: .top, spacing: 0) {
                     VStack(spacing: 0) {
-                        PaperField("Meaning \(index + 1)", placeholder: "thank you", text: $draft.senses[index].meaning)
-                        PaperField("Note", placeholder: "≠ standard 直す", text: optional($draft.senses[index].note))
+                        PaperField("Meaning \(index + 1)", placeholder: "thank you", text: row(\.senses, index, \.meaning))
+                        PaperField("Note", placeholder: "≠ standard 直す", text: optional(row(\.senses, index, \.note)))
                     }
-                    removeButton("Remove meaning \(index + 1)") { draft.senses.remove(at: index) }
+                    .focused($editingRow)
+                    removeButton("Remove meaning \(index + 1)") { remove(index, from: \.senses) }
                 }
                 PaperDivider()
             }
             addRow("Add a meaning") { draft.senses.append(Sense(meaning: "")) }
+        }
+    }
+
+    /// A row field's binding that checks the index, so a field ending its edit after its row was
+    /// removed writes nothing instead of crashing.
+    private func row<Row, Value>(
+        _ rows: WritableKeyPath<WordBankEntryValue, [Row]>, _ index: Int, _ field: WritableKeyPath<Row, Value>
+    ) -> Binding<Value> where Value: DefaultValue {
+        Binding(
+            get: { draft[keyPath: rows].indices.contains(index) ? draft[keyPath: rows][index][keyPath: field] : .defaultValue },
+            set: { if draft[keyPath: rows].indices.contains(index) { draft[keyPath: rows][index][keyPath: field] = $0 } }
+        )
+    }
+
+    /// Clears focus first, then removes the row on the next run loop, so the keyboard never keeps
+    /// typing into the row that slid up into its place.
+    private func remove<Row>(_ index: Int, from rows: WritableKeyPath<WordBankEntryValue, [Row]>) {
+        editingRow = false
+        DispatchQueue.main.async {
+            if draft[keyPath: rows].indices.contains(index) { draft[keyPath: rows].remove(at: index) }
         }
     }
 
@@ -246,10 +281,23 @@ struct WordBankEditor: View {
     }
 
     private var tagPicks: [TagSuggestion] {
-        TagSuggester().quickPicks(
-            applied: draft.dialectTagIDs + draft.customTagIDs, recent: RecentTags.ids(from: recentTagsRaw),
+        let applied = draft.dialectTagIDs + draft.customTagIDs
+        if let shownTagIDs {
+            return TagSuggester().keepingPlaces(
+                shown: shownTagIDs, applied: applied, dialectTags: store.dialectTags, customTags: store.customTags)
+        }
+        return TagSuggester().quickPicks(
+            applied: applied, recent: RecentTags.ids(from: recentTagsRaw),
             dialectTags: store.dialectTags, customTags: store.customTags
         )
+    }
+
+    private func id(of pick: TagSuggestion) -> UUID? {
+        switch pick {
+        case let .existingDialect(tag): tag.id
+        case let .existingCustom(tag): tag.id
+        default: nil
+        }
     }
 
     private var tagsSection: some View {
@@ -383,3 +431,8 @@ struct WordBankEditor: View {
         }
     }
 }
+
+/// A value a bounds-checked row binding returns once its row is gone.
+protocol DefaultValue { static var defaultValue: Self { get } }
+extension String: DefaultValue { static var defaultValue: String { "" } }
+extension Optional: DefaultValue { static var defaultValue: Self { nil } }

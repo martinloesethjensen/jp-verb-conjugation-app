@@ -127,6 +127,23 @@ public struct TagSuggester: Sendable {
     /// What the field shows while empty: recently used tags, then catalogue dialects
     /// near the user's dialect tags (the entry's own, or all of them when it has none):
     /// same prefecture first, then the rest of the region.
+    /// The editor's chips after the first draw: the tags `shown` stay where they were, ticked or not,
+    /// and any applied tag not shown yet (made through "+ New tag") is added after them, so a tap
+    /// never makes a chip jump or vanish. Deleted tags are skipped.
+    public func keepingPlaces(
+        shown: [UUID], applied: [UUID], dialectTags: [DialectTagValue], customTags: [CustomTagValue]
+    ) -> [TagSuggestion] {
+        let dialectByID = Dictionary(dialectTags.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let customByID = Dictionary(customTags.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var seen = Set<UUID>()
+        return (shown + applied).compactMap { id -> TagSuggestion? in
+            guard seen.insert(id).inserted else { return nil }
+            if let tag = dialectByID[id] { return .existingDialect(tag) }
+            if let tag = customByID[id] { return .existingCustom(tag) }
+            return nil
+        }
+    }
+
     /// The editor's tag chips: every applied tag (in applied order), then recent tags that aren't
     /// applied, then the rest (dialect before custom, each by name); unknown ids are skipped and
     /// everything after the applied tags is capped at `limit`, so an applied tag is never hidden.

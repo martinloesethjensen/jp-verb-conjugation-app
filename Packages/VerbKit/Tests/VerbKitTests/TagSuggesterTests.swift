@@ -158,4 +158,18 @@ final class TagSuggesterTests: XCTestCase {
         let picks = TagSuggester().quickPicks(applied: [], recent: [], dialectTags: [tosa, hakata], customTags: [slang, food])
         XCTAssertEqual(picks, [.existingDialect(hakata), .existingDialect(tosa), .existingCustom(food), .existingCustom(slang)])
     }
+
+    func testShownChipsKeepTheirPlaceWhenToggled() {
+        let (a, b, c) = (CustomTagValue(name: "a"), CustomTagValue(name: "b"), CustomTagValue(name: "c"))
+        let shown = [a.id, b.id]
+        // Unticking a (no longer applied) keeps it where it was; ticking c (not shown) appends it.
+        let picks = TagSuggester().keepingPlaces(shown: shown, applied: [c.id], dialectTags: [], customTags: [a, b, c])
+        XCTAssertEqual(picks, [.existingCustom(a), .existingCustom(b), .existingCustom(c)])
+    }
+
+    func testShownChipsSkipDeletedTags() {
+        let a = CustomTagValue(name: "a")
+        let picks = TagSuggester().keepingPlaces(shown: [UUID(), a.id], applied: [], dialectTags: [], customTags: [a])
+        XCTAssertEqual(picks, [.existingCustom(a)])
+    }
 }

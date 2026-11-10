@@ -21,7 +21,8 @@ struct FilterChip: View {
             if let accent {
                 Circle().fill(accent).frame(width: 8, height: 8).accessibilityHidden(true)
             }
-            Text(title)
+            // Dialect tags and て endings are Japanese: furigana when it is on.
+            JapaneseText(title)
             if showsChevron {
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.bold))

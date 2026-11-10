@@ -94,7 +94,8 @@ struct EntrySuggestionCard: View {
             rest.kind.map { "Kind: \($0.rawValue.capitalized)" },
         ].compactMap { $0 }
         if !parts.isEmpty {
-            Text(parts.joined(separator: " · ")).font(.subheadline).foregroundStyle(palette.ink)
+            // Dialect names are kanji (北海道弁).
+            JapaneseText(parts.joined(separator: " · ")).font(.subheadline).foregroundStyle(palette.ink)
         }
     }
 
