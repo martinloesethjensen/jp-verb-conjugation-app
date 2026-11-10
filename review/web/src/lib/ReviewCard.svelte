@@ -55,7 +55,7 @@
 <article class="review-card">
 	<p class="what">
 		<span>{what}<span lang="ja">{owner}</span></span>
-		<a {href}>Open the whole entry <span aria-hidden="true">↗</span></a>
+		<a {href} data-shortcut="open">Open the whole entry <span aria-hidden="true">↗</span></a>
 	</p>
 	{#if item.note}
 		<p class="asks">

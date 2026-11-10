@@ -197,7 +197,7 @@
 
 	<div class="buttons">
 		<button class="primary" disabled={busy || !Object.keys(edits).length}>{submitLabel}</button>
-		<button type="button" class="link" onclick={oncancel}>Cancel</button>
+		<button type="button" class="link" data-shortcut="cancel" onclick={oncancel}>Cancel</button>
 	</div>
 	<ErrorLine message={failure} {stale} />
 </form>

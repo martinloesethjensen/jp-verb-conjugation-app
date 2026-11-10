@@ -9,9 +9,12 @@
 	import ReviewCard from '#lib/ReviewCard.svelte';
 	import Sheet from '#lib/Sheet.svelte';
 	import QueueItemList from '#lib/QueueItemList.svelte';
-	import { firstUndone, keyOf, type ItemFilter } from '#lib/queue-items.ts';
+	import KeyboardHelp from '#lib/KeyboardHelp.svelte';
+	import { filterItems, firstUndone, keyOf, type ItemFilter } from '#lib/queue-items.ts';
 	import { loadReference } from '#lib/reference.ts';
 	import { EntryReview } from '#lib/review.svelte.ts';
+	import { settings } from '#lib/settings.svelte.ts';
+	import { isTyping, shortcutFor } from '#lib/shortcuts.ts';
 
 	type Json = { [key: string]: any };
 	type Loaded = { entry: Json | null; review: EntryReview };
@@ -98,7 +101,56 @@
 		selected = null;
 	}
 
+	// Keyboard shortcuts (desktop, unless switched off in Settings): a key presses the button that carries its
+	// `data-shortcut` in the current card, so it only ever does what the card offers.
+	let pane = $state<HTMLElement>();
+	let helpOpen = $state(false);
+
+	const usable = (el: HTMLElement) =>
+		el.getClientRects().length > 0 && !(el as HTMLButtonElement).disabled;
+
+	function move(step: 1 | -1) {
+		if (!data || !current) return;
+		const list = filterItems(data.items, filter);
+		const at = list.findIndex((i) => keyOf(i) === keyOf(current!));
+		const to = list[at + step];
+		if (to) choose(to);
+	}
+
+	function onkeydown(event: KeyboardEvent) {
+		if (phone.current || !settings.value.shortcuts_on || !data || event.defaultPrevented) return;
+		const action = shortcutFor(event, isTyping(event.target));
+		if (!action) return;
+		if (action === 'help') {
+			event.preventDefault();
+			helpOpen = true;
+			return;
+		}
+		if (helpOpen) return;
+		if (action === 'next' || action === 'previous') {
+			event.preventDefault();
+			move(action === 'next' ? 1 : -1);
+			return;
+		}
+		if (action === 'send') {
+			const form = (event.target as HTMLElement | null)?.closest?.('form');
+			if (form) {
+				event.preventDefault();
+				form.requestSubmit();
+			}
+			return;
+		}
+		const target = [...(pane?.querySelectorAll<HTMLElement>(`[data-shortcut="${action}"]`) ?? [])].find(usable);
+		if (!target) return;
+		event.preventDefault();
+		if (action === 'reply') target.focus();
+		else target.click();
+	}
+
 </script>
+
+<svelte:window {onkeydown} />
+<KeyboardHelp open={helpOpen} onclose={() => (helpOpen = false)} />
 
 <svelte:head>
 	<title>{data?.queue.title ?? 'Queue'} · Kotoba Table review</title>
@@ -141,7 +193,7 @@
 			<QueueItemList items={data.items} currentKey={current && keyOf(current)} bind:filter onselect={choose} />
 		</nav>
 
-		<div class="card-pane">
+		<div class="card-pane" bind:this={pane}>
 			{#if current}
 				{#key keyOf(current)}
 					{#await entryFor(current)}

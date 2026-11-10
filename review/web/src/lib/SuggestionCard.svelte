@@ -143,7 +143,7 @@
 			{#if oncomment}
 				<form class="reply" onsubmit={send}>
 					<label class="visually-hidden" for="{uid}-reply">Reply</label>
-					<textarea id="{uid}-reply" rows="1" maxlength="2000" placeholder="Reply" bind:value={reply}></textarea>
+					<textarea id="{uid}-reply" data-shortcut="reply" rows="1" maxlength="2000" placeholder="Reply" bind:value={reply}></textarea>
 					<button disabled={busy || !reply.trim()}>Reply</button>
 				</form>
 			{/if}

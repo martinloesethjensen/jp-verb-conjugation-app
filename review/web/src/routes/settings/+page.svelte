@@ -5,6 +5,7 @@
 	import { getSession } from '#lib/session.ts';
 	import { settings } from '#lib/settings.svelte.ts';
 	import Switch from '#lib/Switch.svelte';
+	import KeyboardHelp from '#lib/KeyboardHelp.svelte';
 
 	const { me, update } = getSession();
 
@@ -56,6 +57,8 @@
 			busy = false;
 		}
 	}
+
+	let shortcutsOpen = $state(false);
 
 	/** What each Help control last said: "Saved", or why it couldn't save. */
 	let helpStatus = $state<Record<string, string>>({});
@@ -172,9 +175,12 @@
 			checked={settings.value.shortcuts_on}
 			onchange={(on) => saveHelp('shortcuts', { shortcuts_on: on })}
 		/>
+		<button type="button" class="link" onclick={() => (shortcutsOpen = true)}>See the shortcuts</button>
 		{#if helpStatus.shortcuts}<p role="status">{helpStatus.shortcuts}</p>{/if}
 	</div>
 </section>
+
+<KeyboardHelp open={shortcutsOpen} onclose={() => (shortcutsOpen = false)} />
 
 <style>
 	.card {
