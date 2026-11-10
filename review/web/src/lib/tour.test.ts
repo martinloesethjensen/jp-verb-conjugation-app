@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import type { UserSettings } from './api.ts';
-import { availableSteps, shouldTour, shouldWelcome, TOUR_STEPS } from './tour.ts';
+import { availableSteps, PHONE_CARDS, shouldPhoneWelcome, shouldTour, shouldWelcome, TOUR_STEPS } from './tour.ts';
+import PhoneWelcome from './PhoneWelcome.svelte';
 import TourGuide from './TourGuide.svelte';
 import WelcomeDialog from './WelcomeDialog.svelte';
 
@@ -51,5 +52,28 @@ describe('the pieces', () => {
 		expect(body).toContain('>Next<');
 		expect(body).toContain('>Skip<');
 		expect(body).toContain('1 of 5');
+	});
+});
+
+describe('the phone welcome', () => {
+	test('shows on a phone until the tour is done, and again after a reset', () => {
+		expect(shouldPhoneWelcome(base, true, true)).toBe(true);
+		expect(shouldPhoneWelcome(welcomed, true, true)).toBe(true);
+		expect(shouldPhoneWelcome(done, true, true)).toBe(false);
+		expect(shouldPhoneWelcome({ ...done, tour_seen_at: null, welcome_seen_at: null }, true, true)).toBe(true);
+		expect(shouldPhoneWelcome(base, true, false)).toBe(false);
+		expect(shouldPhoneWelcome(base, false, true)).toBe(false);
+	});
+
+	test('four cards with dots, Skip and Next; the last says Start reviewing', () => {
+		const first = render(PhoneWelcome, { props: { ondone: () => {} } }).body;
+		expect(first.match(/class="dot[ "]/g)?.length).toBe(4);
+		expect(first).toContain(PHONE_CARDS[0].title);
+		expect(first).toContain('>Skip<');
+		expect(first).toContain('>Next<');
+		const last = render(PhoneWelcome, { props: { ondone: () => {}, start: 3 } }).body;
+		expect(last).toContain('Start reviewing');
+		expect(last).toContain(PHONE_CARDS[3].title);
+		expect(PHONE_CARDS[3].text).toContain('Another teacher or Martin accepts your change');
 	});
 });

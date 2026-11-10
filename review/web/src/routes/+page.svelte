@@ -5,7 +5,8 @@
 	import HomeView from '#lib/HomeView.svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { settings } from '#lib/settings.svelte.ts';
-	import { shouldWelcome } from '#lib/tour.ts';
+	import { shouldPhoneWelcome, shouldWelcome } from '#lib/tour.ts';
+	import PhoneWelcome from '#lib/PhoneWelcome.svelte';
 	import WelcomeDialog from '#lib/WelcomeDialog.svelte';
 	import { firstUndone } from '#lib/queue-items.ts';
 	import { loadReference } from '#lib/reference.ts';
@@ -47,8 +48,10 @@
 	// First sign-in: the welcome on a computer (the tour itself waits for the first queue).
 	const phoneWidth = new MediaQuery('max-width: 720px');
 	const welcoming = $derived(shouldWelcome(settings.value, settings.loaded, phoneWidth.current));
+	const phoneWelcoming = $derived(shouldPhoneWelcome(settings.value, settings.loaded, phoneWidth.current));
 	const tour = (step: 'welcomed' | 'done') => settings.change({ tour: step }).catch(() => {});
 </script>
 
+{#if phoneWelcoming}<PhoneWelcome ondone={() => tour('done')} />{/if}
 <WelcomeDialog open={welcoming} onstart={() => tour('welcomed')} onskip={() => tour('done')} />
 <HomeView name={session.me().display_name} {queues} {files} {next} {readings} replies={replies.list.filter((r) => r.unread)} />
