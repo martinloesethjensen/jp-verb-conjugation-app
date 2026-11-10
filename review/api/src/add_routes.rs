@@ -227,6 +227,8 @@ pub async fn add<S: Store + ReviewStore>(
         .add_suggestion(&suggestion, &by.email, now)
         .await
         .map_err(unavailable));
+    // The thread is read for its writer; a failed mark doesn't undo the addition.
+    let _ = store.mark_read(&by.email, &[id], now).await;
     suggestion_response(store, id, &by.email, if created { 201 } else { 200 }).await
 }
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getQueue, getSnapshot, listQueues, type QueueItem, type QueueSummary, type SnapshotFile } from '#lib/api.ts';
+	import { replies } from '#lib/replies.svelte.ts';
 	import HomeView from '#lib/HomeView.svelte';
 	import { firstUndone } from '#lib/queue-items.ts';
 	import { loadReference } from '#lib/reference.ts';
@@ -40,4 +41,4 @@
 	});
 </script>
 
-<HomeView name={session.me().display_name} {queues} {files} {next} {readings} />
+<HomeView name={session.me().display_name} {queues} {files} {next} {readings} replies={replies.list.filter((r) => r.unread)} />

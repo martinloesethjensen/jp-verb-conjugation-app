@@ -108,6 +108,18 @@ pub async fn call_via(
     body: Option<Value>,
     jwt: &str,
 ) -> ApiResponse {
+    call_at(s, method, path_and_query, body, jwt, T0).await
+}
+
+/// `call_via` at a given time (the `now` the handlers store), for tests where order matters.
+pub async fn call_at(
+    s: &SqliteStore,
+    method: &str,
+    path_and_query: &str,
+    body: Option<Value>,
+    jwt: &str,
+    now: &str,
+) -> ApiResponse {
     let (path, query) = path_and_query
         .split_once('?')
         .unwrap_or((path_and_query, ""));
@@ -123,7 +135,18 @@ pub async fn call_via(
         access: super::cfg(),
         site_origin: SITE.into(),
     };
-    handle(req, &cfg, &[jwk()], s, &FakeSource::empty(), NOW, T0).await
+    handle(req, &cfg, &[jwk()], s, &FakeSource::empty(), NOW, now).await
+}
+
+/// `post` at a given time.
+pub async fn post_at(
+    s: &SqliteStore,
+    path: &str,
+    body: Value,
+    who: &str,
+    now: &str,
+) -> ApiResponse {
+    call_at(s, "POST", path, Some(body), &jwt(who), now).await
 }
 
 pub async fn get(s: &SqliteStore, path_and_query: &str, who: &str) -> ApiResponse {

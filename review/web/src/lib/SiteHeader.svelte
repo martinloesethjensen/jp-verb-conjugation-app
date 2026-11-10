@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { afterNavigate } from '$app/navigation';
 	import type { Me } from './api.ts';
+	import RepliesBell from './RepliesBell.svelte';
 	import { canDecide } from './roles.ts';
 
 	let { me }: { me: Me | null } = $props();
@@ -31,6 +32,7 @@
 			<span class="title">Kotoba Table <span class="sub">review</span></span>
 		</a>
 		{#if me}
+			<RepliesBell />
 			<nav class="links" aria-label="Account">
 				{#if canDecide(me.role)}
 					<a href="/inbox" data-sveltekit-reload>Inbox</a>
@@ -83,6 +85,7 @@
 	}
 
 	.name {
+		margin-right: auto;
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;

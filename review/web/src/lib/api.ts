@@ -186,7 +186,30 @@ export type Approval = {
 	created_at: string;
 };
 
-export type Comment = { author_name: string; body: string; created_at: string };
+export type Comment = { author_name: string; mine: boolean; body: string; created_at: string };
+
+/** Something that happened in a thread the viewer is part of (review/api `reply_routes.rs`). */
+export type Reply = {
+	suggestion_id: number;
+	what: 'comment' | 'accepted' | 'declined';
+	by_name: string;
+	at: string;
+	/** The comment, cut to 140 characters; empty for a decision. */
+	body: string;
+	item_title: string;
+	dataset: string;
+	kind: string;
+	item_id: string;
+	entry_id: string;
+	action: string;
+	parent_kind: string | null;
+	parent_id: string | null;
+	unread: boolean;
+};
+
+export const getReplies = () => request<{ unread: number; replies: Reply[] }>('/api/replies');
+export const markRead = (ids: number[]) => request<{ unread: number }>('/api/replies/read', { ids });
+export const markAllRead = () => request<{ unread: number }>('/api/replies/read', { all: true });
 
 export type SuggestionAction = 'change' | 'delete' | 'note' | 'add';
 export type SuggestionStatus = 'open' | 'accepted' | 'declined' | 'withdrawn';
@@ -219,6 +242,8 @@ export type Suggestion = {
 	parent_id: string | null;
 	/** An addition whose new item is now in the loaded data. */
 	landed: boolean;
+	/** When the viewer last saw this thread; null when they aren't in it. */
+	last_read: string | null;
 	comments: Comment[];
 };
 

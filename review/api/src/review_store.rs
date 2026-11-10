@@ -41,6 +41,8 @@ pub struct Approval {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Comment {
     pub author_name: String,
+    /// The viewer wrote it.
+    pub mine: bool,
     pub body: String,
     pub created_at: String,
 }
@@ -74,6 +76,8 @@ pub struct Suggestion {
     pub parent_id: Option<String>,
     /// An addition whose new item is now among the loaded items (after export and reload).
     pub landed: bool,
+    /// When the viewer last saw this thread; `None` when they never have (they aren't in it).
+    pub last_read: Option<String>,
     pub comments: Vec<Comment>,
 }
 
@@ -174,6 +178,11 @@ pub struct IdRow {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct NRow {
+    pub n: i64,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct ApprovalRow {
     pub kind: String,
     pub item_id: String,
@@ -222,12 +231,14 @@ pub struct SuggestionRow {
     pub parent_kind: Option<String>,
     pub parent_id: Option<String>,
     pub landed: i64,
+    pub last_read: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CommentRow {
     pub suggestion_id: i64,
     pub author_name: String,
+    pub mine: i64,
     pub body: String,
     pub created_at: String,
 }
@@ -312,6 +323,7 @@ pub fn assemble(rows: Vec<SuggestionRow>, comments: Vec<CommentRow>) -> Vec<Sugg
                 .filter(|c| c.suggestion_id == r.id)
                 .map(|c| Comment {
                     author_name: c.author_name.clone(),
+                    mine: c.mine != 0,
                     body: c.body.clone(),
                     created_at: c.created_at.clone(),
                 })
@@ -339,6 +351,7 @@ pub fn assemble(rows: Vec<SuggestionRow>, comments: Vec<CommentRow>) -> Vec<Sugg
             parent_kind: r.parent_kind,
             parent_id: r.parent_id,
             landed: r.landed != 0,
+            last_read: r.last_read,
         })
         .collect()
 }
@@ -610,6 +623,125 @@ pub const INSERT_WITHDRAW_AUDIT: &str =
     "INSERT INTO audit_log (at, actor, action, target, detail) \
      SELECT ?1, ?2, 'suggestion.withdraw', 'suggestion/' || id, '' FROM suggestions \
      WHERE id = ?3 AND status = 'open' AND author = ?2";
+/// One reply event for the viewer: a comment in a thread they're in, or a decision on their suggestion.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Reply {
+    pub suggestion_id: i64,
+    /// `comment`, `accepted` or `declined`.
+    pub what: String,
+    pub by_name: String,
+    pub at: String,
+    /// The comment, cut to `MAX_REPLY_BODY` characters (empty for a decision).
+    pub body: String,
+    pub item_title: String,
+    pub dataset: String,
+    pub kind: String,
+    pub item_id: String,
+    pub entry_id: String,
+    pub action: String,
+    pub parent_kind: Option<String>,
+    pub parent_id: Option<String>,
+    pub unread: bool,
+}
+
+pub const MAX_REPLY_BODY: usize = 140;
+
+#[derive(Debug, Deserialize)]
+pub struct ReplyRow {
+    pub suggestion_id: i64,
+    pub what: String,
+    pub by_name: String,
+    pub at: String,
+    pub body: String,
+    pub item_title: String,
+    pub dataset: String,
+    pub kind: String,
+    pub item_id: String,
+    pub entry_id: String,
+    pub action: String,
+    pub parent_kind: Option<String>,
+    pub parent_id: Option<String>,
+    pub unread: i64,
+    pub total_unread: i64,
+}
+
+impl From<ReplyRow> for Reply {
+    fn from(r: ReplyRow) -> Reply {
+        let body = if r.body.chars().count() > MAX_REPLY_BODY {
+            r.body.chars().take(MAX_REPLY_BODY).collect::<String>() + "…"
+        } else {
+            r.body
+        };
+        Reply {
+            suggestion_id: r.suggestion_id,
+            what: r.what,
+            by_name: r.by_name,
+            at: r.at,
+            body,
+            item_title: r.item_title,
+            dataset: r.dataset,
+            kind: r.kind,
+            item_id: r.item_id,
+            entry_id: r.entry_id,
+            action: r.action,
+            parent_kind: r.parent_kind,
+            parent_id: r.parent_id,
+            unread: r.unread != 0,
+        }
+    }
+}
+
+/// Every reply event for ?1, the viewer, as the CTE `events`. A comment counts when someone else wrote it in
+/// a thread the viewer wrote or commented in; a decision counts when someone else accepted or declined the
+/// viewer's suggestion. Unread: newer than the viewer's `thread_reads` row. Withdrawals aren't events.
+/// The viewer's threads come first (indexes on `suggestions.author` and `comments.author`), and their
+/// comments are reached through `comments_by_suggestion`, so nothing scans every comment.
+macro_rules! with_reply_events {
+    () => {
+        concat!(
+            "WITH threads AS (SELECT id FROM suggestions WHERE author = ?1 ",
+            "UNION SELECT suggestion_id FROM comments WHERE author = ?1), ",
+            "events AS (",
+            "SELECT 'comment' AS what, 0 AS rank, c.id AS seq, s.id AS suggestion_id, c.created_at AS at, ",
+            "IFNULL(u.display_name, '') AS by_name, c.body AS body, s.item_title, s.dataset, s.kind, s.item_id, ",
+            "s.entry_id, s.action, s.parent_kind, s.parent_id, (c.created_at > IFNULL(r.read_at, '')) AS unread ",
+            "FROM threads t JOIN comments c ON c.suggestion_id = t.id JOIN suggestions s ON s.id = t.id ",
+            "LEFT JOIN users u ON u.email = c.author ",
+            "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = t.id ",
+            "WHERE c.author <> ?1 ",
+            "UNION ALL ",
+            "SELECT s.status, 1, s.id, s.id, s.decided_at, IFNULL(u.display_name, ''), '', s.item_title, s.dataset, ",
+            "s.kind, s.item_id, s.entry_id, s.action, s.parent_kind, s.parent_id, ",
+            "(s.decided_at > IFNULL(r.read_at, '')) ",
+            "FROM suggestions s LEFT JOIN users u ON u.email = s.decided_by ",
+            "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = s.id ",
+            "WHERE s.author = ?1 AND s.status IN ('accepted', 'declined') AND s.decided_by <> ?1) "
+        )
+    };
+}
+
+/// ?1 viewer, ?2 limit. Newest first; a reply posted with a decision comes before the decision. Each row also
+/// carries `total_unread`, the unread count over every event (not just the ones returned), from the same pass.
+pub const SELECT_REPLIES: &str = concat!(
+    with_reply_events!(),
+    "SELECT *, SUM(unread) OVER () AS total_unread FROM events ORDER BY at DESC, rank, seq DESC LIMIT ?2"
+);
+/// ?1 viewer.
+pub const SELECT_UNREAD_COUNT: &str = concat!(
+    with_reply_events!(),
+    "SELECT COUNT(*) AS n FROM events WHERE unread"
+);
+/// ?1 viewer: the threads with an unread event.
+pub const SELECT_UNREAD_THREADS: &str = concat!(
+    with_reply_events!(),
+    "SELECT DISTINCT suggestion_id AS id FROM events WHERE unread"
+);
+
+/// ?1 user, ?2 suggestion ids as a JSON array, ?3 read_at. Only ever moves forward, and skips ids that aren't
+/// suggestions. One statement however many threads.
+pub const UPSERT_READS: &str = "INSERT INTO thread_reads (user, suggestion_id, read_at) \
+     SELECT ?1, s.id, ?3 FROM suggestions s WHERE s.id IN (SELECT value FROM json_each(?2)) \
+     ON CONFLICT (user, suggestion_id) DO UPDATE SET read_at = MAX(read_at, excluded.read_at)";
 /// ?1 suggestion, ?2 author, ?3 body, ?4 now.
 pub const INSERT_COMMENT: &str = "INSERT INTO comments (suggestion_id, author, body, created_at) \
      SELECT ?1, ?2, ?3, ?4 WHERE EXISTS (SELECT 1 FROM suggestions WHERE id = ?1)";
@@ -623,8 +755,10 @@ macro_rules! suggestions_where {
             // An addition is never stale; it is gone when its parent left, and landed once its item is loaded.
             "CASE WHEN s.action = 'add' THEN 0 ELSE (i.content_hash IS NOT NULL AND i.content_hash <> s.base_hash) END AS stale, ",
             "CASE WHEN s.action = 'add' THEN (s.parent_id IS NOT NULL AND p.item_id IS NULL) ELSE (i.content_hash IS NULL) END AS gone, ",
-            "s.parent_kind, s.parent_id, (s.action = 'add' AND i.content_hash IS NOT NULL) AS landed ",
+            "s.parent_kind, s.parent_id, (s.action = 'add' AND i.content_hash IS NOT NULL) AS landed, ",
+            "r.read_at AS last_read ",
             "FROM suggestions s LEFT JOIN users u ON u.email = s.author ",
+            "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = s.id ",
             "LEFT JOIN items i ON i.dataset = s.dataset AND i.kind = s.kind AND i.item_id = s.item_id ",
             "LEFT JOIN items p ON p.dataset = s.dataset AND p.kind = s.parent_kind AND p.item_id = s.parent_id ",
             $where,
@@ -637,7 +771,7 @@ macro_rules! suggestions_where {
 macro_rules! comments_where {
     ($where:literal) => {
         concat!(
-            "SELECT c.suggestion_id, IFNULL(u.display_name, '') AS author_name, c.body, c.created_at ",
+            "SELECT c.suggestion_id, IFNULL(u.display_name, '') AS author_name, (c.author = ?1) AS mine, c.body, c.created_at ",
             "FROM comments c LEFT JOIN users u ON u.email = c.author WHERE c.suggestion_id IN (SELECT s.id FROM suggestions s ",
             $where,
             ") ORDER BY c.id"
@@ -851,6 +985,15 @@ pub trait ReviewStore {
         by: &str,
         now: &str,
     ) -> Result<(), StoreError>;
+    /// Records that `user` has seen these threads as of `now`. Unknown ids are skipped; no audit row
+    /// (reading changes nothing).
+    async fn mark_read(&self, user: &str, ids: &[i64], now: &str) -> Result<(), StoreError>;
+    /// The newest `limit` reply events for `viewer`, and how many of all of them are unread.
+    async fn replies(&self, viewer: &str, limit: u32) -> Result<(Vec<Reply>, u32), StoreError>;
+    /// How many of `viewer`'s reply events are unread.
+    async fn unread_count(&self, viewer: &str) -> Result<u32, StoreError>;
+    /// The threads where `viewer` has an unread event.
+    async fn unread_threads(&self, viewer: &str) -> Result<Vec<i64>, StoreError>;
     /// `NotFound` for an unknown suggestion.
     async fn add_comment(
         &self,
