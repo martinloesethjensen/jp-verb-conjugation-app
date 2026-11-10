@@ -59,6 +59,9 @@ public struct QuizSession: Codable, Equatable, Sendable {
         public var choices: [String]
         public var sentence: String?
         public var translation: String?
+        /// `QuizQuestion.choiceVerbs` as verb ids; nil (and left out of the JSON) when there are
+        /// none, so a session without them has the shape older builds wrote.
+        public var choiceVerbs: [String: String]?
 
         public init(_ question: QuizQuestion) {
             verb = question.verb.id
@@ -69,6 +72,7 @@ public struct QuizSession: Codable, Equatable, Sendable {
             choices = question.choices
             sentence = question.sentence
             translation = question.translation
+            choiceVerbs = question.choiceVerbs.isEmpty ? nil : question.choiceVerbs.mapValues(\.id)
         }
     }
 
@@ -108,7 +112,9 @@ public struct QuizSession: Codable, Equatable, Sendable {
             restored.append(QuizQuestion(
                 verb: verb, form: form, kind: saved.kind, formString: saved.formString,
                 correct: saved.correct, choices: saved.choices,
-                sentence: saved.sentence, translation: saved.translation
+                sentence: saved.sentence, translation: saved.translation,
+                // A verb gone since only loses its kanji spelling; the choice is still right or wrong.
+                choiceVerbs: (saved.choiceVerbs ?? [:]).compactMapValues { verbsByID[$0] }
             ))
         }
         return (restored, progress)

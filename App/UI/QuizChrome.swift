@@ -1,4 +1,5 @@
 import SwiftUI
+import VerbKit
 
 /// The parts every quiz screen repeats: the quit/score header, the answer grid, the prompt and
 /// feedback cards, the pinned Next button, the quit confirmation and the "practise missed"
@@ -40,6 +41,9 @@ struct QuizChoiceGrid: View {
     let isCorrect: (String) -> Bool
     let selected: String?
     let isAnswered: Bool
+    /// The verb each choice is a form of, for choices written in the quiz's script; nil when
+    /// the choices are other text (form names, counters, particles).
+    var verb: ((String) -> Verb)? = nil
     let onChoose: (String) -> Void
 
     var body: some View {
@@ -47,7 +51,7 @@ struct QuizChoiceGrid: View {
             ForEach(Array(choices.enumerated()), id: \.offset) { index, choice in
                 QuizChoiceButton(
                     choice: choice, index: index, isCorrect: isCorrect(choice),
-                    isSelected: choice == selected, isAnswered: isAnswered
+                    isSelected: choice == selected, isAnswered: isAnswered, verb: verb?(choice)
                 ) {
                     onChoose(choice)
                 }
