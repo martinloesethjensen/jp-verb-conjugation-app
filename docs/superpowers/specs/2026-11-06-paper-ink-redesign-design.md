@@ -137,6 +137,36 @@ and `yyyy-MM-dd` dates. Speak sits in the toolbar. The editor is paper sections 
 then recent, then the rest, at most eight more) with "+ New tag", the folder, and a "More" page for
 kind, word class, kanji spelling and notes.
 
+## Coherency pass
+
+Agreed 2026-11-11, after checking every board against the app. Five boards were never in a plan
+(Counters home, Counter, Word Bank, Empty states, Widgets), and about 30 secondary screens kept the
+system style. Owner's choices:
+
+1. **Large titles everywhere.** Grammar and Counters get large titles with the theme motif, like
+   早見表 and the Word Bank; their search bars scroll with the content instead of staying pinned. No
+   Japanese name beside the title (the boards' 助数詞 and 単語帳 give way to the motif).
+2. **Sound changes in ink.** A counter reading whose sound changes is bold with a 2 pt ink underline,
+   in every table, strip and widget; no orange fills or dots (rules 2 and 3).
+
+Screens:
+- **Counters home:** "Start here", a three-column grid of tiles (counter in Mincho, what it counts)
+  for つ, 人, 本, 枚, 個, 匹, 台, 冊 and 杯, then the topics as paper cards of rows (Mincho counter,
+  reading, meaning, "irregular" as an outlined pill), then "Why counters change sound".
+- **Counter page:** the counter in Mincho at headword size with its level pill and meaning; the
+  reading block, strip and stepper keep their roles, in ink and paper; topics and related counters
+  as outlined paper buttons; Examples / Things / Related as filter chips; examples on a ruled card
+  with the counted number underlined; Practise as the ink button.
+- **Word Bank list:** rows on one paper card: Mincho headword with its first meaning beside it, then
+  tag pills and "= standard form"; tag chips with counts above the rows (All, then the most used tags).
+- **Empty states:** a ruled card with a faint 空, a title, one line and up to two paper buttons,
+  instead of the system empty view.
+- **Widgets:** a caption ("Verb of the day", "Counter", "Grammar"), the headword in Mincho with its
+  reading above, the verb's type dot; the counter widget in ink with paper text; the grammar widget
+  on ruled paper with the pattern underlined in its example. Clear and Tinted keep only the type.
+- **Everything else** gets the paper surfaces and tokens: `paperBackground`/`paperRow`/`paperCard`,
+  `palette.muted` for secondary text, paper buttons and `FilterChip` instead of glass.
+
 ## Boards → plans
 
 | Plan | Scope | Canvas boards |
@@ -150,6 +180,7 @@ kind, word class, kanji spelling and notes.
 | Grammar list and lesson (built) | Lesson layout with a formula header (endings as chips, a live example), Practise under it, genkō examples with the pattern underlined, common mistakes marking only the wrong part, a Polite / Casual forms table; the list as chips, two cards and level groups (owner's choice of mockups, 2026-11-08) | Grammar list, lesson (design-subagent mockups) |
 | 5. Onboarding (built) | Levels, furigana, theme, first verb | Onboarding |
 | 6. Theme personality (built) | Alternate app icons (opt-in "App icon matches theme", off by default), title motifs beside large tab titles, results stamps | Theme personality |
+| 8. Coherency pass | Large titles with the motif everywhere, ink sound marks, Counters home and page, Word Bank list, empty states, widgets, paper on every secondary screen | Counters home, Counter, Word Bank, Empty states, Widgets |
 | 7. Word Bank depth (built) | Entry page and editor restyle, suggestion card | Word Bank entry, add a word |
 
 Plans 2–7 depend only on plan 1. Each is planned when it starts.
