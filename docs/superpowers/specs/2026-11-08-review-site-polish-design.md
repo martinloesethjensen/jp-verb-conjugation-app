@@ -80,17 +80,24 @@ seal in the header.
 
 ## Roles
 
-Access roles widen from `admin | reviewer` to `admin | teacher | reviewer` (`users.role`).
-`public_role` (owner, teacher, native) stays a credit label only. Martin sets both.
+Access roles widen from `admin | reviewer` to `admin | teacher | reviewer` (`users.role`), and later
+gain `native` (step 3b). `public_role` (owner, teacher, native) stays a credit label only. Martin sets both.
 
-| Can… | Reviewer (native speakers) | Teacher | Owner (`admin`) |
-|---|---|---|---|
-| Approve items, suggest, note, comment, write courses | yes | yes | yes |
-| Accept or decline others' suggestions, approve others' courses | no | yes | yes |
-| Accept own suggestion or approve own course | no | no | no |
-| Ask for a second opinion | no | yes | yes |
-| Manage reviewers, roles and queues; export | no | no | yes |
-| Sign a data release | no | no | yes, locally (`make data-release`) |
+| Can… | Reviewer | Native (step 3b) | Teacher | Owner (`admin`) |
+|---|---|---|---|---|
+| Approve items, suggest, note, comment, write courses | yes | yes | yes | yes |
+| Accept or decline others' changes to Japanese fields of existing items | no | yes | yes | yes |
+| Accept or decline others' other suggestions (English, additions, removals, notes), approve others' courses | no | no | yes | yes |
+| Accept own suggestion or approve own course | no | no | no | no |
+| Ask for a second opinion | no | no | yes | yes |
+| Manage reviewers, roles and queues; export | no | no | no | yes |
+| Sign a data release | no | no | no | yes, locally (`make data-release`) |
+
+**Japanese fields** (decided 2026-11-11): a `change` suggestion qualifies only when every edited field is
+Japanese text (the Worker's list matching the web's `JAPANESE_FIELDS`: `jp`, `reading`, `kana`, `word`,
+`counter`, `wrong`, `kanji`, `dict` and the conjugated forms) and any furigana it adds. A suggestion that
+also touches English, a choice field or an id, and every `add`, `delete` and `note`, still needs a teacher
+or the owner. A native's "Edit then accept" may only edit the same Japanese fields.
 
 One teacher's acceptance is enough; there is no second check. `suggestions.decided_by` already
 records who decided, and the audit log covers every decision.
@@ -155,15 +162,16 @@ Teachers, native speakers and the owner write courses that learners pick in the 
 and II.
 
 - **Start:** from scratch; following a textbook (lesson numbers only, never the book's text or
-  examples, the same rule as `taught_in`); or copying a published course (the original author stays
-  credited).
+  examples, the same rule as `taught_in`); or copying a published course. A copy is independent (decided 2026-11-11): it is credited "Copied
+  from … by …", but later fixes to the original don't flow into it, and its author decides every change.
 - **Builder:** a lesson outline; per lesson a title, a "what learners can do after it" goal, items in
   teaching order and an optional note; "Add from the data" searches by English, kana, kanji or romaji
   and filters by Verbs, Words, Grammar, Counters, Examples.
 - **Only reviewed data:** items are stable ids from the published data. A missing word or sentence
   goes through "Suggest adding it". A missing grammar point goes through "Propose a new grammar point",
   which reuses today's add flow for `grammar/entry` and puts the proposal in the lesson as
-  "Proposed · waiting for a teacher". A course can't be approved while it holds unaccepted proposals.
+  "Proposed · waiting for a teacher". A course can't be approved while it holds unaccepted proposals. The author's own proposals need another
+  teacher or the owner, even inside their own course (decided 2026-11-11; the own-suggestion guard).
 - **Review:** Written → approved by a teacher who isn't the author (or the owner) → in the app with the
   next signed data release. Automatic checks: every lesson has items; every id exists; unreviewed
   counters are flagged; the author confirms nothing is copied from a textbook.
@@ -199,6 +207,8 @@ Each step is its own plan and PR.
 2. **Phone layouts:** queue sheet and action bar, suggest form, inbox, browse.
 3. **Roles:** the `teacher` access role, accept and decline for teachers, the own-suggestion guard,
    copy changes.
+3b. **Natives accept Japanese fields:** the `native` access role (a migration), the Japanese-field rule in
+   `/api/decide`, the Reviewers page picker, and inbox buttons shown only on suggestions a native may decide.
 4. **Reply alerts:** `thread_reads`, the unread route, the bell, Home section, thread marker.
 5. **Settings and onboarding:** `user_settings`, the Settings page, the tour, the phone welcome, tips,
    keyboard shortcuts and help.
@@ -215,8 +225,13 @@ Each step is its own plan and PR.
 - New example sentences written inside the course builder; they go through suggestions.
 - Changing who signs data releases.
 
+## Decided questions (2026-11-11)
+
+- **Natives accept Japanese fields:** yes, for changes to the Japanese text, readings and furigana of
+  existing items only; see Roles. Built as step 3b.
+- **Copied courses are independent:** credited to the original, but fixes don't flow through.
+- **No accepting your own proposals in your own course:** another teacher or the owner decides.
+
 ## Open questions
 
-- Should native speakers get accept powers for Japanese-only fields later?
-- Does a copied course stay linked to its original, so fixes flow through, or become independent?
-- Should a teacher's acceptance on their own course's proposals count? (Today's rule: no.)
+- Email: Workers Paid ($5/month, any address) or the free verified-addresses route? See Email.
