@@ -7,6 +7,7 @@
 	import SuggestForm from '#lib/SuggestForm.svelte';
 	import InboxGroupHeader from '#lib/InboxGroupHeader.svelte';
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
+	import Tip from '#lib/Tip.svelte';
 	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
 	import { canDecide, ownSuggestionLine } from '#lib/roles.ts';
@@ -124,6 +125,7 @@
 {#if !allowed}
 	<p class="notice">Only teachers and Martin can open the inbox.</p>
 {:else}
+<Tip id="inbox" />
 
 <div class="tabs-scroll">
 <div class="segmented" role="group" aria-label="Which suggestions">

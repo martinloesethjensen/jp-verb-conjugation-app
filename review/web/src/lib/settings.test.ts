@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { render } from 'svelte/server';
 import { settings } from './settings.svelte.ts';
 import RoleSummary from './RoleSummary.svelte';
+import Tip, { TIP_TEXT } from './Tip.svelte';
 
 const json = (status: number, body: unknown) =>
 	new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -54,5 +55,40 @@ describe('RoleSummary', () => {
 		['admin', 'Owner: you also manage reviewers, queues, stamps and exports.']
 	] as const)('%s', (role, text) => {
 		expect(render(RoleSummary, { props: { role } }).body.replaceAll('&#39;', "'")).toContain(text);
+	});
+});
+
+describe('Tip', () => {
+	const props = { id: 'inbox', text: 'Each suggestion is decided on its own.' };
+
+	test('shows with Got it while it is open', async () => {
+		settings.loaded = true;
+		const { body } = render(Tip, { props });
+		expect(body).toContain('Each suggestion is decided on its own.');
+		expect(body).toContain('Got it');
+	});
+
+	test('a dismissed tip renders nothing', () => {
+		settings.loaded = true;
+		settings.value = { ...DEFAULTS, tips_dismissed: ['inbox'] };
+		expect(render(Tip, { props }).body).not.toContain('Got it');
+	});
+
+	test('nothing when tips are off or settings failed to load', () => {
+		settings.loaded = true;
+		settings.value = { ...DEFAULTS, tips_dismissed: [], tips_on: false };
+		expect(render(Tip, { props }).body).not.toContain('Got it');
+		settings.value = { ...DEFAULTS, tips_dismissed: [] };
+		settings.loaded = false;
+		expect(render(Tip, { props }).body).not.toContain('Got it');
+	});
+
+	test('the two tips have their copy', () => {
+		expect(TIP_TEXT.inbox).toBe(
+			'Each suggestion is decided on its own. Edit then accept fixes one before accepting it, and your reply goes to everyone in the thread.'
+		);
+		expect(TIP_TEXT.thread).toBe(
+			'Reply under a suggestion to talk it through. Its author and everyone who replied are told.'
+		);
 	});
 });
