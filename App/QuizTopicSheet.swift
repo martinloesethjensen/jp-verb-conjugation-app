@@ -11,6 +11,8 @@ enum QuizSelection {
     case spotMistake
     /// Example sentences with a marked particle blanked: pick the particle.
     case particles
+    /// Transitive/intransitive pair phrases with the verb or particle blanked (#58).
+    case verbPairs
 }
 
 extension QuizSessionTopic {
@@ -19,7 +21,7 @@ extension QuizSessionTopic {
     init(_ selection: QuizSelection) {
         switch selection {
         case .topics(let topics): self.init(topics: topics)
-        case .weakSpots, .connections, .spotMistake, .particles: self = .weakSpots
+        case .weakSpots, .connections, .spotMistake, .particles, .verbPairs: self = .weakSpots
         }
     }
 }
@@ -34,6 +36,8 @@ struct QuizTopicSheet: View {
     let spotMistakeQuestions: Int
     /// How many particle blanks the level settings allow; the row is off at zero.
     let particleQuestions: Int
+    /// How many verb pair questions the level settings allow; the row is off at zero.
+    let verbPairQuestions: Int
     /// Weak pairs among the given verbs, so the count follows "Favourites only".
     let weakSpotCount: ([Verb]) -> Int
     /// A saved quiz that can be picked up again, offered above the topics (issue #38).
@@ -47,6 +51,7 @@ struct QuizTopicSheet: View {
         case connections
         case spotMistake
         case particles
+        case verbPairs
         case everything
         case topic(QuizTopic)
     }
@@ -77,6 +82,7 @@ struct QuizTopicSheet: View {
         case .connections: return connectionPatterns > 0
         case .spotMistake: return spotMistakeQuestions > 0
         case .particles: return particleQuestions > 0
+        case .verbPairs: return verbPairQuestions > 0
         case .everything: return true
         case .topic(let topic): return choices.contains { $0.topic == topic }
         }
@@ -88,6 +94,7 @@ struct QuizTopicSheet: View {
         case .connections: return .connections
         case .spotMistake: return .spotMistake
         case .particles: return .particles
+        case .verbPairs: return .verbPairs
         case .everything: return .topics(Set(choices.map(\.topic)))
         case .topic(let topic): return .topics([topic])
         }
@@ -148,8 +155,14 @@ struct QuizTopicSheet: View {
                         choice: .particles,
                         enabled: particleQuestions > 0
                     )
+                    row(
+                        title: "Verb pairs",
+                        detail: verbPairQuestions == 0 ? "None for your levels" : "\(verbPairQuestions) \(verbPairQuestions == 1 ? "question" : "questions")",
+                        choice: .verbPairs,
+                        enabled: verbPairQuestions > 0
+                    )
                 } footer: {
-                    Text("Connections: join verbs, adjectives and nouns to grammar patterns, しずか + ので. Spot the mistake: find the wrong form among correct ones. Particles: fill in the particle, 電車＿乗る.")
+                    Text("Connections: join verbs, adjectives and nouns to grammar patterns, しずか + ので. Spot the mistake: find the wrong form among correct ones. Particles: fill in the particle, 電車＿乗る. Verb pairs: pick the half that fits, ドアが＿ → 開く.")
                 }
                 Section {
                     Picker("Show verbs as", selection: $scriptRaw) {

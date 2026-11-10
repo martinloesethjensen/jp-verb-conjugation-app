@@ -66,7 +66,7 @@ struct VerbPairCard: View {
     }
 }
 
-private extension Transitivity {
+extension Transitivity {
     var title: String {
         switch self {
         case .transitive: "Transitive"
