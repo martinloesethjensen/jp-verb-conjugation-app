@@ -1,12 +1,14 @@
 import SwiftUI
+import VerbKit
 
-/// The top of a results screen: the score inside a red hand-drawn ring, like a teacher's mark on
-/// a paper, beside "Quiz complete" and a few muted lines. On ruled genkō paper.
+/// The top of a results screen: the score inside the theme half's results stamp (Light: a
+/// teacher's red circle; canvas board "Theme personality"), beside "Quiz complete" and a few muted lines. On ruled genkō paper.
 struct QuizScoreCard: View {
     let score: Int
     let count: Int
     let lines: [String]
     @Environment(\.palette) private var palette
+    @Environment(\.themeHalf) private var half
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .largeTitle) private var stampSize: CGFloat = 120
@@ -47,9 +49,16 @@ struct QuizScoreCard: View {
 
     private var stamp: some View {
         ZStack {
-            StampRing()
-                .trim(from: 0, to: drawn)
-                .stroke(palette.mark, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+            // The theme half's results stamp, drawn in like a pen at the board's widths.
+            let stamp = ThemeStamp.stamp(for: half.theme, isDark: half.isDark)
+            ForEach(Array(stamp.shape.strokes.enumerated()), id: \.offset) { _, stroke in
+                StampStrokeShape(d: stroke.d)
+                    .trim(from: 0, to: drawn)
+                    .stroke(
+                        stroke.usesSecondColor ? stamp.second : stamp.first,
+                        style: StrokeStyle(lineWidth: stroke.baseWidth * stampSize / 120, lineCap: .round, lineJoin: .round)
+                    )
+            }
             // Fixed sizes: the metrics above already scale with Dynamic Type, like the ring, so
             // the score must not scale a second time or it outgrows the ring.
             HStack(alignment: .firstTextBaseline, spacing: 1) {
@@ -58,28 +67,26 @@ struct QuizScoreCard: View {
                 Text("/\(count)")
                     .font(.custom("HiraMinProN-W6", fixedSize: countSize))
             }
-            .foregroundStyle(palette.mark)
+            // Red only inside the teacher's red circle; every other stamp leaves the score in ink.
+            .foregroundStyle(half.isTeacher ? palette.mark : palette.ink)
             .minimumScaleFactor(0.5)
             .lineLimit(1)
-            .padding(18)
+            // The score keeps inside the smallest inner ring (raked, 37 of 120) at every size.
+            .padding(stampSize * 0.2)
         }
         .frame(width: stampSize, height: stampSize)
     }
 }
 
-/// The board's hand-drawn ring, drawn in a 120 × 120 box and scaled to the frame:
-/// M60 8 C88 7 112 30 111 60 c-1 29 -24 52 -53 51 C30 110 8 88 9 59 10 33 30 12 57 9
-private struct StampRing: Shape {
+/// One stamp stroke from its SVG path data in the 120-unit box, scaled to the frame.
+private struct StampStrokeShape: Shape {
+    let d: String
+
     func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: 60, y: 8))
-        path.addCurve(to: CGPoint(x: 111, y: 60), control1: CGPoint(x: 88, y: 7), control2: CGPoint(x: 112, y: 30))
-        // Relative "c-1 29 -24 52 -53 51" from (111, 60).
-        path.addCurve(to: CGPoint(x: 58, y: 111), control1: CGPoint(x: 110, y: 89), control2: CGPoint(x: 87, y: 112))
-        path.addCurve(to: CGPoint(x: 9, y: 59), control1: CGPoint(x: 30, y: 110), control2: CGPoint(x: 8, y: 88))
-        path.addCurve(to: CGPoint(x: 57, y: 9), control1: CGPoint(x: 10, y: 33), control2: CGPoint(x: 30, y: 12))
-        let scale = CGAffineTransform(scaleX: rect.width / 120, y: rect.height / 120)
-        return path.applying(scale.concatenating(CGAffineTransform(translationX: rect.minX, y: rect.minY)))
+        Path(svg: SVGPathData.parse(d)).applying(
+            CGAffineTransform(scaleX: rect.width / 120, y: rect.height / 120)
+                .concatenating(CGAffineTransform(translationX: rect.minX, y: rect.minY))
+        )
     }
 }
 

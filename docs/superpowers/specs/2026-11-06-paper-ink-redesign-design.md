@@ -149,7 +149,7 @@ kind, word class, kanji spelling and notes.
 | 4. Global search (built) | `Tab(role: .search)`, one index over verbs, grammar, counters and the Word Bank, romaji, recents, hidden-level row | Search boards |
 | Grammar list and lesson (built) | Lesson layout with a formula header (endings as chips, a live example), Practise under it, genkō examples with the pattern underlined, common mistakes marking only the wrong part, a Polite / Casual forms table; the list as chips, two cards and level groups (owner's choice of mockups, 2026-11-08) | Grammar list, lesson (design-subagent mockups) |
 | 5. Onboarding (built) | Levels, furigana, theme, first verb | Onboarding |
-| 6. Theme personality | Alternate app icons, title motifs, results stamps | Theme personality |
+| 6. Theme personality (built) | Alternate app icons (opt-in "App icon matches theme", off by default), title motifs beside large tab titles, results stamps | Theme personality |
 | 7. Word Bank depth (built) | Entry page and editor restyle, suggestion card | Word Bank entry, add a word |
 
 Plans 2–7 depend only on plan 1. Each is planned when it starts.

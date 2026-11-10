@@ -2,7 +2,12 @@
 // Renders the launch screen and the default iOS app icon into App/Assets.xcassets, and writes
 // the 活 outline as App/Launch/SealGlyph.swift so the app's first frame draws the same glyph.
 //
-//     swift scripts/generate-icon.swift --font <ShipporiMinchoB1-Bold.ttf> [repo-root]
+//     make icons FONT=<ShipporiMinchoB1-Bold.ttf>
+//
+// `make icons` compiles this file together with VerbKit's StampShape.swift and SVGPathData.swift,
+// so every stamp is drawn from the same path data as the app. It also renders the nine alternate
+// icon sets (one per theme; Light · Dark is the primary icon) and a small preview of each set for
+// Settings › Theme (canvas board "App icons per palette").
 //
 // The art is the seal from the paper-and-ink design: 活 (from 活用, "conjugation") in Mincho
 // ink inside a stamp: the teacher's red circle in Light, a sumi brush circle in Dark. Everything
@@ -20,7 +25,7 @@ let fontURL = "https://github.com/google/fonts/raw/main/ofl/shipporiminchob1/Shi
 var args = Array(CommandLine.arguments.dropFirst())
 guard let flag = args.firstIndex(of: "--font"), flag + 1 < args.count else {
     FileHandle.standardError.write("""
-    usage: swift scripts/generate-icon.swift --font <ShipporiMinchoB1-Bold.ttf> [repo-root]
+    usage: make icons FONT=<ShipporiMinchoB1-Bold.ttf>
     Download the font (SIL Open Font License 1.1) from:
       \(fontURL)
 
@@ -114,43 +119,81 @@ func glyphPath() -> CGPath {
     return p
 }
 
-// MARK: The two default stamps, in absolute box units. Same data as VerbKit's
-// StampShape.teacher / .sumi (this script can't import VerbKit).
+// MARK: Stamps, from VerbKit's StampShape (compiled in by `make icons`).
 
-func teacherPath() -> CGPath {
-    // M60 10C87 9 110 31 109 60c-1 28-23 50-51 49C31 108 10 87 11 59 12 34 31 14 57 11
+func cgPath(_ d: String) -> CGPath {
+    func cg(_ p: SVGPoint) -> CGPoint { CGPoint(x: p.x, y: p.y) }
     let p = CGMutablePath()
-    p.move(to: CGPoint(x: 60, y: 10))
-    p.addCurve(to: CGPoint(x: 109, y: 60), control1: CGPoint(x: 87, y: 9), control2: CGPoint(x: 110, y: 31))
-    p.addCurve(to: CGPoint(x: 58, y: 109), control1: CGPoint(x: 108, y: 88), control2: CGPoint(x: 86, y: 110))
-    p.addCurve(to: CGPoint(x: 11, y: 59), control1: CGPoint(x: 31, y: 108), control2: CGPoint(x: 10, y: 87))
-    p.addCurve(to: CGPoint(x: 57, y: 11), control1: CGPoint(x: 12, y: 34), control2: CGPoint(x: 31, y: 14))
+    for element in SVGPathData.parse(d) {
+        switch element {
+        case let .move(to): p.move(to: cg(to))
+        case let .line(to): p.addLine(to: cg(to))
+        case let .quad(to, c): p.addQuadCurve(to: cg(to), control: cg(c))
+        case let .cubic(to, c1, c2): p.addCurve(to: cg(to), control1: cg(c1), control2: cg(c2))
+        case .close: p.closeSubpath()
+        }
+    }
     return p
 }
 
-func sumiPath() -> CGPath {
-    // M98 34C88 16 70 9 52 12 28 16 12 38 14 62s6 48 46 48c22 0 40-12 47-32
-    let p = CGMutablePath()
-    p.move(to: CGPoint(x: 98, y: 34))
-    p.addCurve(to: CGPoint(x: 52, y: 12), control1: CGPoint(x: 88, y: 16), control2: CGPoint(x: 70, y: 9))
-    p.addCurve(to: CGPoint(x: 14, y: 62), control1: CGPoint(x: 28, y: 16), control2: CGPoint(x: 12, y: 38))
-    // The lower-left sweep swings wide enough to keep 活's left stroke clear (same gap as the teacher's circle).
-    p.addCurve(to: CGPoint(x: 60, y: 110), control1: CGPoint(x: 16, y: 86), control2: CGPoint(x: 20, y: 110))
-    p.addCurve(to: CGPoint(x: 107, y: 78), control1: CGPoint(x: 82, y: 110), control2: CGPoint(x: 100, y: 98))
-    return p
-}
-
+/// One face of an icon: paper (nil for a transparent launch image), the stamp in its two colours,
+/// and 活 in ink.
 struct Look {
     let paper: CGColor?
-    let stamp: CGPath
-    let stampWidth: CGFloat   // the board's base width
-    let stampColor: CGColor
+    let shape: StampShape
+    let first: CGColor
+    let second: CGColor
     let ink: CGColor
+
+    init(paper: CGColor?, shape: StampShape, first: CGColor, second: CGColor? = nil, ink: CGColor) {
+        self.paper = paper
+        self.shape = shape
+        self.first = first
+        self.second = second ?? first
+        self.ink = ink
+    }
+
+    /// The tinted face iOS recolours: black paper, the stamp at 60 % white, 活 at 95 %.
+    func tinted() -> Look {
+        Look(paper: color(0x000000), shape: shape, first: color(0xFFFFFF, 0.6), ink: color(0xFFFFFF, 0.95))
+    }
 }
 
-let light = Look(paper: color(0xF6F7F4), stamp: teacherPath(), stampWidth: 3, stampColor: color(0xC2372B), ink: color(0x1E2633))
-let dark = Look(paper: color(0x14171C), stamp: sumiPath(), stampWidth: 7, stampColor: color(0xE9EBE6), ink: color(0xE9EBE6))
-let tinted = Look(paper: color(0x000000), stamp: teacherPath(), stampWidth: 3, stampColor: color(0xFFFFFF, 0.6), ink: color(0xFFFFFF, 0.95))
+let light = Look(paper: color(0xF6F7F4), shape: .teacher, first: color(0xC2372B), ink: color(0x1E2633))
+let dark = Look(paper: color(0x14171C), shape: .sumi, first: color(0xE9EBE6), ink: color(0xE9EBE6))
+
+/// The ten sets from the board's SETS table: (theme raw value, light face, dark face). Paper and
+/// ink are each half's palette tokens; stamps and colours match App's ThemeStamp.
+let sets: [(String, Look, Look)] = [
+    ("light", light, dark),
+    ("pastel",
+     Look(paper: color(0xFBF5FA), shape: .rings, first: color(0xC9B6F2), second: color(0xF2B8CF), ink: color(0x3A2E4A)),
+     Look(paper: color(0x1C1724), shape: .rings, first: color(0xB9A3EF), second: color(0xF27A98), ink: color(0xF0E8F6))),
+    ("sand",
+     Look(paper: color(0xF2EBDF), shape: .raked, first: color(0xA8743A), ink: color(0x3B2F22)),
+     Look(paper: color(0x1E1A15), shape: .raked, first: color(0xC08A4A), ink: color(0xF1E8DA))),
+    ("matcha",
+     Look(paper: color(0xEEF1E6), shape: .enso, first: color(0x4A6B35), ink: color(0x24361F)),
+     Look(paper: color(0x141A12), shape: .enso, first: color(0x8FBF6A), ink: color(0xE6EDDC))),
+    ("latte",
+     Look(paper: color(0xF5EEE6), shape: .heart, first: color(0xA8714A), ink: color(0x4A3426)),
+     Look(paper: color(0x1F1712), shape: .mug, first: color(0xC8945F), ink: color(0xF0E6DC))),
+    ("iceCream",
+     Look(paper: color(0xFFF6F8), shape: .scoop, first: color(0xE07AA0), ink: color(0x3D2B3A)),
+     Look(paper: color(0x1F1720), shape: .scoop, first: color(0xF08AB0), ink: color(0xF6E6EE))),
+    ("northernLights",
+     Look(paper: color(0xEEF5F6), shape: .aurora, first: color(0x1FAE84), second: color(0x7C5FD6), ink: color(0x12283A)),
+     Look(paper: color(0x0D1622), shape: .aurora, first: color(0x5FE3B0), second: color(0xA78BFA), ink: color(0xE6F1F2))),
+    ("nocturnal",
+     Look(paper: color(0xF3F2FA), shape: .moon, first: color(0x7A70E0), second: color(0x3D3680), ink: color(0x24223F)),
+     Look(paper: color(0x0B0B14), shape: .moon, first: color(0x8F86F0), second: color(0xB9B3FF), ink: color(0xD9D7F0))),
+    ("halloween",
+     Look(paper: color(0xF6EFE4), shape: .pumpkin, first: color(0xE2701A), second: color(0x4D7A2A), ink: color(0x2E2135)),
+     Look(paper: color(0x17121C), shape: .pumpkin, first: color(0xFF8A2A), second: color(0x9AD36A), ink: color(0xF5EBDD))),
+    ("christmas",
+     Look(paper: color(0xF4F0E8), shape: .wreath, first: color(0x1F6B45), second: color(0xB3202C), ink: color(0x163A2A)),
+     Look(paper: color(0x0F1D16), shape: .wreath, first: color(0x7FCF9A), second: color(0xEF6B5E), ink: color(0xF1ECE0))),
+]
 
 /// Draws the seal filling a `px` square: optional paper, the stamp, then 活.
 func seal(_ look: Look, px: Int, transparent: Bool) -> CGContext {
@@ -167,12 +210,14 @@ func seal(_ look: Look, px: Int, transparent: Bool) -> CGContext {
     ctx.translateBy(x: 60, y: 60)
     ctx.scaleBy(x: 0.84, y: 0.84)
     ctx.translateBy(x: -60, y: -60)
-    ctx.addPath(look.stamp)
-    ctx.setStrokeColor(look.stampColor)
-    ctx.setLineWidth(look.stampWidth * 1.8)
     ctx.setLineCap(.round)
     ctx.setLineJoin(.round)
-    ctx.strokePath()
+    for stroke in look.shape.strokes {
+        ctx.addPath(cgPath(stroke.d))
+        ctx.setStrokeColor(stroke.usesSecondColor ? look.second : look.first)
+        ctx.setLineWidth(stroke.baseWidth * 1.8)
+        ctx.strokePath()
+    }
     ctx.restoreGState()
 
     ctx.addPath(glyphPath())
@@ -263,10 +308,46 @@ try writeJSON(
 let iconSet = assets.appendingPathComponent("AppIcon.appiconset")
 try write(seal(light, px: 1024, transparent: false), to: iconSet.appendingPathComponent("icon-1024.png"))
 try write(seal(dark, px: 1024, transparent: false), to: iconSet.appendingPathComponent("icon-1024-dark.png"))
-try write(seal(tinted, px: 1024, transparent: false), to: iconSet.appendingPathComponent("icon-1024-tinted.png"))
+try write(seal(light.tinted(), px: 1024, transparent: false), to: iconSet.appendingPathComponent("icon-1024-tinted.png"))
+
+func iconEntry(_ file: String, _ appearance: String?) -> [String: Any] {
+    var entry: [String: Any] = ["filename": file, "idiom": "universal", "platform": "ios", "size": "1024x1024"]
+    if let appearance { entry["appearances"] = [["appearance": "luminosity", "value": appearance]] }
+    return entry
+}
+
+// The nine alternate icon sets, named AppIcon-<theme> as VerbKit's AppIconMatching expects.
+for (theme, day, night) in sets where theme != "light" {
+    let set = assets.appendingPathComponent("AppIcon-\(theme).appiconset")
+    try FileManager.default.createDirectory(at: set, withIntermediateDirectories: true)
+    try write(seal(day, px: 1024, transparent: false), to: set.appendingPathComponent("icon-1024.png"))
+    try write(seal(night, px: 1024, transparent: false), to: set.appendingPathComponent("icon-1024-dark.png"))
+    try write(seal(day.tinted(), px: 1024, transparent: false), to: set.appendingPathComponent("icon-1024-tinted.png"))
+    try writeJSON(["images": [
+        iconEntry("icon-1024.png", nil), iconEntry("icon-1024-dark.png", "dark"), iconEntry("icon-1024-tinted.png", "tinted"),
+    ], "info": info], to: set.appendingPathComponent("Contents.json"))
+}
+
+// A 44 pt preview of every set, light and dark, for Settings › Theme (the app can't read its own
+// alternate icons back as images).
+for (theme, day, night) in sets {
+    let set = assets.appendingPathComponent("IconPreview-\(theme).imageset")
+    try FileManager.default.createDirectory(at: set, withIntermediateDirectories: true)
+    var images: [[String: Any]] = []
+    for (name, look, isDark) in [("preview", day, false), ("preview-dark", night, true)] {
+        for scale in 2...3 {
+            let file = "\(name)@\(scale)x.png"
+            try write(seal(look, px: 44 * scale, transparent: false), to: set.appendingPathComponent(file))
+            var entry: [String: Any] = ["filename": file, "idiom": "universal", "scale": "\(scale)x"]
+            if isDark { entry["appearances"] = [["appearance": "luminosity", "value": "dark"]] }
+            images.append(entry)
+        }
+    }
+    try writeJSON(["images": images, "info": info], to: set.appendingPathComponent("Contents.json"))
+}
 
 let swiftDir = root.appendingPathComponent("App/Launch")
 try FileManager.default.createDirectory(at: swiftDir, withIntermediateDirectories: true)
 try swiftSource().write(to: swiftDir.appendingPathComponent("SealGlyph.swift"), atomically: true, encoding: .utf8)
 
-print("wrote the launch image, the iOS icons and App/Launch/SealGlyph.swift (\(glyph.count) path steps)")
+print("wrote the launch image, the iOS icons, \(sets.count - 1) alternate icon sets, their previews and App/Launch/SealGlyph.swift (\(glyph.count) path steps)")
