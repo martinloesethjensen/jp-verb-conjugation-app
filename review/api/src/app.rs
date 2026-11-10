@@ -78,6 +78,8 @@ enum Handler {
     Decide,
     Replies,
     ReadReplies,
+    Settings,
+    ChangeSettings,
     Add,
     Additions,
     Stamp,
@@ -291,6 +293,18 @@ const ROUTES: &[Route] = &[
     },
     Route {
         method: "GET",
+        path: "/api/settings",
+        need: Need::Reviewer,
+        handler: Handler::Settings,
+    },
+    Route {
+        method: "POST",
+        path: "/api/settings",
+        need: Need::Reviewer,
+        handler: Handler::ChangeSettings,
+    },
+    Route {
+        method: "GET",
         path: "/api/replies",
         need: Need::Reviewer,
         handler: Handler::Replies,
@@ -466,6 +480,10 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
             review_routes::inbox(param(&req.query, "status"), &principal, store).await
         }
         Handler::Decide => review_routes::decide(&req.body, &principal, store, today).await,
+        Handler::Settings => crate::settings_routes::settings(&principal, store).await,
+        Handler::ChangeSettings => {
+            crate::settings_routes::change(&req.body, &principal, store, today).await
+        }
         Handler::Replies => crate::reply_routes::replies(&principal, store).await,
         Handler::ReadReplies => {
             crate::reply_routes::read(&req.body, &principal, store, today).await

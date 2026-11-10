@@ -13,6 +13,7 @@ pub mod proposal;
 pub mod reply_routes;
 pub mod review_routes;
 pub mod review_store;
+pub mod settings_routes;
 pub mod source;
 pub mod stamp_routes;
 pub mod store;
