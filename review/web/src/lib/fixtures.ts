@@ -7,7 +7,7 @@ export const addition: Suggestion = {
 	item_title: '食べてから寝ます。', author_name: 'Aiko', mine: false, status: 'open', base_hash: '',
 	proposed: { id: 'new001', form: 'te', jp: '食べてから寝ます。', en: 'I eat, then sleep.' },
 	furigana: null, dropped_blanks: 0, comment: '', admin_edit: null, created_at: '', decided_at: null,
-	stale: false, gone: false, parent_kind: 'entry', parent_id: 'たべる', landed: false, comments: []
+	stale: false, gone: false, parent_kind: 'entry', parent_id: 'たべる', landed: false, last_read: null, comments: []
 };
 
 /** The same as it appears in the inbox: with the target as it is now. */

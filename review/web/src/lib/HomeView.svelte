@@ -1,16 +1,18 @@
 <script lang="ts">
 	// Home: the greeting, the queue to continue, the other queues, and the four datasets to browse.
-	import { DATASETS, type QueueItem, type QueueSummary, type SnapshotFile } from './api.ts';
+	import { DATASETS, type QueueItem, type QueueSummary, type Reply, type SnapshotFile } from './api.ts';
 	import { DATASET_JAPANESE, DATASET_TITLES } from './labels.ts';
 	import Japanese from './Japanese.svelte';
 	import QueueStack from './QueueStack.svelte';
+	import ReplyList from './ReplyList.svelte';
 
 	let {
 		name,
 		queues,
 		files,
 		next,
-		readings
+		readings,
+		replies = []
 	}: {
 		name: string;
 		queues: QueueSummary[];
@@ -19,6 +21,8 @@
 		/** The featured queue's next item, once loaded. */
 		next: QueueItem | undefined;
 		readings: Record<string, string>;
+		/** New replies for the viewer. */
+		replies?: Reply[];
 	} = $props();
 
 	const featured = $derived(queues.find((q) => q.done < q.total));
@@ -36,6 +40,15 @@
 		</p>
 	{/if}
 </header>
+
+{#if replies.length}
+	<a class="replies-banner" href="/replies">{replies.length === 1 ? '1 new reply' : `${replies.length} new replies`}</a>
+	<section class="new-replies" aria-labelledby="new-replies-heading">
+		<h2 id="new-replies-heading">New replies</h2>
+		<ReplyList replies={replies.slice(0, 3)} {readings} />
+		<a class="see-all" href="/replies">See all replies</a>
+	</section>
+{/if}
 
 {#if queues.length}
 	<section class="waiting" aria-label="Your queues">
@@ -237,6 +250,49 @@
 			flex-direction: column;
 			align-items: flex-start;
 			gap: 0.6rem;
+		}
+	}
+
+	.replies-banner {
+		display: none;
+		align-items: center;
+		min-height: 48px;
+		margin: 0 0 1rem;
+		padding: 0 1rem;
+		border: 1px solid var(--red);
+		border-radius: var(--radius);
+		background: var(--red-soft);
+		color: var(--ink);
+		font-weight: 700;
+	}
+
+	.new-replies {
+		margin: 0 0 2rem;
+		padding: 0.5rem;
+		background: var(--card);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+	}
+
+	.new-replies h2 {
+		margin: 0.5rem 0.75rem;
+		font-size: 1.25rem;
+	}
+
+	.see-all {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 0.75rem;
+	}
+
+	@media (max-width: 720px) {
+		.replies-banner {
+			display: flex;
+		}
+
+		.new-replies {
+			display: none;
 		}
 	}
 </style>

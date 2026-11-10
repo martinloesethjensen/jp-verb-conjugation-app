@@ -242,6 +242,8 @@ export type Suggestion = {
 	parent_id: string | null;
 	/** An addition whose new item is now in the loaded data. */
 	landed: boolean;
+	/** When the viewer last saw this thread; null when they aren't in it. */
+	last_read: string | null;
 	comments: Comment[];
 };
 

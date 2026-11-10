@@ -66,3 +66,22 @@ test('the Browse tiles use a weight Shippori Mincho loads (500 or 700)', () => {
 	expect(source).toMatch(/\.tile \{[^}]*font-weight: 700/);
 	expect(source).not.toMatch(/font-weight: 600/);
 });
+
+const newReply = (id: number) => ({
+	suggestion_id: id, what: 'comment' as const, by_name: 'Ben', at: '2026-11-10T12:00:00.000Z', body: 'Hi',
+	item_title: '食べる', dataset: 'verbs', kind: 'entry', item_id: 'たべる', entry_id: 'たべる', action: 'note',
+	parent_kind: null, parent_id: null, unread: true
+});
+
+test('new replies get a section and a phone banner', () => {
+	const { body } = render(HomeView, { props: { name: 'Aiko', queues: [], files: [], next: undefined, readings: {}, replies: [newReply(1), newReply(2)] } });
+	expect(body).toContain('New replies');
+	expect(body).toContain('2 new replies');
+	expect(body).toContain('href="/replies"');
+});
+
+test('no replies, no section', () => {
+	const { body } = render(HomeView, { props: { name: 'Aiko', queues: [], files: [], next: undefined, readings: {}, replies: [] } });
+	expect(body).not.toContain('New replies');
+	expect(body).not.toContain('new repl');
+});

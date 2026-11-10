@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { render } from 'svelte/server';
 import type { Reply } from './api.ts';
-import { groupReplies, replies, replyText } from './replies.svelte.ts';
+import { firstNew, groupReplies, replies, replyText } from './replies.svelte.ts';
 import RepliesBell from './RepliesBell.svelte';
 import ReplyList from './ReplyList.svelte';
 import { suggestionHref } from './targets.ts';
@@ -93,4 +93,36 @@ describe('the bell and the list', () => {
 		expect(body).toContain('Ben replied');
 		expect(body).toContain('Looks good.');
 	});
+});
+
+describe('firstNew', () => {
+	const c = (mine: boolean, at: string) => ({ author_name: 'x', mine, body: 'b', created_at: at });
+	test('nothing is new when the viewer is not in the thread', () => {
+		expect(firstNew({ last_read: null, comments: [c(false, '2026-11-10T12:00:00.000Z')] })).toBe(-1);
+	});
+	test('skips your own comments and finds the first newer one', () => {
+		const comments = [c(false, '2026-11-10T11:00:00.000Z'), c(true, '2026-11-10T12:30:00.000Z'), c(false, '2026-11-10T12:40:00.000Z')];
+		expect(firstNew({ last_read: '2026-11-10T12:00:00.000Z', comments })).toBe(2);
+		expect(firstNew({ last_read: '2026-11-10T13:00:00.000Z', comments })).toBe(-1);
+	});
+});
+
+test('a refresh that started before a read does not bring the old count back', async () => {
+	let answerRefresh: (r: Response) => void = () => {};
+	const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(async (path: string) =>
+			path === '/api/replies' ? new Promise<Response>((r) => (answerRefresh = r)) : json({ unread: 0 })
+		)
+	);
+	replies.unread = 1;
+	replies.list = [reply({ suggestion_id: 1 })];
+	const refreshing = replies.refresh();
+	replies.read(1);
+	await vi.waitFor(() => expect(replies.unread).toBe(0));
+	answerRefresh(json({ unread: 1, replies: [reply({ suggestion_id: 1 })] }));
+	await refreshing;
+	expect(replies.unread).toBe(0);
+	expect(replies.list[0].unread).toBe(false);
 });
