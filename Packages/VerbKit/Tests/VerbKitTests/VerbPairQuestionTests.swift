@@ -40,13 +40,15 @@ final class VerbPairQuestionTests: XCTestCase {
         XCTAssertEqual(questions.count, 4)
         let verbQuestion = try XCTUnwrap(questions.first { $0.verbID == "はじまる" && $0.blank == .verb })
         XCTAssertEqual(verbQuestion.blanked, "会議が" + QuizQuestion.blank)
-        XCTAssertEqual(verbQuestion.answer, "始まる")
-        XCTAssertEqual(Set(verbQuestion.choices), ["始まる", "始める"])
+        XCTAssertEqual(verbQuestion.answer, "はじまる")
+        XCTAssertEqual(Set(verbQuestion.choices), ["はじまる", "はじめる"])
+        XCTAssertEqual(verbQuestion.choiceVerbs["はじめる"]?.kanji, "始める", "so the quiz can write it in its script")
         XCTAssertEqual(verbQuestion.partnerPhrase, "会議を始める")
         let particleQuestion = try XCTUnwrap(questions.first { $0.verbID == "はじめる" && $0.blank == .particle })
         XCTAssertEqual(particleQuestion.blanked, "会議" + QuizQuestion.blank + "始める")
         XCTAssertEqual(particleQuestion.answer, "を")
         XCTAssertEqual(Set(particleQuestion.choices), ["を", "が"])
+        XCTAssertEqual(particleQuestion.choiceVerbs, [:])
     }
 
     func testBothHalvesMustBeVisible() {
@@ -63,7 +65,12 @@ final class VerbPairQuestionTests: XCTestCase {
         for question in questions {
             XCTAssertTrue(question.choices.contains(question.answer))
             XCTAssertEqual(Set(question.choices).count, 2, question.phrase)
-            XCTAssertEqual(question.blanked.replacingOccurrences(of: QuizQuestion.blank, with: question.answer), question.phrase)
+            if question.blank == .particle {
+                XCTAssertEqual(question.blanked.replacingOccurrences(of: QuizQuestion.blank, with: question.answer), question.phrase)
+            } else {
+                XCTAssertEqual(Set(question.choiceVerbs.keys), Set(question.choices), question.phrase)
+                XCTAssertTrue(question.phrase.hasPrefix(question.before), question.phrase)
+            }
         }
     }
 
@@ -78,11 +85,11 @@ final class VerbPairQuestionTests: XCTestCase {
         model.choose("を")
         XCTAssertEqual(model.answeredCorrectly, false)
         model.advance()
-        model.choose("始まる")
+        model.choose("はじまる")
         model.advance()
         model.choose("を")
         model.advance()
-        model.choose("始まる")
+        model.choose("はじまる")
         model.advance()
         XCTAssertTrue(model.finished)
         XCTAssertEqual(model.score, 2)

@@ -3,7 +3,7 @@ import VerbKit
 import WidgetKit
 
 /// Verb pairs (#58): a pair phrase with its verb or its particle blanked, pick the half that fits
-/// (会議が＿＿＿ → 始まる) or the particle (会議＿＿＿始める → を). No timer. After each answer both
+/// (会議が＿＿＿ → はじまる) or the particle (会議＿＿＿始める → を). No timer. After each answer both
 /// phrases of the pair show side by side, with a link to the verb's page.
 struct VerbPairQuizView: View {
     @Environment(\.openRoute) private var openRoute
@@ -40,7 +40,9 @@ struct VerbPairQuizView: View {
                 prompt(question)
                 QuizChoiceGrid(
                     choices: question.choices, isCorrect: question.isCorrect,
-                    selected: model.selected, isAnswered: model.isAnswered, onChoose: model.choose
+                    selected: model.selected, isAnswered: model.isAnswered,
+                    verb: question.choiceVerbs.isEmpty ? nil : { question.choiceVerbs[$0]! },
+                    onChoose: model.choose
                 )
                 .font(.title2.weight(.semibold))
                 if model.isAnswered {
@@ -82,7 +84,7 @@ struct VerbPairQuizView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Label(right ? "Correct!" : "Not quite", systemImage: right ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.headline)
-                Text(Self.answerLine(question))
+                JapaneseText(Self.answerLine(question))
                     .font(.subheadline.weight(.semibold))
                 ForEach(Self.halves(question), id: \.phrase) { half in
                     VStack(alignment: .leading, spacing: 2) {
@@ -99,7 +101,7 @@ struct VerbPairQuizView: View {
         }
     }
 
-    /// Why the answer is right: "が goes with the intransitive verb, 始まる." for a verb blank,
+    /// Why the answer is right: "が goes with the intransitive verb, はじまる." for a verb blank,
     /// "始める is transitive, so it takes を." for a particle blank.
     static func answerLine(_ question: VerbPairQuestion) -> String {
         let kind = question.transitivity.title.lowercased()
@@ -144,9 +146,10 @@ struct VerbPairQuizView: View {
         ) {
             ForEach(Array(missed.enumerated()), id: \.offset) { _, question in
                 QuizMissedCard {
+                    // The prompt as asked, so a verb's two questions read apart.
                     VStack(alignment: .leading, spacing: 4) {
-                        JapaneseText(question.phrase).font(.headline)
-                        Text("\(question.transitivity.title) · \(question.gloss)")
+                        JapaneseText(question.blanked).font(.headline)
+                        Text("\(question.answer) · \(question.gloss)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

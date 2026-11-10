@@ -1,8 +1,8 @@
 import Foundation
 
 /// One transitive/intransitive pair question (#58), built from a verb's `pair` phrase. Either the
-/// verb is blanked and the choices are the two halves of the pair (会議が＿＿＿ → 始まる, not
-/// 始める), or the particle is blanked and the choices are を and が (会議＿＿＿始める → を).
+/// verb is blanked and the choices are the two halves of the pair (会議が＿＿＿ → はじまる, not
+/// はじめる), or the particle is blanked and the choices are を and が (会議＿＿＿始める → を).
 public struct VerbPairQuestion: Equatable, Sendable, Identifiable {
     /// What is blanked.
     public enum Blank: String, Sendable, CaseIterable {
@@ -28,13 +28,16 @@ public struct VerbPairQuestion: Equatable, Sendable, Identifiable {
     public var before: String
     public var after: String
     public var answer: String
-    /// `answer` and the one wrong choice, shuffled.
+    /// `answer` and the one wrong choice, shuffled. For a verb blank these are the two verbs'
+    /// dictionary forms in kana, so the quiz can write them in its script (`choiceVerbs`).
     public var choices: [String]
+    /// For a verb blank, the verb each choice is the dictionary form of; empty for a particle blank.
+    public var choiceVerbs: [String: Verb]
 
     public init(
         id: UUID = UUID(), blank: Blank, verbID: String, verbTitle: String, transitivity: Transitivity,
         phrase: String, gloss: String, partnerPhrase: String, partnerGloss: String, partnerID: String,
-        before: String, after: String, answer: String, choices: [String]
+        before: String, after: String, answer: String, choices: [String], choiceVerbs: [String: Verb] = [:]
     ) {
         self.id = id
         self.blank = blank
@@ -50,6 +53,7 @@ public struct VerbPairQuestion: Equatable, Sendable, Identifiable {
         self.after = after
         self.answer = answer
         self.choices = choices
+        self.choiceVerbs = choiceVerbs
     }
 
     /// The phrase with the blank (＿＿＿) in place.
@@ -93,17 +97,18 @@ public func buildVerbPairQuestions(verbs: [Verb], levels: LevelSettings = LevelS
         guard let pair = verb.pair, let partner = verb.pairPartner(in: visible), let partnerPair = partner.pair,
               let parts = PairPhraseParts(verb: verb, pair: pair),
               let partnerParts = PairPhraseParts(verb: partner, pair: partnerPair),
-              parts.verb != partnerParts.verb
+              verb.dict != partner.dict
         else { continue }
         func question(_ blank: VerbPairQuestion.Blank) -> VerbPairQuestion {
             let (before, after, answer, wrong): (String, String, String, String) = switch blank {
-            case .verb: (parts.head + parts.particle, "", parts.verb, partnerParts.verb)
+            case .verb: (parts.head + parts.particle, "", verb.dict, partner.dict)
             case .particle: (parts.head, parts.verb, parts.particle, partnerParts.particle)
             }
             return VerbPairQuestion(
                 blank: blank, verbID: verb.id, verbTitle: verb.displayTitle, transitivity: pair.transitivity,
                 phrase: pair.jp, gloss: pair.en, partnerPhrase: partnerPair.jp, partnerGloss: partnerPair.en,
-                partnerID: partner.id, before: before, after: after, answer: answer, choices: [answer, wrong].shuffled()
+                partnerID: partner.id, before: before, after: after, answer: answer, choices: [answer, wrong].shuffled(),
+                choiceVerbs: blank == .verb ? [verb.dict: verb, partner.dict: partner] : [:]
             )
         }
         questions += VerbPairQuestion.Blank.allCases.map(question)
