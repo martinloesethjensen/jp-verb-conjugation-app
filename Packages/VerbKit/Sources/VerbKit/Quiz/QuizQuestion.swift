@@ -54,6 +54,9 @@ public struct QuizQuestion: Equatable, Sendable {
     public var sentence: String?
     /// For `.fillIn`: the English translation of the sentence.
     public var translation: String?
+    /// The verb of each choice that is another verb's form, so it can be spelled with that
+    /// verb's kanji. Every other choice is a form of `verb`. See `verb(of:)`.
+    public var choiceVerbs: [String: Verb]
 
     /// What stands in for the verb in a fill-in sentence.
     public static let blank = "＿＿＿"
@@ -62,9 +65,11 @@ public struct QuizQuestion: Equatable, Sendable {
         verb: Verb, form: QuizForm, kind: QuizQuestionKind,
         formString: String, correct: String, choices: [String],
         errors: [String: QuizErrorTag] = [:],
-        sentence: String? = nil, translation: String? = nil
+        sentence: String? = nil, translation: String? = nil,
+        choiceVerbs: [String: Verb] = [:]
     ) {
         self.errors = errors
+        self.choiceVerbs = choiceVerbs
         self.sentence = sentence
         self.translation = translation
         self.verb = verb

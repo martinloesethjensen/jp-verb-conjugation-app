@@ -120,7 +120,7 @@ function handler() {
 		{ email: 'keiko@example.com', display_name: 'Keiko', role: 'teacher', active: true, public_role: 'teacher', public_name: null },
 		{ email: 'owner@example.com', display_name: 'Martin', role: 'admin', active: true, public_role: 'owner', public_name: null }
 	];
-	const me = users.find((u) => u.role === (process.env.MOCK_ROLE ?? 'admin')) ?? users[2];
+	let me = users.find((u) => u.role === (process.env.MOCK_ROLE ?? 'admin')) ?? users[2];
 	const data = publishedData();
 	if (process.env.MOCK_LOADED) for (const f of FILES) data.load(f);
 	const review = reviewMock({
@@ -130,7 +130,9 @@ function handler() {
 		formIds: data.formIds,
 		generation: data.generation,
 		users,
-		me
+		get me() {
+			return me;
+		}
 	});
 
 	return async (req: IncomingMessage, res: ServerResponse) => {
@@ -187,6 +189,13 @@ function handler() {
 			return { email, display_name, role, public_role, public_name };
 		};
 		if (path === '/me' && req.method === 'GET') return send(200, meBody());
+		// Dev only: sign in as someone else without restarting, to try replies between people.
+		if (path === '/dev/as' && req.method === 'POST') {
+			const user = users.find((u) => u.email === body.email);
+			if (!user) return send(404, { error: 'no such mock user' });
+			me = user;
+			return send(200, meBody());
+		}
 		if (path === '/me/public-name' && req.method === 'POST') {
 			const name = typeof body.public_name === 'string' ? body.public_name.trim() : '';
 			if (name.length > 40) return send(400, { error: 'the public name must be 1 to 40 characters' });

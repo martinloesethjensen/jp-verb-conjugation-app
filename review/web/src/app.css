@@ -172,6 +172,11 @@ input:focus-visible {
 	}
 }
 
+/* An open sheet (Sheet.svelte) locks the page behind it, so swiping the backdrop doesn't scroll it. */
+html:has(dialog.sheet[open]) {
+	overflow: hidden;
+}
+
 /* A sheet rising from the bottom edge (Sheet.svelte). */
 @keyframes sheet-up {
 	from {

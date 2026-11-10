@@ -1,12 +1,13 @@
 <script lang="ts">
 	// One suggestion: who made it, what it changes (as a red-pen correction), its state, and its thread.
-	import type { Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { problem, type Suggestion } from './api.ts';
 	import { shortDate } from './dates.ts';
 	import ErrorLine from './ErrorLine.svelte';
 	import PartView from './PartView.svelte';
 	import RedPen from './RedPen.svelte';
 	import { KINDS } from './labels.ts';
+	import { firstNew, newDecision, replies } from './replies.svelte.ts';
 
 	type Json = { [key: string]: any };
 
@@ -40,6 +41,12 @@
 	let failure = $state<string | null>(null);
 
 	const s = $derived(suggestion);
+	const newFrom = $derived(firstNew(s));
+
+	// Seeing the thread reads it: the bell's count for it clears. (onMount: never during server render.)
+	onMount(() => {
+		if (firstNew(suggestion) >= 0 || newDecision(suggestion)) replies.read(suggestion.id);
+	});
 	const HEADINGS: Record<string, string> = {
 		change: 'suggests a change',
 		delete: 'suggests removing it',
@@ -125,6 +132,7 @@
 	{#if s.comments.length}
 		<ol class="thread">
 			{#each s.comments as c, i (i)}
+				{#if i === newFrom}<li class="new-since" role="separator">New since your last visit</li>{/if}
 				<li><span class="author">{c.author_name}</span> {c.body}</li>
 			{/each}
 		</ol>
@@ -252,6 +260,21 @@
 		padding: 0;
 		list-style: none;
 		font-size: 0.92rem;
+	}
+
+	.new-since {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--red);
+		font-size: 0.8rem;
+		font-weight: 700;
+	}
+
+	.new-since::after {
+		content: '';
+		flex: 1;
+		border-top: 1px solid var(--red);
 	}
 
 	.thread li + li {

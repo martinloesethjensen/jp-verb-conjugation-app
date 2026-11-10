@@ -54,6 +54,7 @@ struct QuizTopicSheet: View {
     @State private var choice: Choice = .everything
     @State private var favouritesOnly = false
     @AppStorage(FavouriteVerbs.defaultsKey, store: .appGroup) private var favouritesRaw = ""
+    @AppStorage(QuizScript.defaultsKey, store: .appGroup) private var scriptRaw = QuizScript.kana.rawValue
 
     private var favouriteVerbs: [Verb] { FavouriteVerbs(rawValue: favouritesRaw).filter(verbs) }
 
@@ -149,6 +150,15 @@ struct QuizTopicSheet: View {
                     )
                 } footer: {
                     Text("Connections: join verbs, adjectives and nouns to grammar patterns, しずか + ので. Spot the mistake: find the wrong form among correct ones. Particles: fill in the particle, 電車＿乗る.")
+                }
+                Section {
+                    Picker("Show verbs as", selection: $scriptRaw) {
+                        ForEach(QuizScript.allCases, id: \.self) { script in
+                            Text(script.title).tag(script.rawValue)
+                        }
+                    }
+                } footer: {
+                    Text(QuizScript(storedValue: scriptRaw).explanation)
                 }
                 // Only worth offering when there is a choice to make: some, but not all, verbs starred.
                 if !favouriteVerbs.isEmpty && favouriteVerbs.count < verbs.count {

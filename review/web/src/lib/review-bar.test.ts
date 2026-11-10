@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import ReviewBar from './ReviewBar.svelte';
@@ -44,4 +45,16 @@ test('docked on a phone after approving: Next item and Undo in the bar', () => {
 test('not docked: no action bar', () => {
 	const { body } = render(ReviewBar, { props: { ...props, review: stub(false), phone: true } });
 	expect(body).not.toContain('action-bar');
+});
+
+test('approving and undoing tell the queue, so its list and count refresh', () => {
+	const source = readFileSync(new URL('./ReviewBar.svelte', import.meta.url), 'utf8');
+	expect(source).toMatch(/review\.approve\(kind, id\), onnext \? onchange : onaction/);
+	expect(source.match(/review\.undo\(kind, id\), onchange\)/g)?.length).toBe(3);
+});
+
+test('the More sheet shows errors itself, and the page line hides while a sheet is open', () => {
+	const source = readFileSync(new URL('./ReviewBar.svelte', import.meta.url), 'utf8');
+	expect(source).toMatch(/<Sheet open=\{moreOpen\}[\s\S]*?<ErrorLine[\s\S]*?<\/Sheet>/);
+	expect(source).toMatch(/\{#if !sheetOpen\}<ErrorLine message=\{failure\} \{stale\} \/>\{\/if\}/);
 });

@@ -87,6 +87,12 @@
 		await refresh();
 	}
 
+	/** After approving or undoing in place: keep this item on screen and refresh the list and count. */
+	async function changed() {
+		if (current) selected = keyOf(current);
+		await refresh();
+	}
+
 	async function skipCurrent(item: QueueItem) {
 		data = await skip(queueId, { dataset: item.dataset, kind: item.kind, id: item.item_id });
 		selected = null;
@@ -150,6 +156,7 @@
 							{forms}
 							onaction={next}
 							onnext={next}
+							onchange={changed}
 							docked
 							onskip={() => skipCurrent(current)}
 						/>

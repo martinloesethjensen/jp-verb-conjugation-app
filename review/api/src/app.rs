@@ -76,6 +76,8 @@ enum Handler {
     RemoveQueueItem,
     Inbox,
     Decide,
+    Replies,
+    ReadReplies,
     Add,
     Additions,
     Stamp,
@@ -288,6 +290,18 @@ const ROUTES: &[Route] = &[
         handler: Handler::Decide,
     },
     Route {
+        method: "GET",
+        path: "/api/replies",
+        need: Need::Reviewer,
+        handler: Handler::Replies,
+    },
+    Route {
+        method: "POST",
+        path: "/api/replies/read",
+        need: Need::Reviewer,
+        handler: Handler::ReadReplies,
+    },
+    Route {
         method: "POST",
         path: "/api/add",
         need: Need::Reviewer,
@@ -452,6 +466,10 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
             review_routes::inbox(param(&req.query, "status"), &principal, store).await
         }
         Handler::Decide => review_routes::decide(&req.body, &principal, store, today).await,
+        Handler::Replies => crate::reply_routes::replies(&principal, store).await,
+        Handler::ReadReplies => {
+            crate::reply_routes::read(&req.body, &principal, store, today).await
+        }
         Handler::Add => add_routes::add(&req.body, &principal, store, today).await,
         Handler::Additions => {
             add_routes::additions(param(&req.query, "dataset"), &principal, store).await

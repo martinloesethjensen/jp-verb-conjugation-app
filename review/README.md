@@ -38,6 +38,9 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   before it stop counting (approve them again), and open or accepted-but-unexported changes to verb entries
   show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
   are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
+- **Reply alerts (2026-11-10)** need migration `0008_thread_reads.sql` (`npm run migrate`), which adds the
+  `thread_reads` table and marks every thread people are already in as read. Run it just before or right after
+  merging: until it runs, `/api/replies` fails and the bell stays empty, and every other page works.
 - **Roles (2026-11-09)** need migration `0007_teacher_role.sql` (`npm run migrate`), which rebuilds `users`
   with every row kept. Run it just before or right after merging: either order is safe, but until it runs,
   making someone a teacher fails with "the database is unavailable". The
@@ -143,6 +146,12 @@ one (each example, common phrase, usage, pitfall and thing counted) they can:
 
 Everyone sees everyone's seals and suggestions, by display name. A suggestion made against data that has since
 changed shows "Changed since"; one whose item left the data shows "No longer in the data".
+
+**Replies.** You're told when someone else comments in a thread you started or commented in, and when a teacher
+or Martin accepts or declines your suggestion. Your own comments and decisions never count. A red count on the
+bell in the header shows how many are new. On a computer the bell opens the newest; on a phone it goes to the
+Replies page (New and Earlier). Home lists new replies too. Opening a thread marks it read and shows a red "New
+since your last visit" line above what's new. Nothing is pushed: the site checks when a page opens.
 
 **The inbox** (Inbox in the header, for teachers and you) shows each change as a red-pen correction, grouped by item so
 counter-suggestions sit side by side. For each one: **Accept**, **Edit then accept** (fix it before accepting;

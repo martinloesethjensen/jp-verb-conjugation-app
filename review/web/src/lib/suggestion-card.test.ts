@@ -50,3 +50,31 @@ describe('the restyled card and inbox', () => {
 		expect(card).toContain('{shortDate(when)}');
 	});
 });
+
+describe('the new-since line', () => {
+	const thread: Suggestion = {
+		...addition,
+		id: 3,
+		last_read: '2026-11-10T12:05:00.000Z',
+		comments: [
+			{ author_name: 'Ben', mine: false, body: 'Seen already.', created_at: '2026-11-10T12:01:00.000Z' },
+			{ author_name: 'Keiko', mine: false, body: 'Brand new.', created_at: '2026-11-10T12:09:00.000Z' }
+		]
+	};
+
+	test('sits between what was read and what is new', () => {
+		const { body } = render(SuggestionCard, { props: { suggestion: thread, current: null, names: [] } });
+		const seen = body.indexOf('Seen already.');
+		const line = body.indexOf('New since your last visit');
+		const fresh = body.indexOf('Brand new.');
+		expect(seen).toBeGreaterThan(-1);
+		expect(line).toBeGreaterThan(seen);
+		expect(fresh).toBeGreaterThan(line);
+	});
+
+	test('is gone once everything was read', () => {
+		const read = { ...thread, last_read: '2026-11-10T13:00:00.000Z' };
+		const { body } = render(SuggestionCard, { props: { suggestion: read, current: null, names: [] } });
+		expect(body).not.toContain('New since your last visit');
+	});
+});

@@ -10,6 +10,7 @@ pub mod export_routes;
 pub mod items;
 pub mod manifest;
 pub mod proposal;
+pub mod reply_routes;
 pub mod review_routes;
 pub mod review_store;
 pub mod source;

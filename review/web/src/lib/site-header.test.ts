@@ -49,3 +49,8 @@ test('teachers and the owner get an Inbox link; reviewers do not', () => {
 	}
 	expect(render(SiteHeader, { props: { me: reviewer } }).body).not.toContain('href="/inbox"');
 });
+
+test('signed-in people get the replies bell', () => {
+	expect(render(SiteHeader, { props: { me: reviewer } }).body).toContain('class="bell');
+	expect(render(SiteHeader, { props: { me: null } }).body).not.toContain('class="bell');
+});

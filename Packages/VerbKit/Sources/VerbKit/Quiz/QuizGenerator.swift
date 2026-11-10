@@ -114,6 +114,7 @@ private func makeQuestion(
     guard let kind = usable.randomElement() else { return nil }
 
     let correct: String
+    var otherVerbs: [String: Verb] = [:]
     // Every distractor carries the mistake it represents, in order.
     var tagged: [(choice: String, tag: QuizErrorTag)] = []
     func take(_ candidates: [(choice: String, tag: QuizErrorTag)], limit: Int = 3) {
@@ -144,12 +145,13 @@ private func makeQuestion(
         correct = entry.value
         take(Array(synthetic().prefix(1)))
         take(sameVerbOrdered().map { (choice: $0.value, tag: sameVerbTagged($0)) })
-        take(verbs
+        let others = verbs
             .filter { $0.id != entry.verb.id }
-            .compactMap { other in
-                entry.form.value(in: other.forms).map { (choice: $0, tag: QuizErrorTag.otherVerb(other.dict)) }
-            }
-            .shuffled())
+            .compactMap { other in entry.form.value(in: other.forms).map { (choice: $0, verb: other) } }
+            .shuffled()
+        take(others.map { (choice: $0.choice, tag: QuizErrorTag.otherVerb($0.verb.dict)) })
+        // The first verb with each string, the one `take` tagged.
+        otherVerbs = Dictionary(others.map { ($0.choice, $0.verb) }, uniquingKeysWith: { first, _ in first })
     case .fillIn:
         // Real forms only: a fill-in choice is always a form the verb has.
         correct = entry.value
@@ -168,7 +170,11 @@ private func makeQuestion(
         correct: correct, choices: ([correct] + tagged.map(\.choice)).shuffled(),
         errors: errors,
         sentence: kind == .fillIn ? fillIn.map { blanked($0.example.jp, replacing: $0.written) } : nil,
-        translation: kind == .fillIn ? example?.en : nil
+        translation: kind == .fillIn ? example?.en : nil,
+        choiceVerbs: otherVerbs.filter { choice, _ in
+            if case .otherVerb = errors[choice] { return true }
+            return false
+        }
     )
 }
 

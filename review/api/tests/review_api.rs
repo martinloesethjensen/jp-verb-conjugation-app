@@ -467,3 +467,38 @@ async fn wrong_origin_and_unknown_users() {
     .await;
     assert_eq!(r.status, 403);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn writing_marks_the_thread_read_for_the_writer() {
+    let s = seeded().await;
+    let (id, hash) = first_example(&s).await;
+    let r = post(&s, "/api/suggest", en_change(&id, &hash, "Read me."), AIKO).await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    let sid = r.body["id"].clone();
+    let find = |body: &Value| {
+        body["suggestions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|x| x["id"] == sid)
+            .unwrap()
+            .clone()
+    };
+    assert!(find(&review(&s, "たべる", AIKO).await)["last_read"].is_string());
+    assert!(find(&review(&s, "たべる", BEN).await)["last_read"].is_null());
+    let r = post(
+        &s,
+        "/api/comment",
+        json!({"suggestion_id": sid, "body": "Agreed."}),
+        BEN,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    let for_ben = find(&review(&s, "たべる", BEN).await);
+    assert!(for_ben["last_read"].is_string());
+    assert_eq!(for_ben["comments"][0]["mine"], true);
+    assert_eq!(
+        find(&review(&s, "たべる", AIKO).await)["comments"][0]["mine"],
+        false
+    );
+}

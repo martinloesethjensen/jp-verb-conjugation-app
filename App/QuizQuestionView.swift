@@ -9,6 +9,9 @@ struct QuizQuestionView: View {
 
     @State private var confirmingQuit = false
     @State private var showGuide = false
+    @AppStorage(QuizScript.defaultsKey, store: .appGroup) private var scriptRaw = QuizScript.kana.rawValue
+
+    private var script: QuizScript { QuizScript(storedValue: scriptRaw) }
 
     var body: some View {
         // A ScrollView here (matching QuizResultsView) is what makes the
@@ -26,7 +29,9 @@ struct QuizQuestionView: View {
                     choices: question.choices,
                     isCorrect: { $0 == question.correct },
                     selected: viewModel.selected,
-                    isAnswered: viewModel.isAnswered
+                    isAnswered: viewModel.isAnswered,
+                    // Identify choices are form names, not forms.
+                    verb: question.kind == .identify ? nil : question.verb(of:)
                 ) { choice in
                     viewModel.choose(choice)
                 }
@@ -55,7 +60,7 @@ struct QuizQuestionView: View {
                         .multilineTextAlignment(.center)
                     verbBlock
                 case .fillIn:
-                    Text(.init("Fill in the blank with the **\(question.form.label)** form of \(question.verb.dict)"))
+                    Text(.init("Fill in the blank with the **\(question.form.label)** form of \(script.text(for: question.verb.dict, of: question.verb))"))
                         .font(.caption)
                         .multilineTextAlignment(.center)
                     JapaneseText(question.sentence ?? "")
@@ -73,14 +78,14 @@ struct QuizQuestionView: View {
                 case .identify:
                     Text("Which form is this?")
                         .font(.caption)
-                    Text(question.formString)
+                    QuizVerbText(kana: question.formString, verb: question.verb, revealed: viewModel.isAnswered)
                         .font(.largeTitle.weight(.heavy))
                         .minimumScaleFactor(0.5)
                         .lineLimit(1)
                     // The dictionary form would give the answer away when it is the question.
                     Text(question.verb.dict == question.formString
                          ? question.verb.meaning
-                         : "\(question.verb.dict) · \(question.verb.meaning)")
+                         : "\(script.text(for: question.verb.dict, of: question.verb)) · \(question.verb.meaning)")
                         .italic()
                         .foregroundStyle(.secondary)
                 }
@@ -93,10 +98,15 @@ struct QuizQuestionView: View {
 
     private var verbBlock: some View {
         VStack(spacing: 8) {
-            Text(question.verb.dict)
-                .font(.largeTitle.weight(.heavy))
-            if let kanji = question.verb.kanji {
-                JapaneseText(kanji).font(.title3).foregroundStyle(.secondary)
+            if script.usesKanji {
+                QuizVerbText(kana: question.verb.dict, verb: question.verb, revealed: viewModel.isAnswered)
+                    .font(.largeTitle.weight(.heavy))
+            } else {
+                Text(question.verb.dict)
+                    .font(.largeTitle.weight(.heavy))
+                if let kanji = question.verb.kanji {
+                    JapaneseText(kanji).font(.title3).foregroundStyle(.secondary)
+                }
             }
             Text(question.verb.meaning)
                 .italic()
@@ -132,8 +142,17 @@ struct QuizQuestionView: View {
                     Label("Time's up!", systemImage: "alarm")
                 } else if viewModel.selected == question.correct {
                     Label("Correct!", systemImage: "checkmark.circle.fill")
-                } else {
+                } else if question.kind == .identify {
                     Label("The answer was: \(question.correct)", systemImage: "xmark.circle.fill")
+                } else {
+                    Label {
+                        HStack(alignment: .lastTextBaseline, spacing: 4) {
+                            Text("The answer was:")
+                            QuizVerbText(kana: question.correct, verb: question.verb, revealed: true)
+                        }
+                    } icon: {
+                        Image(systemName: "xmark.circle.fill")
+                    }
                 }
             }
             .font(.headline)

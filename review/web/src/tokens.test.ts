@@ -71,3 +71,7 @@ test('sheets slide up, and reduced motion still switches animations off', () => 
 	expect(css).toMatch(/@keyframes sheet-up/);
 	expect(css).toMatch(/prefers-reduced-motion: reduce[\s\S]*animation: none !important/);
 });
+
+test('an open sheet locks the page behind it', () => {
+	expect(css).toMatch(/html:has\(dialog\.sheet\[open\]\)\s*\{[^}]*overflow: hidden/);
+});

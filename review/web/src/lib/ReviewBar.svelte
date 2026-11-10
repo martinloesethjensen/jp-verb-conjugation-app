@@ -8,6 +8,7 @@
 	import Seal from './Seal.svelte';
 	import SuggestForm from './SuggestForm.svelte';
 	import SuggestionCard from './SuggestionCard.svelte';
+	import type { SuggestDraft } from './suggest-draft.ts';
 	import type { EntryReview } from './review.svelte.ts';
 
 	type Json = { [key: string]: any };
@@ -24,6 +25,7 @@
 		onaction,
 		onskip,
 		onnext,
+		onchange,
 		docked = false,
 		phone
 	}: {
@@ -42,6 +44,8 @@
 		onskip?: () => Promise<void>;
 		/** In a queue: approving stays on the item and offers "Next item", which calls this. */
 		onnext?: () => void;
+		/** In a queue: after approving or undoing in place, so the list and count refresh. */
+		onchange?: () => void;
 		/** In a queue: below 960px the actions sit in a fixed bottom bar and the forms open in sheets. */
 		docked?: boolean;
 		/** Tests only: whether the screen counts as a phone (defaults to the media query). */
@@ -64,6 +68,9 @@
 	const media = new MediaQuery('max-width: 959px');
 	const inBar = $derived(docked && (phone ?? media.current));
 	let moreOpen = $state(false);
+	/** The change form's typed values, kept here so they survive crossing the breakpoint. */
+	let draft = $state<SuggestDraft | undefined>();
+	const sheetOpen = $derived(inBar && (moreOpen || mode !== null));
 	// Leaving phone width closes the More sheet; an open form carries over to the inline one.
 	$effect(() => {
 		if (!inBar) moreOpen = false;
@@ -90,6 +97,7 @@
 	}
 
 	function open(next: typeof mode) {
+		if (next === 'change') draft = undefined;
 		mode = mode === next ? null : next;
 		comment = '';
 		failure = null;
@@ -127,13 +135,13 @@
 				<button type="button" class="primary wide" onclick={onnext}>Next item <span aria-hidden="true">→</span></button>
 				<p class="bar-note">
 					You approved this.
-					<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
+					<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id), onchange)}>Undo</button>
 				</p>
 			{:else}
 				{#if approved}
 					<button type="button" class="approved wide" disabled>Approved</button>
 				{:else}
-					<button type="button" class="primary wide" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? undefined : onaction)}
+					<button type="button" class="primary wide" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? onchange : onaction)}
 						><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>Looks right</button
 					>
 				{/if}
@@ -152,12 +160,12 @@
 			{#if approved && onnext}
 				<button type="button" class="primary" onclick={onnext}>Next item <span aria-hidden="true">→</span></button>
 				<span class="approved-note">You approved this.</span>
-				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
+				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id), onchange)}>Undo</button>
 			{:else if approved}
 				<button type="button" class="approved" disabled>Approved</button>
-				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
+				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id), onchange)}>Undo</button>
 			{:else}
-				<button type="button" class="primary" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? undefined : onaction)}
+				<button type="button" class="primary" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? onchange : onaction)}
 					><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>Looks right</button
 				>
 			{/if}
@@ -180,15 +188,16 @@
 	{/if}
 
 	{#if inBar}
-		<Sheet open={moreOpen} title="More" onclose={() => (moreOpen = false)}>
+		<Sheet open={moreOpen} title="More" onclose={() => ((moreOpen = false), (failure = null))}>
 			<div class="sheet-rows">
 				{#if onskip}
 					<button type="button" disabled={busy} onclick={() => run(onskip, () => (moreOpen = false))}>Not sure, skip</button>
 				{/if}
 				<button type="button" onclick={() => fromMore('note')}>Leave a note</button>
 				<button type="button" onclick={() => fromMore('delete')}>Suggest removing it</button>
-				<button type="button" class="link" onclick={() => (moreOpen = false)}>Cancel</button>
+				<button type="button" class="link" onclick={() => ((moreOpen = false), (failure = null))}>Cancel</button>
 			</div>
+			<ErrorLine message={failure} {stale} />
 		</Sheet>
 		<Sheet open={mode === 'change'} title="Suggest a change" variant="full" onclose={() => (mode = null)}>
 			{#if mode === 'change'}{@render changeForm()}{/if}
@@ -196,7 +205,7 @@
 		<Sheet
 			open={mode === 'delete' || mode === 'note'}
 			title={mode === 'delete' ? 'Suggest removing it' : 'Leave a note'}
-			onclose={() => (mode = null)}
+			onclose={() => ((mode = null), (failure = null))}
 		>
 			{@render commentForm()}
 			<ErrorLine message={failure} {stale} />
@@ -215,6 +224,7 @@
 			{forms}
 			{extra}
 			askWhy
+			bind:draft
 			onsubmit={async (edits, furigana, why) => {
 				await review.suggest(kind, id, 'change', {
 					edits,
@@ -239,7 +249,7 @@
 			</div>
 		</form>
 	{/snippet}
-	<ErrorLine message={failure} {stale} />
+	{#if !sheetOpen}<ErrorLine message={failure} {stale} />{/if}
 
 	{#each suggestions as s (s.id)}
 		<SuggestionCard

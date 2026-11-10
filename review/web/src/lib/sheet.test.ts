@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'svelte/server';
@@ -26,4 +27,10 @@ test('filter chips mark the chosen one and show counts', () => {
 	expect(body).toMatch(/role="group"[^>]*aria-label="Show"/);
 	expect(body).toMatch(/aria-pressed="true"[^>]*>To do 22</);
 	expect(body).toMatch(/aria-pressed="false"[^>]*>All</);
+});
+
+test('a sheet the browser closes on its own (Android back) tells its parent', () => {
+	const source = readFileSync(new URL('./Sheet.svelte', import.meta.url), 'utf8');
+	expect(source).toMatch(/\bonclose=\{onDialogClose\}/);
+	expect(source).toMatch(/function onDialogClose\(\)\s*\{\s*if \(open\) onclose\(\);/);
 });
