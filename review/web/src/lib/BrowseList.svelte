@@ -11,6 +11,8 @@
 		type Suggestion
 	} from './api.ts';
 	import SuggestionCard from './SuggestionCard.svelte';
+	import FilterChips from './FilterChips.svelte';
+	import { browseFilter } from './browse.ts';
 	import Japanese from './Japanese.svelte';
 	import LevelPill from './LevelPill.svelte';
 	import { ADD_LABELS, DATASET_TITLES } from './labels.ts';
@@ -18,7 +20,7 @@
 
 	let { dataset }: { dataset: Dataset } = $props();
 
-	const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
+	const LEVELS = [{ value: '', label: 'All' }, ...['N5', 'N4', 'N3', 'N2', 'N1'].map((l) => ({ value: l, label: l }))];
 
 	let items = $state<ItemSummary[] | null>(null);
 	let version = $state('');
@@ -51,14 +53,7 @@
 			.catch(() => (additions = []));
 	}
 
-	const shown = $derived.by(() => {
-		const needle = search.trim().toLowerCase();
-		return (items ?? []).filter(
-			(item) =>
-				(!level || item.jlpt === level) &&
-				(!needle || `${item.title} ${item.subtitle}`.toLowerCase().includes(needle))
-		);
-	});
+	const shown = $derived(browseFilter(items ?? [], search, level));
 
 	const href = (item: ItemSummary) => `/item?${new URLSearchParams({ dataset, id: item.item_id })}`;
 </script>
@@ -102,13 +97,7 @@
 			<span class="visually-hidden">Search</span>
 			<input type="search" placeholder="Search" bind:value={search} />
 		</label>
-		<label>
-			<span class="visually-hidden">JLPT level</span>
-			<select bind:value={level}>
-				<option value="">All levels</option>
-				{#each LEVELS as l (l)}<option value={l}>{l}</option>{/each}
-			</select>
-		</label>
+		<div class="levels"><FilterChips label="JLPT level" options={LEVELS} bind:value={level} /></div>
 	</div>
 	{#if shown.length === 0}
 		<p class="quiet">No matches.</p>
@@ -188,13 +177,11 @@
 		flex: 1 1 16rem;
 	}
 
-	select {
-		font: inherit;
-		color: inherit;
-		padding: 0.45rem 0.6rem;
-		border: 1px solid var(--rule);
-		border-radius: var(--radius);
-		background: var(--card);
+	.levels {
+		display: flex;
+		align-items: center;
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.items {
@@ -230,6 +217,7 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
 		gap: 0.15rem 1rem;
+		min-height: 44px;
 		padding: 0.75rem 1rem;
 		text-decoration: none;
 	}
@@ -267,5 +255,29 @@
 		background: var(--card);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);
+	}
+
+	@media (max-width: 720px) {
+		.filters {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.search {
+			flex: none;
+		}
+
+		.suggest-new {
+			margin-left: 0;
+			display: inline-flex;
+			align-items: center;
+			min-height: 44px;
+			padding: 0 1.1rem;
+			border: 1.5px solid var(--ink);
+			border-radius: 999px;
+			text-decoration: none;
+			flex-basis: 100%;
+			justify-content: center;
+		}
 	}
 </style>
