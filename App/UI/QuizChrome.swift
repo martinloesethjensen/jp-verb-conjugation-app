@@ -8,12 +8,23 @@ import VerbKit
 
 // MARK: - Header
 
-/// Quit button, question progress and score. Shared by every quiz screen.
+/// Whether quizzes speak the answer after it is given: one app preference, shown as
+/// Settings › "Speak after quiz answers" and as the quiz header's speaker button.
+enum QuizSound {
+    /// The App Group key. Kept from before the header button so the setting carries over.
+    static let defaultsKey = "speakQuizAnswers"
+}
+
+/// Quit button, question progress, the sound switch and score. Shared by every quiz screen.
 struct QuizHeader: View {
     let index: Int
     let count: Int
     let score: Int
+    /// Shows the speaker button. Only quizzes that speak (the verb quiz) pass true.
+    var showsSoundToggle = false
     let onQuit: () -> Void
+
+    @AppStorage(QuizSound.defaultsKey, store: .appGroup) private var soundOn = true
 
     var body: some View {
         HStack {
@@ -26,6 +37,19 @@ struct QuizHeader: View {
             Text("\(index + 1) / \(count)")
                 .font(.headline)
             Spacer()
+            if showsSoundToggle {
+                Button {
+                    soundOn.toggle()
+                    if !soundOn { Speaker.shared.stop() }
+                } label: {
+                    Image(systemName: soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .buttonStyle(.glass)
+                .accessibilityLabel("Sound")
+                .accessibilityValue(soundOn ? "On" : "Off")
+                .accessibilityHint("Speaks each answer after you give it")
+            }
             Label("\(score)", systemImage: "star.fill")
                 .accessibilityLabel("Score \(score)")
         }

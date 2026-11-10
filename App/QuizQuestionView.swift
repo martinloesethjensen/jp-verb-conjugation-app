@@ -21,7 +21,8 @@ struct QuizQuestionView: View {
         // overflow instead of resizing, taking the button with it.
         ScrollView {
             VStack(spacing: 20) {
-                QuizHeader(index: viewModel.index, count: viewModel.questions.count, score: viewModel.score) {
+                QuizHeader(index: viewModel.index, count: viewModel.questions.count, score: viewModel.score,
+                           showsSoundToggle: true) {
                     confirmingQuit = true
                 }
                 promptCard
