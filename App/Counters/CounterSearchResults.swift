@@ -60,7 +60,7 @@ struct CounterSearchResultsView: View {
                 if hiddenMatchCount > 0 {
                     NoMatchInLevelsView(summary: summary, hiddenCount: hiddenMatchCount)
                 } else {
-                    ContentUnavailableView.search(text: search)
+                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.")
                 }
             }
         }

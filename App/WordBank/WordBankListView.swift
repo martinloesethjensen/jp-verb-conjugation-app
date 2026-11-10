@@ -615,11 +615,11 @@ struct WordBankListView: View {
     /// No results: say so, offer ways out (drop a filter, widen the scope) and adding the text.
     private var noResults: some View {
         let ways = index.relaxations(of: query)
-        return ContentUnavailableView {
-            Label(trimmedSearch.isEmpty ? "No entries match" : "No results for “\(trimmedSearch)”", systemImage: "magnifyingglass")
-        } description: {
-            Text(ways.isEmpty ? "Try different words or fewer filters." : "Here are some ways to widen the search.")
-        } actions: {
+        return PaperEmptyState(
+            trimmedSearch.isEmpty ? "No entries match" : "No results for “\(trimmedSearch)”",
+            message: ways.isEmpty ? "Try different words or fewer filters." : "Here are some ways to widen the search.",
+            glyph: "無"
+        ) {
             ForEach(ways, id: \.self) { way in
                 if let token = way.dropping {
                     Button("Without \(token.title(in: store)) (\(way.count))") { tokens.removeAll { $0 == token } }
@@ -641,27 +641,21 @@ struct WordBankListView: View {
         if searchActive, found.isEmpty {
             noResults
         } else if store.entries.isEmpty && store.folders.isEmpty {
-            ContentUnavailableView {
-                Label("Your Word Bank is empty", systemImage: "books.vertical")
-            } description: {
-                Text("Save dialect words, phrases and sentences you learn outside the app.")
-            } actions: {
-                Button("Add your first entry") { editorRequest = WordBankEditorRequest(folderID: folderID) }
+            PaperEmptyState(
+                "Your Word Bank is empty",
+                message: "Save words you meet in class, in shows or on signs. Add a reading, a dialect tag and a note."
+            ) {
+                Button("Add a word") { editorRequest = WordBankEditorRequest(folderID: folderID) }
                     .buttonStyle(.paper)
+                Button("Import…") { importing = true }
+                    .buttonStyle(.paperSecondary)
             }
         } else if let folder = smartFolder, entries.isEmpty {
-            ContentUnavailableView {
-                Label("No entries match", systemImage: "gearshape.2")
-            } description: {
-                Text(folder.tagCount == 0 ? "This smart folder has no tags left. Edit it to pick some." : "Entries with these tags will show up here.")
-            } actions: {
+            PaperEmptyState("No entries match", message: folder.tagCount == 0 ? "This smart folder has no tags left. Edit it to pick some." : "Entries with these tags will show up here.") {
                 Button("Edit smart folder") { smartRequest = .edit(folder) }
             }
         } else if place != nil, subfolders.isEmpty, entries.isEmpty {
-            ContentUnavailableView(
-                folderID == nil ? "Nothing here yet" : "This folder is empty",
-                systemImage: folderID == nil ? "tray" : "folder"
-            )
+            PaperEmptyState(folderID == nil ? "Nothing here yet" : "This folder is empty")
         }
     }
 }

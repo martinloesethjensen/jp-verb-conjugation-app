@@ -67,7 +67,7 @@ struct WordBankImportSheet: View {
         case .loading:
             ProgressView("Reading file…")
         case .failed(let message):
-            ContentUnavailableView("Can't import this file", systemImage: "exclamationmark.triangle", description: Text(message))
+            PaperEmptyState("Can't import this file", message: message)
         case .ready:
             if let plan { preview(plan.summary) }
         }

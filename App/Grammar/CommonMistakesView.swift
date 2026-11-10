@@ -80,9 +80,9 @@ struct CommonMistakesView: View {
         .overlay {
             if groups.isEmpty {
                 if search.isEmpty {
-                    ContentUnavailableView("No mistakes to show", systemImage: "checkmark.seal")
+                    PaperEmptyState("No mistakes to show")
                 } else {
-                    ContentUnavailableView.search(text: search)
+                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.")
                 }
             }
         }

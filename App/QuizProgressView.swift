@@ -18,11 +18,7 @@ struct QuizProgressView: View {
                 if progress.hasHistory {
                     content(progress)
                 } else {
-                    ContentUnavailableView(
-                        "No quiz history yet",
-                        systemImage: "chart.bar",
-                        description: Text("Your streak, accuracy and weak spots appear here once you answer quiz questions.")
-                    )
+                    PaperEmptyState("No quiz history yet", message: "Your streak, accuracy and weak spots appear here once you answer quiz questions.")
                 }
             }
             .navigationTitle("Progress")

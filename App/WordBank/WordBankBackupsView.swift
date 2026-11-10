@@ -21,10 +21,7 @@ struct WordBankBackupsView: View {
     var body: some View {
         List {
             if rows.isEmpty {
-                ContentUnavailableView(
-                    "No backups yet", systemImage: "clock.arrow.circlepath",
-                    description: Text("One is made before every import.")
-                )
+                PaperEmptyState("No backups yet", message: "One is made before every import.")
             } else {
                 Section {
                     ForEach(rows) { row in

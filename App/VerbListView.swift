@@ -243,13 +243,9 @@ struct VerbListView: View {
 
     @ViewBuilder private var emptyState: some View {
         if !search.isEmpty && !hasFilters {
-            ContentUnavailableView.search(text: search)
+            PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.")
         } else {
-            ContentUnavailableView {
-                Label("No verbs match", systemImage: "line.3.horizontal.decrease.circle")
-            } description: {
-                Text(search.isEmpty ? "No verb fits these filters." : "No verb fits “\(search)” with these filters.")
-            } actions: {
+            PaperEmptyState("No verbs match", message: search.isEmpty ? "No verb fits these filters." : "No verb fits “\(search)” with these filters.") {
                 Button("Clear filters") { typeFilter = nil; teFilter = nil; favouritesOnly = false }
             }
         }

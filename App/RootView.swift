@@ -190,7 +190,7 @@ struct RootView: View {
                     onQuiz: { topicSheetVerbs = [selection] }
                 )
             } else {
-                ContentUnavailableView("Select a Verb", systemImage: "text.book.closed")
+                PaperEmptyState("Select a Verb")
             }
         }
         .sheet(item: $examplesVerb) { verb in

@@ -25,11 +25,7 @@ struct SoundPatternsView: View {
         let table = table
         Group {
             if table.columns.isEmpty && table.irregular.isEmpty {
-                ContentUnavailableView {
-                    Label("No Counters", systemImage: "waveform")
-                } description: {
-                    Text("Counters hidden by your level settings have no patterns to show.")
-                }
+                PaperEmptyState("No Counters", message: "Counters hidden by your level settings have no patterns to show.")
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -118,18 +114,13 @@ struct SoundPatternsView: View {
     @ViewBuilder private func cell(_ table: SoundPatternTable, _ number: CounterNumber, _ column: SoundColumnID) -> some View {
         if let cell = table.cell(number, column) {
             Text(cell.reading)
-                .font(.callout.weight(.semibold))
+                .font(.callout)
+                .foregroundStyle(palette.ink)
+                .soundChangeMark(cell.changed)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .frame(minWidth: typeSize.isAccessibilitySize ? columnWidth : 0)
-                .background(cell.changed ? Color.orange.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
-                .overlay(alignment: .topTrailing) {
-                    if cell.changed {
-                        Image(systemName: "circle.fill").font(.system(size: 5)).foregroundStyle(.orange)
-                            .padding(3).accessibilityHidden(true)
-                    }
-                }
                 .overlay {
                     if selected == number && selectedColumn == nil {
                         RoundedRectangle(cornerRadius: 8).strokeBorder(palette.button.opacity(0.5), lineWidth: 1)

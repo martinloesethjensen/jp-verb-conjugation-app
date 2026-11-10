@@ -44,11 +44,7 @@ struct TagManagerView: View {
             }
             .overlay {
                 if store.dialectTags.isEmpty && store.customTags.isEmpty {
-                    ContentUnavailableView {
-                        Label("No tags yet", systemImage: "tag")
-                    } description: {
-                        Text("Tag entries with a dialect, like 関西弁, or anything else you like.")
-                    } actions: {
+                    PaperEmptyState("No tags yet", message: "Tag entries with a dialect, like 関西弁, or anything else you like.") {
                         Button("Add a tag") { adding = true }.buttonStyle(.paper)
                     }
                 }

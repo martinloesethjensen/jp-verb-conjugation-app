@@ -56,10 +56,10 @@ struct CountersHomeView: View {
     var body: some View {
         content
             .paperBackground()
-            .navigationTitle("Counters")
+            .motifTitle("Counters")
             .navigationSubtitle(scope == .mine ? summary : "")
             .inlineSearch(
-                text: $search, prompt: "Counters, 3本, sanbon, umbrella…", focused: $searchFocused, alwaysVisible: true
+                text: $search, prompt: "Counters, 3本, sanbon, umbrella…", focused: $searchFocused
             )
             .levelScopeBar(isActive: levelsHidden, scope: $scope)
             .onChange(of: search) { if search.isEmpty { scope = .mine } }
@@ -79,11 +79,7 @@ struct CountersHomeView: View {
 
     @ViewBuilder private var content: some View {
         if store.counters.isEmpty {
-            ContentUnavailableView {
-                Label("Counters Not Downloaded Yet", systemImage: "icloud.and.arrow.down")
-            } description: {
-                Text("Counters download in the background. Check your connection, then reopen the app.")
-            }
+            PaperEmptyState("Counters Not Downloaded Yet", message: "Counters download in the background. Check your connection, then reopen the app.")
         } else if search.isEmpty {
             directory
         } else {
@@ -145,9 +141,7 @@ struct CountersHomeView: View {
         .listStyle(.plain)
         .overlay {
             if sections.isEmpty {
-                ContentUnavailableView(
-                    "No counters in your levels", systemImage: "line.3.horizontal.decrease.circle"
-                )
+                PaperEmptyState("No counters in your levels", message: "Show more levels in Settings to see them here.")
             }
         }
     }
