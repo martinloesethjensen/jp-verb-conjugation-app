@@ -157,6 +157,12 @@ export function reviewMock(ctx: ReviewContext) {
 	const approvals: Approval[] = [];
 	const suggestions: Suggestion[] = [];
 	const comments: { suggestion_id: number; author: string; body: string; created_at: string }[] = [];
+	/** When each person last saw each thread: `email/id` → ISO time (review/api `thread_reads`). */
+	const reads = new Map<string, string>();
+	const markRead = (email: string, id: number, at = now()) => {
+		const key = `${email}/${id}`;
+		if ((reads.get(key) ?? '') < at) reads.set(key, at);
+	};
 	const queues: QueueRow[] = [];
 	const queueItems: QueueItem[] = [];
 	const skips: { queue_id: number; dataset: string; kind: string; item_id: string; reviewer: string }[] = [];
@@ -239,9 +245,34 @@ export function reviewMock(ctx: ReviewContext) {
 			stale: !adding && !!current && current.hash !== s.base_hash,
 			gone: adding ? parentGone : !current,
 			landed: adding && !!current,
-			comments: comments.filter((c) => c.suggestion_id === s.id).map((c) => ({ author_name: nameOf(c.author), body: c.body, created_at: c.created_at }))
+			last_read: reads.get(`${ctx.me.email}/${s.id}`) ?? null,
+			comments: comments.filter((c) => c.suggestion_id === s.id).map((c) => ({ author_name: nameOf(c.author), mine: c.author === ctx.me.email, body: c.body, created_at: c.created_at }))
 		};
 	};
+
+	/** The same rule as review/api's reply events: others' comments in threads you're in, and decisions on
+	 * your suggestions by someone else. Newest first. */
+	function repliesFor(email: string) {
+		const about = (s: Suggestion) => ({
+			suggestion_id: s.id, item_title: s.item_title, dataset: s.dataset, kind: s.kind, item_id: s.item_id,
+			entry_id: s.entry_id, action: s.action, parent_kind: s.parent_kind ?? null, parent_id: s.parent_id ?? null
+		});
+		const since = (s: Suggestion) => reads.get(`${email}/${s.id}`) ?? '';
+		const out = [];
+		for (const s of suggestions) {
+			const inThread = s.author === email || comments.some((c) => c.suggestion_id === s.id && c.author === email);
+			if (inThread) {
+				for (const c of comments.filter((c) => c.suggestion_id === s.id && c.author !== email)) {
+					out.push({ ...about(s), what: 'comment', by_name: nameOf(c.author), at: c.created_at, body: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body, unread: c.created_at > since(s) });
+				}
+			}
+			const decider = (s as Suggestion & { decided_by?: string }).decided_by;
+			if (s.author === email && (s.status === 'accepted' || s.status === 'declined') && decider && decider !== email && s.decided_at) {
+				out.push({ ...about(s), what: s.status, by_name: nameOf(decider), at: s.decided_at, body: '', unread: s.decided_at > since(s) });
+			}
+		}
+		return out.sort((a, b) => b.at.localeCompare(a.at));
+	}
 
 	function queueOut(q: QueueRow) {
 		const items = queueItems.filter((i) => i.queue_id === q.id).sort((a, b) => a.position - b.position).map((i) => {
@@ -441,6 +472,7 @@ export function reviewMock(ctx: ReviewContext) {
 				parent_kind: body.parent?.kind ?? null, parent_id: body.parent?.id ?? null
 			};
 			suggestions.push(s);
+			markRead(by, s.id);
 			return [201, suggestionOut(s)];
 		}
 		if (path === '/additions' && method === 'GET') {
@@ -474,6 +506,7 @@ export function reviewMock(ctx: ReviewContext) {
 				created_at: now(), decided_at: null
 			};
 			suggestions.push(s);
+			markRead(by, s.id);
 			return [201, suggestionOut(s)];
 		}
 		const suggestion = suggestions.find((s) => s.id === Number(body.id ?? body.suggestion_id));
@@ -483,11 +516,22 @@ export function reviewMock(ctx: ReviewContext) {
 			Object.assign(suggestion, { status: 'withdrawn', decided_at: now() });
 			return [200, suggestionOut(suggestion)];
 		}
+		if (path === '/replies' && method === 'GET') {
+			const list = repliesFor(by);
+			return [200, { unread: list.filter((r) => r.unread).length, replies: list.slice(0, 50) }];
+		}
+		if (path === '/replies/read' && method === 'POST') {
+			const ids: number[] = body.all === true ? repliesFor(by).filter((r) => r.unread).map((r) => r.suggestion_id) : Array.isArray(body.ids) ? body.ids : [];
+			if (!ids.length && body.all !== true) return [400, { error: 'send ids (1 to 200 suggestions) or all' }];
+			for (const id of ids) markRead(by, id);
+			return [200, { unread: repliesFor(by).filter((r) => r.unread).length }];
+		}
 		if (path === '/comment') {
 			if (!suggestion) return [404, { error: 'no such suggestion' }];
 			const text = String(body.body ?? '').trim();
 			if (!text) return [400, { error: "a comment can't be empty" }];
 			comments.push({ suggestion_id: suggestion.id, author: by, body: text, created_at: now() });
+			markRead(by, suggestion.id);
 			return [201, suggestionOut(suggestion)];
 		}
 		if (path === '/queues' || path === '/admin/queues') {
@@ -563,7 +607,8 @@ export function reviewMock(ctx: ReviewContext) {
 					if (!body.confirm) return [400, { error: warning }];
 				}
 			}
-			Object.assign(suggestion, { status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now() });
+			Object.assign(suggestion, { status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now(), decided_by: by });
+			markRead(by, suggestion.id);
 			const reply = String(body.reply ?? '').trim();
 			if (reply) comments.push({ suggestion_id: suggestion.id, author: by, body: reply, created_at: now() });
 			return [200, { ...suggestionOut(suggestion), warning }];

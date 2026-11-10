@@ -3,6 +3,8 @@
 	import { onMount } from 'svelte';
 	import favicon from '#lib/assets/favicon.svg';
 	import { ApiError, getMe, type Me } from '#lib/api.ts';
+	import { afterNavigate } from '$app/navigation';
+	import { replies } from '#lib/replies.svelte.ts';
 	import { setSession } from '#lib/session.ts';
 	import SiteHeader from '#lib/SiteHeader.svelte';
 	import type { LayoutProps } from './$types';
@@ -16,10 +18,18 @@
 
 	setSession({ me: () => me!, update: (user) => (me = user) });
 
+	// Replies load with the site and again after each navigation: there is no push.
+	afterNavigate(({ from }) => {
+		if (me && from) replies.refresh();
+	});
+
 	onMount(() => {
 		const timer = setTimeout(() => (slow = true), 300);
 		getMe()
-			.then((user) => (me = user))
+			.then((user) => {
+				me = user;
+				replies.refresh();
+			})
 			.catch((error) => {
 				failure =
 					error instanceof ApiError ? error.message : 'Something went wrong. Try again in a minute.';
