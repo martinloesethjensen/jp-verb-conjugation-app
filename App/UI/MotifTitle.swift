@@ -27,10 +27,13 @@ private struct MotifTitle: ViewModifier {
                             JapaneseText(title)
                                 .font(.largeTitle.bold())
                                 .foregroundStyle(palette.ink)
-                                .accessibilityAddTraits(.isHeader)
                             Spacer(minLength: 8)
                             TitleMotifView()
                         }
+                        // One heading, read as the title: not ruby fragments, not the motif.
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(title)
+                        .accessibilityAddTraits(.isHeader)
                     }
                 }
         } else {

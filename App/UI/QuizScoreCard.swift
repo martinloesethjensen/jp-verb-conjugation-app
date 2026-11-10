@@ -71,7 +71,8 @@ struct QuizScoreCard: View {
             .foregroundStyle(half.isTeacher ? palette.mark : palette.ink)
             .minimumScaleFactor(0.5)
             .lineLimit(1)
-            .padding(18)
+            // The score keeps inside the smallest inner ring (raked, 37 of 120) at every size.
+            .padding(stampSize * 0.2)
         }
         .frame(width: stampSize, height: stampSize)
     }
