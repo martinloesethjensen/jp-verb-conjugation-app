@@ -182,7 +182,15 @@ and II.
   It must stay free of Apple-only assumptions (see AGENTS.md, Android). The app's course picker
   and "start from this course" in My course get their own iOS design; *Course review* only sketches it.
 
-## Email (to investigate before building)
+## Email (deferred)
+
+**Decided 2026-11-11:** email notifications wait until after the other steps. When they are built, they go
+through **Resend's free tier** (an HTTP API the Worker calls with a secret key), not Cloudflare Email
+Sending. Re-check Resend's free-tier limits and domain setup (SPF, DKIM) when building; the opt-in, off by
+default, unsubscribe and suppression rules below still apply.
+
+The Cloudflare findings below are kept for reference.
+
 
 Checked on 8 November 2026 in the Cloudflare docs; Email Sending is in beta, so re-check before building.
 
@@ -217,7 +225,7 @@ Each step is its own plan and PR.
 7. **Courses on the site:** tables, builder, review, grammar proposals.
 8. **Courses in the app:** `data/courses.json`, schema, docs spec, sync, picker. This needs an iOS
    design first.
-9. **Email**, after the investigation above.
+9. **Email** (deferred): opt-in notifications through Resend's free tier.
 
 ## Out of scope
 
@@ -232,6 +240,8 @@ Each step is its own plan and PR.
 - **Copied courses are independent:** credited to the original, but fixes don't flow through.
 - **No accepting your own proposals in your own course:** another teacher or the owner decides.
 
+- **Email waits, then uses Resend's free tier** instead of Cloudflare Email Sending.
+
 ## Open questions
 
-- Email: Workers Paid ($5/month, any address) or the free verified-addresses route? See Email.
+None for now.
