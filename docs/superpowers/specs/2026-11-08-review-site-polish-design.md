@@ -149,6 +149,13 @@ A new page (replacing today's Account page) with three sections, saved automatic
 Data: `user_settings(user, email_on, email_kinds, email_frequency, tour_seen_at, tips_on,
 tips_dismissed, shortcuts_on)`.
 
+**As built (step 5, 2026-11-11):** the Email section, its columns and its switches wait for step 9, so
+`user_settings` (migration 0009) holds `welcome_seen_at`, `tour_seen_at`, `tips_on`, `tips_dismissed` and
+`shortcuts_on`. `welcome_seen_at` is new: on a computer the welcome shows on Home, and the highlighted tour runs
+the first time the person opens a queue (they may have none yet); the tour counts as seen only when it finishes or
+is skipped. Phones get the four cards instead. Tips exist for the inbox and threads; the courses tip comes with
+step 7. Shortcuts work on the queue page only. Settings replaces Account; `/account` redirects.
+
 ## Courses
 
 Teachers, native speakers and the owner write courses that learners pick in the app, next to Genki I
