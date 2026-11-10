@@ -859,6 +859,20 @@ impl ReviewStore for D1Store {
         Ok(())
     }
 
+    async fn replies(&self, viewer: &str, limit: u32) -> Result<(Vec<Reply>, u32), StoreError> {
+        let rows: Vec<ReplyRow> = self
+            .rows(SELECT_REPLIES, &[text(viewer), number(i64::from(limit))])
+            .await?;
+        let count: Vec<NRow> = self.rows(SELECT_UNREAD_COUNT, &[text(viewer)]).await?;
+        let unread = count.first().map_or(0, |c| c.n as u32);
+        Ok((rows.into_iter().map(Reply::from).collect(), unread))
+    }
+
+    async fn unread_threads(&self, viewer: &str) -> Result<Vec<i64>, StoreError> {
+        let rows: Vec<IdRow> = self.rows(SELECT_UNREAD_THREADS, &[text(viewer)]).await?;
+        Ok(rows.into_iter().map(|r| r.id).collect())
+    }
+
     async fn add_comment(
         &self,
         suggestion_id: i64,

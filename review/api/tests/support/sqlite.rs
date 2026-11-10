@@ -809,6 +809,20 @@ impl ReviewStore for SqliteStore {
         tx.commit().map_err(backend)
     }
 
+    async fn replies(&self, viewer: &str, limit: u32) -> Result<(Vec<Reply>, u32), StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<ReplyRow> = query(&conn, SELECT_REPLIES, params![viewer, limit])?;
+        let count: Vec<NRow> = query(&conn, SELECT_UNREAD_COUNT, params![viewer])?;
+        let unread = count.first().map_or(0, |c| c.n as u32);
+        Ok((rows.into_iter().map(Reply::from).collect(), unread))
+    }
+
+    async fn unread_threads(&self, viewer: &str) -> Result<Vec<i64>, StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<IdRow> = query(&conn, SELECT_UNREAD_THREADS, params![viewer])?;
+        Ok(rows.into_iter().map(|r| r.id).collect())
+    }
+
     async fn add_comment(
         &self,
         suggestion_id: i64,
