@@ -799,6 +799,16 @@ impl ReviewStore for SqliteStore {
         tx.commit().map_err(backend)
     }
 
+    async fn mark_read(&self, user: &str, ids: &[i64], now: &str) -> Result<(), StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        for id in ids {
+            tx.execute(UPSERT_READ, params![user, id, now])
+                .map_err(backend)?;
+        }
+        tx.commit().map_err(backend)
+    }
+
     async fn add_comment(
         &self,
         suggestion_id: i64,

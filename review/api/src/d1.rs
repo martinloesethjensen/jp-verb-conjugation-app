@@ -847,6 +847,18 @@ impl ReviewStore for D1Store {
         Ok(())
     }
 
+    async fn mark_read(&self, user: &str, ids: &[i64], now: &str) -> Result<(), StoreError> {
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let statements = ids
+            .iter()
+            .map(|id| self.statement(UPSERT_READ, &[text(user), number(*id), text(now)]))
+            .collect::<Result<Vec<_>, _>>()?;
+        self.db.batch(statements).await.map_err(backend)?;
+        Ok(())
+    }
+
     async fn add_comment(
         &self,
         suggestion_id: i64,

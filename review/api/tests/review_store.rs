@@ -710,3 +710,61 @@ async fn the_migration_keeps_existing_suggestions() {
     assert_eq!(got.parent_kind, None);
     assert_eq!(got.comments.len(), 1);
 }
+
+fn read_at(s: &SqliteStore, user: &str, id: i64) -> Option<String> {
+    s.conn
+        .borrow()
+        .query_row(
+            "SELECT read_at FROM thread_reads WHERE user = ?1 AND suggestion_id = ?2",
+            rusqlite::params![user, id],
+            |r| r.get(0),
+        )
+        .ok()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn migration_0008_marks_existing_threads_read() {
+    let s = SqliteStore::with_migrations_before("0008");
+    {
+        let conn = s.conn.borrow();
+        conn.execute_batch(
+            "INSERT INTO suggestions (action, dataset, kind, item_id, entry_id, item_title, base_hash, author, created_at)
+             VALUES ('change', 'words', 'entry', 'noun:x', 'noun:x', 'x', 'h', 'aiko@example.com', 't');
+             INSERT INTO comments (suggestion_id, author, body, created_at) VALUES (1, 'ben@example.com', 'hi', 't');",
+        )
+        .unwrap();
+    }
+    s.apply_migrations_from("0008");
+    for who in ["aiko@example.com", "ben@example.com"] {
+        let at = read_at(&s, who, 1).unwrap_or_default();
+        assert!(at.starts_with("20") && at.ends_with('Z'), "{who}: {at:?}");
+    }
+    assert_eq!(read_at(&s, "martin@example.com", 1), None);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn mark_read_never_moves_back() {
+    let s = SqliteStore::new();
+    {
+        let conn = s.conn.borrow();
+        conn.execute_batch(
+            "INSERT INTO suggestions (action, dataset, kind, item_id, entry_id, item_title, base_hash, author, created_at)
+             VALUES ('change', 'words', 'entry', 'noun:x', 'noun:x', 'x', 'h', 'aiko@example.com', 't');",
+        )
+        .unwrap();
+    }
+    s.mark_read(AIKO, &[1], "2026-11-10T12:00:00.000Z")
+        .await
+        .unwrap();
+    s.mark_read(AIKO, &[1], "2026-11-09T12:00:00.000Z")
+        .await
+        .unwrap();
+    assert_eq!(
+        read_at(&s, AIKO, 1).as_deref(),
+        Some("2026-11-10T12:00:00.000Z")
+    );
+    s.mark_read(AIKO, &[99], "2026-11-10T12:00:00.000Z")
+        .await
+        .unwrap();
+    assert_eq!(read_at(&s, AIKO, 99), None);
+}

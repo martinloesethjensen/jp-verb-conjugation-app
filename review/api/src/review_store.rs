@@ -41,6 +41,8 @@ pub struct Approval {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Comment {
     pub author_name: String,
+    /// The viewer wrote it.
+    pub mine: bool,
     pub body: String,
     pub created_at: String,
 }
@@ -74,6 +76,8 @@ pub struct Suggestion {
     pub parent_id: Option<String>,
     /// An addition whose new item is now among the loaded items (after export and reload).
     pub landed: bool,
+    /// When the viewer last saw this thread; `None` when they never have (they aren't in it).
+    pub last_read: Option<String>,
     pub comments: Vec<Comment>,
 }
 
@@ -222,12 +226,14 @@ pub struct SuggestionRow {
     pub parent_kind: Option<String>,
     pub parent_id: Option<String>,
     pub landed: i64,
+    pub last_read: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CommentRow {
     pub suggestion_id: i64,
     pub author_name: String,
+    pub mine: i64,
     pub body: String,
     pub created_at: String,
 }
@@ -312,6 +318,7 @@ pub fn assemble(rows: Vec<SuggestionRow>, comments: Vec<CommentRow>) -> Vec<Sugg
                 .filter(|c| c.suggestion_id == r.id)
                 .map(|c| Comment {
                     author_name: c.author_name.clone(),
+                    mine: c.mine != 0,
                     body: c.body.clone(),
                     created_at: c.created_at.clone(),
                 })
@@ -339,6 +346,7 @@ pub fn assemble(rows: Vec<SuggestionRow>, comments: Vec<CommentRow>) -> Vec<Sugg
             parent_kind: r.parent_kind,
             parent_id: r.parent_id,
             landed: r.landed != 0,
+            last_read: r.last_read,
         })
         .collect()
 }
@@ -610,6 +618,10 @@ pub const INSERT_WITHDRAW_AUDIT: &str =
     "INSERT INTO audit_log (at, actor, action, target, detail) \
      SELECT ?1, ?2, 'suggestion.withdraw', 'suggestion/' || id, '' FROM suggestions \
      WHERE id = ?3 AND status = 'open' AND author = ?2";
+/// ?1 user, ?2 suggestion, ?3 read_at. Only ever moves forward, and only for a suggestion that exists.
+pub const UPSERT_READ: &str = "INSERT INTO thread_reads (user, suggestion_id, read_at) \
+     SELECT ?1, ?2, ?3 WHERE EXISTS (SELECT 1 FROM suggestions WHERE id = ?2) \
+     ON CONFLICT (user, suggestion_id) DO UPDATE SET read_at = MAX(read_at, excluded.read_at)";
 /// ?1 suggestion, ?2 author, ?3 body, ?4 now.
 pub const INSERT_COMMENT: &str = "INSERT INTO comments (suggestion_id, author, body, created_at) \
      SELECT ?1, ?2, ?3, ?4 WHERE EXISTS (SELECT 1 FROM suggestions WHERE id = ?1)";
@@ -623,8 +635,10 @@ macro_rules! suggestions_where {
             // An addition is never stale; it is gone when its parent left, and landed once its item is loaded.
             "CASE WHEN s.action = 'add' THEN 0 ELSE (i.content_hash IS NOT NULL AND i.content_hash <> s.base_hash) END AS stale, ",
             "CASE WHEN s.action = 'add' THEN (s.parent_id IS NOT NULL AND p.item_id IS NULL) ELSE (i.content_hash IS NULL) END AS gone, ",
-            "s.parent_kind, s.parent_id, (s.action = 'add' AND i.content_hash IS NOT NULL) AS landed ",
+            "s.parent_kind, s.parent_id, (s.action = 'add' AND i.content_hash IS NOT NULL) AS landed, ",
+            "r.read_at AS last_read ",
             "FROM suggestions s LEFT JOIN users u ON u.email = s.author ",
+            "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = s.id ",
             "LEFT JOIN items i ON i.dataset = s.dataset AND i.kind = s.kind AND i.item_id = s.item_id ",
             "LEFT JOIN items p ON p.dataset = s.dataset AND p.kind = s.parent_kind AND p.item_id = s.parent_id ",
             $where,
@@ -637,7 +651,7 @@ macro_rules! suggestions_where {
 macro_rules! comments_where {
     ($where:literal) => {
         concat!(
-            "SELECT c.suggestion_id, IFNULL(u.display_name, '') AS author_name, c.body, c.created_at ",
+            "SELECT c.suggestion_id, IFNULL(u.display_name, '') AS author_name, (c.author = ?1) AS mine, c.body, c.created_at ",
             "FROM comments c LEFT JOIN users u ON u.email = c.author WHERE c.suggestion_id IN (SELECT s.id FROM suggestions s ",
             $where,
             ") ORDER BY c.id"
@@ -851,6 +865,9 @@ pub trait ReviewStore {
         by: &str,
         now: &str,
     ) -> Result<(), StoreError>;
+    /// Records that `user` has seen these threads as of `now`. Unknown ids are skipped; no audit row
+    /// (reading changes nothing).
+    async fn mark_read(&self, user: &str, ids: &[i64], now: &str) -> Result<(), StoreError>;
     /// `NotFound` for an unknown suggestion.
     async fn add_comment(
         &self,

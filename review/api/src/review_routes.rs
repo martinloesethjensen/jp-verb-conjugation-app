@@ -341,6 +341,7 @@ pub async fn suggest<S: Store + ReviewStore>(
         .add_suggestion(&new, &by.email, now)
         .await
         .map_err(unavailable));
+    let _ = store.mark_read(&by.email, &[id], now).await;
     suggestion_response(store, id, &by.email, if created { 201 } else { 200 }).await
 }
 
@@ -387,7 +388,10 @@ pub async fn comment<S: ReviewStore>(
         .add_comment(body.suggestion_id, &text, &by.email, now)
         .await
     {
-        Ok(()) => suggestion_response(store, body.suggestion_id, &by.email, 201).await,
+        Ok(()) => {
+            let _ = store.mark_read(&by.email, &[body.suggestion_id], now).await;
+            suggestion_response(store, body.suggestion_id, &by.email, 201).await
+        }
         Err(StoreError::NotFound) => error(404, "no such suggestion"),
         Err(e) => unavailable(e),
     }
@@ -799,6 +803,7 @@ pub async fn decide<S: Store + ReviewStore>(
             .await
             .map_err(unavailable));
     }
+    let _ = store.mark_read(&by.email, &[s.id], now).await;
     let mut response = suggestion_response(store, s.id, &by.email, 200).await;
     if let Some(text) = warning {
         response.body["warning"] = json!(text);
