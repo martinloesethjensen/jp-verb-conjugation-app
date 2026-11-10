@@ -212,10 +212,13 @@
         {
           "id": "3jq3xe",
           "heading": "が, を and には",
-          "explanation": "The thing that can be done normally takes が. を is very common in speech and is fine too. The person who can (or can't) often takes には, especially when contrasting with other people.",
+          "explanation": "The thing that can be done normally takes が. を is very common in speech and is fine too. Only を changes like this: every other particle stays as it was, so 山に登る becomes 山に登れる. できる is the exception the other way: it takes が almost every time, and 〜をできる is much rarer. The person who can (or can't) often takes には, especially when contrasting with other people.",
           "examples": [
             { "id": "m8wnbc", "jp": "すしが食べられますか。", "en": "Can you eat sushi? (the standard particle)" },
             { "id": "ahahxn", "jp": "すしを食べられますか。", "en": "Can you eat sushi? (common in speech)" },
+            { "id": "jpxcea", "jp": "駅まで自転車で行けます。", "en": "I can get to the station by bike. (まで and で stay as they are)" },
+            { "id": "4nzevs", "jp": "昨日は友だちに会えなかった。", "en": "I couldn't meet my friend yesterday. (に stays に)" },
+            { "id": "swp4e3", "jp": "妹はピアノができます。", "en": "My little sister can play the piano. (できる takes が)" },
             { "id": "xtj993", "jp": "私にはこの漢字が読めません。", "en": "I can't read this kanji. (for me, at least)" }
           ]
         },
@@ -251,6 +254,7 @@
         {
           "word_class": "verb",
           "condition": "U-verbs",
+          "kana_row": "e",
           "pattern": "change the last kana to its え-sound, then る",
           "example": "飲む → 飲める / 書く → 書ける / 話す → 話せる / 買う → 買える / 泳ぐ → 泳げる / 待つ → 待てる / 死ぬ → 死ねる / 遊ぶ → 遊べる / 取る → 取れる",
           "note": "The endings move like this: う→え, く→け, ぐ→げ, す→せ, つ→て, ぬ→ね, ぶ→べ, む→め, る→れ."
@@ -1708,6 +1712,10 @@
       "summary": "〜ましょう means \"let's…\", and 〜ましょうか means \"shall I…?\" or \"shall we…?\". The plain version is the volitional form (食べよう, 飲もう, N4), used among friends and with と思う for plans.",
       "keywords": ["let's", "shall we", "shall I", "I think I'll", "plan to", "intend to"],
       "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 5, "reviewed": false },
+        { "book": "genki-2", "lesson": 15, "reviewed": false }
+      ],
       "usages": [
         {
           "id": "hshseb",
@@ -1766,6 +1774,7 @@
         {
           "word_class": "verb",
           "condition": "U-verbs",
+          "kana_row": "o",
           "pattern": "change the last kana to its お-sound, then う",
           "example": "飲む → 飲もう / 書く → 書こう / 話す → 話そう / 買う → 買おう / 泳ぐ → 泳ごう / 待つ → 待とう / 死ぬ → 死のう / 遊ぶ → 遊ぼう / 取る → 取ろう",
           "note": "The endings move like this: う→お, く→こ, ぐ→ご, す→そ, つ→と, ぬ→の, ぶ→ぼ, む→も, る→ろ."

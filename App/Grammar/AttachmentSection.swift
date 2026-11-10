@@ -63,6 +63,11 @@ struct AttachmentSection: View {
                                 .font(.sentence(.title3))
                         }
                         .accessibilityElement(children: .combine)
+                    } else if let table = KanaRowTable(rule: rule) {
+                        // The table shows every example and how its ending moves, so it stands in
+                        // for the example lines and the note that spells out the endings.
+                        JapaneseText(rule.pattern).font(.headline)
+                        KanaRowTableView(table: table)
                     } else {
                         JapaneseText(rule.pattern).font(.headline)
                         ForEach(rule.example.components(separatedBy: " / "), id: \.self) { example in
@@ -70,7 +75,7 @@ struct AttachmentSection: View {
                                 .font(.sentence(.title3))
                         }
                     }
-                    if let note = rule.note {
+                    if let note = rule.note, rule.kanaRow == nil {
                         JapaneseText(note).font(.footnote).foregroundStyle(palette.muted)
                     }
                 }

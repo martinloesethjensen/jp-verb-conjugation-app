@@ -515,6 +515,8 @@ pub struct Attachment {
     pub slots: Option<Vec<String>>,
     #[serde(default)]
     pub then: Option<String>,
+    #[serde(default)]
+    pub kana_row: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]

@@ -671,6 +671,14 @@ class ValidateGrammarTests(unittest.TestCase):
         self.assertTrue(self.rule(then="ので"))
         self.assertTrue(self.rule(slots=["plain"], then=""))
 
+    def test_kana_row(self):
+        self.assertEqual(self.rule(kana_row="e", example="飲む → 飲める / 買う → 買える"), [])
+        self.assertEqual(self.rule(kana_row="o", example="勉強する → 勉強しよう / 書く → 書こう"), [])
+        self.assertTrue(self.rule(kana_row="x", example="飲む → 飲める"))
+        self.assertTrue(self.rule(kana_row="e", word_class="noun", example="飲む → 飲める"))
+        self.assertTrue(self.rule(kana_row="o", example="飲む → 飲める"))
+        self.assertTrue(self.rule(kana_row="e", example="勉強する → 勉強できる"))
+
     def test_contrasts(self):
         doc = valid_grammar()
         doc["grammar"][0]["contrasts"] = [{"pattern": "〜から", "explanation": "e",

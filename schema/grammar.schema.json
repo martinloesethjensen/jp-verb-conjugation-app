@@ -302,6 +302,10 @@
         "then": {
           "type": "string",
           "minLength": 1
+        },
+        "kana_row": {
+          "description": "Verb rules only: the kana row (a, i, u, e, o) a u-verb's last kana moves to. Clients show the kana-row table built from the rule's 'A → B' example pairs.",
+          "enum": ["a", "i", "u", "e", "o"]
         }
       }
     },
