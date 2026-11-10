@@ -12,6 +12,8 @@ struct QuizChoiceButton: View {
     let isAnswered: Bool
     /// Lines the choice may use; `nil` for choices that are whole phrases and must not be cut off.
     var lineLimit: Int? = 3
+    /// The verb `choice` is a form of, to write it in the quiz's script; nil for any other text.
+    var verb: Verb? = nil
     let action: () -> Void
 
     @Environment(\.palette) private var palette
@@ -58,7 +60,7 @@ struct QuizChoiceButton: View {
                             .font(.caption)
                             .foregroundStyle(palette.muted)
                     }
-                    Text(choice)
+                    label
                         .fontWeight(mark == .correct ? .bold : .regular)
                         .strikethrough(mark == .wrong, color: palette.mark)
                         // Ink text on the soft fills keeps 4.5:1; the strike, cross and outline carry the mark colour.
@@ -83,6 +85,16 @@ struct QuizChoiceButton: View {
         .accessibilityValue(statusDescription)
         .allowsHitTesting(!isAnswered)
         .opacity(mark == .faded ? 0.45 : 1)
+    }
+
+    /// The choice, written in the quiz's script when it is a verb form. Kanji only shows the
+    /// reading on the right answer once answered.
+    @ViewBuilder private var label: some View {
+        if let verb {
+            QuizVerbText(kana: choice, verb: verb, revealed: mark == .correct)
+        } else {
+            Text(choice)
+        }
     }
 
     /// The words shown with Differentiate Without Color, so the mark never relies on colour.

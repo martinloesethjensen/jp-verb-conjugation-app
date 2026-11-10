@@ -70,8 +70,8 @@ struct QuizResultsView: View {
                 }
             }
             ViewThatFits(in: .horizontal) {
-                WrappingFlowLayout(spacing: 8) { choiceLine(result) }
-                VStack(alignment: .leading, spacing: 2) { choiceLine(result) }
+                WrappingFlowLayout(spacing: 8) { choiceLine(question, result) }
+                VStack(alignment: .leading, spacing: 2) { choiceLine(question, result) }
             }
             if let why = result.errorExplanation {
                 Text(why)
@@ -96,7 +96,7 @@ struct QuizResultsView: View {
             .foregroundStyle(palette.muted)
     }
 
-    @ViewBuilder private func choiceLine(_ result: QuizResult) -> some View {
+    @ViewBuilder private func choiceLine(_ question: QuizQuestion, _ result: QuizResult) -> some View {
         if result.timedOut {
             Text("TIME’S UP")
                 .font(.caption.weight(.bold))
@@ -105,15 +105,25 @@ struct QuizResultsView: View {
             Text("YOU CHOSE")
                 .font(.caption.weight(.bold))
                 .foregroundStyle(palette.mark)
-            Text(result.chosen)
+            answer(result.chosen, question, result)
                 .strikethrough(color: palette.mark)
                 .foregroundStyle(palette.ink)
         }
         Text("CORRECT")
             .font(.caption.weight(.bold))
             .foregroundStyle(palette.good)
-        Text(result.correct)
+        answer(result.correct, question, result)
             .bold()
             .foregroundStyle(palette.ink)
+    }
+
+    /// A chosen or correct answer: a verb form in the quiz's script, with its reading, or a
+    /// form name for an identify question.
+    @ViewBuilder private func answer(_ choice: String, _ question: QuizQuestion, _ result: QuizResult) -> some View {
+        if result.kind == .identify {
+            Text(choice)
+        } else {
+            QuizVerbText(kana: choice, verb: question.verb(of: choice), revealed: true)
+        }
     }
 }

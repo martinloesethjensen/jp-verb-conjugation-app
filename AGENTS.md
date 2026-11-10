@@ -117,6 +117,7 @@ Run `make` for the full list. Common ones:
 | `GlobalSearch.results`, `SearchScope`, `GlobalSearchResults` | The Search tab's one search over all four, with the level setting, hidden-match count and the romaji reading line |
 | `GrammarHighlight`, `MistakeMark`, `GrammarPoint.formula`, `AttachmentRule.example`, `ConjugationTable` | Grammar page helpers: where a lesson's pattern sits in an example, which part of a wrong form is wrong, the formula header, a rule's live example, polite/casual rows |
 | `ParticleBlank`, `ParticleQuiz`, `buildParticleQuestions` | Marked `particle_blanks` on examples and the particle quiz built from them (spec: `docs/superpowers/specs/2026-10-29-particle-blanks-design.md`) |
+| `QuizScript`, `QuizQuestion.verb(of:)` | How the verb quiz writes verb forms (kana, kanji with furigana, kanji only; `quizScript` App Group key) and which verb a choice is a form of |
 | `DataSyncStatus` | Per-file sync status shown in Settings |
 | `DataFileSync` (internal) | Shared persist → confirm → record-status flow for `WordsStore`, `FuriganaStore` and `CountersStore` |
 | `SyncVerification` (internal) | The seven sync services' rollback rejection, hash verification and JSON decoding |
@@ -160,6 +161,7 @@ Run `make` for the full list. Common ones:
 | `QuizHeader`, `QuizChoiceGrid` | Quiz progress/score header and two-column answer grid |
 | `QuizPromptCard`, `QuizFeedbackCard`, `QuizMissedCard` | Question, feedback and missed-question card surfaces |
 | `quizAdvanceBar`, `quizQuitDialog` | Pinned Next/See Results button and the quit confirmation |
+| `QuizVerbText` | A verb form in the verb quiz, written in the picked `QuizScript` |
 | `QuizScoreCard`, `quizResultsActions(practise:onPractise:onDone:)` | The results score in a red hand-drawn ring on ruled paper, and the pinned Practise/Done buttons |
 | `QuizResultsSummary` | Counter and connection quiz results, built on `QuizScoreCard`; the verb quiz keeps its own `QuizResultsView` |
 | `LevelScopeBar`, `HiddenMatchesRow`, `NoMatchInLevelsView` | "My levels / All levels" search behavior |
