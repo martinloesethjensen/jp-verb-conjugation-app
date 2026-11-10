@@ -125,6 +125,18 @@ at once. Finishing writes only the hidden levels, furigana and the theme, never 
 Seasonal. Studied levels keep every dataset visible: a learner studying only N3 still sees N4 verbs
 (`LevelSettings.studying`).
 
+## Word Bank depth
+
+The entry page reads top to bottom: tag pills and the kind, the text in Mincho (with its reading and
+kanji spelling when they differ), the folder path, 方言 → 標準語 (the entry beside its standard forms,
+with a line per note), numbered meanings, the kanji as paper tiles (stroke order, or Jisho without
+kanji data; "From the standard form." or "From the kanji spelling." when one field gives them), notes
+and `yyyy-MM-dd` dates. Speak sits in the toolbar. The editor is paper sections of labelled fields
+(Text and Reading; Standard Japanese; Meanings), the on-device suggestion as one dashed card with
+"Use all" and "Dismiss" (dismissed until the text changes), tags as quick chips (applied first,
+then recent, then the rest, at most eight more) with "+ New tag", the folder, and a "More" page for
+kind, word class, kanji spelling and notes.
+
 ## Boards → plans
 
 | Plan | Scope | Canvas boards |
@@ -138,6 +150,6 @@ Seasonal. Studied levels keep every dataset visible: a learner studying only N3 
 | Grammar list and lesson (built) | Lesson layout with a formula header (endings as chips, a live example), Practise under it, genkō examples with the pattern underlined, common mistakes marking only the wrong part, a Polite / Casual forms table; the list as chips, two cards and level groups (owner's choice of mockups, 2026-11-08) | Grammar list, lesson (design-subagent mockups) |
 | 5. Onboarding (built) | Levels, furigana, theme, first verb | Onboarding |
 | 6. Theme personality | Alternate app icons, title motifs, results stamps | Theme personality |
-| 7. Word Bank depth | Entry page and editor restyle, suggestion card | Word Bank entry, add a word |
+| 7. Word Bank depth (built) | Entry page and editor restyle, suggestion card | Word Bank entry, add a word |
 
 Plans 2–7 depend only on plan 1. Each is planned when it starts.

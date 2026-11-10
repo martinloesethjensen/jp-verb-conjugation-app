@@ -135,4 +135,41 @@ final class TagSuggesterTests: XCTestCase {
     func testRecordFixture() {
         XCTAssertEqual(record("熊本弁").prefectures, [.kumamoto])
     }
+
+    // MARK: Quick picks (the editor's tag chips)
+
+    func testAppliedTagsAlwaysShowAndOthersAreCapped() {
+        let custom = (0..<30).map { CustomTagValue(name: "tag \($0)", color: .blue) }
+        let applied = [custom[29].id, custom[28].id]
+        let picks = TagSuggester().quickPicks(applied: applied, recent: [custom[3].id], dialectTags: [], customTags: custom, limit: 8)
+        XCTAssertEqual(picks.count, 10)
+        XCTAssertEqual(Array(picks.prefix(3)), [.existingCustom(custom[29]), .existingCustom(custom[28]), .existingCustom(custom[3])])
+    }
+
+    func testDeletedRecentIDsAreSkipped() {
+        let kansai = DialectTagValue(name: "Kansai-ben", region: .kansai)
+        let picks = TagSuggester().quickPicks(applied: [], recent: [UUID(), kansai.id], dialectTags: [kansai], customTags: [])
+        XCTAssertEqual(picks, [.existingDialect(kansai)])
+    }
+
+    func testDialectsComeBeforeCustomInTheRest() {
+        let (tosa, hakata) = (DialectTagValue(name: "Tosa-ben", region: .shikoku), DialectTagValue(name: "Hakata-ben", region: .kyushuOkinawa))
+        let (slang, food) = (CustomTagValue(name: "slang", color: .purple), CustomTagValue(name: "food", color: .orange))
+        let picks = TagSuggester().quickPicks(applied: [], recent: [], dialectTags: [tosa, hakata], customTags: [slang, food])
+        XCTAssertEqual(picks, [.existingDialect(hakata), .existingDialect(tosa), .existingCustom(food), .existingCustom(slang)])
+    }
+
+    func testShownChipsKeepTheirPlaceWhenToggled() {
+        let (a, b, c) = (CustomTagValue(name: "a"), CustomTagValue(name: "b"), CustomTagValue(name: "c"))
+        let shown = [a.id, b.id]
+        // Unticking a (no longer applied) keeps it where it was; ticking c (not shown) appends it.
+        let picks = TagSuggester().keepingPlaces(shown: shown, applied: [c.id], dialectTags: [], customTags: [a, b, c])
+        XCTAssertEqual(picks, [.existingCustom(a), .existingCustom(b), .existingCustom(c)])
+    }
+
+    func testShownChipsSkipDeletedTags() {
+        let a = CustomTagValue(name: "a")
+        let picks = TagSuggester().keepingPlaces(shown: [UUID(), a.id], applied: [], dialectTags: [], customTags: [a])
+        XCTAssertEqual(picks, [.existingCustom(a)])
+    }
 }

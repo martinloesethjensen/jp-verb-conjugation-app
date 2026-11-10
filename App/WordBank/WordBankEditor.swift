@@ -31,6 +31,11 @@ struct WordBankEditor: View {
     @State private var choosingFolder = false
     @State private var choosingTags = false
     @State private var failed = false
+    @AppStorage(RecentTags.key) private var recentTagsRaw = ""
+    /// The tag chips as first drawn, so ticking or unticking never makes one jump or vanish.
+    @State private var shownTagIDs: [UUID]?
+    /// Any field of the standard-form and meaning rows; cleared before a row is removed.
+    @FocusState private var editingRow: Bool
 
     init(request: WordBankEditorRequest, onOpenExisting: @escaping (UUID) -> Void = { _ in }) {
         self.request = request
@@ -57,16 +62,21 @@ struct WordBankEditor: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                textSection
-                suggestionsSection
-                equivalentsSection
-                sensesSection
-                detailsSection
-                tagsSection
-                moreSection
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    textSection
+                    if suggestionsOn { suggestionCard }
+                    equivalentsSection
+                    sensesSection
+                    tagsSection
+                    folderAndMoreSection
+                }
+                .padding(16)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
             }
-            .navigationTitle(isNew ? "New Entry" : "Edit Entry")
+            .paperBackground()
+            .navigationTitle(isNew ? "New word" : "Edit word")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -93,6 +103,7 @@ struct WordBankEditor: View {
             }
             .onAppear {
                 if suggestionsOn, !isNew { suggestions.textChanged(draft.text) }
+                if shownTagIDs == nil { shownTagIDs = tagPicks.compactMap(id(of:)) }
             }
         }
     }
@@ -100,42 +111,54 @@ struct WordBankEditor: View {
     // MARK: - Sections
 
     private var textSection: some View {
-        Section {
-            TextField("Text (おおきに)", text: $draft.text, axis: .vertical)
-                .autocorrectionDisabled()
+        VStack(alignment: .leading, spacing: 8) {
+            PaperFieldSection {
+                PaperField("Text", placeholder: "おおきに", text: $draft.text, font: .headword(.title2), axis: .vertical)
+                    .autocorrectionDisabled()
+                PaperDivider()
+                PaperField("Reading", placeholder: "かな", text: optional($draft.reading))
+                    .autocorrectionDisabled()
+            }
+            if draft.reading != nil, draft.reading == autoReading {
+                note("Filled in from the furigana dictionary. Change it if it's wrong.")
+            }
             if let duplicate {
                 HStack {
-                    Label("You already have “\(duplicate.text)”", systemImage: "exclamationmark.circle")
-                        .font(.footnote)
-                    Spacer()
+                    Label {
+                        JapaneseText("You already have “\(duplicate.text)”")
+                    } icon: {
+                        Image(systemName: "exclamationmark.circle")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(palette.ink)
+                    Spacer(minLength: 8)
                     Button("Open") {
                         dismiss()
                         onOpenExisting(duplicate.id)
                     }
-                    .font(.footnote.weight(.semibold))
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.paperSecondaryInline)
                 }
             }
             ForEach(dictionaryForms) { verb in
                 HStack {
-                    Label("A form of \(verb.jishoQuery)", systemImage: "text.magnifyingglass")
-                        .font(.footnote)
-                    Spacer()
+                    Label {
+                        JapaneseText("A form of \(verb.jishoQuery)")
+                    } icon: {
+                        Image(systemName: "text.magnifyingglass")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(palette.ink)
+                    Spacer(minLength: 8)
                     Button("Use \(verb.jishoQuery)") { useDictionaryForm(verb) }
-                        .font(.footnote.weight(.semibold))
-                        .buttonStyle(.borderless)
+                        .buttonStyle(.paperSecondaryInline)
                         .accessibilityLabel("Save as the dictionary form, \(verb.jishoQuery)")
                 }
             }
-            TextField("Reading (かな)", text: optional($draft.reading))
-                .autocorrectionDisabled()
-        } header: {
-            Text("Text")
-        } footer: {
-            if draft.reading != nil, draft.reading == autoReading {
-                Text("Filled in from the furigana dictionary. Change it if it's wrong.")
-            }
         }
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text).font(.footnote).foregroundStyle(palette.muted).padding(.horizontal, 4)
     }
 
     // MARK: - Suggestions
@@ -144,90 +167,22 @@ struct WordBankEditor: View {
         Set(store.dialectTags.filter { draft.dialectTagIDs.contains($0.id) }.compactMap(\.catalogueID))
     }
 
-    @ViewBuilder
-    private var suggestionsSection: some View {
-        switch suggestions.state {
-        case .idle, .unavailable:
-            EmptyView()
-        case .nothing:
-            suggestionNote("No suggestions for this one.")
-        case .unsure:
-            suggestionNote("The on-device model wasn't sure about this one and had nothing to suggest.")
-        case .loading:
-            Section {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("Looking for suggestions…").font(.footnote).foregroundStyle(.secondary)
-                }
-            }
-        case .failed:
-            Section {
-                HStack {
-                    Label("Couldn't get suggestions", systemImage: "exclamationmark.circle").font(.footnote)
-                    Spacer()
-                    Button("Try again") { suggestions.retry() }.font(.footnote.weight(.semibold)).buttonStyle(.borderless)
-                }
-            }
-        case .ready(let full):
-            let rest = full.removing(whatIsIn: draft, appliedDialectCatalogueIDs: appliedCatalogueIDs)
-            if rest.isEmpty {
-                suggestionNote("Nothing new to suggest: the entry already has it.")
-            } else {
-                Section {
-                    WrappingFlowLayout(spacing: 8) { suggestionChips(rest) }
-                        .padding(.vertical, 4)
-                    Button("Use all", systemImage: "wand.and.stars") { useAll(rest) }
-                } header: {
-                    Text(rest.isUnsure ? "Guesses" : "Suggestions")
-                } footer: {
-                    Text(rest.isUnsure
-                         ? "The on-device model wasn't sure about these. Check them before adding."
-                         : "Suggested on this device. Check them: dialect words are often wrong.")
-                }
-            }
-        }
+    private var suggestionRest: EntrySuggestion? {
+        guard case let .ready(full) = suggestions.state else { return nil }
+        return full.removing(whatIsIn: draft, appliedDialectCatalogueIDs: appliedCatalogueIDs)
     }
 
-    /// A one-line note in place of the chips, so a finished request never ends in silence.
-    private func suggestionNote(_ text: String) -> some View {
-        Section {
-            Label(text, systemImage: "sparkles")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
+    private var suggestionDialectName: String? {
+        suggestionRest?.dialectCatalogueID.flatMap { id in DialectCatalogue.bundled.dialects.first { $0.id == id }?.name }
     }
 
-    @ViewBuilder
-    private func suggestionChips(_ rest: EntrySuggestion) -> some View {
-        if let reading = rest.reading {
-            chip("Reading", reading) { draft.apply(reading: reading) }
-        }
-        ForEach(rest.standardForms, id: \.written) { form in
-            chip("Standard", form.written) { draft.apply(standardForm: form) }
-        }
-        ForEach(rest.meanings, id: \.self) { meaning in
-            chip("Meaning", meaning) { draft.apply(meaning: meaning) }
-        }
-        if let kind = rest.kind {
-            chip("Kind", kind.rawValue.capitalized) { draft.apply(kind: kind) }
-        }
-        if let id = rest.dialectCatalogueID, let record = DialectCatalogue.bundled.dialects.first(where: { $0.id == id }) {
-            chip("Dialect", record.name) { applyDialect(record) }
-        }
-    }
-
-    private func chip(_ label: String, _ value: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                Text(value).font(.callout)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(palette.button.opacity(0.12), in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(label): \(value). Tap to add.")
+    private var suggestionCard: some View {
+        EntrySuggestionCard(
+            state: suggestions.state, rest: suggestionRest, dialectName: suggestionDialectName,
+            onUseAll: { if let rest = suggestionRest { useAll(rest) } },
+            onDismiss: { suggestions.dismiss() },
+            onRetry: { suggestions.retry() }
+        )
     }
 
     private func useAll(_ rest: EntrySuggestion) {
@@ -247,105 +202,195 @@ struct WordBankEditor: View {
     }
 
     private var equivalentsSection: some View {
-        Section {
+        PaperFieldSection("Standard Japanese") {
             ForEach(draft.equivalents.indices, id: \.self) { index in
-                VStack(alignment: .leading) {
-                    TextField("Standard Japanese (ありがとう)", text: $draft.equivalents[index].written)
-                        .autocorrectionDisabled()
-                    TextField("Reading", text: optional($draft.equivalents[index].reading))
-                        .autocorrectionDisabled()
-                        .font(.subheadline)
-                    TextField("Note", text: optional($draft.equivalents[index].note))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 0) {
+                    VStack(spacing: 0) {
+                        PaperField("Written", placeholder: "ありがとう", text: row(\.equivalents, index, \.written))
+                            .autocorrectionDisabled()
+                        PaperField("Reading", placeholder: "かな", text: optional(row(\.equivalents, index, \.reading)))
+                            .autocorrectionDisabled()
+                        PaperField("Note", placeholder: "Only in casual speech", text: optional(row(\.equivalents, index, \.note)))
+                    }
+                    .focused($editingRow)
+                    removeButton("Remove standard form \(index + 1)") { remove(index, from: \.equivalents) }
                 }
+                PaperDivider()
             }
-            .onDelete { draft.equivalents.remove(atOffsets: $0) }
-            Button("Add standard form", systemImage: "plus.circle") {
-                draft.equivalents.append(StandardEquivalent(written: ""))
-            }
-        } header: {
-            Text("Standard Japanese")
-        } footer: {
-            Text("What this is in standard Japanese, so entries line up across dialects.")
+            addRow("Add a standard form") { draft.equivalents.append(StandardEquivalent(written: "")) }
         }
     }
 
     private var sensesSection: some View {
-        Section {
+        PaperFieldSection("Meanings") {
             ForEach(draft.senses.indices, id: \.self) { index in
-                VStack(alignment: .leading) {
-                    TextField("Meaning (thank you)", text: $draft.senses[index].meaning)
-                    TextField("Note (≠ standard 直す)", text: optional($draft.senses[index].note))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 0) {
+                    VStack(spacing: 0) {
+                        PaperField("Meaning \(index + 1)", placeholder: "thank you", text: row(\.senses, index, \.meaning))
+                        PaperField("Note", placeholder: "≠ standard 直す", text: optional(row(\.senses, index, \.note)))
+                    }
+                    .focused($editingRow)
+                    removeButton("Remove meaning \(index + 1)") { remove(index, from: \.senses) }
                 }
+                PaperDivider()
             }
-            .onDelete { draft.senses.remove(atOffsets: $0) }
-            Button("Add meaning", systemImage: "plus.circle") {
-                draft.senses.append(Sense(meaning: ""))
-            }
-        } header: {
-            Text("Meanings")
+            addRow("Add a meaning") { draft.senses.append(Sense(meaning: "")) }
         }
     }
 
-    private var detailsSection: some View {
-        Section {
-            Picker("Kind", selection: $draft.kind) {
-                ForEach(EntryKind.allCases, id: \.self) { Text($0.rawValue.capitalized).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            if draft.kind == .word {
-                Picker("Word class", selection: $draft.wordClass) {
-                    Text("None").tag(WordClass?.none)
-                    ForEach(WordClass.allCases, id: \.self) { Text($0.rawValue.capitalized).tag(WordClass?.some($0)) }
+    /// A row field's binding that checks the index, so a field ending its edit after its row was
+    /// removed writes nothing instead of crashing.
+    private func row<Row, Value>(
+        _ rows: WritableKeyPath<WordBankEntryValue, [Row]>, _ index: Int, _ field: WritableKeyPath<Row, Value>
+    ) -> Binding<Value> where Value: DefaultValue {
+        Binding(
+            get: { draft[keyPath: rows].indices.contains(index) ? draft[keyPath: rows][index][keyPath: field] : .defaultValue },
+            set: { if draft[keyPath: rows].indices.contains(index) { draft[keyPath: rows][index][keyPath: field] = $0 } }
+        )
+    }
+
+    /// Clears focus first, then removes the row on the next run loop, so the keyboard never keeps
+    /// typing into the row that slid up into its place.
+    private func remove<Row>(_ index: Int, from rows: WritableKeyPath<WordBankEntryValue, [Row]>) {
+        editingRow = false
+        DispatchQueue.main.async {
+            if draft[keyPath: rows].indices.contains(index) { draft[keyPath: rows].remove(at: index) }
+        }
+    }
+
+    private func removeButton(_ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "minus.circle")
+                .foregroundStyle(palette.muted)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+
+    private func addRow(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: "plus")
+                .font(.body)
+                .foregroundStyle(palette.button)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .padding(.horizontal, 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var tagPicks: [TagSuggestion] {
+        let applied = draft.dialectTagIDs + draft.customTagIDs
+        if let shownTagIDs {
+            return TagSuggester().keepingPlaces(
+                shown: shownTagIDs, applied: applied, dialectTags: store.dialectTags, customTags: store.customTags)
+        }
+        return TagSuggester().quickPicks(
+            applied: applied, recent: RecentTags.ids(from: recentTagsRaw),
+            dialectTags: store.dialectTags, customTags: store.customTags
+        )
+    }
+
+    private func id(of pick: TagSuggestion) -> UUID? {
+        switch pick {
+        case let .existingDialect(tag): tag.id
+        case let .existingCustom(tag): tag.id
+        default: nil
+        }
+    }
+
+    private var tagsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("TAGS")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(palette.muted)
+                .padding(.horizontal, 4)
+                .accessibilityAddTraits(.isHeader)
+            WrappingFlowLayout(spacing: 8) {
+                ForEach(tagPicks, id: \.self) { pick in
+                    switch pick {
+                    case let .existingDialect(tag):
+                        tagChip(tag.name, isOn: draft.dialectTagIDs.contains(tag.id)) { toggle(tag.id, in: \.dialectTagIDs) }
+                    case let .existingCustom(tag):
+                        tagChip(tag.name, isOn: draft.customTagIDs.contains(tag.id)) { toggle(tag.id, in: \.customTagIDs) }
+                    default:
+                        EmptyView()
+                    }
                 }
+                Button {
+                    choosingTags = true
+                } label: {
+                    Text("+ New tag")
+                        .font(.subheadline)
+                        .foregroundStyle(palette.muted)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .overlay(Capsule().strokeBorder(palette.rule, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                }
+                .buttonStyle(.plain)
             }
+        }
+    }
+
+    private func tagChip(_ name: String, isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            FilterChip(name, isOn: isOn)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+
+    private func toggle(_ id: UUID, in keyPath: WritableKeyPath<WordBankEntryValue, [UUID]>) {
+        if draft[keyPath: keyPath].contains(id) {
+            draft[keyPath: keyPath].removeAll { $0 == id }
+        } else {
+            draft[keyPath: keyPath].append(id)
+            recentTagsRaw = RecentTags.recording(id, in: recentTagsRaw)
+        }
+    }
+
+    private var folderAndMoreSection: some View {
+        PaperFieldSection {
             Button {
                 choosingFolder = true
             } label: {
                 HStack {
-                    Text("Folder")
-                    Spacer()
-                    Text(folderName).foregroundStyle(.secondary)
+                    Text("Folder").foregroundStyle(palette.ink)
+                    Spacer(minLength: 8)
+                    Text(folderPath).foregroundStyle(palette.muted).lineLimit(1)
                     RowChevron()
                 }
+                .frame(minHeight: 44)
+                .padding(.horizontal, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            PaperDivider()
+            NavigationLink {
+                WordBankEditorMore(draft: $draft)
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("More").foregroundStyle(palette.ink)
+                        Text("Kanji spelling, notes").font(.caption).foregroundStyle(palette.muted)
+                    }
+                    Spacer(minLength: 8)
+                    RowChevron()
+                }
+                .frame(minHeight: 44)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 4)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
     }
 
-    private var tagsSection: some View {
-        Section("Tags") {
-            let dialect = store.dialectTags.filter { draft.dialectTagIDs.contains($0.id) }
-            let custom = store.customTags.filter { draft.customTagIDs.contains($0.id) }
-            if !dialect.isEmpty || !custom.isEmpty {
-                WrappingFlowLayout(spacing: 6) {
-                    ForEach(dialect) { TagPill($0) }
-                    ForEach(custom) { TagPill($0) }
-                }
-            }
-            Button(dialect.isEmpty && custom.isEmpty ? "Add tags" : "Edit tags", systemImage: "tag") {
-                choosingTags = true
-            }
-        }
-    }
-
-    private var moreSection: some View {
-        Section("More") {
-            TextField("Kanji spelling (大きに)", text: optional($draft.kanjiSpelling))
-                .autocorrectionDisabled()
-            TextField("Source or notes", text: optional($draft.notes), axis: .vertical)
-                .lineLimit(2...6)
-        }
-    }
-
     // MARK: - Helpers
 
-    private var folderName: String {
-        draft.folderID.flatMap { store.tree.folder($0)?.name } ?? "Unfiled"
+    private var folderPath: String {
+        draft.folderID.map { store.tree.path(of: $0).map(\.name).joined(separator: " › ") } ?? "Unfiled"
     }
 
     /// A text field's binding for an optional string: empty means nil.
@@ -386,3 +431,8 @@ struct WordBankEditor: View {
         }
     }
 }
+
+/// A value a bounds-checked row binding returns once its row is gone.
+protocol DefaultValue { static var defaultValue: Self { get } }
+extension String: DefaultValue { static var defaultValue: String { "" } }
+extension Optional: DefaultValue { static var defaultValue: Self { nil } }

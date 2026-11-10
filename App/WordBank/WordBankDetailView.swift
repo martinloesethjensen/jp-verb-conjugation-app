@@ -1,8 +1,8 @@
 import SwiftUI
 import VerbKit
 
-/// One entry: the text large (with furigana), a comparison with standard Japanese, its
-/// meanings, a chip per kanji that opens its stroke order (Jisho without kanji data), tags, where it's filed, notes and dates.
+/// One entry, in paper and ink: its tags and folder above the text in Mincho, 方言 → 標準語, the
+/// meanings, a tile per kanji (stroke order, or Jisho without kanji data), notes and dates.
 struct WordBankDetailView: View {
     @Environment(WordBankStore.self) private var store
     @Environment(\.openURL) private var openURL
@@ -14,13 +14,16 @@ struct WordBankDetailView: View {
     @State private var moving = false
     @State private var deleting = false
     @State private var kanjiRequest: KanjiSheetRequest?
+    @Environment(\.palette) private var palette
+    @ScaledMetric(relativeTo: .title) private var tileSide: CGFloat = 56
 
     private var dialectTags: [DialectTagValue] { store.dialectTags.filter { entry.dialectTagIDs.contains($0.id) } }
     private var customTags: [CustomTagValue] { store.customTags.filter { entry.customTagIDs.contains($0.id) } }
 
-    private var kanji: [Character] {
-        KanjiExtraction.kanji(in: [entry.text, entry.kanjiSpelling ?? ""] + entry.equivalents.map(\.written))
+    private var chips: KanjiChips {
+        KanjiExtraction.chips(text: entry.text, spelling: entry.kanjiSpelling, standard: entry.equivalents.map(\.written))
     }
+    private var kanji: [Character] { chips.kanji }
 
     private var folderPath: String? {
         entry.folderID.map { store.tree.path(of: $0).map(\.name).joined(separator: " › ") }
@@ -33,8 +36,7 @@ struct WordBankDetailView: View {
                 if !entry.equivalents.isEmpty { comparisonCard }
                 if !entry.senses.isEmpty { meaningsSection }
                 if !kanji.isEmpty { kanjiSection }
-                if !dialectTags.isEmpty || !customTags.isEmpty { tagsSection }
-                if folderPath != nil || entry.notes != nil { detailsSection }
+                if let notes = entry.notes { notesSection(notes) }
                 dates
             }
             .padding()
@@ -48,7 +50,9 @@ struct WordBankDetailView: View {
         .toolbar(.hidden, for: .tabBar)
         #endif
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                SpeakButton(text: entry.reading ?? entry.text)
+                    .accessibilityHint("Standard pronunciation")
                 Button("Edit", systemImage: "square.and.pencil") { editing = true }
             }
             ToolbarItem(placement: .secondaryAction) {
@@ -79,88 +83,114 @@ struct WordBankDetailView: View {
 
     // MARK: - Sections
 
+    private var kindLine: String? {
+        if entry.kind != .word { return entry.kind.rawValue }
+        return entry.wordClass?.displayName.lowercased()
+    }
+
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Text(entry.kind.rawValue.capitalized)
-                if let wordClass = entry.wordClass { Text("· \(wordClass.rawValue)") }
+        VStack(alignment: .leading, spacing: 10) {
+            if !dialectTags.isEmpty || !customTags.isEmpty || kindLine != nil {
+                WrappingFlowLayout(spacing: 6) {
+                    ForEach(dialectTags) { TagPill($0) }
+                    ForEach(customTags) { TagPill($0) }
+                    if let kindLine {
+                        Text("· \(kindLine)").font(.caption).foregroundStyle(palette.muted)
+                    }
+                }
             }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-
             JapaneseText(entry.text)
-                .font(.largeTitle.weight(.heavy))
+                .font(.headword(.largeTitle, scale: 1.35))
+                .foregroundStyle(palette.ink)
                 .textActions(entry.text, translate: entry.kind == .sentence)
-
             // Furigana covers kanji it knows; a reading the user typed for kana-only text,
             // or for kanji the dictionary doesn't know, is shown plainly.
             if let reading = entry.reading, JapaneseNormalizer.key(reading) != JapaneseNormalizer.key(entry.text) {
-                Text(reading).font(.title3).foregroundStyle(.secondary)
+                Text(reading).font(.title3).foregroundStyle(palette.muted)
             }
             if let spelling = entry.kanjiSpelling {
                 HStack(spacing: 6) {
-                    Text("Written").font(.caption).foregroundStyle(.secondary)
-                    JapaneseText(spelling).font(.title3)
+                    Text("Written").font(.caption).foregroundStyle(palette.muted)
+                    JapaneseText(spelling).font(.title3).foregroundStyle(palette.ink)
                 }
                 .textActions(spelling)
             }
-
-            HStack(spacing: 8) {
-                SpeakButton(text: entry.reading ?? entry.text)
-                Text("Standard pronunciation")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            if let folderPath {
+                Text("Folder: \(folderPath)").font(.subheadline).foregroundStyle(palette.muted)
             }
         }
     }
 
-    /// 方言 → 標準語, one row per standard equivalent.
+    /// 方言 → 標準語: the entry beside its standard forms, then a line per form that has a note.
     private var comparisonCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeader("方言 → 標準語", systemImage: "arrow.left.arrow.right")
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(entry.equivalents.indices, id: \.self) { index in
-                    let equivalent = entry.equivalents[index]
-                    VStack(alignment: .leading, spacing: 2) {
-                        JapaneseText(equivalent.written).font(.title2.weight(.semibold))
-                        if let reading = equivalent.reading, JapaneseNormalizer.key(reading) != JapaneseNormalizer.key(equivalent.written) {
-                            Text(reading).font(.subheadline).foregroundStyle(.secondary)
-                        }
-                        if let note = equivalent.note {
-                            Text(note).font(.footnote).foregroundStyle(.secondary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textActions(equivalent.written)
-                    if index < entry.equivalents.count - 1 { Divider() }
+        VStack(alignment: .leading, spacing: 8) {
+            // Fixed readings: the dictionary reads 方言 kanji by kanji (かた・い) and lacks 標準語.
+            JapaneseText(units: [
+                TextUnit(text: "方言", reading: "ほうげん"), TextUnit(text: " → "),
+                TextUnit(text: "標準語", reading: "ひょうじゅんご"),
+            ])
+                .font(.headword(.title3))
+                .foregroundStyle(palette.ink)
+                .accessibilityAddTraits(.isHeader)
+            WrappingFlowLayout(spacing: 10) {
+                JapaneseText(entry.text).font(.headword(.title3)).foregroundStyle(palette.ink)
+                Image(systemName: "arrow.right").foregroundStyle(palette.muted).accessibilityLabel("in standard Japanese")
+                JapaneseText(entry.equivalents.map(\.written).joined(separator: "・"))
+                    .font(.headword(.title3))
+                    .foregroundStyle(palette.ink)
+                    .textActions(entry.equivalents.map(\.written).joined(separator: "・"))
+            }
+            .paperCard(cornerRadius: 14)
+            ForEach(entry.equivalents.indices, id: \.self) { index in
+                let equivalent = entry.equivalents[index]
+                if let note = equivalent.note {
+                    JapaneseText("\(equivalent.written) — \(note)").font(.footnote).foregroundStyle(palette.muted)
                 }
             }
-            .paperCard(cornerRadius: 16)
         }
     }
 
     private var meaningsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader("Meanings", systemImage: "text.quote")
-            ForEach(entry.senses.indices, id: \.self) { index in
-                let sense = entry.senses[index]
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("\(index + 1)").font(.callout.weight(.bold)).foregroundStyle(.secondary).monospacedDigit()
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(sense.meaning).font(.body)
-                        if let note = sense.note {
-                            Text(note).font(.footnote).foregroundStyle(.secondary)
+            SectionHeader("Meanings")
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(entry.senses.indices, id: \.self) { index in
+                    let sense = entry.senses[index]
+                    if index > 0 { PaperDivider() }
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text("\(index + 1)").font(.callout.weight(.bold)).foregroundStyle(palette.muted).monospacedDigit()
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(sense.meaning).font(.body).foregroundStyle(palette.ink)
+                            if let note = sense.note {
+                                JapaneseText("— \(note)").font(.footnote).foregroundStyle(palette.muted)
+                            }
                         }
+                        Spacer(minLength: 0)
                     }
+                    .padding(.vertical, 10)
+                    .accessibilityElement(children: .combine)
                 }
-                .accessibilityElement(children: .combine)
             }
+            .padding(.horizontal, 14)
+            .background(palette.card, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(palette.rule, lineWidth: 1))
         }
+    }
+
+    private var kanjiCaption: String {
+        let source: String? = switch chips.source {
+        case .standard: "From the standard form."
+        case .spelling: "From the kanji spelling."
+        case .text, .mixed: nil
+        }
+        let tap = kanji.contains { kanjiStore?.entry(for: $0) != nil }
+            ? "Tap for stroke order." : "Tap a kanji to open it in Jisho."
+        return [source, tap].compactMap { $0 }.joined(separator: " ")
     }
 
     private var kanjiSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader("Kanji", systemImage: "character.book.closed.ja")
+            SectionHeader("Kanji")
             WrappingFlowLayout(spacing: 8) {
                 ForEach(kanji, id: \.self) { character in
                     let hasStrokes = kanjiStore?.entry(for: character) != nil
@@ -172,49 +202,39 @@ struct WordBankDetailView: View {
                         }
                     } label: {
                         Text(String(character))
-                            .font(.title2)
-                            .frame(minWidth: 44, minHeight: 44)
-                            .glassEffect(in: RoundedRectangle(cornerRadius: 10))
+                            .font(.headword(.title))
+                            .foregroundStyle(palette.ink)
+                            .frame(minWidth: tileSide, minHeight: tileSide)
+                            .background(palette.card, in: RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(palette.rule, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(hasStrokes ? "\(String(character)), stroke order" : "Look up \(character) in Jisho")
                 }
             }
-            Text(kanji.contains { kanjiStore?.entry(for: $0) != nil }
-                 ? "Tap a kanji for its stroke order." : "Tap a kanji to open it in Jisho.")
-                .font(.caption).foregroundStyle(.secondary)
+            Text(kanjiCaption).font(.caption).foregroundStyle(palette.muted)
         }
         .kanjiSheet($kanjiRequest)
         .dismissOnLink { kanjiRequest = nil }
     }
 
-    private var tagsSection: some View {
+    private func notesSection(_ notes: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader("Tags", systemImage: "tag")
-            WrappingFlowLayout(spacing: 6) {
-                ForEach(dialectTags) { TagPill($0) }
-                ForEach(customTags) { TagPill($0) }
-            }
-        }
-    }
-
-    private var detailsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let folderPath {
-                Label(folderPath, systemImage: "folder").font(.subheadline).foregroundStyle(.secondary)
-            }
-            if let notes = entry.notes {
-                SectionHeader("Notes", systemImage: "note.text")
-                Text(notes).font(.body).textSelection(.enabled)
-            }
+            SectionHeader("Notes")
+            JapaneseText(notes)
+                .font(.body)
+                .foregroundStyle(palette.ink)
+                .textSelection(.enabled)
+                .paperCard(cornerRadius: 14)
         }
     }
 
     private var dates: some View {
-        let added = entry.createdAt.formatted(date: .abbreviated, time: .omitted)
-        let edited = entry.updatedAt.formatted(date: .abbreviated, time: .omitted)
+        let added = WordBankDates.day(entry.createdAt)
+        let edited = WordBankDates.day(entry.updatedAt)
         return Text(added == edited ? "Added \(added)" : "Added \(added) · Edited \(edited)")
             .font(.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(palette.muted)
+            .frame(maxWidth: .infinity)
     }
 }
