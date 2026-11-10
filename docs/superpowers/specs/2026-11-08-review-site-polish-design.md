@@ -115,6 +115,14 @@ included.
   events for the signed-in user. Unread counts come from comments, decisions and requests newer than
   `read_at`. No push, no service worker.
 
+**As built (step 4, 2026-11-10):** events are worked out from `comments` and `suggestions.decided_at` on each
+request; only `thread_reads` is stored (migration 0008, which seeds a row for everyone already in a thread so
+earlier activity counts as read). Writing a suggestion, comment or decision marks that thread read for its
+writer, and a thread card marks itself read when it shows something new. `GET /api/replies` returns the newest
+50 events (comments cut to 140 characters) and the unread count; `POST /api/replies/read` takes ids or `all`.
+The site checks when it loads and after each navigation. Second-opinion and course events come with steps 6
+and 7.
+
 ## Onboarding
 
 - **Desktop:** on first sign-in, a welcome dialog, then five highlighted steps on the queue page:
