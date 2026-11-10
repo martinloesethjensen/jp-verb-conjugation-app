@@ -124,7 +124,11 @@ struct WordBankDetailView: View {
     /// 方言 → 標準語: the entry beside its standard forms, then a line per form that has a note.
     private var comparisonCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            JapaneseText("方言 → 標準語")
+            // Fixed readings: the dictionary reads 方言 kanji by kanji (かた・い) and lacks 標準語.
+            JapaneseText(units: [
+                TextUnit(text: "方言", reading: "ほうげん"), TextUnit(text: " → "),
+                TextUnit(text: "標準語", reading: "ひょうじゅんご"),
+            ])
                 .font(.headword(.title3))
                 .foregroundStyle(palette.ink)
                 .accessibilityAddTraits(.isHeader)
