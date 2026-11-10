@@ -1,22 +1,32 @@
 // The signed-in person's replies: one store the header bell, Home and the Replies page share. It loads when
 // the site does and after each navigation (no push). A failed load leaves it as it was, quietly.
 import { getReplies, markAllRead, markRead, type Reply, type Suggestion } from './api.ts';
+import { loadReference } from './reference.ts';
 
 class Replies {
 	unread = $state(0);
 	list = $state<Reply[]>([]);
 	loaded = $state(false);
+	/** Furigana for item titles in the bell's panel. */
+	readings = $state<Record<string, string>>({});
 	#pending = new Set<number>();
-	/** Bumped by every read, so a refresh that started before one doesn't bring the old count back. */
-	#reads = 0;
+	/** Every settled read, in order (`'all'` for Mark all read): a refresh that started before some of them
+	 * marks those read in its answer and keeps the newer count. */
+	#readLog: (number | 'all')[] = [];
 
 	async refresh() {
-		const started = this.#reads;
+		const started = this.#readLog.length;
+		if (!Object.keys(this.readings).length) {
+			loadReference()
+				.then((reference) => (this.readings = reference.readings))
+				.catch(() => {});
+		}
 		try {
 			const answer = await getReplies();
-			if (this.#reads !== started) return;
-			this.unread = answer.unread;
-			this.list = answer.replies;
+			const since = this.#readLog.slice(started);
+			const read = (r: Reply) => since.includes('all') || since.includes(r.suggestion_id);
+			this.list = since.length ? answer.replies.map((r) => (read(r) ? { ...r, unread: false } : r)) : answer.replies;
+			if (!since.length) this.unread = answer.unread;
 			this.loaded = true;
 		} catch {
 			// The bell stays as it was; nothing else on the page depends on it.
@@ -35,6 +45,7 @@ class Replies {
 		this.#pending.clear();
 		try {
 			const answer = await markRead(ids);
+			this.#readLog.push(...ids);
 			this.#settle(answer.unread, (r) => ids.includes(r.suggestion_id));
 		} catch {
 			// Still unread; the next visit tries again.
@@ -44,6 +55,7 @@ class Replies {
 	async readAll() {
 		try {
 			const answer = await markAllRead();
+			this.#readLog.push('all');
 			this.#settle(answer.unread, () => true);
 		} catch {
 			// Nothing changes.
@@ -51,7 +63,6 @@ class Replies {
 	}
 
 	#settle(unread: number, read: (r: Reply) => boolean) {
-		this.#reads++;
 		this.unread = unread;
 		this.list = this.list.map((r) => (read(r) ? { ...r, unread: false } : r));
 	}

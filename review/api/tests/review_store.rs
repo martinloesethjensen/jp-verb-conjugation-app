@@ -768,3 +768,60 @@ async fn mark_read_never_moves_back() {
         .unwrap();
     assert_eq!(read_at(&s, AIKO, 99), None);
 }
+
+#[test]
+fn the_replies_query_reads_comments_through_indexes() {
+    let s = SqliteStore::new();
+    let conn = s.conn.borrow();
+    let plan: Vec<String> = conn
+        .prepare(&format!(
+            "EXPLAIN QUERY PLAN {}",
+            review_api::review_store::SELECT_REPLIES
+        ))
+        .unwrap()
+        .query_map(rusqlite::params![AIKO, 50], |r| r.get::<_, String>(3))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    let scans: Vec<&String> = plan
+        .iter()
+        .filter(|l| {
+            l.starts_with("SCAN")
+                && (l.contains("comments") || l.contains(" c"))
+                && !l.contains("INDEX")
+        })
+        .collect();
+    assert!(
+        scans.is_empty(),
+        "full scans of comments: {scans:?}\n{plan:#?}"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn many_threads_are_marked_read_in_one_statement() {
+    let s = SqliteStore::new();
+    {
+        let conn = s.conn.borrow();
+        for _ in 0..3 {
+            conn.execute(
+                "INSERT INTO suggestions (action, dataset, kind, item_id, entry_id, item_title, base_hash, author, created_at)
+                 VALUES ('change', 'words', 'entry', 'noun:x', 'noun:x', 'x', 'h', 'aiko@example.com', 't')",
+                [],
+            )
+            .unwrap();
+        }
+        let n = conn
+            .execute(
+                review_api::review_store::UPSERT_READS,
+                rusqlite::params![AIKO, "[1, 2, 3, 99]", "2026-11-10T12:00:00.000Z"],
+            )
+            .unwrap();
+        assert_eq!(n, 3);
+    }
+    for id in 1..=3 {
+        assert_eq!(
+            read_at(&s, AIKO, id).as_deref(),
+            Some("2026-11-10T12:00:00.000Z")
+        );
+    }
+}

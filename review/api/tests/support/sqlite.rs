@@ -800,21 +800,25 @@ impl ReviewStore for SqliteStore {
     }
 
     async fn mark_read(&self, user: &str, ids: &[i64], now: &str) -> Result<(), StoreError> {
-        let mut conn = self.conn.borrow_mut();
-        let tx = conn.transaction().map_err(backend)?;
-        for id in ids {
-            tx.execute(UPSERT_READ, params![user, id, now])
-                .map_err(backend)?;
-        }
-        tx.commit().map_err(backend)
+        let ids = serde_json::to_string(ids).map_err(|e| StoreError::Backend(e.to_string()))?;
+        self.conn
+            .borrow()
+            .execute(UPSERT_READS, params![user, ids, now])
+            .map_err(backend)?;
+        Ok(())
     }
 
     async fn replies(&self, viewer: &str, limit: u32) -> Result<(Vec<Reply>, u32), StoreError> {
         let conn = self.conn.borrow();
         let rows: Vec<ReplyRow> = query(&conn, SELECT_REPLIES, params![viewer, limit])?;
-        let count: Vec<NRow> = query(&conn, SELECT_UNREAD_COUNT, params![viewer])?;
-        let unread = count.first().map_or(0, |c| c.n as u32);
+        let unread = rows.first().map_or(0, |r| r.total_unread as u32);
         Ok((rows.into_iter().map(Reply::from).collect(), unread))
+    }
+
+    async fn unread_count(&self, viewer: &str) -> Result<u32, StoreError> {
+        let conn = self.conn.borrow();
+        let count: Vec<NRow> = query(&conn, SELECT_UNREAD_COUNT, params![viewer])?;
+        Ok(count.first().map_or(0, |c| c.n as u32))
     }
 
     async fn unread_threads(&self, viewer: &str) -> Result<Vec<i64>, StoreError> {

@@ -45,6 +45,6 @@ pub async fn read<S: ReviewStore>(
         .mark_read(&by.email, &ids, now)
         .await
         .map_err(unavailable));
-    let (_, unread) = tri!(store.replies(&by.email, 0).await.map_err(unavailable));
+    let unread = tri!(store.unread_count(&by.email).await.map_err(unavailable));
     ok(200, json!({ "unread": unread }))
 }

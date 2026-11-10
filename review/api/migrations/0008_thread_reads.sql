@@ -15,3 +15,7 @@ INSERT OR IGNORE INTO thread_reads (user, suggestion_id, read_at)
 
 INSERT OR IGNORE INTO thread_reads (user, suggestion_id, read_at)
   SELECT author, suggestion_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now') FROM comments;
+
+-- The replies query starts from the threads a person is in: what they wrote and what they commented on.
+CREATE INDEX suggestions_by_author ON suggestions (author);
+CREATE INDEX comments_by_author ON comments (author, suggestion_id);

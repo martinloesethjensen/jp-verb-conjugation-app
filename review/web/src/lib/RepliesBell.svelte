@@ -36,7 +36,7 @@
 	<div class="bell-panel">
 		<p class="heading">Replies</p>
 		{#if fresh.length}
-			<ReplyList replies={fresh} readings={{}} />
+			<ReplyList replies={fresh} readings={replies.readings} />
 			<button type="button" class="link" onclick={() => replies.readAll()}>Mark all read</button>
 		{:else}
 			<p class="quiet">Nothing new.</p>

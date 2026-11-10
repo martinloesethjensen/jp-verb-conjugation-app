@@ -851,11 +851,10 @@ impl ReviewStore for D1Store {
         if ids.is_empty() {
             return Ok(());
         }
-        let statements = ids
-            .iter()
-            .map(|id| self.statement(UPSERT_READ, &[text(user), number(*id), text(now)]))
-            .collect::<Result<Vec<_>, _>>()?;
-        self.db.batch(statements).await.map_err(backend)?;
+        // One statement however many ids: D1 counts each statement in a batch as a query.
+        let ids = serde_json::to_string(ids).map_err(|e| StoreError::Backend(e.to_string()))?;
+        let statement = self.statement(UPSERT_READS, &[text(user), text(&ids), text(now)])?;
+        self.db.batch(vec![statement]).await.map_err(backend)?;
         Ok(())
     }
 
@@ -863,9 +862,13 @@ impl ReviewStore for D1Store {
         let rows: Vec<ReplyRow> = self
             .rows(SELECT_REPLIES, &[text(viewer), number(i64::from(limit))])
             .await?;
-        let count: Vec<NRow> = self.rows(SELECT_UNREAD_COUNT, &[text(viewer)]).await?;
-        let unread = count.first().map_or(0, |c| c.n as u32);
+        let unread = rows.first().map_or(0, |r| r.total_unread as u32);
         Ok((rows.into_iter().map(Reply::from).collect(), unread))
+    }
+
+    async fn unread_count(&self, viewer: &str) -> Result<u32, StoreError> {
+        let count: Vec<NRow> = self.rows(SELECT_UNREAD_COUNT, &[text(viewer)]).await?;
+        Ok(count.first().map_or(0, |c| c.n as u32))
     }
 
     async fn unread_threads(&self, viewer: &str) -> Result<Vec<i64>, StoreError> {

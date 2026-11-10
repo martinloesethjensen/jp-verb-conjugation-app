@@ -126,3 +126,31 @@ test('a refresh that started before a read does not bring the old count back', a
 	expect(replies.unread).toBe(0);
 	expect(replies.list[0].unread).toBe(false);
 });
+
+test('a read that overtakes the first load still leaves the list filled in', async () => {
+	let answerRefresh: (r: Response) => void = () => {};
+	const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(async (path: string) =>
+			path === '/api/replies' ? new Promise<Response>((r) => (answerRefresh = r)) : json({ unread: 1 })
+		)
+	);
+	const refreshing = replies.refresh();
+	replies.read(1);
+	await vi.waitFor(() => expect(replies.unread).toBe(1));
+	answerRefresh(json({ unread: 2, replies: [reply({ suggestion_id: 1 }), reply({ suggestion_id: 2 })] }));
+	await refreshing;
+	expect(replies.loaded).toBe(true);
+	expect(replies.unread).toBe(1);
+	expect(replies.list.map((r) => [r.suggestion_id, r.unread])).toEqual([[1, false], [2, true]]);
+});
+
+test('the bell panel shows furigana on item titles', () => {
+	replies.readings = { 猫: 'ねこ' };
+	replies.unread = 1;
+	replies.list = [reply({ item_title: '猫' })];
+	const { body } = render(RepliesBell);
+	expect(body).toContain('<rt>ねこ</rt>');
+	replies.readings = {};
+});
