@@ -1,6 +1,9 @@
 // Rules about a queue's items, shared by Home and the queue page.
 import type { QueueItem } from './api.ts';
 
+/** A queue item's identity within its queue. */
+export const keyOf = (item: QueueItem) => `${item.dataset}/${item.kind}/${item.item_id}`;
+
 /** Done for this reviewer: approved, suggested, skipped, or no longer in the data. */
 const isDone = (item: QueueItem) => item.mine !== null || item.gone;
 

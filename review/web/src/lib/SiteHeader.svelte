@@ -87,6 +87,7 @@
 		align-items: center;
 		gap: 0.75rem;
 		min-width: 0;
+		min-height: 44px;
 		text-decoration: none;
 	}
 

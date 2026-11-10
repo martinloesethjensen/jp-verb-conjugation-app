@@ -1,8 +1,10 @@
 <script lang="ts">
 	// The review actions for one target (an entry or one of its parts), with the seals of everyone who
 	// approved it and the suggestions made on it.
+	import { MediaQuery } from 'svelte/reactivity';
 	import { isStale, problem, type Field } from './api.ts';
 	import ErrorLine from './ErrorLine.svelte';
+	import Sheet from './Sheet.svelte';
 	import Seal from './Seal.svelte';
 	import SuggestForm from './SuggestForm.svelte';
 	import SuggestionCard from './SuggestionCard.svelte';
@@ -20,7 +22,10 @@
 		forms,
 		extra = {},
 		onaction,
-		onskip
+		onskip,
+		onnext,
+		docked = false,
+		phone
 	}: {
 		review: EntryReview;
 		kind: string;
@@ -35,6 +40,12 @@
 		onaction?: () => void;
 		/** Offers "Not sure, skip" (queues only). */
 		onskip?: () => Promise<void>;
+		/** In a queue: approving stays on the item and offers "Next item", which calls this. */
+		onnext?: () => void;
+		/** In a queue: below 960px the actions sit in a fixed bottom bar and the forms open in sheets. */
+		docked?: boolean;
+		/** Tests only: whether the screen counts as a phone (defaults to the media query). */
+		phone?: boolean;
 	} = $props();
 
 	const uid = $props.id();
@@ -49,6 +60,19 @@
 	const approved = $derived(review.approvedByMe(kind, id));
 	const loaded = $derived(review.hashOf(kind, id) !== undefined);
 	const names = $derived(fields.map((f) => f.name));
+
+	const media = new MediaQuery('max-width: 959px');
+	const inBar = $derived(docked && (phone ?? media.current));
+	let moreOpen = $state(false);
+	// Leaving phone width closes the More sheet; an open form carries over to the inline one.
+	$effect(() => {
+		if (!inBar) moreOpen = false;
+	});
+
+	function fromMore(next: 'delete' | 'note') {
+		moreOpen = false;
+		open(next);
+	}
 
 	async function run(action: () => Promise<unknown>, after?: () => void) {
 		busy = true;
@@ -97,13 +121,43 @@
 		</div>
 	{/if}
 
-	{#if loaded}
+	{#if loaded && inBar}
+		<div class="action-bar">
+			{#if approved && onnext}
+				<button type="button" class="primary wide" onclick={onnext}>Next item <span aria-hidden="true">→</span></button>
+				<p class="bar-note">
+					You approved this.
+					<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
+				</p>
+			{:else}
+				{#if approved}
+					<button type="button" class="approved wide" disabled>Approved</button>
+				{:else}
+					<button type="button" class="primary wide" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? undefined : onaction)}
+						><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>Looks right</button
+					>
+				{/if}
+				<div class="bar-row">
+					{#if fields.length}
+						<button type="button" aria-haspopup="dialog" onclick={() => open('change')}
+							><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5l3 3-8 8H2.5v-3z" /></svg>Suggest a change</button
+						>
+					{/if}
+					<button type="button" aria-haspopup="dialog" onclick={() => (moreOpen = true)}>More</button>
+				</div>
+			{/if}
+		</div>
+	{:else if loaded}
 		<div class="actions">
-			{#if approved}
+			{#if approved && onnext}
+				<button type="button" class="primary" onclick={onnext}>Next item <span aria-hidden="true">→</span></button>
+				<span class="approved-note">You approved this.</span>
+				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
+			{:else if approved}
 				<button type="button" class="approved" disabled>Approved</button>
 				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id))}>Undo</button>
 			{:else}
-				<button type="button" class="primary" disabled={busy} onclick={() => run(() => review.approve(kind, id), onaction)}
+				<button type="button" class="primary" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? undefined : onaction)}
 					><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>Looks right</button
 				>
 			{/if}
@@ -125,20 +179,55 @@
 		</div>
 	{/if}
 
-	{#if mode === 'change'}
+	{#if inBar}
+		<Sheet open={moreOpen} title="More" onclose={() => (moreOpen = false)}>
+			<div class="sheet-rows">
+				{#if onskip}
+					<button type="button" disabled={busy} onclick={() => run(onskip, () => (moreOpen = false))}>Not sure, skip</button>
+				{/if}
+				<button type="button" onclick={() => fromMore('note')}>Leave a note</button>
+				<button type="button" onclick={() => fromMore('delete')}>Suggest removing it</button>
+				<button type="button" class="link" onclick={() => (moreOpen = false)}>Cancel</button>
+			</div>
+		</Sheet>
+		<Sheet open={mode === 'change'} title="Suggest a change" variant="full" onclose={() => (mode = null)}>
+			{#if mode === 'change'}{@render changeForm()}{/if}
+		</Sheet>
+		<Sheet
+			open={mode === 'delete' || mode === 'note'}
+			title={mode === 'delete' ? 'Suggest removing it' : 'Leave a note'}
+			onclose={() => (mode = null)}
+		>
+			{@render commentForm()}
+			<ErrorLine message={failure} {stale} />
+		</Sheet>
+	{:else if mode === 'change'}
+		{@render changeForm()}
+	{:else if mode === 'delete' || mode === 'note'}
+		{@render commentForm()}
+	{/if}
+
+	{#snippet changeForm()}
 		<SuggestForm
 			{fields}
 			current={value}
 			{readings}
 			{forms}
 			{extra}
-			onsubmit={async (edits, furigana) => {
-				await review.suggest(kind, id, 'change', { edits, furigana: Object.keys(furigana).length ? furigana : undefined });
+			askWhy
+			onsubmit={async (edits, furigana, why) => {
+				await review.suggest(kind, id, 'change', {
+					edits,
+					furigana: Object.keys(furigana).length ? furigana : undefined,
+					comment: why || undefined
+				});
 				done();
 			}}
 			oncancel={() => (mode = null)}
 		/>
-	{:else if mode === 'delete' || mode === 'note'}
+	{/snippet}
+
+	{#snippet commentForm()}
 		<form class="comment" onsubmit={sendComment}>
 			<label for="{uid}-comment">{mode === 'delete' ? 'Why? (optional)' : 'Your note'}</label>
 			<textarea id="{uid}-comment" rows="3" maxlength="2000" bind:value={comment}></textarea>
@@ -149,7 +238,7 @@
 				<button type="button" class="link" onclick={() => (mode = null)}>Cancel</button>
 			</div>
 		</form>
-	{/if}
+	{/snippet}
 	<ErrorLine message={failure} {stale} />
 
 	{#each suggestions as s (s.id)}
@@ -189,6 +278,62 @@
 		margin-top: 1.25rem;
 		padding-top: 1.25rem;
 		border-top: 1px solid var(--rule);
+	}
+
+	/* Phone queue: the actions in a bar fixed to the bottom of the screen. */
+	.action-bar {
+		position: fixed;
+		inset: auto 0 0 0;
+		z-index: 5;
+		display: grid;
+		gap: 0.5rem;
+		padding: 0.75rem 16px calc(0.75rem + env(safe-area-inset-bottom));
+		background: var(--card);
+		border-top: 1px solid var(--rule);
+		box-shadow: 0 -6px 18px rgb(30 38 51 / 0.06);
+	}
+
+	.action-bar button {
+		min-height: 48px;
+	}
+
+	.wide {
+		width: 100%;
+	}
+
+	.bar-row {
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: 1fr;
+		gap: 0.5rem;
+	}
+
+	.bar-row button {
+		padding: 0 0.75rem;
+		white-space: nowrap;
+	}
+
+	.bar-note {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		margin: 0;
+		color: var(--muted);
+	}
+
+	.sheet-rows {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.sheet-rows button {
+		width: 100%;
+		min-height: 48px;
+	}
+
+	.approved-note {
+		color: var(--muted);
 	}
 
 	.spacer {

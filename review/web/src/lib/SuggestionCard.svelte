@@ -2,6 +2,7 @@
 	// One suggestion: who made it, what it changes (as a red-pen correction), its state, and its thread.
 	import type { Snippet } from 'svelte';
 	import { problem, type Suggestion } from './api.ts';
+	import { shortDate } from './dates.ts';
 	import ErrorLine from './ErrorLine.svelte';
 	import PartView from './PartView.svelte';
 	import RedPen from './RedPen.svelte';
@@ -81,7 +82,7 @@
 		<span class="avatar" aria-hidden="true">{initial}</span>
 		<span class="who">{s.author_name} {heading}</span>
 		{#if when && !Number.isNaN(when.getTime())}<time class="when" datetime={when.toISOString()}
-				>{when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</time
+				>{shortDate(when)}</time
 			>{/if}
 		{#if adding}<span class="status new">New</span>{/if}
 		{#if status}<span class="status">{status}</span>{/if}
@@ -282,8 +283,9 @@
 
 	@media (max-width: 720px) {
 		.actions :global(button:not(.link)) {
-			flex: 1 1 0;
+			flex: 1 1 auto;
 			padding: 0 0.75rem;
+			white-space: nowrap;
 		}
 	}
 
