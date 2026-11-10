@@ -207,6 +207,23 @@ export type Reply = {
 	unread: boolean;
 };
 
+/** One person's preferences and onboarding progress (review/api `UserSettings`). */
+export type UserSettings = {
+	welcome_seen_at: string | null;
+	tour_seen_at: string | null;
+	tips_on: boolean;
+	tips_dismissed: string[];
+	shortcuts_on: boolean;
+};
+export type SettingsChange = {
+	tips_on?: boolean;
+	shortcuts_on?: boolean;
+	tour?: 'welcomed' | 'done' | 'reset';
+	dismiss_tip?: string;
+};
+export const getSettings = () => request<UserSettings>('/api/settings');
+export const changeSettings = (change: SettingsChange) => request<UserSettings>('/api/settings', change);
+
 export const getReplies = () => request<{ unread: number; replies: Reply[] }>('/api/replies');
 export const markRead = (ids: number[]) => request<{ unread: number }>('/api/replies/read', { ids });
 export const markAllRead = () => request<{ unread: number }>('/api/replies/read', { all: true });
