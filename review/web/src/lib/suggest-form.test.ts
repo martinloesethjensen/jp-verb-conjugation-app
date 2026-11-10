@@ -32,3 +32,19 @@ test('an add form (nothing to compare with) shows no Was or red pen', () => {
 	expect(body).not.toMatch(/<del[\s>]/);
 	expect(body).not.toMatch(sendDisabled);
 });
+
+test('a draft carries typed values, readings and the reason into a new form', () => {
+	const draft = { values: { en: 'I used to eat bread.' }, answers: {}, why: 'More natural.' };
+	const { body } = render(SuggestForm, { props: { ...base, current: { en: 'I ate bread.' }, askWhy: true, draft } });
+	expect(body).toMatch(/value="I used to eat bread\."/);
+	expect(body).toContain('Was: I ate bread.');
+	expect(body).toContain('More natural.');
+});
+
+test('Was shows Japanese with furigana', () => {
+	const jp = [{ name: 'jp', input: 'text', optional: false, choices: [] }] as Field[];
+	const { body } = render(SuggestForm, {
+		props: { ...base, fields: jp, readings: { 食: 'た' }, current: { jp: '食べた。' }, initial: { jp: '食べていた。' } }
+	});
+	expect(body).toMatch(/Was: <span lang=\"ja\">[\s\S]*?<ruby[^>]*>食<rt>た<\/rt><\/ruby>/);
+});

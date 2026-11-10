@@ -32,13 +32,19 @@
 		onclose();
 	}
 
+	/** The browser closed the dialog itself (Android back, a repeated Esc): tell the parent, or its
+	 *  `open` stays true and the next attempt to open the sheet does nothing. */
+	function onDialogClose() {
+		if (open) onclose();
+	}
+
 	/** A click on the dialog itself (not its content) is a click on the backdrop. */
 	function onclick(event: MouseEvent) {
 		if (event.target === dialog) onclose();
 	}
 </script>
 
-<dialog bind:this={dialog} class={['sheet', variant]} aria-labelledby="{uid}-title" {oncancel} {onclick}>
+<dialog bind:this={dialog} class={['sheet', variant]} aria-labelledby="{uid}-title" {oncancel} {onclick} onclose={onDialogClose}>
 	<div class="inner">
 		{#if variant === 'full'}
 			<header class="top">

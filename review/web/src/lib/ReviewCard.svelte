@@ -20,6 +20,7 @@
 		onaction,
 		onskip,
 		onnext,
+		onchange,
 		docked = false
 	}: {
 		item: QueueItem;
@@ -33,6 +34,8 @@
 		onskip: () => Promise<void>;
 		/** Approving stays on the item; "Next item" calls this. */
 		onnext?: () => void;
+		/** After approving or undoing in place (the queue refreshes its list). */
+		onchange?: () => void;
 		/** In a queue: on a phone the actions sit in a fixed bar at the bottom. */
 		docked?: boolean;
 	} = $props();
@@ -76,6 +79,7 @@
 			{onaction}
 			{onskip}
 			{onnext}
+			{onchange}
 			{docked}
 		/>
 	{:else}
