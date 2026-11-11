@@ -92,3 +92,28 @@ describe('Tip', () => {
 		);
 	});
 });
+
+test('changes go one at a time, so a failed one never undoes the next', async () => {
+	let fail: () => void = () => {};
+	const calls: unknown[] = [];
+	vi.stubGlobal(
+		'fetch',
+		vi.fn(async (_path: string, init: RequestInit) => {
+			calls.push(JSON.parse(String(init.body)));
+			if (calls.length === 1) {
+				return new Promise<Response>((_, reject) => (fail = () => reject(new Error('offline'))));
+			}
+			return json(200, { ...DEFAULTS, tips_on: false });
+		})
+	);
+	settings.loaded = true;
+	const a = settings.change({ shortcuts_on: false }).catch(() => 'failed');
+	const b = settings.change({ tips_on: false });
+	await vi.waitFor(() => expect(calls.length).toBe(1));
+	fail();
+	expect(await a).toBe('failed');
+	await b;
+	expect(calls).toEqual([{ shortcuts_on: false }, { tips_on: false }]);
+	expect(settings.value.shortcuts_on).toBe(true);
+	expect(settings.value.tips_on).toBe(false);
+});

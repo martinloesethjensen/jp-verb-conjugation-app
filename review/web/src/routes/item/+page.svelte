@@ -163,7 +163,6 @@
 	<p class="back"><a href="/browse/{dataset}">Back to {DATASET_TITLES[dataset].toLowerCase()}</a></p>
 	<p class="notice">This item is no longer in the loaded data.</p>
 	{#if reviewFailure}<p class="notice" role="alert">Reviews couldn't be loaded: {reviewFailure}</p>{/if}
-	{#if review?.suggestions.length}<Tip id="thread" />{/if}
 	{@render leftOver()}
 {:else if !response || !dataset}
 	<p class="quiet">Loading…</p>
@@ -174,6 +173,7 @@
 		<LevelPill level={item.jlpt} />
 	</header>
 	{#if reviewFailure}<p class="notice" role="alert">Reviews couldn't be loaded: {reviewFailure}</p>{/if}
+	{#if review?.suggestions.length}<Tip id="thread" />{/if}
 
 	{#if dataset === 'verbs'}
 		<section class="card fields">

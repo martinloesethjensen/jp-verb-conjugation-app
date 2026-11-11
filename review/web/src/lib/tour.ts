@@ -2,6 +2,10 @@
 // Phones get their own welcome cards instead (PhoneWelcome).
 import type { UserSettings } from './api.ts';
 
+/** Narrower than this, a person gets the phone cards instead of the welcome and the highlighted tour. The
+ * queue page puts its item list in a sheet below the same width, so the tour's targets aren't there. */
+export const ONBOARDING_PHONE = 'max-width: 959px';
+
 export type TourTarget = 'list' | 'item' | 'approve' | 'suggest' | 'bell';
 export type TourStep = { target: TourTarget; title: string; text: string };
 

@@ -153,7 +153,7 @@ tips_dismissed, shortcuts_on)`.
 `user_settings` (migration 0009) holds `welcome_seen_at`, `tour_seen_at`, `tips_on`, `tips_dismissed` and
 `shortcuts_on`. `welcome_seen_at` is new: on a computer the welcome shows on Home, and the highlighted tour runs
 the first time the person opens a queue (they may have none yet); the tour counts as seen only when it finishes or
-is skipped. Phones get the four cards instead. Tips exist for the inbox and threads; the courses tip comes with
+is skipped. Below 960 px (phones and narrow tablets, where the queue's list moves into a sheet) people get the four cards instead. Tips exist for the inbox and threads; the courses tip comes with
 step 7. Shortcuts work on the queue page only. Settings replaces Account; `/account` redirects.
 
 ## Courses

@@ -31,8 +31,17 @@ class Settings {
 		}
 	}
 
-	/** Shows the change at once and saves it; on failure puts the old value back and rethrows. */
-	async change(change: SettingsChange) {
+	#queue: Promise<unknown> = Promise.resolve();
+
+	/** Shows the change at once and saves it; on failure puts the old value back and rethrows. Changes go one at
+	 * a time, so a failed one never puts back a value that a later one has already saved. */
+	change(change: SettingsChange): Promise<void> {
+		const run = this.#queue.then(() => this.#apply(change));
+		this.#queue = run.catch(() => {});
+		return run;
+	}
+
+	async #apply(change: SettingsChange) {
 		const before = this.value;
 		this.value = {
 			...before,

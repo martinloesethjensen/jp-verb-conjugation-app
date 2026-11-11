@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { render } from 'svelte/server';
-import { isTyping, shortcutFor, SHORTCUT_HELP } from './shortcuts.ts';
+import { isTyping, sendButton, shortcutFor, SHORTCUT_HELP } from './shortcuts.ts';
 import KeyboardHelp from './KeyboardHelp.svelte';
 import ReviewBar from './ReviewBar.svelte';
 import type { EntryReview } from './review.svelte.ts';
@@ -82,5 +82,16 @@ describe('where the keys land', () => {
 		expect(body).toContain('Looks right');
 		expect(body).toMatch(/<kbd[^>]*>A<\/kbd>/);
 		expect(SHORTCUT_HELP.length).toBeGreaterThanOrEqual(11);
+	});
+});
+
+describe('sending with the keyboard', () => {
+	test('Cmd/Ctrl+Enter presses the form’s Send button only when it is enabled', () => {
+		const form = (button: { disabled: boolean } | null) => ({ querySelector: () => button });
+		const enabled = { disabled: false };
+		expect(sendButton(form(enabled))).toBe(enabled);
+		expect(sendButton(form({ disabled: true }))).toBeNull();
+		expect(sendButton(form(null))).toBeNull();
+		expect(sendButton(null)).toBeNull();
 	});
 });

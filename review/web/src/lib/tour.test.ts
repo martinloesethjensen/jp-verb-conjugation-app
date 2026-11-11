@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import type { UserSettings } from './api.ts';
-import { availableSteps, PHONE_CARDS, shouldPhoneWelcome, shouldTour, shouldWelcome, TOUR_STEPS } from './tour.ts';
+import { availableSteps, ONBOARDING_PHONE, PHONE_CARDS, shouldPhoneWelcome, shouldTour, shouldWelcome, TOUR_STEPS } from './tour.ts';
 import PhoneWelcome from './PhoneWelcome.svelte';
 import TourGuide from './TourGuide.svelte';
 import WelcomeDialog from './WelcomeDialog.svelte';
@@ -75,5 +76,19 @@ describe('the phone welcome', () => {
 		expect(last).toContain('Start reviewing');
 		expect(last).toContain(PHONE_CARDS[3].title);
 		expect(PHONE_CARDS[3].text).toContain('Another teacher or Martin accepts your change');
+	});
+});
+
+describe('one idea of a phone', () => {
+	const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
+	test('Home and the queue decide onboarding with the same width', () => {
+		expect(ONBOARDING_PHONE).toBe('max-width: 959px');
+		expect(read('../routes/+page.svelte')).toContain('new MediaQuery(ONBOARDING_PHONE)');
+		expect(read('../routes/queue/+page.svelte')).toContain('new MediaQuery(ONBOARDING_PHONE)');
+	});
+
+	test('the thread tip sits on the normal item page, not only on removed items', () => {
+		const page = read('../routes/item/+page.svelte');
+		expect(page.slice(page.indexOf('class="item-header"'))).toContain('<Tip id="thread"');
 	});
 });

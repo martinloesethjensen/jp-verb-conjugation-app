@@ -14,9 +14,9 @@
 	import { loadReference } from '#lib/reference.ts';
 	import { EntryReview } from '#lib/review.svelte.ts';
 	import { settings } from '#lib/settings.svelte.ts';
-	import { isTyping, shortcutFor } from '#lib/shortcuts.ts';
+	import { isTyping, sendButton, shortcutFor } from '#lib/shortcuts.ts';
 	import TourGuide from '#lib/TourGuide.svelte';
-	import { availableSteps, shouldTour, type TourStep } from '#lib/tour.ts';
+	import { availableSteps, ONBOARDING_PHONE, shouldTour, type TourStep } from '#lib/tour.ts';
 
 	type Json = { [key: string]: any };
 	type Loaded = { entry: Json | null; review: EntryReview };
@@ -32,7 +32,7 @@
 	let itemsOpen = $state(false);
 
 	// Below 960px the list moves into the Items sheet; crossing back closes it.
-	const phone = new MediaQuery('max-width: 959px');
+	const phone = new MediaQuery(ONBOARDING_PHONE);
 	$effect(() => {
 		if (!phone.current) itemsOpen = false;
 	});
@@ -154,10 +154,10 @@
 			return;
 		}
 		if (action === 'send') {
-			const form = (event.target as HTMLElement | null)?.closest?.('form');
-			if (form) {
+			const button = sendButton((event.target as HTMLElement | null)?.closest?.('form') ?? null);
+			if (button) {
 				event.preventDefault();
-				form.requestSubmit();
+				button.click();
 			}
 			return;
 		}

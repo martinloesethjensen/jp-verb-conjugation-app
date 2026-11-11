@@ -62,3 +62,13 @@ export const SHORTCUT_HELP: [keys: string[], what: string][] = [
 	[['⌘', 'Enter'], 'Send (Ctrl+Enter on Windows and Linux)'],
 	[['?'], 'Show these shortcuts']
 ];
+
+/** The Send button Cmd/Ctrl+Enter presses: the form's submit button, only while it's enabled, so the key
+ * never sends something the button itself wouldn't (an empty note, a second copy while one is in flight). */
+export function sendButton(form: { querySelector: (selector: string) => unknown } | null): HTMLElement | null {
+	const button = form?.querySelector('button[type="submit"], button:not([type])') as
+		| (HTMLElement & { disabled?: boolean })
+		| null
+		| undefined;
+	return button && !button.disabled ? button : null;
+}
