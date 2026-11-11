@@ -7,6 +7,7 @@ import VerbKit
 struct NumberStepper: View {
     let counter: Counter
     @Binding var selection: CounterNumber
+    @Environment(\.palette) private var palette
 
     private struct Step: Identifiable {
         let title: String
@@ -24,7 +25,7 @@ struct NumberStepper: View {
                 ForEach(Self.down) { button($0) }
                 Text(selection.isExtended ? selection.key : "11")
                     .font(.title3.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(selection.isExtended ? .primary : .tertiary)
+                    .foregroundStyle(selection.isExtended ? palette.ink : palette.muted)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(selection.isExtended ? "Number \(selection.key)" : "Numbers above ten")
@@ -42,7 +43,7 @@ struct NumberStepper: View {
                 .font(.callout.weight(.semibold).monospacedDigit())
                 .frame(minWidth: 44, minHeight: 44)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.paperSecondaryInline)
         .disabled(target == nil)
         .accessibilityLabel(step.label)
     }

@@ -1,7 +1,7 @@
 import SwiftUI
 import VerbKit
 
-/// What a counter counts: one chip per thing, primary first. Outlined chips are acceptable but
+/// What a counter counts: one chip per thing, primary first. Dashed chips are acceptable but
 /// not the standard counter, dimmed chips are casual fallbacks. Tapping a chip lists every
 /// counter that lists the word.
 struct ThingChips: View {
@@ -9,6 +9,7 @@ struct ThingChips: View {
     @Environment(CountersStore.self) private var store
     @Environment(\.openRoute) private var openRoute
     @State private var shown: CountedThing?
+    @Environment(\.palette) private var palette
 
     private var things: [CountedThing] { counter.thingsByFit }
 
@@ -35,7 +36,7 @@ struct ThingChips: View {
             if let legend {
                 Text(legend)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
     }
@@ -44,8 +45,8 @@ struct ThingChips: View {
         let hasAcceptable = things.contains { $0.fit == .acceptable }
         let hasCasual = things.contains { $0.fit == .casual }
         switch (hasAcceptable, hasCasual) {
-        case (true, true): return "Outlined: heard, but another counter is standard. Dimmed: a casual fallback."
-        case (true, false): return "Outlined: heard, but another counter is standard."
+        case (true, true): return "Dashed: heard, but another counter is standard. Dimmed: a casual fallback."
+        case (true, false): return "Dashed: heard, but another counter is standard."
         case (false, true): return "Dimmed: a casual fallback."
         case (false, false): return nil
         }
@@ -54,31 +55,30 @@ struct ThingChips: View {
     private func chip(_ thing: CountedThing) -> some View {
         HStack(spacing: 8) {
             Image(systemName: thing.symbol ?? counter.symbol)
-                .foregroundStyle(.tint)
+                .foregroundStyle(palette.ink)
                 .accessibilityHidden(true)
             VStack(spacing: 0) {
                 if thing.kana != thing.word {
                     Text(thing.kana)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.muted)
                 }
                 Text(thing.word)
                     .font(.body)
+                    .foregroundStyle(palette.ink)
             }
             Text(thing.meaning)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background {
             switch thing.fit {
-            case .primary:
-                Capsule().fill(.clear).glassEffect(in: Capsule())
+            case .primary, .casual:
+                Capsule().fill(palette.card).overlay(Capsule().strokeBorder(palette.rule, lineWidth: 1))
             case .acceptable:
-                Capsule().strokeBorder(.secondary, lineWidth: 1)
-            case .casual:
-                Capsule().fill(.clear).glassEffect(in: Capsule())
+                Capsule().strokeBorder(palette.muted, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
             }
         }
         .opacity(thing.fit == .casual ? 0.6 : 1)
@@ -109,9 +109,9 @@ struct ThingChips: View {
                     openRoute(.counter(other.id))
                 } label: {
                     HStack {
-                        Text(other.counter).font(.title3.weight(.bold))
+                        JapaneseText(other.counter).font(.headword(.title3))
                         Text(other.reading)
-                        Text(other.meaning).font(.caption).foregroundStyle(.secondary)
+                        Text(other.meaning).font(.caption).foregroundStyle(palette.muted)
                     }
                     .padding(.vertical, 4)
                 }

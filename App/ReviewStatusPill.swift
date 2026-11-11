@@ -4,7 +4,7 @@ import VerbKit
 /// Whether the owner switched review markers on in Settings (on by default).
 let showReviewStatusKey = "showReviewStatus"
 
-/// A small capsule on a counter, grammar or verb page: "Not yet reviewed" (outlined, amber) or "Reviewed" (a check).
+/// A small capsule on a counter, grammar or verb page: "Not yet reviewed" (outlined in `muted`, with a question glyph; red is kept for mistakes) or "Reviewed" (a check).
 /// Tapping opens a sheet that says what the data pipeline checks by itself and what nobody has checked yet.
 struct ReviewStatusPill: View {
     /// What Report a problem names, "Counter: 本 (hon)".
@@ -17,6 +17,7 @@ struct ReviewStatusPill: View {
     var note: String? = nil
     @AppStorage(showReviewStatusKey, store: .appGroup) private var showReviewStatus = true
     @State private var showingSheet = false
+    @Environment(\.palette) private var palette
 
     var body: some View {
         if showReviewStatus {
@@ -26,9 +27,9 @@ struct ReviewStatusPill: View {
                 Label(review == nil ? "Not yet reviewed" : "Reviewed",
                       systemImage: review == nil ? "questionmark.circle" : "checkmark.circle.fill")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(review == nil ? Color.orange : Color.green)
+                    .foregroundStyle(review == nil ? palette.muted : palette.good)
                     .padding(.horizontal, 8).padding(.vertical, 2)
-                    .overlay(Capsule().strokeBorder(review == nil ? Color.orange : Color.green, lineWidth: 1))
+                    .overlay(Capsule().strokeBorder(review == nil ? palette.muted : palette.good, lineWidth: 1))
                     .frame(minHeight: 44)
                     .contentShape(Capsule())
             }

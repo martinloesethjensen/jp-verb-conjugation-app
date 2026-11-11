@@ -10,6 +10,8 @@ struct CounterDetailView: View {
     @Environment(CountersStore.self) private var store
     @Environment(\.furiganaDictionary) private var furigana
     @Environment(\.startCounterQuiz) private var startQuiz
+    @Environment(\.palette) private var palette
+    @AppStorage(FuriganaSetting.defaultsKey, store: .appGroup) private var showFurigana = true
     @AppStorage("quizQuestionCount", store: .appGroup) private var quizQuestionCount = 10
     @State private var number: CounterNumber
     @State private var segment: Segment = .examples
@@ -78,17 +80,22 @@ struct CounterDetailView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(counter.counter)
-                    .font(.largeTitle.weight(.bold))
-                Text(counter.reading)
-                    .font(.title2)
+                JapaneseText(counter.counter)
+                    .font(.headword(.largeTitle, scale: 1.4))
+                    .foregroundStyle(palette.ink)
+                // With furigana on, the reading is already over the counter.
+                if !showFurigana || counter.reading == counter.counter {
+                    Text(counter.reading)
+                        .font(.title2)
+                        .foregroundStyle(palette.ink)
+                }
                 SpeakButton(text: counter.reading)
             }
             HStack(spacing: 8) {
                 LevelBadge(level: counter.jlpt, emphasis: .header)
                 Text(counter.meaning)
                     .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.ink)
             }
             ReviewStatusPill(
                 item: "Counter: \(counter.counter) (\(counter.id))", review: counter.review,
@@ -101,7 +108,7 @@ struct CounterDetailView: View {
                             NavigationLink(value: CounterDestination.section(section)) {
                                 Text(section.title)
                             }
-                            .buttonStyle(.glass)
+                            .buttonStyle(.paperSecondaryInline)
                         }
                     }
                 }
@@ -119,7 +126,7 @@ struct CounterDetailView: View {
                     JapaneseText(pitfall.explanation).font(.subheadline)
                     ForEach(Array(pitfall.examples.enumerated()), id: \.offset) { _, example in
                         Divider()
-                        CounterExampleRow(example: example, dictionary: furigana)
+                        CounterExampleRow(example: example, dictionary: furigana, counter: counter)
                     }
                 }
             }
@@ -131,7 +138,7 @@ struct CounterDetailView: View {
                 Label {
                     JapaneseText(hint.heading).font(.subheadline.weight(.semibold))
                 } icon: {
-                    Image(systemName: "exclamationmark.triangle")
+                    Image(systemName: "exclamationmark.triangle").foregroundStyle(palette.mark)
                 }
                 JapaneseText(hint.firstSentence).font(.subheadline)
                 Button("More") { showAllPitfalls = true }
@@ -143,27 +150,41 @@ struct CounterDetailView: View {
     private func segmented(_ shown: Segment) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             if segments.count > 1 {
-                Picker("Show", selection: Binding(get: { shown }, set: { segment = $0 })) {
-                    ForEach(segments) { Text($0.rawValue).tag($0) }
+                HStack(spacing: 8) {
+                    ForEach(segments) { option in
+                        Button { segment = option } label: {
+                            FilterChip(option.rawValue, isOn: option == shown)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .pickerStyle(.segmented)
             }
             switch shown {
             case .examples:
-                card {
+                VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(counter.examples.enumerated()), id: \.offset) { index, example in
-                        if index > 0 { Divider() }
-                        CounterExampleRow(example: example, dictionary: furigana)
+                        if index > 0 { Rectangle().fill(palette.rule).frame(height: 1) }
+                        CounterExampleRow(example: example, dictionary: furigana, counter: counter)
                     }
                 }
+                .paperCard(ruled: true)
             case .things:
                 ThingChips(counter: counter)
             case .related:
                 ForEach(store.related(to: counter)) { related in
                     NavigationLink(value: CounterDestination.counter(related, focus: nil)) {
-                        Label("\(related.counter)  \(related.meaning)", systemImage: "arrow.right.circle")
+                        HStack(spacing: 10) {
+                            JapaneseText(related.counter).font(.headword(.title3))
+                            Text(related.meaning).font(.subheadline).foregroundStyle(palette.muted)
+                            Spacer(minLength: 0)
+                            RowChevron()
+                        }
+                        .foregroundStyle(palette.ink)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.plain)
+                    .paperCard()
                 }
             }
         }
@@ -176,7 +197,7 @@ struct CounterDetailView: View {
         } label: {
             Label("Practise this counter", systemImage: "graduationcap")
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.paper)
     }
 }
 
@@ -185,6 +206,8 @@ struct CounterDetailView: View {
 struct CounterExampleRow: View {
     let example: CounterExample
     let dictionary: FuriganaDictionary?
+    /// Underlines the counted number (三本) when given.
+    var counter: Counter?
 
     /// An example with its own readings is spoken from its kana, so the voice cannot read 一日 the
     /// wrong way. Others are spoken as written.
@@ -194,7 +217,10 @@ struct CounterExampleRow: View {
     }
 
     var body: some View {
-        ExampleRow(example: GrammarExample(jp: example.jp, en: example.en), speech: speech)
+        ExampleRow(
+            example: GrammarExample(jp: example.jp, en: example.en), speech: speech,
+            highlight: counter.flatMap { CounterHighlight.range(in: example.jp, counter: $0) }
+        )
             .environment(\.furiganaDictionary, dictionary.map { example.furigana(over: $0) })
     }
 }
