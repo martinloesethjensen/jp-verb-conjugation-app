@@ -102,6 +102,17 @@ owner sets access roles on the Reviewers page (`POST /api/admin/users/access`, t
 owner's own role never changes there). Deciding one's own suggestion is refused for everyone, the owner
 included.
 
+**As built (step 3b, 2026-11-11):** `users.role` gained `native` (migration 0010), set on the Reviewers page
+as "also accept Japanese fixes" through the same `POST /api/admin/users/access`. `Need::Teacher` became
+`Need::Decider` (teachers, natives and the owner reach `/api/inbox` and `/api/decide`), and `/api/decide`
+checks what a native may decide: another person's `change` whose every edited field is in
+`review/api/src/japanese.rs`'s list (kept equal to the web's `JAPANESE_FIELDS` by a test), with edits only to
+those fields. "Edited" means different from the item as loaded now, leaving out `particle_blanks` (dropped by
+a `jp` edit, marked again at export), so a stale change whose item moved in another field goes to a teacher.
+Declining follows the same rule. The inbox returns `japanese_only` per suggestion and the page shows Accept,
+Edit then accept (Japanese fields only) and Decline where it is true, and "A teacher or Martin decides this
+one." elsewhere.
+
 ## Reply alerts
 
 - **Who is told:** the author of a suggestion or note; anyone who commented in its thread; the author
