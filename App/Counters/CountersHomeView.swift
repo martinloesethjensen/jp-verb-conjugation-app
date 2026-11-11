@@ -168,7 +168,11 @@ struct CountersHomeView: View {
                 ReviewSummaryLine(noun: "counters", summary: ReviewSummary(counters(in: settings)))
             }
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #else
+        .listStyle(.inset)
+        #endif
         .scrollContentBackground(.hidden)
         .overlay {
             if sections.isEmpty {
