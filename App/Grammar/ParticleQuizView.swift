@@ -6,6 +6,7 @@ import WidgetKit
 /// from the blanks the data marks (`particle_blanks`). No timer. After each answer the whole
 /// sentence shows with the right particle named, and a link to the lesson or verb it comes from.
 struct ParticleQuizView: View {
+    @Environment(\.palette) private var palette
     @Environment(\.openRoute) private var openRoute
     @State private var model: ParticleQuizModel
     @State private var confirmingQuit = false
@@ -70,7 +71,7 @@ struct ParticleQuizView: View {
                     .accessibilityLabel("\(question.before), blank, \(question.after)")
                 Text(question.translation)
                     .italic()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
                     .multilineTextAlignment(.center)
             }
         }
@@ -110,7 +111,7 @@ struct ParticleQuizView: View {
             Label("Open \(question.sourceTitle)", systemImage: "book")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.paperSecondaryInline)
         .controlSize(.large)
         .accessibilityHint("Ends the quiz and opens the page")
     }
@@ -131,7 +132,7 @@ struct ParticleQuizView: View {
                         JapaneseText(question.sentence).font(.headline)
                         Text("\(question.particle) · \(question.translation)")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(palette.muted)
                     }
                     .accessibilityElement(children: .combine)
                 }

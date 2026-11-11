@@ -97,6 +97,8 @@ Run `make` for the full list. Common ones:
 | `SVGPathData.parse(_:)`, `SVGPoint` | SVG `d` strings to path elements (arcs as cubics), Foundation-only |
 | `StampShape`, `StampStroke` | The twelve results/icon stamps as path data in the seal's 120-unit box |
 | `TitleMotif`, `MotifStroke`, `MotifColor` | The twelve still title motifs as path data in a 64×40 box; colours per theme half live in App |
+| `CounterHome.startHere`, `CounterHighlight.range(in:counter:)` | The Counters home's "Start here" tiles; where a counted number (三本, 3本, さんぼん) sits in an example |
+| `WordBankTagCounts.top(_:limit:)` | The Word Bank list's tag chips: the most used tags with counts |
 | `AppIconMatching`, `IconChange` | "App icon matches theme": alternate icon names (`AppIcon-<theme>`) and when a tap changes the icon (never the seasonal override) |
 | `FormHighlight.range(of:for:in:)` | Where a kana form sits in an example sentence, spelled with the verb's kanji or in kana |
 | `TextUnit.emphasizing(_:characters:)` | Marks a character range of furigana units emphasised, splitting plain units and keeping ruby whole |
@@ -170,7 +172,9 @@ Run `make` for the full list. Common ones:
 | `QuizPromptCard`, `QuizFeedbackCard`, `QuizMissedCard` | Question, feedback and missed-question card surfaces |
 | `quizAdvanceBar`, `quizQuitDialog` | Pinned Next/See Results button and the quit confirmation |
 | `QuizVerbText` | A verb form in the verb quiz, written in the picked `QuizScript` |
-| `QuizScoreCard`, `quizResultsActions(practise:onPractise:onDone:)` | The results score in a red hand-drawn ring on ruled paper, and the pinned Practise/Done buttons |
+| `QuizScoreCard`, `quizResultsActions(practise:onPractise:onDone:)` | The results score in the theme half's stamp on ruled paper, and the pinned Practise/Done buttons |
+| `soundChangeMark(_:)` | A counter reading whose sound changes: bold with a 2 pt ink underline (never orange) |
+| `PaperEmptyState(_:message:glyph:actions:)` | An empty screen on a ruled card with a faint 空 (or 無 for no results); use instead of `ContentUnavailableView` |
 | `QuizResultsSummary` | Counter and connection quiz results, built on `QuizScoreCard`; the verb quiz keeps its own `QuizResultsView` |
 | `LevelScopeBar`, `HiddenMatchesRow`, `NoMatchInLevelsView` | "My levels / All levels" search behavior |
 | `accentPill(_:)` | Pastel Liquid Glass capsule; used by `TypeLabel` for filled pills — prefer `TypeLabel` |
@@ -220,6 +224,8 @@ formatter, App Group defaults helper, date formatter or widget theme.
   (it compiles `scripts/generate-icon.swift` with VerbKit's `StampShape`/`SVGPathData`). Don't hand-edit them; the font
   (SIL OFL) is a generation-time input and is never committed. iOS caches launch screens: uninstall the app to see a new one.
 
+- Use `PaperEmptyState`, not `ContentUnavailableView`; secondary text is `palette.muted`, not `.secondary`;
+  content buttons are `PaperButtonStyle`, not `.glass` (glass stays on bars, toolbars and quiz chrome).
 - The Word Bank editor is a `ScrollView` of `PaperFieldSection`s, not a `Form`; add fields as `PaperField`.
 - Adding a Swift file under `App/` is automatically part of the app target, but **not** the widget
   target. Widgets only see files named in `project.yml`.

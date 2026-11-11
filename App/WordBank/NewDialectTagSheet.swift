@@ -34,6 +34,7 @@ struct NewDialectTagSheet: View {
                         .textInputAutocapitalization(.words)
                         #endif
                 }
+                .paperRow()
                 Section {
                     Picker("Prefecture", selection: $prefecture) {
                         Text("None (region only)").tag(Prefecture?.none)
@@ -41,6 +42,7 @@ struct NewDialectTagSheet: View {
                             Section(region.name) {
                                 ForEach(region.prefectures, id: \.self) { Text($0.name).tag(Prefecture?.some($0)) }
                             }
+                            .paperRow()
                         }
                     }
                     if prefecture == nil {
@@ -53,7 +55,9 @@ struct NewDialectTagSheet: View {
                         Label(FolderNameSheet.message(error), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
                     }
                 }
+                .paperRow()
             }
+            .paperBackground()
             .navigationTitle("New Dialect Tag")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

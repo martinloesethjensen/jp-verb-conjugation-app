@@ -31,7 +31,7 @@ struct SoundPatternsView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Find the counter's first sound, then read across. Tap a number or a column.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(palette.muted)
                         tableView(table)
                         explanation(table)
                         exceptions(table)
@@ -81,7 +81,7 @@ struct SoundPatternsView: View {
                 Text(column.id.title).font(.subheadline.weight(.semibold))
                 Text(column.counters.map(\.counter).uniqued().joined(separator: " "))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .frame(minWidth: typeSize.isAccessibilitySize ? columnWidth : 0)
@@ -102,7 +102,7 @@ struct SoundPatternsView: View {
         } label: {
             Text(label(number))
                 .font(.headline)
-                .foregroundStyle(selected == number && selectedColumn == nil ? palette.button : .secondary)
+                .foregroundStyle(selected == number && selectedColumn == nil ? palette.button : palette.muted)
                 .frame(width: numberWidth, height: 44)
                 .contentShape(Rectangle())
         }
@@ -153,7 +153,7 @@ struct SoundPatternsView: View {
                             Text(counter.counter).font(.title3.weight(.semibold))
                                 .padding(.horizontal, 12).frame(minHeight: 44)
                         }
-                        .buttonStyle(.glass)
+                        .buttonStyle(.paperSecondaryInline)
                         .accessibilityLabel("\(counter.counter), \(counter.reading)")
                     }
                 }
@@ -161,7 +161,7 @@ struct SoundPatternsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .background(palette.card, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(palette.rule, lineWidth: 1))
         .accessibilityElement(children: .contain)
     }
 
@@ -175,7 +175,7 @@ struct SoundPatternsView: View {
             }
         }
         .font(.footnote)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(palette.muted)
     }
 }
 

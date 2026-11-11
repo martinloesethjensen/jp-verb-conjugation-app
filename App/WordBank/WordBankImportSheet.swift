@@ -4,6 +4,7 @@ import VerbKit
 /// Reads a `.wordbank` file, shows what importing it would do, and does it on Import.
 /// Nothing is saved until then, and a backup of the current bank is made first.
 struct WordBankImportSheet: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(WordBankStore.self) private var store
     @Environment(WordBankTransferHub.self) private var hub
@@ -35,6 +36,7 @@ struct WordBankImportSheet: View {
     var body: some View {
         NavigationStack {
             content
+                .paperBackground()
                 .navigationTitle("Import")
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
@@ -88,6 +90,7 @@ struct WordBankImportSheet: View {
                 }
                 .buttonStyle(.plain)
             }
+            .paperRow()
             if summary.changesAnything {
                 Section {
                     countRow("New entries", summary.newEntries, "plus.circle")
@@ -102,30 +105,34 @@ struct WordBankImportSheet: View {
                 } footer: {
                     Text("Nothing you have is overwritten or deleted. A backup is made first, so you can undo this in Settings › Word Bank › Restore backup.")
                 }
+                .paperRow()
                 if !summary.newFolders.isEmpty {
                     Section("New folders") {
                         ForEach(Array(summary.newFolders.prefix(8).enumerated()), id: \.offset) { _, path in
                             Label(path.joined(separator: " › "), systemImage: "folder")
                         }
                         if summary.newFolders.count > 8 {
-                            Text("and \(summary.newFolders.count - 8) more").foregroundStyle(.secondary)
+                            Text("and \(summary.newFolders.count - 8) more").foregroundStyle(palette.muted)
                         }
                     }
+                    .paperRow()
                 }
             } else {
                 Section {
                     Label("Everything in this file is already in your Word Bank.", systemImage: "checkmark.circle")
                 }
+                .paperRow()
             }
             if !summary.skipped.isEmpty {
                 Section("Skipped") {
                     ForEach(Array(summary.skipped.enumerated()), id: \.offset) { _, skipped in
                         VStack(alignment: .leading, spacing: 2) {
                             Text("\(skipped.section) #\(skipped.position)")
-                            Text(skipped.reason).font(.footnote).foregroundStyle(.secondary)
+                            Text(skipped.reason).font(.footnote).foregroundStyle(palette.muted)
                         }
                     }
                 }
+                .paperRow()
             }
         }
     }
@@ -136,7 +143,7 @@ struct WordBankImportSheet: View {
             HStack {
                 Label(title, systemImage: systemImage)
                 Spacer()
-                Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
+                Text("\(count)").foregroundStyle(palette.muted).monospacedDigit()
             }
             .accessibilityElement(children: .combine)
         }

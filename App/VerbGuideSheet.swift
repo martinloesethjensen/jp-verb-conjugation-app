@@ -3,6 +3,7 @@ import VerbKit
 
 /// What the list's colours mean, the three verb types and every て-form rule.
 struct VerbGuideSheet: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -11,6 +12,7 @@ struct VerbGuideSheet: View {
                 Section("Reading the list") {
                     Text("The pill shows a verb's type. The dot beside the name shows its て-form group, so verbs that make the same て-form share a colour. Ru-verbs and irregulars have no such group, so they have no dot.")
                 }
+                .paperRow()
                 Section("Verb types") {
                     typeRow(.ru, "Ru-verb (一段)", "Ends in -eru or -iru. Drop る and add the ending. Exceptions: "
                             + RuLookalike.all.map { "\($0.kana) (\($0.kanji))" }.joined(separator: ", ")
@@ -18,6 +20,7 @@ struct VerbGuideSheet: View {
                     typeRow(.u, "U-verb (五段)", "Ends in any -u sound. If it is not -eru/-iru, it is a u-verb.")
                     typeRow(.irregular, "Irregular", "Only する and くる, and compounds like べんきょうする.")
                 }
+                .paperRow()
                 Section("て-form rules") {
                     ruleRow(color: VerbType.ru.accentColor, from: "Ru-verb", to: "drop る + て", example: "たべる → たべて")
                     ruleRow(color: VerbType.irregular.accentColor, from: "する / くる", to: "して / きて", example: "べんきょうする → べんきょうして")
@@ -27,7 +30,9 @@ struct VerbGuideSheet: View {
                                     + (rule.exception.map { "\nException: \($0.dict) → \($0.te) (not ×\($0.dict.dropLast())\(rule.result))" } ?? ""))
                     }
                 }
+                .paperRow()
             }
+            .paperBackground()
             .navigationTitle("Guide")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -43,7 +48,7 @@ struct VerbGuideSheet: View {
     private func typeRow(_ type: VerbType, _ title: String, _ text: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             TypeLabel(type, emphasis: .header, title: title)
-            Text(text).font(.callout).foregroundStyle(.secondary)
+            Text(text).font(.callout).foregroundStyle(palette.muted)
         }
     }
 
@@ -52,7 +57,7 @@ struct VerbGuideSheet: View {
             Circle().fill(color).frame(width: 12, height: 12)
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(from) → \(to)").font(.body.weight(.semibold))
-                Text(example).font(.callout).foregroundStyle(.secondary)
+                Text(example).font(.callout).foregroundStyle(palette.muted)
             }
         }
     }

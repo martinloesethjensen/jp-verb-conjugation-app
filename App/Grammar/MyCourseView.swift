@@ -3,6 +3,7 @@ import VerbKit
 
 /// Settings › Grammar › My course: pick textbooks to start from, then edit the lessons.
 struct MyCourseView: View {
+    @Environment(\.palette) private var palette
     @Environment(VerbStore.self) private var verbStore
     @Environment(CourseStore.self) private var courseStore
     @State private var selectedBooks: Set<String> = []
@@ -25,6 +26,7 @@ struct MyCourseView: View {
                 startForm
             }
         }
+        .paperBackground()
         .navigationTitle("My course")
     }
 
@@ -45,6 +47,7 @@ struct MyCourseView: View {
             } footer: {
                 Text("Textbook lessons are matched by us and marked unreviewed until checked.")
             }
+            .paperRow()
             Section {
                 Button("Create course") {
                     let ids = textbooks.map(\.id).filter(selectedBooks.contains)
@@ -56,6 +59,7 @@ struct MyCourseView: View {
                 }
                 .disabled(points.isEmpty)
             }
+            .paperRow()
         }
     }
 
@@ -67,7 +71,7 @@ struct MyCourseView: View {
             ForEach(lessons) { lesson in
                 Section {
                     if lesson.grammarIDs.isEmpty {
-                        Text("No grammar yet").foregroundStyle(.secondary)
+                        Text("No grammar yet").foregroundStyle(palette.muted)
                     }
                     ForEach(lesson.grammarIDs, id: \.self) { id in
                         if let point = points.first(where: { $0.id == id }) {
@@ -88,10 +92,12 @@ struct MyCourseView: View {
                 } header: {
                     lessonHeader(lesson)
                 }
+                .paperRow()
             }
             Section {
                 Button("Reset course", role: .destructive) { confirmingReset = true }
             }
+            .paperRow()
         }
         .toolbar {
             #if os(iOS)
@@ -153,7 +159,7 @@ struct MyCourseView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(lesson.name)
                 if lesson.unreviewed {
-                    Text("unreviewed").font(.caption).foregroundStyle(.orange).textCase(nil)
+                    Text("unreviewed").font(.caption).foregroundStyle(palette.muted).textCase(nil)
                 }
             }
             Spacer()

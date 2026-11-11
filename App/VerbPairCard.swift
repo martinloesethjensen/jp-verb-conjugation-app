@@ -5,6 +5,7 @@ import VerbKit
 /// `ドアを開ける ↔ ドアが開く`, with the partner one tap away. Draws nothing when the verb has no
 /// pair or the partner is not in the loaded data.
 struct VerbPairCard: View {
+    @Environment(\.palette) private var palette
     let verb: Verb
     @Environment(VerbStore.self) private var verbStore
     @Environment(\.openRoute) private var openRoute
@@ -30,7 +31,7 @@ struct VerbPairCard: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("\(pair.transitivity.title) · \(pair.transitivity.particle)")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
                     .accessibilityLabel(pair.transitivity.accessibilityTitle)
                 Spacer()
                 if opens {
@@ -54,7 +55,7 @@ struct VerbPairCard: View {
                         .font(.body)
                     Text(pair.en)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())

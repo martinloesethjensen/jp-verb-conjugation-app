@@ -31,11 +31,14 @@ struct FolderPicker: View {
         NavigationStack {
             List {
                 pick(nil, name: "Top level", subtitle: "Unfiled", systemImage: "tray", depth: 0, enabled: true)
+                    .paperRow()
                 ForEach(rows) { row in
                     pick(row.folder.id, name: row.folder.name, subtitle: nil, systemImage: "folder", depth: row.depth,
                          enabled: !disabled.contains(row.folder.id))
                 }
+                .paperRow()
             }
+            .paperBackground()
             .navigationTitle(title)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -56,7 +59,7 @@ struct FolderPicker: View {
                 Label {
                     VStack(alignment: .leading) {
                         Text(name)
-                        if let subtitle { Text(subtitle).font(.caption).foregroundStyle(.secondary) }
+                        if let subtitle { Text(subtitle).font(.caption).foregroundStyle(palette.muted) }
                     }
                 } icon: {
                     Image(systemName: systemImage)
@@ -69,6 +72,6 @@ struct FolderPicker: View {
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
-        .foregroundStyle(enabled ? Color.primary : Color.secondary)
+        .foregroundStyle(enabled ? palette.ink : palette.muted)
     }
 }

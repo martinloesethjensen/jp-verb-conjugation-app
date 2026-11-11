@@ -48,6 +48,7 @@ struct DataSyncSection: View {
 }
 
 private struct DataFileRow: View {
+    @Environment(\.palette) private var palette
     let status: DataFileStatus
 
     private var versionText: String {
@@ -61,18 +62,18 @@ private struct DataFileRow: View {
                 Text(status.file.displayName)
                 Spacer()
                 Text(versionText)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
                     .monospacedDigit()
             }
             if let updated = status.lastUpdated {
                 Text("Updated \(updated.formatted(.relative(presentation: .named)))")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
             if let message = status.problemMessage {
                 Label(message, systemImage: "info.circle")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
         .accessibilityElement(children: .combine)

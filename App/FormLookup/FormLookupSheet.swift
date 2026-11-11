@@ -11,6 +11,7 @@ struct FormLookupRequest: Identifiable {
 /// which form, and how it is built. Opened from the Verbs search, the "Look up form" text
 /// action and the Verbs menu. A link out dismisses the sheet before it navigates.
 struct FormLookupSheet: View {
+    @Environment(\.palette) private var palette
     @Environment(FormLookupStore.self) private var store: FormLookupStore?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openRoute) private var openRoute
@@ -63,7 +64,7 @@ struct FormLookupSheet: View {
         if isBlank {
             Text("Paste a word from your reading, in kanji or kana, to see its dictionary form and how the ending is built.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
         } else if items.isEmpty {
             PaperEmptyState("No verb found", message: "The app doesn't recognise a verb in “\(text)”. It knows the verbs in its table and the endings its lessons teach.") {
                 if let url = TextLookupURL.jisho(text.trimmingCharacters(in: .whitespacesAndNewlines)) {
@@ -81,6 +82,7 @@ struct FormLookupSheet: View {
 /// One line for a verb found in the search text: 食べる · Causative-passive + Plain · past ·
 /// negative. Tapping it opens the full result.
 struct FormLookupRow: View {
+    @Environment(\.palette) private var palette
     let item: FormLookup.Item
 
     private var summary: String {
@@ -98,14 +100,14 @@ struct FormLookupRow: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: item.status == .notInApp ? "circle.dashed" : "text.magnifyingglass")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.surface)
                     .font(.headline)
                 Text(summary)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.forward")

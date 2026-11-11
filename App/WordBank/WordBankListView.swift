@@ -486,7 +486,7 @@ struct WordBankListView: View {
             HStack {
                 Label(title, systemImage: systemImage)
                 Spacer()
-                Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
+                Text("\(count)").foregroundStyle(palette.muted).monospacedDigit()
                 RowChevron()
             }
             .contentShape(Rectangle())

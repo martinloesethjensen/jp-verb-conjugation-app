@@ -9,6 +9,7 @@ import VerbKit
 /// derivation strip (#115). Links go through `openRoute`, so a presenter that is a sheet
 /// overrides it to dismiss first.
 struct VerbSpanCard: View {
+    @Environment(\.palette) private var palette
     let item: FormLookup.Item
     @State private var chosenID: String?
 
@@ -48,11 +49,11 @@ struct VerbSpanCard: View {
             case .ambiguous:
                 Label("\(item.readings.count) readings", systemImage: "questionmark.circle")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             case .notInApp:
                 Label("Not in the app yet", systemImage: "circle.dashed")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
         .accessibilityElement(children: .combine)
@@ -64,7 +65,7 @@ struct VerbSpanCard: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("This could be any of these. Choose one:")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
             ForEach(item.readings) { reading in
                 let selected = reading.id == chosen?.id
                 Button {
@@ -78,7 +79,7 @@ struct VerbSpanCard: View {
                                 .font(.subheadline.weight(selected ? .semibold : .regular))
                             Text(reading.verb.meaning)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(palette.muted)
                         }
                         Spacer(minLength: 0)
                     }
@@ -93,6 +94,7 @@ struct VerbSpanCard: View {
 
 /// The verb, its form and the chain of one reading, then its links.
 private struct ReadingDetail: View {
+    @Environment(\.palette) private var palette
     let reading: FormLookup.Reading
     @Environment(\.openRoute) private var openRoute
 
@@ -104,7 +106,7 @@ private struct ReadingDetail: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Form")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
                 Text(reading.label)
                     .font(.headline)
             }
@@ -122,7 +124,7 @@ private struct ReadingDetail: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(.paperSecondaryInline)
             .font(.subheadline)
             LessonLinks(ids: reading.lessonIDs)
         }
@@ -136,7 +138,7 @@ private struct ReadingDetail: View {
                     .font(.title3.weight(.bold))
                 Text(verb.meaning)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -152,20 +154,21 @@ private struct ReadingDetail: View {
 /// 食べさせられ + なかった as chips, each with its label. A part the tail rules built says
 /// "built by rule" in words and has a dashed outline, so the mark never relies on colour.
 private struct ChainView: View {
+    @Environment(\.palette) private var palette
     let parts: [FormLookup.Part]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("How it's built")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
                 .accessibilityAddTraits(.isHeader)
             WrappingFlowLayout(spacing: 6) {
                 ForEach(parts.indices, id: \.self) { index in
                     if index > 0 {
                         Text("+")
                             .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(palette.muted)
                             .padding(.top, 6)
                             .accessibilityHidden(true)
                     }
@@ -175,7 +178,7 @@ private struct ChainView: View {
             if parts.contains(where: \.isRuleBuilt) {
                 Text("Parts built by rule come from the app's ending rules, not from the verb's form table.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
     }
@@ -186,11 +189,11 @@ private struct ChainView: View {
                 .font(.body.weight(.semibold))
             Text(part.label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
             if part.isRuleBuilt {
                 Label("built by rule", systemImage: "gearshape")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
         .padding(.horizontal, 10)
@@ -198,9 +201,9 @@ private struct ChainView: View {
         .background {
             let shape = RoundedRectangle(cornerRadius: 10)
             if part.isRuleBuilt {
-                shape.strokeBorder(.secondary, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                shape.strokeBorder(palette.muted, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
             } else {
-                shape.fill(.secondary.opacity(0.12))
+                shape.fill(palette.muted.opacity(0.12))
             }
         }
         .accessibilityElement(children: .ignore)
@@ -213,6 +216,7 @@ private struct ChainView: View {
 /// A verb the app doesn't have: the guesses at its dictionary form, Jisho and the
 /// "Suggest a verb" form.
 private struct NotInAppSection: View {
+    @Environment(\.palette) private var palette
     let item: FormLookup.Item
 
     var body: some View {
@@ -223,7 +227,7 @@ private struct NotInAppSection: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Dictionary form, probably:")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.muted)
                     WrappingFlowLayout(spacing: 6) {
                         ForEach(item.guesses, id: \.self) { guess in
                             if let url = TextLookupURL.jisho(guess) {
@@ -233,7 +237,7 @@ private struct NotInAppSection: View {
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 4)
                                 }
-                                .buttonStyle(.glass)
+                                .buttonStyle(.paperSecondaryInline)
                                 .accessibilityLabel("\(guess), look up in Jisho")
                             }
                         }
@@ -241,21 +245,21 @@ private struct NotInAppSection: View {
                 }
                 Text("A guess from the spelling: check it in a dictionary.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
             if let url = TextLookupURL.jisho(item.surface) {
                 Link(destination: url) {
                     Label("Look up “\(item.surface)” in Jisho", systemImage: "book")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.paperSecondaryInline)
                 .font(.subheadline)
             }
             Link(destination: IssueReportURL.suggestVerb(kanji: item.guesses.first)) {
                 Label("Suggest this verb", systemImage: "plus.bubble")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(.paperSecondaryInline)
             .font(.subheadline)
         }
     }

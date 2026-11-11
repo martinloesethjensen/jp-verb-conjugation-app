@@ -185,7 +185,7 @@ struct VerbListView: View {
                             .font(.headline)
                             .frame(width: 24, height: 24)
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.paperSecondaryInline)
                     .buttonBorderShape(.circle)
                     .padding(.trailing, 20)
                     .padding(.bottom, 12)

@@ -30,19 +30,21 @@ struct GrammarPointPicker: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             JapaneseText(point.title)
-                            Text(point.summary).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            Text(point.summary).font(.caption).foregroundStyle(palette.muted).lineLimit(1)
                         }
                         Spacer()
                         if isExisting || isSelected {
-                            Image(systemName: "checkmark").foregroundStyle(isExisting ? Color.secondary : palette.button)
+                            Image(systemName: "checkmark").foregroundStyle(isExisting ? palette.muted : palette.button)
                         }
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(isExisting)
+                .paperRow()
             }
             .searchable(text: $query)
+            .paperBackground()
             .navigationTitle("Add grammar")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
