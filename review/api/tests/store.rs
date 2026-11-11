@@ -368,12 +368,83 @@ async fn migration_0007_keeps_every_user_and_allows_teacher() {
 }
 
 #[test]
-fn only_teachers_and_the_admin_can_decide() {
+fn teachers_natives_and_the_admin_decide_and_only_teachers_and_the_admin_decide_everything() {
     assert!(Role::Teacher.can_decide());
+    assert!(Role::Native.can_decide());
     assert!(Role::Admin.can_decide());
     assert!(!Role::Reviewer.can_decide());
+    assert!(Role::Teacher.decides_all());
+    assert!(Role::Admin.decides_all());
+    assert!(!Role::Native.decides_all());
+    assert!(!Role::Reviewer.decides_all());
     assert_eq!(Role::parse("teacher"), Some(Role::Teacher));
     assert_eq!(Role::Teacher.as_str(), "teacher");
+    assert_eq!(Role::parse("native"), Some(Role::Native));
+    assert_eq!(Role::Native.as_str(), "native");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn migration_0010_keeps_every_user_and_allows_native() {
+    let s = SqliteStore::with_migrations_before("0010");
+    s.conn
+        .borrow()
+        .execute_batch(
+            "INSERT INTO users (email, display_name, role, active, created_at, public_role) VALUES \
+             ('owner@example.com', 'Martin', 'admin', 1, 't1', 'owner'); \
+             INSERT INTO users (email, display_name, role, active, created_at, public_role, public_name) VALUES \
+             ('keiko@example.com', 'Keiko', 'teacher', 1, 't2', 'teacher', 'Keiko'); \
+             INSERT INTO users (email, display_name, role, active, created_at) VALUES \
+             ('ken@example.com', 'Ken', 'reviewer', 0, 't3');",
+        )
+        .unwrap();
+    assert!(s
+        .conn
+        .borrow()
+        .execute(
+            "UPDATE users SET role = 'native' WHERE email = 'ken@example.com'",
+            []
+        )
+        .is_err());
+    let before = s.users().await.unwrap();
+    s.apply_migrations_from("0010");
+    assert_eq!(s.users().await.unwrap(), before);
+    s.conn
+        .borrow()
+        .execute(
+            "UPDATE users SET role = 'native' WHERE email = 'ken@example.com'",
+            [],
+        )
+        .unwrap();
+    assert_eq!(
+        s.user("ken@example.com").await.unwrap().unwrap().role,
+        Role::Native
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_opens_the_inbox_on_either_application_but_not_admin_routes() {
+    let s = seeded().await;
+    s.conn
+        .borrow()
+        .execute(
+            "INSERT INTO users (email, display_name, role, active, created_at) VALUES ('hana@example.com', 'Hana', 'native', 1, 't')",
+            [],
+        )
+        .unwrap();
+    let hana = claims(Some("hana@example.com"));
+    for audience in [Audience::Reviewer, Audience::Admin] {
+        assert_eq!(
+            authorize(&hana, audience, Need::Decider, &s)
+                .await
+                .unwrap()
+                .role,
+            Role::Native
+        );
+        assert_eq!(
+            authorize(&hana, audience, Need::Admin, &s).await,
+            Err(Denied::Forbidden)
+        );
+    }
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -383,7 +454,7 @@ async fn teacher_routes_need_a_teacher_or_the_admin_on_either_application() {
     add_teacher(&s, "old@example.com", false);
     let keiko = claims(Some("keiko@example.com"));
     for audience in [Audience::Reviewer, Audience::Admin] {
-        for need in [Need::Reviewer, Need::Teacher] {
+        for need in [Need::Reviewer, Need::Decider] {
             assert_eq!(
                 authorize(&keiko, audience, need, &s).await.unwrap().role,
                 Role::Teacher,
@@ -396,11 +467,11 @@ async fn teacher_routes_need_a_teacher_or_the_admin_on_either_application() {
         );
         let aiko = claims(Some("aiko@example.com"));
         assert_eq!(
-            authorize(&aiko, audience, Need::Teacher, &s).await,
+            authorize(&aiko, audience, Need::Decider, &s).await,
             Err(Denied::Forbidden)
         );
         let old = claims(Some("old@example.com"));
-        for need in [Need::Reviewer, Need::Teacher, Need::Admin] {
+        for need in [Need::Reviewer, Need::Decider, Need::Admin] {
             assert_eq!(
                 authorize(&old, audience, need, &s).await,
                 Err(Denied::Forbidden)
@@ -408,7 +479,7 @@ async fn teacher_routes_need_a_teacher_or_the_admin_on_either_application() {
         }
     }
     let owner = claims(Some(OWNER));
-    assert!(authorize(&owner, Audience::Reviewer, Need::Teacher, &s)
+    assert!(authorize(&owner, Audience::Reviewer, Need::Decider, &s)
         .await
         .is_ok());
 }
