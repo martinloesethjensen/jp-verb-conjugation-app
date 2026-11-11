@@ -614,10 +614,23 @@ pub async fn queue_item<S: ReviewStore>(
     }
 }
 
-// --- The inbox (teachers and the owner) -----------------------------------------------------------
+// --- The inbox (teachers, natives and the owner) ---------------------------------------------------
 
-/// Teachers and the owner decide other people's suggestions, never their own.
+/// Teachers, natives and the owner decide other people's suggestions, never their own.
 pub const OWN_SUGGESTION: &str = "someone else decides your own suggestion; withdraw it instead";
+
+/// A native decides only changes to Japanese text, and edits only Japanese fields (polish step 3b).
+pub const NATIVE_LIMIT: &str =
+    "a teacher or Martin decides this one: it changes more than Japanese text";
+
+/// A change whose every edited field, against the item as loaded now, is Japanese text: what a native may
+/// decide. `current` is the target's JSON from `current_json`.
+fn japanese_change(s: &Suggestion, current: &Value) -> bool {
+    s.action == "change"
+        && s.proposed
+            .as_ref()
+            .is_some_and(|proposed| crate::japanese::japanese_only(proposed, current))
+}
 
 pub const ACCEPT_STALE: &str = "the data changed since this was suggested; use Edit then accept";
 
@@ -678,8 +691,10 @@ pub async fn inbox<S: Store + ReviewStore>(
     let mut out = Vec::with_capacity(suggestions.len());
     for s in suggestions {
         let current = current_json(store, &mut entries, &s).await;
+        let japanese_only = japanese_change(&s, &current);
         let mut value = json!(s);
         value["current"] = current;
+        value["japanese_only"] = json!(japanese_only);
         out.push(value);
     }
     ok(200, json!({ "suggestions": out }))
@@ -723,6 +738,15 @@ pub async fn decide<S: Store + ReviewStore>(
         return error(409, DECIDED);
     }
     let edits = body.edits.filter(|e| !e.is_empty());
+    if !by.role.decides_all() {
+        let current = current_json(store, &mut BTreeMap::new(), &s).await;
+        let japanese_edits = edits
+            .as_ref()
+            .is_none_or(|e| e.keys().all(|key| crate::japanese::is_japanese_field(key)));
+        if !japanese_change(&s, &current) || !japanese_edits {
+            return error(403, NATIVE_LIMIT);
+        }
+    }
     let mut warning = None;
     let (mut admin_edit, mut furigana, mut base) = (None, None, None);
     if s.action == "add" {
