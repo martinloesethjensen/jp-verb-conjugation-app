@@ -28,6 +28,12 @@ public enum QuizQuestionKind: String, CaseIterable, Codable, Sendable {
     /// as the subject and the right particle as the form id. Builds on old kinds' history: an
     /// older app build skips an attempt of this kind. It is neither a verb nor a counter question.
     case particle
+    /// A verb pair question (#58): a verb's pair phrase with the verb blanked (pick 始まる or
+    /// 始める) or its particle blanked (pick を or が). Only recorded in quiz history, with the
+    /// verb's id as the subject and what was blanked ("verb" or "particle") as the form id. Builds
+    /// on old kinds' history: an older app build skips an attempt of this kind. It is not a verb
+    /// question: the verb quiz and weak spots never handle it.
+    case verbPair
 
     /// A counter question, which verb code (the verb quiz, weak spots, the widget) never handles.
     public var isCounter: Bool { self == .counterChoice || self == .counterReading || self == .counterAsk }
