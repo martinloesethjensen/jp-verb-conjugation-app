@@ -56,21 +56,31 @@ struct VerbWidgetView: View {
         }
     }
 
+    /// The board's small widget: caption, the headword in Mincho with its reading above, the
+    /// meaning, then the type dot with its name and level.
     private func small(_ verb: Verb) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(verb.kanji ?? verb.dict)
-                .font(.title.weight(.heavy))
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-                .foregroundStyle(palette.ink)
-            if verb.kanji != nil {
-                Text(verb.dict).font(.caption).foregroundStyle(palette.ink)
-            }
-            Text(verb.meaning).font(.caption).foregroundStyle(palette.muted).lineLimit(2)
+            WidgetCaption(text: "Verb of the day", color: palette.muted)
             Spacer(minLength: 0)
-            Text(verb.forms.masuPos).font(.callout).foregroundStyle(palette.ink)
+            WidgetRuby(text: verb.kanji ?? verb.dict, reading: verb.kanji == nil ? nil : verb.dict, size: 34,
+                       color: palette.ink, readingColor: palette.muted)
+            Spacer(minLength: 0)
+            Text(verb.meaning).font(.subheadline.weight(.semibold)).foregroundStyle(palette.ink).lineLimit(1)
+            HStack(spacing: 5) {
+                Circle().fill(verb.type.accentColor).frame(width: 7, height: 7).accessibilityHidden(true)
+                Text(typeLine(verb)).font(.caption).foregroundStyle(palette.muted).lineLimit(1)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func typeLine(_ verb: Verb) -> String {
+        let name = switch verb.type {
+        case .ru: "Ru-verb"
+        case .u: "U-verb"
+        case .irregular: "Irregular"
+        }
+        return [name, verb.jlpt?.rawValue].compactMap { $0 }.joined(separator: " · ")
     }
 
     private func formsGrid(_ verb: Verb) -> some View {
