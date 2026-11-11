@@ -35,6 +35,8 @@ struct WordBankListView: View {
 
     @AppStorage("wordBank.grouping") private var groupingRaw = WordBankGrouping.dateAdded.rawValue
     @State private var chosen = Set<UUID>()
+    /// The tag chip picked above the entries (canvas board "Proposed: Word Bank"); nil is All.
+    @State private var tagFilter: UUID?
     @State private var folderRequest: FolderNameRequest?
     @State private var editorRequest: WordBankEditorRequest?
     @State private var moveRequest: MoveRequest?
@@ -365,11 +367,61 @@ struct WordBankListView: View {
                     ForEach(store.smartFolders) { smartFolderRow($0) }
                 }
             }
-            ForEach(groups(of: entries)) { group in
+            if place != nil { tagChips }
+            ForEach(groups(of: shownEntries)) { group in
                 Section(group.title ?? (subfolders.isEmpty && place != nil ? "" : "Entries")) {
                     ForEach(group.entries) { entryRow($0) }
                 }
             }
+        }
+    }
+
+    /// The most used tags among these entries, at most six.
+    private var topTags: [WordBankTagCount] { WordBankTagCounts.top(entries, limit: 6) }
+
+    /// The picked tag, while it is still among the chips (a deleted tag falls back to All).
+    private var activeTagFilter: UUID? {
+        guard let tagFilter, topTags.contains(where: { $0.tagID == tagFilter }) else { return nil }
+        return tagFilter
+    }
+
+    private var shownEntries: [WordBankEntryValue] {
+        guard let tag = activeTagFilter else { return entries }
+        return entries.filter { $0.dialectTagIDs.contains(tag) || $0.customTagIDs.contains(tag) }
+    }
+
+    private func tagName(_ id: UUID) -> String? {
+        store.dialectTags.first { $0.id == id }?.name ?? store.customTags.first { $0.id == id }?.name
+    }
+
+    /// All, then the most used tags with their counts; hidden when no entry here has a tag.
+    @ViewBuilder private var tagChips: some View {
+        let tags = topTags.filter { tagName($0.tagID) != nil }
+        if !tags.isEmpty {
+            Section {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Button { tagFilter = nil } label: {
+                            FilterChip("All \(entries.count)", isOn: activeTagFilter == nil)
+                        }
+                        .buttonStyle(.plain)
+                        ForEach(tags, id: \.tagID) { tag in
+                            Button { tagFilter = tag.tagID } label: {
+                                FilterChip("\(tagName(tag.tagID) ?? "") \(tag.count)", isOn: activeTagFilter == tag.tagID)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 2)
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+            #if os(iOS)
+            .listSectionMargins(.horizontal, 0)
+            #endif
         }
     }
 
