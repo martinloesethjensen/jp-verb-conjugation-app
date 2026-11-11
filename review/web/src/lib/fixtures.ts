@@ -11,4 +11,4 @@ export const addition: Suggestion = {
 };
 
 /** The same as it appears in the inbox: with the target as it is now. */
-export const inboxSuggestion: InboxSuggestion = { ...addition, current: null };
+export const inboxSuggestion: InboxSuggestion = { ...addition, current: null, japanese_only: false };

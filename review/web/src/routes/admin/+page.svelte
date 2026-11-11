@@ -12,6 +12,7 @@
 		setActive,
 		setAccessRole,
 		setPublicRole,
+		type AccessRole,
 		type DataFileName,
 		type PublicRole,
 		type SnapshotFile,
@@ -113,7 +114,7 @@
 		}
 	}
 
-	async function access(user: User, role: 'teacher' | 'reviewer') {
+	async function access(user: User, role: AccessRole) {
 		busy = true;
 		notice = null;
 		try {
@@ -172,9 +173,10 @@
 										<select
 											value={user.role}
 											disabled={busy}
-											onchange={(e) => access(user, e.currentTarget.value as 'teacher' | 'reviewer')}
+											onchange={(e) => access(user, e.currentTarget.value as AccessRole)}
 										>
 											<option value="reviewer">review and suggest</option>
+											<option value="native">also accept Japanese fixes</option>
 											<option value="teacher">also accept suggestions</option>
 										</select>
 									</label>
