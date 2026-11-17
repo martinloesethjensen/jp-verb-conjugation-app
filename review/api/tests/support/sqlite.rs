@@ -1205,4 +1205,138 @@ impl ReviewStore for SqliteStore {
         )?;
         tx.commit().map_err(backend)
     }
+
+    async fn opinion_candidates(
+        &self,
+        t: &Target,
+        viewer: &str,
+    ) -> Result<Vec<Candidate>, StoreError> {
+        let conn = self.conn.borrow();
+        query(
+            &conn,
+            SELECT_OPINION_CANDIDATES,
+            params![viewer, t.dataset, t.kind, t.item_id],
+        )
+    }
+
+    async fn user_by_number(
+        &self,
+        user: i64,
+    ) -> Result<Option<(String, String, bool)>, StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<UserNumberRow> = query(&conn, SELECT_USER_NUMBER, params![user])?;
+        Ok(rows
+            .into_iter()
+            .next()
+            .map(|r| (r.email, r.role, r.active == 1)))
+    }
+
+    async fn ask_opinion(
+        &self,
+        t: &Target,
+        asked_of: &str,
+        question: &str,
+        asker: &str,
+        now: &str,
+    ) -> Result<i64, StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let ids: Vec<IdRow> = query(
+            &tx,
+            INSERT_OPINION,
+            params![t.dataset, t.kind, t.item_id, asker, asked_of, question, now],
+        )?;
+        let Some(id) = ids.first().map(|r| r.id) else {
+            return Err(StoreError::Conflict);
+        };
+        let key = params![t.dataset, t.kind, t.item_id, asker, now];
+        tx.execute(INSERT_OPINION_AUDIT, key).map_err(backend)?;
+        tx.execute(READ_ASKED_THREAD, key).map_err(backend)?;
+        tx.commit().map_err(backend)?;
+        Ok(id)
+    }
+
+    async fn opinion(&self, id: i64, viewer: &str) -> Result<Option<OpinionRequest>, StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<OpinionRow> = query(&conn, SELECT_OPINION, params![viewer, id])?;
+        Ok(rows.into_iter().next().map(OpinionRequest::from))
+    }
+
+    async fn cancel_opinion(&self, id: i64, asker: &str, now: &str) -> Result<(), StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let state: Vec<OpinionStateRow> = query(&conn, SELECT_OPINION_STATE, params![id])?;
+        match state.first() {
+            Some(row) if row.open == 1 && row.asked_by == asker => {}
+            Some(row) if row.open == 1 => return Err(StoreError::Conflict),
+            _ => return Err(StoreError::NotFound),
+        }
+        let tx = conn.transaction().map_err(backend)?;
+        tx.execute(INSERT_CANCEL_AUDIT, params![id, asker, now])
+            .map_err(backend)?;
+        if tx
+            .execute(CANCEL_OPINION, params![id, asker, now])
+            .map_err(backend)?
+            == 0
+        {
+            return Err(StoreError::NotFound); // dropping tx rolls the audit row back
+        }
+        tx.commit().map_err(backend)
+    }
+
+    async fn answer_opinion(
+        &self,
+        id: i64,
+        pick: Option<i64>,
+        body: &str,
+        by: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let mut conn = self.conn.borrow_mut();
+        let state: Vec<OpinionStateRow> = query(&conn, SELECT_OPINION_STATE, params![id])?;
+        match state.first() {
+            Some(row) if row.open == 1 && row.asked_of == by => {}
+            Some(row) if row.open == 1 => return Err(StoreError::Conflict),
+            _ => return Err(StoreError::NotFound),
+        }
+        let tx = conn.transaction().map_err(backend)?;
+        tx.execute(INSERT_ANSWER_AUDIT, params![id, by, pick, now])
+            .map_err(backend)?;
+        tx.execute(READ_ANSWERED_THREAD, params![id, by, pick, now])
+            .map_err(backend)?;
+        if tx
+            .execute(ANSWER_OPINION, params![id, by, pick, now, body])
+            .map_err(backend)?
+            == 0
+        {
+            return Err(StoreError::Conflict); // dropping tx rolls the audit row back
+        }
+        tx.commit().map_err(backend)
+    }
+
+    async fn opinions_for_entry(
+        &self,
+        dataset: &str,
+        entry_id: &str,
+        viewer: &str,
+    ) -> Result<Vec<OpinionRequest>, StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<OpinionRow> = query(
+            &conn,
+            SELECT_ENTRY_OPINIONS,
+            params![viewer, dataset, entry_id],
+        )?;
+        Ok(rows.into_iter().map(OpinionRequest::from).collect())
+    }
+
+    async fn opinions_for_targets(
+        &self,
+        targets: &[Target],
+        viewer: &str,
+    ) -> Result<Vec<OpinionRequest>, StoreError> {
+        let json =
+            serde_json::to_string(targets).map_err(|e| StoreError::Backend(e.to_string()))?;
+        let conn = self.conn.borrow();
+        let rows: Vec<OpinionRow> = query(&conn, SELECT_TARGET_OPINIONS, params![viewer, json])?;
+        Ok(rows.into_iter().map(OpinionRequest::from).collect())
+    }
 }

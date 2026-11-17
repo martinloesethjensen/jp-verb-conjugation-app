@@ -926,10 +926,227 @@ pub const INSERT_SKIP: &str =
     "INSERT OR IGNORE INTO skips (queue_id, dataset, kind, item_id, reviewer, created_at) \
      VALUES (?1, ?2, ?3, ?4, ?5, ?6)";
 
+/// A request for a second opinion on an item's open suggestions, as the viewer sees it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct OpinionRequest {
+    pub id: i64,
+    pub dataset: String,
+    pub kind: String,
+    pub item_id: String,
+    pub entry_id: String,
+    pub item_title: String,
+    /// The oldest open suggestion when it was asked: the thread the request appears in.
+    pub anchor_id: i64,
+    pub asked_by_name: String,
+    pub asked_of_name: String,
+    pub mine_asked: bool,
+    pub mine_to_answer: bool,
+    pub question: String,
+    pub created_at: String,
+    pub answered_at: Option<String>,
+    pub pick: Option<i64>,
+    pub answer: String,
+    pub cancelled_at: Option<String>,
+    /// Unanswered, not cancelled, and the item still has an open suggestion.
+    pub waiting: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OpinionRow {
+    pub id: i64,
+    pub dataset: String,
+    pub kind: String,
+    pub item_id: String,
+    pub entry_id: String,
+    pub item_title: String,
+    pub anchor_id: i64,
+    pub asked_by_name: String,
+    pub asked_of_name: String,
+    pub mine_asked: i64,
+    pub mine_to_answer: i64,
+    pub question: String,
+    pub created_at: String,
+    pub answered_at: Option<String>,
+    pub pick: Option<i64>,
+    pub answer: String,
+    pub cancelled_at: Option<String>,
+    pub waiting: i64,
+}
+
+impl From<OpinionRow> for OpinionRequest {
+    fn from(r: OpinionRow) -> OpinionRequest {
+        OpinionRequest {
+            id: r.id,
+            dataset: r.dataset,
+            kind: r.kind,
+            item_id: r.item_id,
+            entry_id: r.entry_id,
+            item_title: r.item_title,
+            anchor_id: r.anchor_id,
+            asked_by_name: r.asked_by_name,
+            asked_of_name: r.asked_of_name,
+            mine_asked: r.mine_asked != 0,
+            mine_to_answer: r.mine_to_answer != 0,
+            question: r.question,
+            created_at: r.created_at,
+            answered_at: r.answered_at,
+            pick: r.pick,
+            answer: r.answer,
+            cancelled_at: r.cancelled_at,
+            waiting: r.waiting != 0,
+        }
+    }
+}
+
+/// Someone who could be asked. `user` is the number the API uses for them (`users.rowid`); `seen` is the
+/// first of `approved`, `suggested` or `commented` that applies to them on the item.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Candidate {
+    pub user: i64,
+    pub name: String,
+    pub role: String,
+    pub seen: Option<String>,
+}
+
+/// A user by number: `email`, `role`, `active`.
+#[derive(Debug, Deserialize)]
+pub struct UserNumberRow {
+    pub email: String,
+    pub role: String,
+    pub active: i64,
+}
+
+/// The state `cancel_opinion` and `answer_opinion` check before writing.
+#[derive(Debug, Deserialize)]
+pub struct OpinionStateRow {
+    pub asked_by: String,
+    pub asked_of: String,
+    pub open: i64,
+}
+
+macro_rules! opinions_select {
+    ($where:literal) => {
+        concat!(
+            "SELECT o.id, o.dataset, o.kind, o.item_id, o.entry_id, o.item_title, o.anchor_id, \
+             IFNULL(ub.display_name, o.asked_by) AS asked_by_name, \
+             IFNULL(uo.display_name, o.asked_of) AS asked_of_name, \
+             o.asked_by = ?1 AS mine_asked, o.asked_of = ?1 AS mine_to_answer, \
+             o.question, o.created_at, o.answered_at, o.pick, o.answer, o.cancelled_at, \
+             (o.answered_at IS NULL AND o.cancelled_at IS NULL AND EXISTS ( \
+                SELECT 1 FROM suggestions s WHERE s.dataset = o.dataset AND s.kind = o.kind \
+                AND s.item_id = o.item_id AND s.status = 'open')) AS waiting \
+             FROM opinion_requests o \
+             LEFT JOIN users ub ON ub.email = o.asked_by LEFT JOIN users uo ON uo.email = o.asked_of ",
+            $where,
+            " ORDER BY o.id DESC"
+        )
+    };
+}
+
+/// ?1 viewer, ?2 id.
+pub const SELECT_OPINION: &str = opinions_select!("WHERE o.id = ?2");
+/// ?1 viewer, ?2 dataset, ?3 entry id.
+pub const SELECT_ENTRY_OPINIONS: &str =
+    opinions_select!("WHERE o.dataset = ?2 AND o.entry_id = ?3");
+/// ?1 viewer, ?2 targets as a JSON array of `{dataset, kind, item_id}`.
+pub const SELECT_TARGET_OPINIONS: &str = opinions_select!(
+    "WHERE EXISTS (SELECT 1 FROM json_each(?2) j WHERE json_extract(j.value, '$.dataset') = o.dataset \
+     AND json_extract(j.value, '$.kind') = o.kind AND json_extract(j.value, '$.item_id') = o.item_id)"
+);
+
+/// ?1 viewer, ?2–?4 the target. Active people other than the viewer and the authors of the item's open
+/// suggestions; those who haven't seen the item come first.
+pub const SELECT_OPINION_CANDIDATES: &str = "SELECT u.rowid AS user, u.display_name AS name, u.role AS role, \
+     CASE WHEN EXISTS (SELECT 1 FROM approvals a WHERE a.dataset = ?2 AND a.kind = ?3 AND a.item_id = ?4 \
+            AND a.reviewer = u.email) THEN 'approved' \
+          WHEN EXISTS (SELECT 1 FROM suggestions s WHERE s.dataset = ?2 AND s.kind = ?3 AND s.item_id = ?4 \
+            AND s.author = u.email) THEN 'suggested' \
+          WHEN EXISTS (SELECT 1 FROM comments c JOIN suggestions s ON s.id = c.suggestion_id \
+            WHERE s.dataset = ?2 AND s.kind = ?3 AND s.item_id = ?4 AND c.author = u.email) THEN 'commented' \
+     END AS seen \
+     FROM users u WHERE u.active = 1 AND u.email <> ?1 \
+     AND u.email NOT IN (SELECT s.author FROM suggestions s WHERE s.dataset = ?2 AND s.kind = ?3 \
+            AND s.item_id = ?4 AND s.status = 'open') \
+     ORDER BY seen IS NOT NULL, u.display_name, u.email";
+/// ?1 number.
+pub const SELECT_USER_NUMBER: &str = "SELECT email, role, active FROM users WHERE rowid = ?1";
+
+/// Opens a request on the item's oldest open suggestion unless one is already open, so no row back means
+/// a conflict (or nothing to ask about). ?1–?3 target, ?4 asker, ?5 asked of, ?6 question, ?7 now.
+pub const INSERT_OPINION: &str = "INSERT INTO opinion_requests \
+     (dataset, kind, item_id, entry_id, item_title, anchor_id, asked_by, asked_of, question, created_at) \
+     SELECT ?1, ?2, ?3, s.entry_id, s.item_title, s.id, ?4, ?5, ?6, ?7 FROM suggestions s \
+     WHERE s.dataset = ?1 AND s.kind = ?2 AND s.item_id = ?3 AND s.status = 'open' \
+     AND NOT EXISTS (SELECT 1 FROM opinion_requests o WHERE o.dataset = ?1 AND o.kind = ?2 \
+        AND o.item_id = ?3 AND o.answered_at IS NULL AND o.cancelled_at IS NULL) \
+     ORDER BY s.id LIMIT 1 RETURNING id";
+
+/// The request `INSERT_OPINION` just made, by its natural key: the item's one open request, from this
+/// asker at this time. The batch's later statements find it this way, and write nothing if it didn't open.
+macro_rules! just_asked {
+    () => {
+        "FROM opinion_requests o WHERE o.dataset = ?1 AND o.kind = ?2 AND o.item_id = ?3 \
+         AND o.answered_at IS NULL AND o.cancelled_at IS NULL AND o.asked_by = ?4 AND o.created_at = ?5"
+    };
+}
+/// ?1–?3 target, ?4 asker, ?5 now.
+pub const INSERT_OPINION_AUDIT: &str = concat!(
+    "INSERT INTO audit_log (at, actor, action, target, detail) \
+     SELECT ?5, ?4, 'opinion.ask', 'opinion/' || o.id, o.asked_of ",
+    just_asked!()
+);
+/// As `INSERT_OPINION_AUDIT`: the asker has read the thread they asked in.
+pub const READ_ASKED_THREAD: &str = concat!(
+    "INSERT INTO thread_reads (user, suggestion_id, read_at) SELECT ?4, o.anchor_id, ?5 ",
+    just_asked!(),
+    " ON CONFLICT (user, suggestion_id) DO UPDATE SET read_at = MAX(read_at, excluded.read_at)"
+);
+
+/// ?1 id: who asked whom, and whether it is still open (neither answered nor cancelled).
+pub const SELECT_OPINION_STATE: &str = "SELECT asked_by, asked_of, \
+     (answered_at IS NULL AND cancelled_at IS NULL) AS open FROM opinion_requests WHERE id = ?1";
+
+/// ?1 id, ?2 asker, ?3 now.
+pub const CANCEL_OPINION: &str = "UPDATE opinion_requests SET cancelled_at = ?3 \
+     WHERE id = ?1 AND asked_by = ?2 AND answered_at IS NULL AND cancelled_at IS NULL";
+/// As `INSERT_WITHDRAW_AUDIT`, for `CANCEL_OPINION`: ?1 id, ?2 asker, ?3 now.
+pub const INSERT_CANCEL_AUDIT: &str = "INSERT INTO audit_log (at, actor, action, target, detail) \
+     SELECT ?3, ?2, 'opinion.cancel', 'opinion/' || id, '' FROM opinion_requests \
+     WHERE id = ?1 AND asked_by = ?2 AND answered_at IS NULL AND cancelled_at IS NULL";
+
+/// What an answer needs to be written: the request is open, the answerer is who was asked, and a pick is
+/// a suggestion on the same item. ?1 id, ?2 by, ?3 pick.
+macro_rules! answerable {
+    () => {
+        "o.id = ?1 AND o.asked_of = ?2 AND o.answered_at IS NULL AND o.cancelled_at IS NULL \
+         AND (?3 IS NULL OR EXISTS (SELECT 1 FROM suggestions p WHERE p.id = ?3 AND p.dataset = o.dataset \
+            AND p.kind = o.kind AND p.item_id = o.item_id))"
+    };
+}
+/// ?1 id, ?2 by, ?3 pick, ?4 now.
+pub const INSERT_ANSWER_AUDIT: &str = concat!(
+    "INSERT INTO audit_log (at, actor, action, target, detail) \
+     SELECT ?4, ?2, 'opinion.answer', 'opinion/' || o.id, IFNULL('suggestion/' || ?3, '') \
+     FROM opinion_requests o WHERE ",
+    answerable!()
+);
+/// ?1 id, ?2 by, ?3 pick, ?4 now.
+pub const READ_ANSWERED_THREAD: &str = concat!(
+    "INSERT INTO thread_reads (user, suggestion_id, read_at) SELECT ?2, o.anchor_id, ?4 \
+     FROM opinion_requests o WHERE ",
+    answerable!(),
+    " ON CONFLICT (user, suggestion_id) DO UPDATE SET read_at = MAX(read_at, excluded.read_at)"
+);
+/// ?1 id, ?2 by, ?3 pick, ?4 now, ?5 answer text.
+pub const ANSWER_OPINION: &str = concat!(
+    "UPDATE opinion_requests AS o SET answered_at = ?4, pick = ?3, answer = ?5 WHERE ",
+    answerable!()
+);
+
 /// Review data. `viewer` is the asking user's email, used only for `mine` and queue progress; names come
 /// from `users.display_name`. Every write inserts its audit row in the same batch (actions
 /// `approval.add|remove`, `suggestion.add|withdraw|accept|decline`, `comment.add`,
-/// `queue.add|update|note|remove_item|skip`).
+/// `queue.add|update|note|remove_item|skip`, `opinion.ask|cancel|answer`).
 #[allow(async_fn_in_trait)]
 pub trait ReviewStore {
     /// `(content_hash, entry_id, title)` of a loaded target.
@@ -1079,4 +1296,50 @@ pub trait ReviewStore {
     ) -> Result<(), StoreError>;
     /// `NotFound` when the target isn't in the queue.
     async fn skip(&self, id: i64, t: &Target, reviewer: &str, now: &str) -> Result<(), StoreError>;
+    /// Who `viewer` could ask about the target: active people other than the viewer and the authors of its
+    /// open suggestions, those who haven't seen it first, then by name.
+    async fn opinion_candidates(
+        &self,
+        t: &Target,
+        viewer: &str,
+    ) -> Result<Vec<Candidate>, StoreError>;
+    /// `(email, role, active)` of the user with this number.
+    async fn user_by_number(&self, user: i64)
+        -> Result<Option<(String, String, bool)>, StoreError>;
+    /// Opens a request to `asked_of` on the item's open suggestions and returns its id. `Conflict` when
+    /// the item already has an open request or has no open suggestion.
+    async fn ask_opinion(
+        &self,
+        t: &Target,
+        asked_of: &str,
+        question: &str,
+        asker: &str,
+        now: &str,
+    ) -> Result<i64, StoreError>;
+    async fn opinion(&self, id: i64, viewer: &str) -> Result<Option<OpinionRequest>, StoreError>;
+    /// `NotFound` unless the request is open; `Conflict` if `asker` didn't ask it.
+    async fn cancel_opinion(&self, id: i64, asker: &str, now: &str) -> Result<(), StoreError>;
+    /// `NotFound` unless the request is open; `Conflict` unless `by` is who was asked and `pick`, when
+    /// given, is a suggestion on the same item.
+    async fn answer_opinion(
+        &self,
+        id: i64,
+        pick: Option<i64>,
+        body: &str,
+        by: &str,
+        now: &str,
+    ) -> Result<(), StoreError>;
+    /// Every request on the entry's items, newest first.
+    async fn opinions_for_entry(
+        &self,
+        dataset: &str,
+        entry_id: &str,
+        viewer: &str,
+    ) -> Result<Vec<OpinionRequest>, StoreError>;
+    /// Every request on these targets, newest first.
+    async fn opinions_for_targets(
+        &self,
+        targets: &[Target],
+        viewer: &str,
+    ) -> Result<Vec<OpinionRequest>, StoreError>;
 }

@@ -1209,4 +1209,154 @@ impl ReviewStore for D1Store {
         self.db.batch(vec![insert, log]).await.map_err(backend)?;
         Ok(())
     }
+
+    async fn opinion_candidates(
+        &self,
+        t: &Target,
+        viewer: &str,
+    ) -> Result<Vec<Candidate>, StoreError> {
+        let [d, k, i] = Self::target_binds(t);
+        self.rows(SELECT_OPINION_CANDIDATES, &[text(viewer), d, k, i])
+            .await
+    }
+
+    async fn user_by_number(
+        &self,
+        user: i64,
+    ) -> Result<Option<(String, String, bool)>, StoreError> {
+        let rows: Vec<UserNumberRow> = self.rows(SELECT_USER_NUMBER, &[number(user)]).await?;
+        Ok(rows
+            .into_iter()
+            .next()
+            .map(|r| (r.email, r.role, r.active == 1)))
+    }
+
+    async fn ask_opinion(
+        &self,
+        t: &Target,
+        asked_of: &str,
+        question: &str,
+        asker: &str,
+        now: &str,
+    ) -> Result<i64, StoreError> {
+        let [d, k, i] = Self::target_binds(t);
+        let insert = self.statement(
+            INSERT_OPINION,
+            &[
+                d.clone(),
+                k.clone(),
+                i.clone(),
+                text(asker),
+                text(asked_of),
+                text(question),
+                text(now),
+            ],
+        )?;
+        // The audit row and the read mark find the new request by its natural key and write nothing when
+        // the insert didn't open one.
+        let key = [d, k, i, text(asker), text(now)];
+        let log = self.statement(INSERT_OPINION_AUDIT, &key)?;
+        let read = self.statement(READ_ASKED_THREAD, &key)?;
+        let results = self
+            .db
+            .batch(vec![insert, log, read])
+            .await
+            .map_err(backend)?;
+        let ids: Vec<IdRow> = results
+            .first()
+            .ok_or_else(|| StoreError::Backend("no insert result".into()))?
+            .results()
+            .map_err(backend)?;
+        ids.first().map(|r| r.id).ok_or(StoreError::Conflict)
+    }
+
+    async fn opinion(&self, id: i64, viewer: &str) -> Result<Option<OpinionRequest>, StoreError> {
+        let rows: Vec<OpinionRow> = self
+            .rows(SELECT_OPINION, &[text(viewer), number(id)])
+            .await?;
+        Ok(rows.into_iter().next().map(OpinionRequest::from))
+    }
+
+    async fn cancel_opinion(&self, id: i64, asker: &str, now: &str) -> Result<(), StoreError> {
+        let state: Vec<OpinionStateRow> = self.rows(SELECT_OPINION_STATE, &[number(id)]).await?;
+        match state.first() {
+            Some(row) if row.open == 1 && row.asked_by == asker => {}
+            Some(row) if row.open == 1 => return Err(StoreError::Conflict),
+            _ => return Err(StoreError::NotFound),
+        }
+        // As in withdraw: the audit row first, written only while the request is still open.
+        let log = self.statement(INSERT_CANCEL_AUDIT, &[number(id), text(asker), text(now)])?;
+        let update = self.statement(CANCEL_OPINION, &[number(id), text(asker), text(now)])?;
+        let results = self.db.batch(vec![log, update]).await.map_err(backend)?;
+        if changes(results.get(1)) == 0 {
+            return Err(StoreError::NotFound);
+        }
+        Ok(())
+    }
+
+    async fn answer_opinion(
+        &self,
+        id: i64,
+        pick: Option<i64>,
+        body: &str,
+        by: &str,
+        now: &str,
+    ) -> Result<(), StoreError> {
+        let state: Vec<OpinionStateRow> = self.rows(SELECT_OPINION_STATE, &[number(id)]).await?;
+        match state.first() {
+            Some(row) if row.open == 1 && row.asked_of == by => {}
+            Some(row) if row.open == 1 => return Err(StoreError::Conflict),
+            _ => return Err(StoreError::NotFound),
+        }
+        let pick = pick.map_or(JsValue::NULL, number);
+        let key = [number(id), text(by), pick.clone(), text(now)];
+        let log = self.statement(INSERT_ANSWER_AUDIT, &key)?;
+        let read = self.statement(READ_ANSWERED_THREAD, &key)?;
+        let update = self.statement(
+            ANSWER_OPINION,
+            &[number(id), text(by), pick, text(now), text(body)],
+        )?;
+        let results = self
+            .db
+            .batch(vec![log, read, update])
+            .await
+            .map_err(backend)?;
+        // The statements share one condition, so nothing was written when the pick isn't a suggestion
+        // on the item.
+        if changes(results.get(2)) == 0 {
+            return Err(StoreError::Conflict);
+        }
+        Ok(())
+    }
+
+    async fn opinions_for_entry(
+        &self,
+        dataset: &str,
+        entry_id: &str,
+        viewer: &str,
+    ) -> Result<Vec<OpinionRequest>, StoreError> {
+        let rows: Vec<OpinionRow> = self
+            .rows(
+                SELECT_ENTRY_OPINIONS,
+                &[text(viewer), text(dataset), text(entry_id)],
+            )
+            .await?;
+        Ok(rows.into_iter().map(OpinionRequest::from).collect())
+    }
+
+    async fn opinions_for_targets(
+        &self,
+        targets: &[Target],
+        viewer: &str,
+    ) -> Result<Vec<OpinionRequest>, StoreError> {
+        if targets.is_empty() {
+            return Ok(Vec::new());
+        }
+        let json =
+            serde_json::to_string(targets).map_err(|e| StoreError::Backend(e.to_string()))?;
+        let rows: Vec<OpinionRow> = self
+            .rows(SELECT_TARGET_OPINIONS, &[text(viewer), text(&json)])
+            .await?;
+        Ok(rows.into_iter().map(OpinionRequest::from).collect())
+    }
 }
