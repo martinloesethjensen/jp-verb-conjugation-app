@@ -1,6 +1,7 @@
 mod support;
 
 use review_api::data::DataFile;
+use review_api::review_routes::{NATIVE_LIMIT, OWN_SUGGESTION};
 use serde_json::{json, Value};
 use support::review::*;
 use support::sqlite::SqliteStore;
@@ -271,12 +272,12 @@ async fn nobody_decides_their_own_suggestion() {
         )
         .await;
         assert_eq!(r.status, 403, "{decision}");
-        assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
+        assert_eq!(r.body["error"], OWN_SUGGESTION);
     }
     let martins = suggest_en(&s, MARTIN, "The owner's.").await;
     let r = decide(&s, json!({"id": martins, "decision": "accept"})).await;
     assert_eq!(r.status, 403);
-    assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
+    assert_eq!(r.body["error"], OWN_SUGGESTION);
     let r = post(
         &s,
         "/api/decide",
@@ -303,7 +304,7 @@ async fn an_own_addition_is_guarded_too() {
     )
     .await;
     assert_eq!(r.status, 403, "{}", r.body);
-    assert_eq!(r.body["error"], review_api::review_routes::OWN_SUGGESTION);
+    assert_eq!(r.body["error"], OWN_SUGGESTION);
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -379,4 +380,251 @@ async fn a_demoted_teacher_can_no_longer_decide() {
     )
     .await;
     assert_eq!(r.status, 403);
+}
+
+// --- Natives (step 3b): other people's changes to Japanese text only --------------------------------
+
+/// Ben becomes a native through the owner's Reviewers page.
+async fn make_native(s: &SqliteStore) {
+    let r = post(
+        s,
+        "/api/admin/users/access",
+        json!({"email": BEN, "role": "native"}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["role"], "native");
+}
+
+async fn suggest_edits(s: &SqliteStore, who: &str, edits: Value) -> Value {
+    let (id, hash, _) = example(s).await;
+    let r = post(
+        s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": id, "base_hash": hash,
+        "action": "change", "edits": edits}),
+        who,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    r.body["id"].clone()
+}
+
+async fn suggest_jp(s: &SqliteStore, who: &str) -> Value {
+    let (_, _, json) = example(s).await;
+    let jp = format!("{}ね", json["jp"].as_str().unwrap());
+    suggest_edits(s, who, json!({ "jp": jp })).await
+}
+
+async fn ben_decides(s: &SqliteStore, body: Value) -> support::review::Response {
+    post(s, "/api/decide", body, BEN).await
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_sees_the_inbox_with_japanese_only_flags() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let jp = suggest_jp(&s, AIKO).await;
+    let en = suggest_en(&s, AIKO, "English.").await;
+    let r = get(&s, "/api/inbox", BEN).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let flags: Vec<(Value, Value)> = r.body["suggestions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|s| (s["id"].clone(), s["japanese_only"].clone()))
+        .collect();
+    assert!(flags.contains(&(jp, json!(true))), "{flags:?}");
+    assert!(flags.contains(&(en, json!(false))), "{flags:?}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_accepts_and_declines_a_japanese_only_change() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let a = suggest_jp(&s, AIKO).await;
+    let r = ben_decides(&s, json!({"id": a, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(decided_by(&s, &a), BEN);
+    let b = suggest_jp(&s, AIKO).await;
+    let r = ben_decides(&s, json!({"id": b, "decision": "decline"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["status"], "declined");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_cannot_decide_english_or_mixed_changes() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let (_, _, json) = example(&s).await;
+    let en = suggest_en(&s, AIKO, "English.").await;
+    let mixed = suggest_edits(
+        &s,
+        AIKO,
+        json!({"jp": format!("{}ね", json["jp"].as_str().unwrap()), "en": "Both."}),
+    )
+    .await;
+    for id in [&en, &mixed] {
+        for decision in ["accept", "decline"] {
+            let r = ben_decides(&s, json!({"id": id, "decision": decision})).await;
+            assert_eq!(r.status, 403, "{id} {decision}");
+            assert_eq!(r.body["error"], NATIVE_LIMIT);
+        }
+    }
+    assert_eq!(inbox(&s, "open").await.len(), 2, "both still open");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_cannot_decide_additions_removals_or_notes() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let (id, hash, _) = example(&s).await;
+    let mut ids = Vec::new();
+    for (action, comment) in [("delete", ""), ("note", "Hmm.")] {
+        let r = post(
+            &s,
+            "/api/suggest",
+            json!({"dataset": "verbs", "kind": "example", "id": id,
+            "base_hash": hash, "action": action, "comment": comment}),
+            AIKO,
+        )
+        .await;
+        assert_eq!(r.status, 201, "{}", r.body);
+        ids.push(r.body["id"].clone());
+    }
+    let r = post(&s, "/api/add", json!({"dataset": "words", "kind": "entry",
+        "fields": {"class": "noun", "dict": "ねこ", "kanji": "猫", "meaning": "cat", "jlpt": "N5"}}), AIKO).await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    ids.push(r.body["id"].clone());
+    for id in ids {
+        for decision in ["accept", "decline"] {
+            let r = ben_decides(&s, json!({"id": id, "decision": decision, "confirm": true})).await;
+            assert_eq!(r.status, 403, "{id} {decision}: {}", r.body);
+            assert_eq!(r.body["error"], NATIVE_LIMIT);
+        }
+    }
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_natives_edit_then_accept_may_only_edit_japanese() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let id = suggest_jp(&s, AIKO).await;
+    let r = ben_decides(
+        &s,
+        json!({"id": id, "decision": "accept", "edits": {"en": "Sneaked in."}}),
+    )
+    .await;
+    assert_eq!(r.status, 403, "{}", r.body);
+    assert_eq!(r.body["error"], NATIVE_LIMIT);
+    let r = ben_decides(
+        &s,
+        json!({"id": id, "decision": "accept", "edits": {"jp": "パンを食べるよ。"}}),
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["admin_edit"]["jp"], "パンを食べるよ。");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_does_not_decide_their_own_suggestion() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let own = suggest_jp(&s, BEN).await;
+    let r = ben_decides(&s, json!({"id": own, "decision": "accept"})).await;
+    assert_eq!(r.status, 403);
+    assert_eq!(r.body["error"], OWN_SUGGESTION);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_stale_japanese_change_goes_to_a_teacher_once_the_english_moved() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let id = suggest_jp(&s, AIKO).await;
+    let (ex, _, _) = example(&s).await;
+    let mut d = doc(DataFile::Verbs);
+    for verb in d["verbs"].as_array_mut().unwrap() {
+        for e in verb["examples"].as_array_mut().unwrap() {
+            if e["id"] == ex.as_str() {
+                e["en"] = json!("Changed in the data since.");
+            }
+        }
+    }
+    load_bytes(&s, DataFile::Verbs, d.to_string().as_bytes()).await;
+    let r = ben_decides(&s, json!({"id": id, "decision": "decline"})).await;
+    assert_eq!(r.status, 403, "{}", r.body);
+    assert_eq!(r.body["error"], NATIVE_LIMIT);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_demoted_native_can_no_longer_decide() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let id = suggest_jp(&s, AIKO).await;
+    let r = post(
+        &s,
+        "/api/admin/users/access",
+        json!({"email": BEN, "role": "reviewer"}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(get(&s, "/api/inbox", BEN).await.status, 403);
+    let r = ben_decides(&s, json!({"id": id, "decision": "accept"})).await;
+    assert_eq!(r.status, 403);
+}
+
+/// An entry's `(id, hash)` from the review route.
+async fn entry_target(s: &SqliteStore, dataset: &str, id: &str) -> String {
+    let r = get(
+        s,
+        &format!("/api/review?{}", q(&[("dataset", dataset), ("id", id)])),
+        AIKO,
+    )
+    .await;
+    let part = r.body["parts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["kind"] == "entry")
+        .unwrap()
+        .clone();
+    part["content_hash"].as_str().unwrap().into()
+}
+
+async fn suggest_entry(s: &SqliteStore, dataset: &str, id: &str, edits: Value) -> Value {
+    let hash = entry_target(s, dataset, id).await;
+    let r = post(
+        s,
+        "/api/suggest",
+        json!({"dataset": dataset, "kind": "entry", "id": id, "base_hash": hash,
+        "action": "change", "edits": edits}),
+        AIKO,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    r.body["id"].clone()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_decides_a_counters_reading_but_not_its_meaning() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let reading = suggest_entry(&s, "counters", "tsu", json!({"reading": "っつ"})).await;
+    let meaning = suggest_entry(&s, "counters", "tsu", json!({"meaning": "things"})).await;
+    let r = ben_decides(&s, json!({"id": meaning, "decision": "accept"})).await;
+    assert_eq!(r.status, 403, "{}", r.body);
+    assert_eq!(r.body["error"], NATIVE_LIMIT);
+    let r = ben_decides(&s, json!({"id": reading, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_accepts_removing_a_words_optional_kanji() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let id = suggest_entry(&s, "words", "i-adjective:おおきい", json!({"kanji": ""})).await;
+    let r = ben_decides(&s, json!({"id": id, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
 }

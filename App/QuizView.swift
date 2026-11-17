@@ -11,7 +11,7 @@ struct QuizView: View {
     @State private var attempt = 0
     /// Set when the quiz is quit or done, so leaving the screen then doesn't save it again.
     @State private var ended = false
-    @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
+    @AppStorage(QuizSound.defaultsKey, store: .appGroup) private var speakQuizAnswers = true
     private let topic: QuizSessionTopic
     private let recorder: (QuizAttempt) -> Void
     var onDone: () -> Void

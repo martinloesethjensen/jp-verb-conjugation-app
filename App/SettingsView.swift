@@ -15,7 +15,7 @@ struct SettingsView: View {
     @AppStorage(FuriganaSetting.defaultsKey, store: .appGroup) private var showFurigana = true
     @AppStorage("speechSpeed", store: .appGroup) private var speechSpeedRaw = SpeechSpeed.normal.rawValue
     @AppStorage(Speaker.voiceDefaultsKey, store: .appGroup) private var speechVoiceID = ""
-    @AppStorage("speakQuizAnswers", store: .appGroup) private var speakQuizAnswers = true
+    @AppStorage(QuizSound.defaultsKey, store: .appGroup) private var speakQuizAnswers = true
     @AppStorage(WordBankSuggestions.enabledKey, store: .appGroup) private var wordBankSuggestions = true
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
