@@ -62,8 +62,8 @@
    under *Waiting for an opinion* and not under *Open*. An answered request sends the group back to *Open* with
    the answer shown. Deciding every open suggestion ends the wait: nothing is stored, the condition just stops
    holding. Answering an item with no open suggestion is refused with "Already decided".
-6. **Deciding while waiting is allowed** for anyone who may decide that suggestion. This is the default, and
-   open question 1 asks the owner about it.
+6. **Deciding while waiting is allowed** for anyone who may decide that suggestion. The owner confirmed this
+   (owner decision 1).
 7. **Disagreement:** an item with two or more open `change`/`delete` suggestions. Accepting one declines the
    others that the decider may decide: not their own, and for a native only the Japanese-only ones. Each declined
    suggestion gets a comment by the decider: `Declined: {author}'s suggestion was accepted instead.` Suggestions
@@ -82,18 +82,14 @@
     target's JSON at that moment). Older accepted suggestions have none, and the page shows their proposed text
     without strike-through.
 
-## Open questions for the owner
+## Owner decisions (2026-11-17)
 
-1. **Deciding while a second opinion is pending:** the plan lets teachers and natives decide straight away
-   (the request then ends). Should the inbox instead hide Accept and Decline on a waiting item until the opinion
-   arrives or the asker cancels?
-2. **Suggestions exported before this ships:** migration 0012 files every suggestion exported before the
-   dataset's last load under one "Earlier releases" group (shown live). Suggestions exported after it wait for
-   the next release. Fine, or would you rather leave them all ungrouped?
-3. **"Mark exported" after the release:** if you mark a batch exported only *after* loading the release that
-   carried it, those changes get credited to the *following* release. The Export page will say "Mark exported
-   before your next `make data-release`". Is a warning enough, or do you want a "these went out in the loaded
-   release" button on the Export page?
+1. **Deciding while a second opinion is pending:** "Yes, deciding ends the wait". Teachers and natives
+   decide as usual, and the request then ends (decision 6).
+2. **Suggestions exported before this ships:** the "Earlier releases" group. Migration 0012 files every
+   suggestion exported before its dataset's last load there, shown live; the rest wait for the next release.
+3. **"Mark exported" after the release:** "Warning is enough". The Export page says "Mark exported before
+   your next `make data-release`" (Task B4); no extra button.
 
 ## Review Focus
 
