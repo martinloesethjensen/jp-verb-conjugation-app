@@ -7,7 +7,6 @@
 //! is loaded (in `items`) or already in that lesson of the stored course, so a kept item that has left the
 //! data reads back with `loaded = false`. Every write adds its `audit_log` row in the same batch.
 
-use crate::addition::STABLE_ID_ALPHABET;
 use crate::review_store::Target;
 use crate::store::StoreError;
 use serde::{Deserialize, Serialize};
@@ -414,19 +413,13 @@ fn kept_set(stored: &[CourseItemRow]) -> BTreeSet<String> {
         .collect()
 }
 
-fn valid_lesson_id(id: &str) -> bool {
-    !id.is_empty()
-        && id.len() <= 32
-        && id
-            .bytes()
-            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
-}
-
-/// Checks an outline and gives it ids and positions. `stored` are the course's current items and
-/// `loaded` the keys (from `keys_to_check`) found in `items`. Lessons without an id get one from
-/// `new_id`; an item repeated within a lesson is kept once.
+/// Checks an outline and gives it ids and positions. `lesson_ids` are the course's stored lesson ids (a
+/// lesson that keeps its id must be one of them), `stored` its current items and `loaded` the keys (from
+/// `keys_to_check`) found in `items`. Lessons without an id get one from `new_id`; an item repeated within
+/// a lesson is kept once.
 pub fn plan_outline(
     inputs: &[LessonInput],
+    lesson_ids: &BTreeSet<String>,
     stored: &[CourseItemRow],
     loaded: &BTreeSet<String>,
     new_id: &mut dyn FnMut() -> String,
@@ -447,8 +440,8 @@ pub fn plan_outline(
     let mut ids: BTreeSet<String> = BTreeSet::new();
     for l in inputs {
         if let Some(id) = &l.id {
-            if !valid_lesson_id(id) {
-                return Err(CourseError::Invalid(format!("bad lesson id {id:?}")));
+            if !lesson_ids.contains(id) {
+                return Err(CourseError::Invalid(format!("unknown lesson id {id:?}")));
             }
             if !ids.insert(id.clone()) {
                 return Err(CourseError::Invalid(format!("lesson id {id:?} twice")));
@@ -462,7 +455,7 @@ pub fn plan_outline(
             Some(id) => id.clone(),
             None => loop {
                 let id = new_id();
-                if ids.insert(id.clone()) {
+                if !lesson_ids.contains(&id) && ids.insert(id.clone()) {
                     break id;
                 }
             },
@@ -510,10 +503,19 @@ pub fn plan_outline(
     Ok(lessons)
 }
 
-/// A fresh 6-character id for a course; the caller retries on `Conflict`.
+/// A fresh 6-character id (from `STABLE_ID_ALPHABET`) for a course or lesson; a course's caller retries
+/// on `Conflict`.
 pub fn new_course_id() -> String {
-    debug_assert!(STABLE_ID_ALPHABET.iter().all(|b| b.is_ascii_alphanumeric()));
     crate::addition::random_stable_id()
+}
+
+/// A guarded write that changed nothing lost a race (the status moved on after the pre-check).
+pub fn require_written(changes: usize, otherwise: CourseError) -> Result<(), CourseError> {
+    if changes == 0 {
+        Err(otherwise)
+    } else {
+        Ok(())
+    }
 }
 
 /// How many times creating a course retries after an id collision.

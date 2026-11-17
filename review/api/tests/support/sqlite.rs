@@ -1313,11 +1313,13 @@ impl CourseStore for SqliteStore {
         self.require_draft(id)?;
         let mut conn = self.conn.borrow_mut();
         let tx = conn.transaction().map_err(backend)?;
-        tx.execute(
-            UPDATE_COURSE_META,
-            params![id, meta.title, meta.summary, meta.follows_book, now],
-        )
-        .map_err(backend)?;
+        let n = tx
+            .execute(
+                UPDATE_COURSE_META,
+                params![id, meta.title, meta.summary, meta.follows_book, now],
+            )
+            .map_err(backend)?;
+        require_written(n, CourseError::NotDraft)?;
         tx.execute(
             INSERT_COURSE_AUDIT,
             params![
@@ -1348,7 +1350,9 @@ impl CourseStore for SqliteStore {
         let keys = keys_to_check(lessons, &stored);
         let found: Vec<KeyRow> = query(&tx, SELECT_LOADED_KEYS, params![json_list(&keys)])?;
         let loaded: BTreeSet<String> = found.into_iter().map(|r| r.key).collect();
-        let plan = plan_outline(lessons, &stored, &loaded, &mut new_course_id)?;
+        let known: Vec<LessonRow> = query(&tx, SELECT_LESSONS, params![course_id])?;
+        let known: BTreeSet<String> = known.into_iter().map(|l| l.id).collect();
+        let plan = plan_outline(lessons, &known, &stored, &loaded, &mut new_course_id)?;
 
         tx.execute(DELETE_COURSE_ITEMS, params![course_id])
             .map_err(backend)?;
@@ -1385,8 +1389,10 @@ impl CourseStore for SqliteStore {
                 .map_err(backend)?;
             }
         }
-        tx.execute(TOUCH_COURSE, params![course_id, now])
+        let n = tx
+            .execute(TOUCH_COURSE, params![course_id, now])
             .map_err(backend)?;
+        require_written(n, CourseError::NotDraft)?; // dropping `tx` rolls the guarded no-ops back
         let items: usize = plan.iter().map(|l| l.items.len()).sum();
         tx.execute(
             INSERT_COURSE_AUDIT,
@@ -1442,11 +1448,13 @@ impl CourseStore for SqliteStore {
         }
         let mut conn = self.conn.borrow_mut();
         let tx = conn.transaction().map_err(backend)?;
-        tx.execute(
-            UPDATE_COURSE_STATUS,
-            params![id, from, to, now, own_words as i64],
-        )
-        .map_err(backend)?;
+        let n = tx
+            .execute(
+                UPDATE_COURSE_STATUS,
+                params![id, from, to, now, own_words as i64],
+            )
+            .map_err(backend)?;
+        require_written(n, CourseError::Conflict)?;
         tx.execute(
             INSERT_COURSE_AUDIT,
             params![

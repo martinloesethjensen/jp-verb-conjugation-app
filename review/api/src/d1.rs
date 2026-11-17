@@ -1328,8 +1328,8 @@ impl CourseStore for D1Store {
             id,
             &format!("title={}", meta.title),
         )?;
-        self.db.batch(vec![update, log]).await.map_err(backend)?;
-        Ok(())
+        let results = self.db.batch(vec![update, log]).await.map_err(backend)?;
+        require_written(changes(results.first()), CourseError::NotDraft)
     }
 
     async fn save_lessons(
@@ -1348,9 +1348,12 @@ impl CourseStore for D1Store {
             .rows(SELECT_LOADED_KEYS, &[text(&json_list(&keys))])
             .await?;
         let loaded: BTreeSet<String> = found.into_iter().map(|r| r.key).collect();
-        let plan = plan_outline(lessons, &stored, &loaded, &mut new_course_id)?;
+        let known: Vec<LessonRow> = self.rows(SELECT_LESSONS, &[text(course_id)]).await?;
+        let known: BTreeSet<String> = known.into_iter().map(|l| l.id).collect();
+        let plan = plan_outline(lessons, &known, &stored, &loaded, &mut new_course_id)?;
 
-        // Every statement is guarded by the course still being a draft, so the batch is all or nothing.
+        // Every statement is guarded by the course still being a draft, so if the status moved on after the
+        // pre-check each one writes nothing; the touch's change count tells (it is the last write).
         let mut batch = vec![
             self.statement(DELETE_COURSE_ITEMS, &[text(course_id)])?,
             self.statement(DELETE_COURSE_LESSONS, &[text(course_id)])?,
@@ -1392,7 +1395,9 @@ impl CourseStore for D1Store {
             course_id,
             &format!("lessons={} items={items}", plan.len()),
         )?);
-        self.db.batch(batch).await.map_err(backend)?;
+        let results = self.db.batch(batch).await.map_err(backend)?;
+        let touched = results.len().checked_sub(2).and_then(|i| results.get(i));
+        require_written(changes(touched), CourseError::NotDraft)?;
         Ok(plan.into_iter().map(|l| l.id).collect())
     }
 
@@ -1448,8 +1453,8 @@ impl CourseStore for D1Store {
             ],
         )?;
         let log = self.course_log((now, by), "course.status", id, &format!("{from} -> {to}"))?;
-        self.db.batch(vec![update, log]).await.map_err(backend)?;
-        Ok(())
+        let results = self.db.batch(vec![update, log]).await.map_err(backend)?;
+        require_written(changes(results.first()), CourseError::Conflict)
     }
 
     async fn search_items(

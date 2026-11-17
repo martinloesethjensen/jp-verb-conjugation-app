@@ -359,3 +359,64 @@ fn course_kind_round_trips() {
     assert_eq!(course_kind("furigana", "entry"), None);
     assert!(kind_targets("nope").is_empty());
 }
+
+#[tokio::test]
+async fn made_up_lesson_ids_are_refused() {
+    let (s, v, _) = setup().await;
+    let id = new_course(&s).await;
+    let ids = s
+        .save_lessons(&id, &[lesson(None, "A", vec![v[0].clone()])], AIKO, T0)
+        .await
+        .unwrap();
+    assert!(
+        ids[0].len() == 6
+            && ids[0]
+                .bytes()
+                .all(|b| b"abcdefghijkmnpqrstuvwxyz23456789".contains(&b))
+    );
+    let before = s.course(&id, AIKO).await.unwrap().unwrap();
+    for bad in ["1", "madeup", "zzzzzz"] {
+        let input = [
+            lesson(Some(&ids[0]), "A", vec![]),
+            lesson(Some(bad), "B", vec![]),
+        ];
+        assert!(matches!(
+            s.save_lessons(&id, &input, AIKO, T1).await,
+            Err(CourseError::Invalid(_))
+        ));
+    }
+    assert_eq!(s.course(&id, AIKO).await.unwrap().unwrap(), before);
+    assert_eq!(audits(&s, "course.outline"), 1);
+}
+
+#[tokio::test]
+async fn a_guarded_write_that_changes_nothing_is_an_error() {
+    assert_eq!(
+        require_written(0, CourseError::NotDraft),
+        Err(CourseError::NotDraft)
+    );
+    assert_eq!(require_written(1, CourseError::NotDraft), Ok(()));
+    // The SQL really does write nothing once the status has moved on, which is what the helper catches.
+    let (s, _, _) = setup().await;
+    let id = new_course(&s).await;
+    s.set_status(&id, "draft", "in_review", false, AIKO, T0)
+        .await
+        .unwrap();
+    let conn = s.conn.borrow();
+    let meta = conn
+        .execute(
+            UPDATE_COURSE_META,
+            rusqlite::params![id, "x", "y", None::<String>, T1],
+        )
+        .unwrap();
+    let touch = conn
+        .execute(TOUCH_COURSE, rusqlite::params![id, T1])
+        .unwrap();
+    let status = conn
+        .execute(
+            UPDATE_COURSE_STATUS,
+            rusqlite::params![id, "draft", "approved", T1, 0],
+        )
+        .unwrap();
+    assert_eq!((meta, touch, status), (0, 0, 0));
+}
