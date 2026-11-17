@@ -62,3 +62,9 @@ test('the asked line says who else is told', () => {
 	const line = askedLine(opinion, [a, k, { ...a, author_name: 'Yumi' }, { ...a, author_name: 'Mio', action: 'note' }], new Date('2026-11-17T12:00:00Z'));
 	expect(line).toMatch(/^Asked .*17.*\. It shows up in their Replies\. Aiko and Kenji are told too\.$/);
 });
+
+test('the radiogroup has one tab stop: the chosen person', () => {
+	const { body } = render(AskOpinion, { props: { target, onasked: () => {}, candidates } });
+	expect(body.match(/tabindex="0"/g)).toHaveLength(1);
+	expect(body.match(/tabindex="-1"/g)).toHaveLength(1);
+});

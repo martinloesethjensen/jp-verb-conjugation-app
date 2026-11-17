@@ -4,7 +4,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { askOpinion, getCandidates, problem, type Candidate, type Target } from './api.ts';
 	import ErrorLine from './ErrorLine.svelte';
-	import { askLabel, firstCandidate, seenNote } from './opinions.ts';
+	import { askLabel, firstCandidate, seenNote, stepIndex } from './opinions.ts';
 
 	let {
 		target,
@@ -39,6 +39,19 @@
 		}
 	});
 
+	let group = $state<HTMLElement>();
+
+	/** Arrow keys move the choice (and focus) round the group; Space or Enter on a focused radio picks it. */
+	function key(event: KeyboardEvent) {
+		const delta = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
+		if (!delta || !candidates?.length) return;
+		event.preventDefault();
+		const at = candidates.findIndex((c) => c.user === chosen);
+		const next = stepIndex(at, delta, candidates.length);
+		chosen = candidates[next].user;
+		group?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus();
+	}
+
 	async function ask(event: SubmitEvent) {
 		event.preventDefault();
 		if (chosen === null || busy) return;
@@ -62,14 +75,16 @@
 		{#if candidates === null}
 			<p class="lead">Loading…</p>
 		{:else if candidates.length}
-			<div class="people" role="radiogroup" aria-label="Who to ask">
-				{#each candidates as c (c.user)}
+			<div class="people" role="radiogroup" aria-label="Who to ask" bind:this={group}>
+				{#each candidates as c, i (c.user)}
 					<button
 						type="button"
 						role="radio"
 						class="person"
 						aria-checked={chosen === c.user}
+						tabindex={chosen === c.user || (chosen === null && i === 0) ? 0 : -1}
 						onclick={() => (chosen = c.user)}
+						onkeydown={key}
 					>
 						<span class="initial" aria-hidden="true">{(Array.from(c.name.trim())[0] ?? '?').toUpperCase()}</span>
 						<span class="who"

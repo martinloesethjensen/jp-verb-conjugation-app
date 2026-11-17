@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Candidate, InboxSuggestion, Opinion } from './api.ts';
 import { inboxSuggestion } from './fixtures.ts';
-import { disagreement, seenNote, waitingLine } from './opinions.ts';
+import { disagreement, seenNote, stepIndex, waitingLine } from './opinions.ts';
 
 const by = (name: string, over: Partial<InboxSuggestion> = {}): InboxSuggestion => ({
 	...inboxSuggestion,
@@ -44,4 +44,11 @@ test('seenNote says how the candidate knows the item', () => {
 
 test('waitingLine names who is asked', () => {
 	expect(waitingLine({ asked_of_name: 'Haruka' } as Opinion)).toBe("Waiting for Haruka's opinion");
+});
+
+test('stepIndex wraps both ways', () => {
+	expect(stepIndex(0, 1, 3)).toBe(1);
+	expect(stepIndex(2, 1, 3)).toBe(0);
+	expect(stepIndex(0, -1, 3)).toBe(2);
+	expect(stepIndex(0, 1, 0)).toBe(-1);
 });

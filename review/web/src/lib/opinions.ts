@@ -57,3 +57,7 @@ export function askedLine(
 	const who = told.length > 1 ? `${told.slice(0, -1).join(', ')} and ${told[told.length - 1]}` : told[0];
 	return `Asked${date}. It shows up in their Replies.${who ? ` ${who} ${told.length > 1 ? 'are' : 'is'} told too.` : ''}`;
 }
+
+/** The index `delta` steps from `from` in a list of `length`, wrapping round (arrow keys in a radiogroup). */
+export const stepIndex = (from: number, delta: number, length: number): number =>
+	length === 0 ? -1 : (((from + delta) % length) + length) % length;
