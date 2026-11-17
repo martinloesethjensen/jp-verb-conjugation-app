@@ -78,6 +78,10 @@ enum Handler {
     Decide,
     Replies,
     ReadReplies,
+    OpinionCandidates,
+    AskOpinion,
+    CancelOpinion,
+    AnswerOpinion,
     Settings,
     ChangeSettings,
     Add,
@@ -316,6 +320,30 @@ const ROUTES: &[Route] = &[
         handler: Handler::ReadReplies,
     },
     Route {
+        method: "GET",
+        path: "/api/opinion/candidates",
+        need: Need::Decider,
+        handler: Handler::OpinionCandidates,
+    },
+    Route {
+        method: "POST",
+        path: "/api/opinion/ask",
+        need: Need::Decider,
+        handler: Handler::AskOpinion,
+    },
+    Route {
+        method: "POST",
+        path: "/api/opinion/cancel",
+        need: Need::Decider,
+        handler: Handler::CancelOpinion,
+    },
+    Route {
+        method: "POST",
+        path: "/api/opinion/answer",
+        need: Need::Reviewer,
+        handler: Handler::AnswerOpinion,
+    },
+    Route {
         method: "POST",
         path: "/api/add",
         need: Need::Reviewer,
@@ -487,6 +515,23 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
         Handler::Replies => crate::reply_routes::replies(&principal, store).await,
         Handler::ReadReplies => {
             crate::reply_routes::read(&req.body, &principal, store, today).await
+        }
+        Handler::OpinionCandidates => {
+            let (d, k, i) = (
+                param(&req.query, "dataset"),
+                param(&req.query, "kind"),
+                param(&req.query, "id"),
+            );
+            crate::opinion_routes::candidates(d, k, i, &principal, store).await
+        }
+        Handler::AskOpinion => {
+            crate::opinion_routes::ask(&req.body, &principal, store, today).await
+        }
+        Handler::CancelOpinion => {
+            crate::opinion_routes::cancel(&req.body, &principal, store, today).await
+        }
+        Handler::AnswerOpinion => {
+            crate::opinion_routes::answer(&req.body, &principal, store, today).await
         }
         Handler::Add => add_routes::add(&req.body, &principal, store, today).await,
         Handler::Additions => {

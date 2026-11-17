@@ -1028,8 +1028,8 @@ macro_rules! opinions_select {
     ($where:literal) => {
         concat!(
             "SELECT o.id, o.dataset, o.kind, o.item_id, o.entry_id, o.item_title, o.anchor_id, \
-             IFNULL(ub.display_name, o.asked_by) AS asked_by_name, \
-             IFNULL(uo.display_name, o.asked_of) AS asked_of_name, \
+             IFNULL(ub.display_name, '') AS asked_by_name, \
+             IFNULL(uo.display_name, '') AS asked_of_name, \
              o.asked_by = ?1 AS mine_asked, o.asked_of = ?1 AS mine_to_answer, \
              o.question, o.created_at, o.answered_at, o.pick, o.answer, o.cancelled_at, \
              (o.answered_at IS NULL AND o.cancelled_at IS NULL AND EXISTS ( \

@@ -10,6 +10,7 @@ pub mod export_routes;
 pub mod items;
 pub mod japanese;
 pub mod manifest;
+pub mod opinion_routes;
 pub mod proposal;
 pub mod reply_routes;
 pub mod review_routes;

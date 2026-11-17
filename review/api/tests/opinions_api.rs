@@ -1,7 +1,7 @@
 mod support;
 
 use review_api::review_store::*;
-use review_api::store::{Role, StoreError};
+use review_api::store::{NewUser, Role, Store, StoreError};
 use serde_json::{json, Value};
 use support::review::*;
 use support::sqlite::SqliteStore;
@@ -216,4 +216,361 @@ async fn candidates_put_people_who_have_not_seen_the_item_first() {
         (AIKO, "reviewer", true)
     );
     assert_eq!(s.user_by_number(0).await.unwrap(), None);
+}
+
+// --- Routes ----------------------------------------------------------------------------------------
+
+const NATIVE: &str = "nao@example.com";
+
+async fn with_native() -> SqliteStore {
+    let s = seeded().await;
+    let user = NewUser {
+        email: NATIVE.into(),
+        display_name: "Nao".into(),
+        role: Role::Native,
+    };
+    s.add_user(&user, MARTIN, T0).await.unwrap();
+    s
+}
+
+fn number(s: &SqliteStore, email: &str) -> i64 {
+    s.conn
+        .borrow()
+        .query_row("SELECT rowid FROM users WHERE email = ?1", [email], |r| {
+            r.get(0)
+        })
+        .unwrap()
+}
+
+async fn ask_via(s: &SqliteStore, who: &str, of: i64, question: &str) -> Response {
+    let (id, _) = example(s).await;
+    post(
+        s,
+        "/api/opinion/ask",
+        json!({"dataset": "verbs", "kind": "example", "id": id, "user": of, "question": question}),
+        who,
+    )
+    .await
+}
+
+async fn review_of(s: &SqliteStore, who: &str) -> Response {
+    get(
+        s,
+        &format!(
+            "/api/review?{}",
+            q(&[("dataset", "verbs"), ("id", "たべる")])
+        ),
+        who,
+    )
+    .await
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn only_teachers_and_the_owner_may_ask() {
+    let s = with_native().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let ben = number(&s, BEN);
+    assert_eq!(ask_via(&s, AIKO, ben, "Which?").await.status, 403);
+    assert_eq!(ask_via(&s, NATIVE, ben, "Which?").await.status, 403);
+    let r = ask_via(&s, KEIKO, ben, "Which?").await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    assert!(r.body["id"].as_i64().is_some());
+    // Another item: the first open request blocks only its own item.
+    let sen = get(
+        &s,
+        &format!("/api/review?{}", q(&[("dataset", "verbs"), ("id", "のむ")])),
+        AIKO,
+    )
+    .await;
+    let part = sen.body["parts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["kind"] == "example")
+        .unwrap()
+        .clone();
+    let (item, hash) = (part["item_id"].clone(), part["content_hash"].clone());
+    let sg = post(
+        &s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": item, "base_hash": hash,
+        "action": "change", "edits": {"en": "Other English."}}),
+        AIKO,
+    )
+    .await;
+    assert_eq!(sg.status, 201, "{}", sg.body);
+    let r = post(
+        &s,
+        "/api/opinion/ask",
+        json!({"dataset": "verbs", "kind": "example", "id": item, "user": ben, "question": ""}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn asking_a_second_time_on_one_item_is_refused() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let ben = number(&s, BEN);
+    assert_eq!(ask_via(&s, KEIKO, ben, "").await.status, 201);
+    let r = ask_via(&s, MARTIN, ben, "").await;
+    assert_eq!(r.status, 409);
+    assert_eq!(r.body["error"], "someone was already asked about this item");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn asking_needs_an_open_suggestion_on_the_item() {
+    let s = seeded().await;
+    let r = ask_via(&s, KEIKO, number(&s, BEN), "Which?").await;
+    assert_eq!(r.status, 409);
+    assert_eq!(r.body["error"], "nothing open to give an opinion on");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_asked_person_must_be_someone_else_and_not_an_author() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let r = ask_via(&s, KEIKO, number(&s, KEIKO), "").await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (400, "you can't ask yourself")
+    );
+    let r = ask_via(&s, KEIKO, number(&s, AIKO), "").await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (400, "they wrote one of these suggestions")
+    );
+    s.conn
+        .borrow()
+        .execute("UPDATE users SET active = 0 WHERE email = ?1", [BEN])
+        .unwrap();
+    let r = ask_via(&s, KEIKO, number(&s, BEN), "").await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (400, "no such reviewer")
+    );
+    let r = ask_via(&s, KEIKO, 999_999, "").await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (400, "no such reviewer")
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_or_reviewer_can_be_asked_and_answer() {
+    let s = with_native().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "Which reads better?")
+        .await
+        .body["id"]
+        .as_i64()
+        .unwrap();
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": null, "body": " Both read oddly. "}),
+        BEN,
+    )
+    .await;
+    assert_eq!((r.status, r.body), (200, json!({})));
+    let seen = review_of(&s, AIKO).await;
+    let o = &seen.body["opinions"][0];
+    assert_eq!(o["answer"], "Both read oddly.");
+    assert_eq!(o["asked_by_name"], "Keiko");
+    assert_eq!(o["asked_of_name"], "Ben");
+    assert_eq!(o["waiting"], false);
+    assert!(!seen.body.to_string().contains("@example.com"));
+    // A native is asked too.
+    let s2 = with_native().await;
+    suggest_en(&s2, AIKO, "Better English.").await;
+    assert_eq!(
+        ask_via(&s2, KEIKO, number(&s2, NATIVE), "").await.status,
+        201
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn candidates_list_who_can_be_asked_without_emails() {
+    let s = with_native().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let (item, _) = example(&s).await;
+    let path = format!(
+        "/api/opinion/candidates?{}",
+        q(&[("dataset", "verbs"), ("kind", "example"), ("id", &item)])
+    );
+    assert_eq!(get(&s, &path, AIKO).await.status, 403);
+    assert_eq!(get(&s, &path, NATIVE).await.status, 403);
+    let r = get(&s, &path, KEIKO).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let names: Vec<&str> = r.body["candidates"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, vec!["Ben", "Martin", "Nao"]);
+    assert!(r.body["candidates"][0]["user"].as_i64().is_some());
+    assert!(!r.body.to_string().contains("@example.com"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn neither_needs_a_reason() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": null, "body": "  "}),
+        BEN,
+    )
+    .await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (400, "say why neither works")
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_pick_must_be_an_open_suggestion_on_the_item() {
+    let s = seeded().await;
+    let own = suggest_en(&s, AIKO, "Better English.").await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    for pick in [999_999, own + 1000] {
+        let r = post(
+            &s,
+            "/api/opinion/answer",
+            json!({"id": id, "pick": pick, "body": ""}),
+            BEN,
+        )
+        .await;
+        assert_eq!(r.status, 400, "{}", r.body);
+    }
+    // A suggestion on another item.
+    let other = get(
+        &s,
+        &format!("/api/review?{}", q(&[("dataset", "verbs"), ("id", "のむ")])),
+        AIKO,
+    )
+    .await;
+    let part = other.body["parts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["kind"] == "example")
+        .unwrap()
+        .clone();
+    let sg = post(
+        &s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": part["item_id"],
+        "base_hash": part["content_hash"], "action": "change", "edits": {"en": "Elsewhere."}}),
+        AIKO,
+    )
+    .await;
+    let other_id = sg.body["id"].as_i64().unwrap();
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": other_id, "body": ""}),
+        BEN,
+    )
+    .await;
+    assert_eq!(r.status, 400, "{}", r.body);
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": own, "body": ""}),
+        BEN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn only_the_asked_person_answers() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": null, "body": "No."}),
+        AIKO,
+    )
+    .await;
+    assert_eq!(r.status, 403);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn answering_a_decided_item_is_refused() {
+    let s = seeded().await;
+    let sid = suggest_en(&s, AIKO, "Better English.").await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    let d = post(
+        &s,
+        "/api/decide",
+        json!({"id": sid, "decision": "decline"}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(d.status, 200, "{}", d.body);
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": null, "body": "Neither."}),
+        BEN,
+    )
+    .await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (409, "already decided")
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn only_the_asker_cancels() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    let r = post(&s, "/api/opinion/cancel", json!({"id": id}), MARTIN).await;
+    assert_eq!(r.status, 403);
+    let r = post(&s, "/api/opinion/cancel", json!({"id": id}), KEIKO).await;
+    assert_eq!((r.status, r.body), (200, json!({})));
+    let r = post(&s, "/api/opinion/cancel", json!({"id": id}), KEIKO).await;
+    assert_eq!(r.status, 409);
+    let r = post(&s, "/api/opinion/cancel", json!({"id": 999_999}), KEIKO).await;
+    assert_eq!(r.status, 404);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_question_and_answer_are_capped() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let long = "あ".repeat(review_api::proposal::MAX_TEXT + 1);
+    let ben = number(&s, BEN);
+    assert_eq!(ask_via(&s, KEIKO, ben, &long).await.status, 400);
+    let id = ask_via(&s, KEIKO, ben, "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": null, "body": long}),
+        BEN,
+    )
+    .await;
+    assert_eq!(r.status, 400);
 }

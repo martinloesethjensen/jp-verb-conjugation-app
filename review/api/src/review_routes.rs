@@ -140,10 +140,14 @@ pub async fn review<S: ReviewStore>(
         stamp = tri!(store.pending_stamp(&t).await.map_err(unavailable));
         stampable = stamp.is_none() && crate::stamp_routes::ready(store, &t).await.is_ok();
     }
+    let opinions = tri!(store
+        .opinions_for_entry(file.name(), &id, &by.email)
+        .await
+        .map_err(unavailable));
     ok(
         200,
         json!({ "parts": parts, "approvals": approvals, "suggestions": suggestions,
-                "stamp": stamp, "stampable": stampable }),
+                "stamp": stamp, "stampable": stampable, "opinions": opinions }),
     )
 }
 
