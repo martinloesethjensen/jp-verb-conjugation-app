@@ -209,3 +209,132 @@ async fn a_long_comment_is_cut_in_the_list() {
     assert_eq!(body.chars().count(), 141);
     assert!(body.ends_with('…'));
 }
+
+// --- Second opinions ---------------------------------------------------------------------------------
+
+fn number(s: &SqliteStore, email: &str) -> i64 {
+    s.conn
+        .borrow()
+        .query_row("SELECT rowid FROM users WHERE email = ?1", [email], |r| {
+            r.get(0)
+        })
+        .unwrap()
+}
+
+/// Keiko asks Ben about the example; returns the request's id.
+async fn ask(s: &SqliteStore, question: &str, n: u32) -> i64 {
+    let (id, _) = example(s).await;
+    let r = post_at(
+        s,
+        "/api/opinion/ask",
+        json!({"dataset": "verbs", "kind": "example", "id": id, "user": number(s, BEN),
+            "question": question}),
+        KEIKO,
+        &at(n),
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    r.body["id"].as_i64().unwrap()
+}
+
+fn of_kind<'a>(list: &'a [Value], what: &str) -> Vec<&'a Value> {
+    list.iter().filter(|r| r["what"] == what).collect()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_asked_person_and_the_authors_are_told_when_asked() {
+    let s = seeded().await;
+    let id = suggest(&s, AIKO, "Which reads better?", 1).await;
+    ask(&s, "Does this sound natural?", 2).await;
+    for who in [BEN, AIKO] {
+        let (unread, list) = replies(&s, who).await;
+        let asked = of_kind(&list, "opinion_asked");
+        assert_eq!(asked.len(), 1, "{who}");
+        assert_eq!(unread, 1, "{who}");
+        assert_eq!(asked[0]["by_name"], "Keiko");
+        assert_eq!(asked[0]["asked_of_name"], "Ben");
+        assert_eq!(asked[0]["body"], "Does this sound natural?");
+        assert_eq!(asked[0]["suggestion_id"], id);
+        assert_eq!(asked[0]["unread"], true);
+    }
+    let (unread, list) = replies(&s, KEIKO).await;
+    assert_eq!((unread, list.len()), (0, 0));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_suggestion_made_after_the_question_is_not_told() {
+    let s = seeded().await;
+    suggest(&s, AIKO, "Before.", 1).await;
+    ask(&s, "Which one?", 2).await;
+    let (id, hash) = example(&s).await;
+    let r = post_at(
+        &s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": id, "base_hash": hash,
+            "action": "change", "edits": {"en": "After."}}),
+        MARTIN,
+        &at(3),
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    let (_, list) = replies(&s, MARTIN).await;
+    assert!(list.is_empty(), "{list:?}");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_asker_and_authors_are_told_the_answer() {
+    let s = seeded().await;
+    let sid = suggest(&s, AIKO, "Pick me.", 1).await;
+    let req = ask(&s, "Which one?", 2).await;
+    let r = post_at(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": req, "pick": sid, "body": "This one is natural."}),
+        BEN,
+        &at(3),
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    for who in [KEIKO, AIKO] {
+        let (_, list) = replies(&s, who).await;
+        let answered = of_kind(&list, "opinion_answered");
+        assert_eq!(answered.len(), 1, "{who}");
+        assert_eq!(answered[0]["by_name"], "Ben");
+        assert_eq!(answered[0]["asked_of_name"], "Ben");
+        assert_eq!(answered[0]["body"], "This one is natural.");
+        assert_eq!(answered[0]["unread"], true);
+    }
+    let (_, list) = replies(&s, BEN).await;
+    assert!(of_kind(&list, "opinion_answered").is_empty());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_asked_person_is_told_of_a_cancel() {
+    let s = seeded().await;
+    suggest(&s, AIKO, "Never mind.", 1).await;
+    let req = ask(&s, "Which one?", 2).await;
+    let r = post_at(&s, "/api/opinion/cancel", json!({"id": req}), KEIKO, &at(3)).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let (_, list) = replies(&s, BEN).await;
+    let cancelled = of_kind(&list, "opinion_cancelled");
+    assert_eq!(cancelled.len(), 1);
+    assert_eq!(cancelled[0]["by_name"], "Keiko");
+    assert_eq!(cancelled[0]["asked_of_name"], "Ben");
+    let (_, list) = replies(&s, KEIKO).await;
+    assert!(of_kind(&list, "opinion_cancelled").is_empty());
+    let (_, list) = replies(&s, AIKO).await;
+    assert!(of_kind(&list, "opinion_cancelled").is_empty());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn reading_the_anchor_thread_reads_opinion_events() {
+    let s = seeded().await;
+    let id = suggest(&s, AIKO, "Read me.", 1).await;
+    ask(&s, "Which one?", 2).await;
+    for who in [BEN, AIKO] {
+        assert_eq!(replies(&s, who).await.0, 1, "{who}");
+        let r = post_at(&s, "/api/replies/read", json!({"ids": [id]}), who, &at(10)).await;
+        assert_eq!(r.status, 200, "{}", r.body);
+        assert_eq!(r.body["unread"], 0, "{who}");
+    }
+}

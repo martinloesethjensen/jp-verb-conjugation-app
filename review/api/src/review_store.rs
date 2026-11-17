@@ -650,11 +650,13 @@ pub const INSERT_WITHDRAW_AUDIT: &str =
     "INSERT INTO audit_log (at, actor, action, target, detail) \
      SELECT ?1, ?2, 'suggestion.withdraw', 'suggestion/' || id, '' FROM suggestions \
      WHERE id = ?3 AND status = 'open' AND author = ?2";
-/// One reply event for the viewer: a comment in a thread they're in, or a decision on their suggestion.
+/// One reply event for the viewer: a comment in a thread they're in, a decision on their suggestion, or a
+/// second opinion asked, answered or cancelled on an item they're part of.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Reply {
     pub suggestion_id: i64,
-    /// `comment`, `accepted` or `declined`.
+    /// `comment`, `accepted`, `declined`, `opinion_asked`, `opinion_answered` or `opinion_cancelled`. For the
+    /// opinion events `suggestion_id` is the request's anchor suggestion and `body` the question or answer.
     pub what: String,
     pub by_name: String,
     pub at: String,
@@ -669,6 +671,8 @@ pub struct Reply {
     pub parent_kind: Option<String>,
     pub parent_id: Option<String>,
     pub unread: bool,
+    /// Who was asked, on the opinion events; empty on the others.
+    pub asked_of_name: String,
 }
 
 pub const MAX_REPLY_BODY: usize = 140;
@@ -689,6 +693,7 @@ pub struct ReplyRow {
     pub parent_kind: Option<String>,
     pub parent_id: Option<String>,
     pub unread: i64,
+    pub asked_of_name: String,
     pub total_unread: i64,
 }
 
@@ -714,8 +719,73 @@ impl From<ReplyRow> for Reply {
             parent_kind: r.parent_kind,
             parent_id: r.parent_id,
             unread: r.unread != 0,
+            asked_of_name: r.asked_of_name,
         }
     }
+}
+
+macro_rules! opinion_joins {
+    ($actor:literal) => {
+        concat!(
+            "JOIN suggestions a ON a.id = o.anchor_id LEFT JOIN users ua ON ua.email = ",
+            $actor,
+            " ",
+            "LEFT JOIN users ub ON ub.email = o.asked_of ",
+            "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = o.anchor_id "
+        )
+    };
+}
+
+/// The `UNION ALL` branches of `with_reply_events!` for one opinion event, rank 2 and sequenced by request:
+/// one for the person it is aimed at (`$direct`, through the `asked_of`/`asked_by` index), one for the
+/// authors of suggestions on the item that were open when it was asked, found from the viewer's own
+/// suggestions (`$authors` leaves out whoever else already hears it or acted). `$actor` did it, `$has` says it
+/// happened. Unread: newer than the viewer's read of the request's anchor suggestion. A missing display name
+/// stays empty, never an email.
+macro_rules! opinion_events {
+    ($what:literal, $at:literal, $body:literal, $actor:literal, $direct:literal, $authors:literal, $has:literal) => {
+        concat!(
+            "UNION ALL SELECT '",
+            $what,
+            "', 2, o.id, o.anchor_id, o.",
+            $at,
+            ", IFNULL(ua.display_name, ''), ",
+            "o.",
+            $body,
+            ", o.item_title, o.dataset, o.kind, o.item_id, o.entry_id, a.action, a.parent_kind, ",
+            "a.parent_id, (o.",
+            $at,
+            " > IFNULL(r.read_at, '')), IFNULL(ub.display_name, '') ",
+            "FROM opinion_requests o ",
+            opinion_joins!($actor),
+            "WHERE ",
+            $direct,
+            " AND ",
+            $has,
+            " ",
+            "UNION ALL SELECT '",
+            $what,
+            "', 2, o.id, o.anchor_id, o.",
+            $at,
+            ", IFNULL(ua.display_name, ''), ",
+            "o.",
+            $body,
+            ", o.item_title, o.dataset, o.kind, o.item_id, o.entry_id, a.action, a.parent_kind, ",
+            "a.parent_id, (o.",
+            $at,
+            " > IFNULL(r.read_at, '')), IFNULL(ub.display_name, '') ",
+            "FROM (SELECT DISTINCT o2.id FROM suggestions m JOIN opinion_requests o2 ",
+            "ON o2.dataset = m.dataset AND o2.kind = m.kind AND o2.item_id = m.item_id ",
+            "WHERE m.author = ?1 AND m.created_at <= o2.created_at AND m.status <> 'withdrawn' ",
+            "AND (m.decided_at IS NULL OR m.decided_at = '' OR m.decided_at > o2.created_at) AND ",
+            $authors,
+            ") k JOIN opinion_requests o ON o.id = k.id ",
+            opinion_joins!($actor),
+            "WHERE ",
+            $has,
+            " "
+        )
+    };
 }
 
 /// Every reply event for ?1, the viewer, as the CTE `events`. A comment counts when someone else wrote it in
@@ -731,7 +801,7 @@ macro_rules! with_reply_events {
             "events AS (",
             "SELECT 'comment' AS what, 0 AS rank, c.id AS seq, s.id AS suggestion_id, c.created_at AS at, ",
             "IFNULL(u.display_name, '') AS by_name, c.body AS body, s.item_title, s.dataset, s.kind, s.item_id, ",
-            "s.entry_id, s.action, s.parent_kind, s.parent_id, (c.created_at > IFNULL(r.read_at, '')) AS unread ",
+            "s.entry_id, s.action, s.parent_kind, s.parent_id, (c.created_at > IFNULL(r.read_at, '')) AS unread, '' AS asked_of_name ",
             "FROM threads t JOIN comments c ON c.suggestion_id = t.id JOIN suggestions s ON s.id = t.id ",
             "LEFT JOIN users u ON u.email = c.author ",
             "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = t.id ",
@@ -739,10 +809,17 @@ macro_rules! with_reply_events {
             "UNION ALL ",
             "SELECT s.status, 1, s.id, s.id, s.decided_at, IFNULL(u.display_name, ''), '', s.item_title, s.dataset, ",
             "s.kind, s.item_id, s.entry_id, s.action, s.parent_kind, s.parent_id, ",
-            "(s.decided_at > IFNULL(r.read_at, '')) ",
+            "(s.decided_at > IFNULL(r.read_at, '')), '' ",
             "FROM suggestions s LEFT JOIN users u ON u.email = s.decided_by ",
             "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = s.id ",
-            "WHERE s.author = ?1 AND s.status IN ('accepted', 'declined') AND s.decided_by <> ?1) "
+            "WHERE s.author = ?1 AND s.status IN ('accepted', 'declined') AND s.decided_by <> ?1 ",
+            opinion_events!("opinion_asked", "created_at", "question", "o.asked_by",
+                "o.asked_of = ?1", "m.author <> o2.asked_by", "1"),
+            opinion_events!("opinion_answered", "answered_at", "answer", "o.asked_of",
+                "o.asked_by = ?1", "m.author NOT IN (o2.asked_by, o2.asked_of)", "o.answered_at IS NOT NULL"),
+            opinion_events!("opinion_cancelled", "cancelled_at", "question", "o.asked_by",
+                "o.asked_of = ?1", "0", "o.cancelled_at IS NOT NULL"),
+            ") "
         )
     };
 }
