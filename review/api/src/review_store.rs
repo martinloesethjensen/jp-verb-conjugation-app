@@ -736,14 +736,12 @@ macro_rules! opinion_joins {
     };
 }
 
-/// The `UNION ALL` branches of `with_reply_events!` for one opinion event, rank 2 and sequenced by request:
-/// one for the person it is aimed at (`$direct`, through the `asked_of`/`asked_by` index), one for the
-/// authors of suggestions on the item that were open when it was asked, found from the viewer's own
-/// suggestions (`$authors` leaves out whoever else already hears it or acted). `$actor` did it, `$has` says it
+/// The `UNION ALL` branch of `with_reply_events!` for one opinion event aimed at one person (`$direct`,
+/// through the `asked_of`/`asked_by` index), rank 2 and sequenced by request. `$actor` did it, `$has` says it
 /// happened. Unread: newer than the viewer's read of the request's anchor suggestion. A missing display name
 /// stays empty, never an email.
-macro_rules! opinion_events {
-    ($what:literal, $at:literal, $body:literal, $actor:literal, $direct:literal, $authors:literal, $has:literal) => {
+macro_rules! opinion_event {
+    ($what:literal, $at:literal, $body:literal, $actor:literal, $direct:literal, $has:literal) => {
         concat!(
             "UNION ALL SELECT '",
             $what,
@@ -762,7 +760,16 @@ macro_rules! opinion_events {
             $direct,
             " AND ",
             $has,
-            " ",
+            " "
+        )
+    };
+}
+
+/// As `opinion_event!`, for the authors of suggestions on the item that were open when it was asked, found
+/// from the viewer's own suggestions. `$authors` leaves out whoever else already hears it or acted.
+macro_rules! opinion_event_authors {
+    ($what:literal, $at:literal, $body:literal, $actor:literal, $authors:literal, $has:literal) => {
+        concat!(
             "UNION ALL SELECT '",
             $what,
             "', 2, o.id, o.anchor_id, o.",
@@ -813,12 +820,15 @@ macro_rules! with_reply_events {
             "FROM suggestions s LEFT JOIN users u ON u.email = s.decided_by ",
             "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = s.id ",
             "WHERE s.author = ?1 AND s.status IN ('accepted', 'declined') AND s.decided_by <> ?1 ",
-            opinion_events!("opinion_asked", "created_at", "question", "o.asked_by",
-                "o.asked_of = ?1", "m.author <> o2.asked_by", "1"),
-            opinion_events!("opinion_answered", "answered_at", "answer", "o.asked_of",
-                "o.asked_by = ?1", "m.author NOT IN (o2.asked_by, o2.asked_of)", "o.answered_at IS NOT NULL"),
-            opinion_events!("opinion_cancelled", "cancelled_at", "question", "o.asked_by",
-                "o.asked_of = ?1", "0", "o.cancelled_at IS NOT NULL"),
+            opinion_event!("opinion_asked", "created_at", "question", "o.asked_by", "o.asked_of = ?1", "1"),
+            opinion_event_authors!("opinion_asked", "created_at", "question", "o.asked_by",
+                "m.author <> o2.asked_by", "1"),
+            opinion_event!("opinion_answered", "answered_at", "answer", "o.asked_of", "o.asked_by = ?1",
+                "o.answered_at IS NOT NULL"),
+            opinion_event_authors!("opinion_answered", "answered_at", "answer", "o.asked_of",
+                "m.author NOT IN (o2.asked_by, o2.asked_of)", "o.answered_at IS NOT NULL"),
+            opinion_event!("opinion_cancelled", "cancelled_at", "question", "o.asked_by", "o.asked_of = ?1",
+                "o.cancelled_at IS NOT NULL"),
             ") "
         )
     };

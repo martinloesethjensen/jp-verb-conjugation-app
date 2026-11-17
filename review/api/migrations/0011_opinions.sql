@@ -29,3 +29,6 @@ CREATE UNIQUE INDEX opinion_open ON opinion_requests (dataset, kind, item_id)
 -- The replies query starts from the people on either side of a request.
 CREATE INDEX opinions_by_asked_of ON opinion_requests (asked_of);
 CREATE INDEX opinions_by_asked_by ON opinion_requests (asked_by);
+
+-- The replies query's authors branch finds requests on the item of each of a person's suggestions.
+CREATE INDEX opinions_by_item ON opinion_requests (dataset, kind, item_id);
