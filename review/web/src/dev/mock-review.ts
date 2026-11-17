@@ -574,7 +574,7 @@ export function reviewMock(ctx: ReviewContext) {
 		/** The target's JSON now, or null when it left the data. */
 		const currentOf = (s: Suggestion) => {
 			const current = find(s);
-			return current ? (s.kind === 'entry' ? current.value : partOf(current.value, s.kind, s.item_id) ?? current.value) : null;
+			return current ? (s.kind === 'entry' ? current.value : partOf(current.value, s.kind, s.item_id) ?? null) : null;
 		};
 		/** As the Worker's `japanese_only`: a change whose every edited field (blanks aside) is Japanese. */
 		const japaneseOnly = (s: Suggestion) => {

@@ -574,3 +574,57 @@ async fn a_demoted_native_can_no_longer_decide() {
     let r = ben_decides(&s, json!({"id": id, "decision": "accept"})).await;
     assert_eq!(r.status, 403);
 }
+
+/// An entry's `(id, hash)` from the review route.
+async fn entry_target(s: &SqliteStore, dataset: &str, id: &str) -> String {
+    let r = get(
+        s,
+        &format!("/api/review?{}", q(&[("dataset", dataset), ("id", id)])),
+        AIKO,
+    )
+    .await;
+    let part = r.body["parts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["kind"] == "entry")
+        .unwrap()
+        .clone();
+    part["content_hash"].as_str().unwrap().into()
+}
+
+async fn suggest_entry(s: &SqliteStore, dataset: &str, id: &str, edits: Value) -> Value {
+    let hash = entry_target(s, dataset, id).await;
+    let r = post(
+        s,
+        "/api/suggest",
+        json!({"dataset": dataset, "kind": "entry", "id": id, "base_hash": hash,
+        "action": "change", "edits": edits}),
+        AIKO,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    r.body["id"].clone()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_decides_a_counters_reading_but_not_its_meaning() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let reading = suggest_entry(&s, "counters", "tsu", json!({"reading": "っつ"})).await;
+    let meaning = suggest_entry(&s, "counters", "tsu", json!({"meaning": "things"})).await;
+    let r = ben_decides(&s, json!({"id": meaning, "decision": "accept"})).await;
+    assert_eq!(r.status, 403, "{}", r.body);
+    assert_eq!(r.body["error"], NATIVE_LIMIT);
+    let r = ben_decides(&s, json!({"id": reading, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_accepts_removing_a_words_optional_kanji() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let id = suggest_entry(&s, "words", "i-adjective:おおきい", json!({"kanji": ""})).await;
+    let r = ben_decides(&s, json!({"id": id, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
