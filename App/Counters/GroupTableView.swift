@@ -7,6 +7,7 @@ import VerbKit
 /// pinned, kept aligned by giving every row the same (Dynamic Type scaled) height. At accessibility
 /// text sizes even three columns scroll, so text wraps instead of truncating.
 struct GroupTableView: View {
+    @Environment(\.palette) private var palette
     let title: String
     let summary: String?
     private let memberRefs: [CounterGroupMember]
@@ -65,7 +66,7 @@ struct GroupTableView: View {
                 if let summary {
                     Text(summary)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.muted)
                 }
                 if ranges.count > 1 { rangePicker(ranges, shown: shown) }
                 HStack(alignment: .top, spacing: 8) {
@@ -114,7 +115,7 @@ struct GroupTableView: View {
             ForEach(numbers) { number in
                 Text(Self.label(number))
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
                     .frame(width: width, height: rowHeight)
             }
         }
@@ -165,14 +166,14 @@ struct GroupTableView: View {
                         Text("irregular")
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 5)
-                            .glassEffect(in: Capsule())
+                            .background(palette.card, in: Capsule()).overlay(Capsule().strokeBorder(palette.rule, lineWidth: 1))
                     }
                 }
                 .font(.caption)
                 if let note {
                     Text(note)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.muted)
                         .multilineTextAlignment(.center)
                 }
             }
@@ -192,7 +193,7 @@ struct GroupTableView: View {
             ForEach(members, id: \.counter.id) { member in
                 Text("\(member.counter.counter): \(changeSummary(member.counter))")
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
     }

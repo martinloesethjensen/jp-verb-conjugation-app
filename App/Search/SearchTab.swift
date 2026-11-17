@@ -102,9 +102,7 @@ struct SearchTab: View {
             if results.isEmpty && results.hiddenCount == 0 {
                 VStack(spacing: 12) {
                     SearchScopeChips(scope: $scope).padding(.top, 12)
-                    ContentUnavailableView {
-                        Label { JapaneseText(SearchDisplay.noResults(shown.query)) } icon: { Image(systemName: "magnifyingglass") }
-                    }
+                    PaperEmptyState(SearchDisplay.noResults(shown.query), glyph: "無")
                 }
             } else {
                 SearchResultsList(

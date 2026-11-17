@@ -29,6 +29,7 @@ extension GrammarSlot {
 /// The four word types side by side in every slot, then what each slot is for and which
 /// lessons use it. Patterns attach to these forms, so learning them once covers every lesson.
 struct BuildingBlocksView: View {
+    @Environment(\.palette) private var palette
     @Environment(VerbStore.self) private var verbStore
     @Environment(WordsStore.self) private var wordsStore
     @State private var picks: [WordClass: String] = [:]
@@ -75,8 +76,9 @@ struct BuildingBlocksView: View {
             Section {
                 Text("Most grammar is a building block plus a pattern. Learn these forms once, then each lesson only says which block it takes.")
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
+            .paperRow()
             Section("Example words") {
                 ForEach(Self.classes, id: \.self) { wordClass in
                     let options = pickerOptions(wordClass)
@@ -90,6 +92,7 @@ struct BuildingBlocksView: View {
                     }
                 }
             }
+            .paperRow()
             CopulaSection()
             PoliteAdjectiveSection(iAdjective: source(.iAdjective), naAdjective: source(.naAdjective))
             ForEach(GrammarSlot.allCases, id: \.self) { slot in
@@ -99,12 +102,12 @@ struct BuildingBlocksView: View {
                         LabeledContent(wordClass.displayName) {
                             JapaneseText(form ?? "none")
                                 .font(form == nil ? .body : .title3.weight(.semibold))
-                                .foregroundStyle(form == nil ? .secondary : .primary)
+                                .foregroundStyle(form == nil ? palette.muted : .primary)
                         }
                     }
                     let users = lessons(using: slot)
                     DisclosureGroup(users.count == 1 ? "Used by 1 lesson" : "Used by \(users.count) lessons") {
-                        Text(slot.explanation).font(.callout).foregroundStyle(.secondary)
+                        Text(slot.explanation).font(.callout).foregroundStyle(palette.muted)
                         ForEach(users) { point in
                             JapaneseText(point.title)
                         }
@@ -112,8 +115,10 @@ struct BuildingBlocksView: View {
                 } header: {
                     Text(slot.title)
                 }
+                .paperRow()
             }
         }
+        .paperBackground()
         .navigationTitle("Building blocks")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

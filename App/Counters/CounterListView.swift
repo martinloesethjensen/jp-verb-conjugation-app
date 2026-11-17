@@ -3,6 +3,7 @@ import VerbKit
 
 /// A counter as a list row in search results: the counter, its reading and meaning, its symbol and level.
 struct CounterRow: View {
+    @Environment(\.palette) private var palette
     let counter: Counter
 
     var body: some View {
@@ -18,12 +19,12 @@ struct CounterRow: View {
                 }
                 Text(counter.meaning)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
                     .lineLimit(2)
             }
             Spacer(minLength: 0)
             Image(systemName: counter.symbol)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
                 .accessibilityHidden(true)
         }
         .padding(.vertical, 4)

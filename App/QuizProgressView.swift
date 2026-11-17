@@ -5,6 +5,7 @@ import VerbKit
 /// The Progress sheet: streaks, totals, the last 7 days and the weakest verbs, forms and counters,
 /// all derived from the quiz history each time it renders.
 struct QuizProgressView: View {
+    @Environment(\.palette) private var palette
     @Environment(QuizHistoryStore.self) private var quizHistory
     @Environment(VerbStore.self) private var verbStore
     @Environment(CountersStore.self) private var countersStore
@@ -18,13 +19,10 @@ struct QuizProgressView: View {
                 if progress.hasHistory {
                     content(progress)
                 } else {
-                    ContentUnavailableView(
-                        "No quiz history yet",
-                        systemImage: "chart.bar",
-                        description: Text("Your streak, accuracy and weak spots appear here once you answer quiz questions.")
-                    )
+                    PaperEmptyState("No quiz history yet", message: "Your streak, accuracy and weak spots appear here once you answer quiz questions.")
                 }
             }
+            .paperBackground()
             .navigationTitle("Progress")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -47,15 +45,18 @@ struct QuizProgressView: View {
                 Section {
                     ConfusionLine(confusion: confusion) { showGuide = true }
                 }
+                .paperRow()
             }
             Section("Streak") {
                 LabeledContent("Current", value: days(progress.currentStreak))
                 LabeledContent("Best", value: days(progress.bestStreak))
             }
+            .paperRow()
             Section("Overall") {
                 LabeledContent("Answered", value: "\(progress.totalAnswered)")
                 LabeledContent("Accuracy", value: progress.accuracy.map { "\(Int(($0 * 100).rounded()))%" } ?? "—")
             }
+            .paperRow()
             Section("Last 7 days") {
                 Chart(progress.last7Days, id: \.day) { item in
                     BarMark(
@@ -64,7 +65,7 @@ struct QuizProgressView: View {
                     )
                     .annotation(position: .top) {
                         if item.answered > 0 {
-                            Text("\(item.answered)").font(.caption2).foregroundStyle(.secondary)
+                            Text("\(item.answered)").font(.caption2).foregroundStyle(palette.muted)
                         }
                     }
                 }
@@ -81,6 +82,7 @@ struct QuizProgressView: View {
                 .frame(height: 140)
                 .padding(.vertical, 4)
             }
+            .paperRow()
             if !progress.weakestVerbs.isEmpty {
                 Section("Weakest verbs") {
                     let top = progress.weakestVerbs.map(\.weakness).max() ?? 1
@@ -90,7 +92,7 @@ struct QuizProgressView: View {
                                 // The stored name is a `Verb.id`; show the verb's kana, not `きる:切る`.
                                 Text(verb(withID: weak.verb)?.dict ?? weak.verb).font(.body)
                                 if let kanji = kanji(forID: weak.verb) {
-                                    Text(kanji).font(.caption).foregroundStyle(.secondary)
+                                    Text(kanji).font(.caption).foregroundStyle(palette.muted)
                                 }
                             }
                             Spacer()
@@ -98,6 +100,7 @@ struct QuizProgressView: View {
                         }
                     }
                 }
+                .paperRow()
             }
             if !progress.weakestCounters.isEmpty {
                 Section("Weakest counters") {
@@ -108,7 +111,7 @@ struct QuizProgressView: View {
                             if let counter = countersStore.counter(id: weak.counterID) {
                                 VStack(alignment: .leading) {
                                     Text(counter.counter).font(.title3.weight(.bold))
-                                    Text("\(counter.reading) · \(counter.meaning)").font(.caption).foregroundStyle(.secondary)
+                                    Text("\(counter.reading) · \(counter.meaning)").font(.caption).foregroundStyle(palette.muted)
                                 }
                             } else {
                                 Text(weak.counterID).font(.body)
@@ -118,6 +121,7 @@ struct QuizProgressView: View {
                         }
                     }
                 }
+                .paperRow()
             }
             if !progress.weakestForms.isEmpty {
                 Section("Weakest forms") {
@@ -130,6 +134,7 @@ struct QuizProgressView: View {
                         }
                     }
                 }
+                .paperRow()
             }
         }
         .formStyle(.grouped)
@@ -150,6 +155,7 @@ struct QuizProgressView: View {
 /// "You often confuse ru- and u-verbs": the dominant mistake in recent wrong answers, with a
 /// link to the verb guide when it explains that mistake. Wraps at any Dynamic Type size.
 private struct ConfusionLine: View {
+    @Environment(\.palette) private var palette
     let confusion: QuizConfusion
     let openGuide: () -> Void
 
@@ -162,9 +168,9 @@ private struct ConfusionLine: View {
             Label {
                 Text(confusion.category.headline).font(.headline)
             } icon: {
-                Image(systemName: "lightbulb").foregroundStyle(.orange)
+                Image(systemName: "lightbulb").foregroundStyle(palette.ink)
             }
-            Text(detail).font(.callout).foregroundStyle(.secondary)
+            Text(detail).font(.callout).foregroundStyle(palette.muted)
             if confusion.category.opensVerbGuide {
                 Button("See the verb guide", systemImage: "book", action: openGuide)
                     .buttonStyle(.paperSecondaryInline)
@@ -178,6 +184,7 @@ private struct ConfusionLine: View {
 
 /// A small bar relative to the weakest entry in its list.
 private struct WeaknessBar: View {
+    @Environment(\.palette) private var palette
     let value: Double
 
     var body: some View {
@@ -185,7 +192,7 @@ private struct WeaknessBar: View {
             .fill(.quaternary)
             .frame(width: 60, height: 6)
             .overlay(alignment: .leading) {
-                Capsule().fill(.orange).frame(width: 60 * min(max(value, 0), 1))
+                Capsule().fill(palette.ink).frame(width: 60 * min(max(value, 0), 1))
             }
             .accessibilityLabel("Weakness")
             .accessibilityValue("\(Int((min(max(value, 0), 1) * 100).rounded())) percent of the weakest")

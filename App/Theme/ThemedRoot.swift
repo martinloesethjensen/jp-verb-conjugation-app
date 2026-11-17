@@ -28,13 +28,14 @@ struct ThemedRoot: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        let palette = ThemePalette.resolve(
-            choice.effectiveTheme(on: today),
-            isDark: choice.isDark(systemIsDark: colorScheme == .dark),
-            contrast: contrast
+        let half = ThemeHalf(
+            theme: choice.effectiveTheme(on: today),
+            isDark: choice.isDark(systemIsDark: colorScheme == .dark)
         )
+        let palette = ThemePalette.resolve(half.theme, isDark: half.isDark, contrast: contrast)
         return content
             .environment(\.palette, palette)
+            .environment(\.themeHalf, half)
             // Text buttons, links and the selected tab use `button` (≥ 4.5:1 on paper and card in
             // every palette). Switches take `accent` through `paperSwitch()` on each Toggle: the
             // tint is the only way to colour them on iOS 26, and this one is `button`.

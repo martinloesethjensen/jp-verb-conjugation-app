@@ -70,7 +70,7 @@ struct QuizQuestionView: View {
                     if let translation = question.translation {
                         Text(translation)
                             .italic()
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(palette.muted)
                             .multilineTextAlignment(.center)
                     }
                 case .connect, .counterChoice, .counterReading, .counterAsk, .spotMistake, .particle, .verbPair:
@@ -88,7 +88,7 @@ struct QuizQuestionView: View {
                          ? question.verb.meaning
                          : "\(script.text(for: question.verb.dict, of: question.verb)) · \(question.verb.meaning)")
                         .italic()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.muted)
                 }
                 Label("\(viewModel.timeLeft)s", systemImage: viewModel.timeLeft > 5 ? "timer" : "exclamationmark.timer")
                     .font(.headline)
@@ -106,12 +106,12 @@ struct QuizQuestionView: View {
                 Text(question.verb.dict)
                     .font(.largeTitle.weight(.heavy))
                 if let kanji = question.verb.kanji {
-                    JapaneseText(kanji).font(.title3).foregroundStyle(.secondary)
+                    JapaneseText(kanji).font(.title3).foregroundStyle(palette.muted)
                 }
             }
             Text(question.verb.meaning)
                 .italic()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
         }
     }
 

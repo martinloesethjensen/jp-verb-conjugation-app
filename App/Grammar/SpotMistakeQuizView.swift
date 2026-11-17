@@ -6,6 +6,7 @@ import WidgetKit
 /// pitfalls that have a wrong form. No timer. After each answer the pitfall's explanation shows,
 /// with a link to the lesson or counter page it comes from.
 struct SpotMistakeQuizView: View {
+    @Environment(\.palette) private var palette
     @Environment(\.openRoute) private var openRoute
     @State private var model: SpotMistakeQuizModel
     @State private var confirmingQuit = false
@@ -74,7 +75,7 @@ struct SpotMistakeQuizView: View {
                     .accessibilityAddTraits(.isHeader)
                 Text("One of these is a mistake learners often make.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
                     .multilineTextAlignment(.center)
             }
         }
@@ -104,7 +105,7 @@ struct SpotMistakeQuizView: View {
             Label("Open \(question.sourceTitle)", systemImage: "book")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.paperSecondaryInline)
         .controlSize(.large)
         .accessibilityHint("Ends the quiz and opens the page")
     }
@@ -123,7 +124,7 @@ struct SpotMistakeQuizView: View {
                 QuizMissedCard {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Mistake: \(question.wrong)").font(.headline)
-                        Text(question.explanation).font(.subheadline).foregroundStyle(.secondary)
+                        Text(question.explanation).font(.subheadline).foregroundStyle(palette.muted)
                     }
                     .accessibilityElement(children: .combine)
                 }

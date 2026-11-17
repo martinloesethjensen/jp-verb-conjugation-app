@@ -3,6 +3,7 @@ import VerbKit
 
 /// Search results in four sections: Forms, Counters, Groups, Things. Empty sections are hidden.
 struct CounterSearchResultsView: View {
+    @Environment(\.palette) private var palette
     let results: CounterSearchResults
     let search: String
     let summary: String
@@ -17,6 +18,7 @@ struct CounterSearchResultsView: View {
                         formRow(results.forms[index])
                     }
                 }
+                .paperRow()
             }
             if !results.counters.isEmpty {
                 Section("Counters") {
@@ -29,6 +31,7 @@ struct CounterSearchResultsView: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .paperRow()
             }
             if !results.groups.isEmpty {
                 Section("Groups") {
@@ -43,6 +46,7 @@ struct CounterSearchResultsView: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .paperRow()
             }
             if !results.things.isEmpty {
                 Section("Things") {
@@ -50,17 +54,19 @@ struct CounterSearchResultsView: View {
                         thingRow(results.things[index])
                     }
                 }
+                .paperRow()
             }
             if !results.isEmpty && hiddenMatchCount > 0 {
                 HiddenMatchesRow(count: hiddenMatchCount)
             }
         }
+        .paperBackground()
         .overlay {
             if results.isEmpty {
                 if hiddenMatchCount > 0 {
                     NoMatchInLevelsView(summary: summary, hiddenCount: hiddenMatchCount)
                 } else {
-                    ContentUnavailableView.search(text: search)
+                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.", glyph: "無")
                 }
             }
         }
@@ -80,7 +86,7 @@ struct CounterSearchResultsView: View {
                     HStack(spacing: 6) {
                         Text("\(match.counter.counter) at \(match.number == .what ? "何" : match.number.key)")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(palette.muted)
                         if match.number.isExtended { UnreviewedLabel() }
                     }
                 }

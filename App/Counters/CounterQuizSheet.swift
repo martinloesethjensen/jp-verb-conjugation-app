@@ -45,7 +45,9 @@ struct CounterQuizSheet: View {
                     row("Bigger numbers", detail: "三十分 is さんじゅっぷん", value: .biggerNumbers)
                     row("Mixed", detail: "All of them", value: .mixed)
                 }
+                .paperRow()
             }
+            .paperBackground()
             .navigationTitle("Counter quiz")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -76,11 +78,11 @@ struct CounterQuizSheet: View {
             choice = value
         } label: {
             HStack {
-                Text(title).foregroundStyle(enabled ? .primary : .secondary)
+                Text(title).foregroundStyle(enabled ? palette.ink : palette.muted)
                 Spacer()
-                Text(detail).foregroundStyle(.secondary)
+                Text(detail).foregroundStyle(palette.muted)
                 Image(systemName: choice == value ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(choice == value ? palette.button : Color.secondary)
+                    .foregroundStyle(choice == value ? palette.button : palette.muted)
             }
             // On the label, so the gap between title and detail is tappable too.
             .contentShape(Rectangle())

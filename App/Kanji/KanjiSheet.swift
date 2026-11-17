@@ -44,7 +44,7 @@ struct KanjiSheet: View {
                         }
                     }
                 } else {
-                    ContentUnavailableView("No stroke order for \(String(character))", systemImage: "paintbrush.pointed")
+                    PaperEmptyState("No stroke order for \(String(character))")
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

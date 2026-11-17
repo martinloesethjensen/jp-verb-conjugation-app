@@ -47,6 +47,7 @@ struct SmartFolderEditor: View {
                         Label(FolderNameSheet.message(error), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
                     }
                 }
+                .paperRow()
                 Section {
                     Picker("Show entries with", selection: $match) {
                         ForEach(SmartFolderMatch.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -57,8 +58,10 @@ struct SmartFolderEditor: View {
                          ? "An entry shows up if it has at least one of the tags you pick."
                          : "An entry shows up only if it has every tag you pick.")
                 }
+                .paperRow()
                 tagSection
             }
+            .paperBackground()
             .navigationTitle(isEditing ? "Edit Smart Folder" : "New Smart Folder")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -81,8 +84,9 @@ struct SmartFolderEditor: View {
         if store.dialectTags.isEmpty && store.customTags.isEmpty {
             Section("Tags") {
                 Text("You have no tags yet. Add tags to your entries first (More › Manage Tags).")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(.footnote).foregroundStyle(palette.muted)
             }
+            .paperRow()
         } else {
             if !store.dialectTags.isEmpty {
                 Section("Dialects") {
@@ -90,6 +94,7 @@ struct SmartFolderEditor: View {
                         tagRow(TagPill(tag), selected: dialectIDs.contains(tag.id)) { toggle(&dialectIDs, tag.id) }
                     }
                 }
+                .paperRow()
             }
             if !store.customTags.isEmpty {
                 Section("Tags") {
@@ -97,6 +102,7 @@ struct SmartFolderEditor: View {
                         tagRow(TagPill(tag), selected: customIDs.contains(tag.id)) { toggle(&customIDs, tag.id) }
                     }
                 }
+                .paperRow()
             }
         }
     }

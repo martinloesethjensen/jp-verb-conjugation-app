@@ -11,6 +11,7 @@ struct ThemePickerView: View {
     @AppStorage(ThemeChoice.themeKey, store: .appGroup) private var themeRaw = ThemeID.light.rawValue
     @AppStorage(ThemeChoice.appearanceKey, store: .appGroup) private var appearanceRaw = AppearanceSetting.automatic.rawValue
     @AppStorage(ThemeChoice.seasonalKey, store: .appGroup) private var seasonal = false
+    @AppStorage(AppIconMatching.defaultsKey, store: .appGroup) private var iconMatches = false
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var colorScheme
 
@@ -41,6 +42,9 @@ struct ThemePickerView: View {
                     Text("Seasonal themes switch on by themselves in October and December, then go back.")
                         .font(.footnote)
                         .foregroundStyle(palette.muted)
+                }
+                if AppIconSwitcher.isSupported {
+                    iconMatching
                 }
             }
             .padding()
@@ -107,6 +111,38 @@ struct ThemePickerView: View {
         ThemeSwatch(theme: theme, isSelected: theme == selected, caption: seasonMonth(theme)) {
             themeRaw = theme.rawValue
             reloadWidgets()
+            // Only a tap changes the icon; the seasonal override never does.
+            AppIconSwitcher.apply(AppIconMatching.change(tapped: theme, matches: iconMatches, current: AppIconSwitcher.current))
+        }
+    }
+
+    /// "App icon matches theme": the chosen theme's icon (light or dark as the Home Screen is),
+    /// the switch, and what it does. Off by default, since iOS confirms every change with an alert.
+    private var iconMatching: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                Image("IconPreview-\(selected.rawValue)")
+                    .resizable()
+                    .frame(width: 44, height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(palette.rule, lineWidth: 1)
+                    }
+                    .accessibilityHidden(true)
+                Toggle("App icon matches theme", isOn: Binding(
+                    get: { iconMatches },
+                    set: { on in
+                        iconMatches = on
+                        AppIconSwitcher.apply(AppIconMatching.change(switchedOn: on, chosen: selected, current: AppIconSwitcher.current))
+                    }
+                ))
+                .paperSwitch()
+            }
+            .padding(.vertical, 10)
+            .paperCard()
+            Text("Changes the Home Screen icon when you pick a theme. iOS confirms each change.")
+                .font(.footnote)
+                .foregroundStyle(palette.muted)
         }
     }
 

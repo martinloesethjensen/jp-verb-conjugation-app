@@ -64,7 +64,7 @@ struct ConnectionQuizView: View {
                     .font(.caption)
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(question.word)
-                    Image(systemName: "plus").font(.title2).foregroundStyle(.secondary)
+                    Image(systemName: "plus").font(.title2).foregroundStyle(palette.muted)
                         .accessibilityLabel("plus")
                     Text(question.ending)
                 }
@@ -73,11 +73,11 @@ struct ConnectionQuizView: View {
                 .lineLimit(1)
                 .accessibilityElement(children: .combine)
                 if let kanji = question.kanji {
-                    JapaneseText(kanji).font(.title3).foregroundStyle(.secondary)
+                    JapaneseText(kanji).font(.title3).foregroundStyle(palette.muted)
                 }
                 Text("\(question.wordClass.displayName) · \(question.meaning)")
                     .italic()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
                 if let cue = question.cue.label {
                     Text(cue)
                         .font(.subheadline.weight(.semibold))
@@ -115,7 +115,7 @@ struct ConnectionQuizView: View {
                 QuizMissedCard {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(question.correct).font(.headline)
-                        Text(question.explanation).font(.subheadline).foregroundStyle(.secondary)
+                        Text(question.explanation).font(.subheadline).foregroundStyle(palette.muted)
                     }
                 }
             }

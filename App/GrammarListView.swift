@@ -239,12 +239,13 @@ struct GrammarListView: View {
                 ReviewSummaryLine(noun: "lessons", summary: ReviewSummary(verbStore.grammarPoints.visible(in: currentLevels)))
             }
         }
-        // Always shown: with only the chips in the list (no course yet) the drawer would hide it.
-        .inlineSearch(text: $search, prompt: "Search grammar…", focused: $searchFocused, alwaysVisible: true)
+        // Not pinned: a pinned drawer turns the large title (and its motif) inline. With no course
+        // yet the list is short and the field stays hidden; By level, one tap away, has search.
+        .inlineSearch(text: $search, prompt: "Search grammar…", focused: $searchFocused)
         .levelScopeBar(isActive: levelsHidden, scope: $scope)
         .onChange(of: search) { if search.isEmpty { scope = .mine } }
         .paperBackground()
-        .navigationTitle("Grammar")
+        .motifTitle("Grammar")
         .sheet(isPresented: $showingBlocks) { BuildingBlocksSheet() }
         .sheet(isPresented: $showingMistakes) { CommonMistakesSheet() }
         .dismissOnLink {
@@ -272,31 +273,19 @@ struct GrammarListView: View {
         }
         .overlay {
             if !verbStore.hasGrammar {
-                ContentUnavailableView {
-                    Label("Grammar Not Downloaded Yet", systemImage: "icloud.and.arrow.down")
-                } description: {
-                    Text("Grammar lessons download in the background. Check your connection and try again.")
-                } actions: {
+                PaperEmptyState("Grammar Not Downloaded Yet", message: "Grammar lessons download in the background. Check your connection and try again.") {
                     Button("Try Again") {
                         Task { await verbStore.retryGrammarSync() }
                     }
                     .buttonStyle(.paper)
                 }
             } else if showsCourse && courseStore.course == nil {
-                ContentUnavailableView {
-                    Label("No course yet", systemImage: "books.vertical")
-                } description: {
-                    Text("Set up My course to see grammar by lesson.")
-                } actions: {
+                PaperEmptyState("No course yet", message: "Set up My course to see grammar by lesson.") {
                     Button("Set Up My Course") { showingCourse = true }
                         .buttonStyle(.paper)
                 }
             } else if showsCourse && lessonSections(in: LevelSettings()).isEmpty {
-                ContentUnavailableView {
-                    Label("No lessons yet", systemImage: "books.vertical")
-                } description: {
-                    Text("Add lessons in My course.")
-                } actions: {
+                PaperEmptyState("No lessons yet", message: "Add lessons in My course.") {
                     Button("Set Up My Course") { showingCourse = true }
                         .buttonStyle(.paper)
                 }
@@ -304,7 +293,7 @@ struct GrammarListView: View {
                 if hiddenMatchCount > 0 {
                     NoMatchInLevelsView(summary: summary, hiddenCount: hiddenMatchCount)
                 } else {
-                    ContentUnavailableView.search(text: search)
+                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.", glyph: "無")
                 }
             }
         }

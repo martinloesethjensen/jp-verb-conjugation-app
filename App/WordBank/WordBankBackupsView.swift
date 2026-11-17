@@ -4,6 +4,7 @@ import VerbKit
 /// The automatic backups (one is made before every import and restore). Restoring replaces
 /// the Word Bank with the backup, after a backup of the current one.
 struct WordBankBackupsView: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(WordBankTransferHub.self) private var hub
 
@@ -21,10 +22,7 @@ struct WordBankBackupsView: View {
     var body: some View {
         List {
             if rows.isEmpty {
-                ContentUnavailableView(
-                    "No backups yet", systemImage: "clock.arrow.circlepath",
-                    description: Text("One is made before every import.")
-                )
+                PaperEmptyState("No backups yet", message: "One is made before every import.")
             } else {
                 Section {
                     ForEach(rows) { row in
@@ -33,11 +31,11 @@ struct WordBankBackupsView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(row.backup.createdAt.formatted(date: .abbreviated, time: .shortened))
                                     if let count = row.entryCount {
-                                        Text(count == 1 ? "1 entry" : "\(count) entries").font(.footnote).foregroundStyle(.secondary)
+                                        Text(count == 1 ? "1 entry" : "\(count) entries").font(.footnote).foregroundStyle(palette.muted)
                                     }
                                 }
                                 Spacer()
-                                Image(systemName: "arrow.uturn.backward").foregroundStyle(.tint).accessibilityHidden(true)
+                                Image(systemName: "arrow.uturn.backward").foregroundStyle(palette.button).accessibilityHidden(true)
                             }
                             .contentShape(Rectangle())
                         }
@@ -46,8 +44,10 @@ struct WordBankBackupsView: View {
                 } footer: {
                     Text("The last three are kept. Restoring one replaces your Word Bank with it, after making a backup of the current one.")
                 }
+                .paperRow()
             }
         }
+        .paperBackground()
         .navigationTitle("Restore Backup")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)

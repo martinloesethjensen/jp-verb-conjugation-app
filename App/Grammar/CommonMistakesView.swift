@@ -3,6 +3,7 @@ import VerbKit
 
 /// One pitfall: heading, the wrong form (when it has one), explanation, first example and the lesson it comes from.
 struct MistakeRow: View {
+    @Environment(\.palette) private var palette
     let mistake: CommonMistake
 
     var body: some View {
@@ -11,7 +12,7 @@ struct MistakeRow: View {
             if let wrong = mistake.wrong { WrongForm(text: wrong).font(.subheadline) }
             JapaneseText(mistake.explanation)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
                 .lineLimit(3)
             if let example = mistake.examples.first {
                 JapaneseText(example.jp).font(.subheadline)
@@ -21,7 +22,7 @@ struct MistakeRow: View {
                 Image(systemName: "chevron.right").imageScale(.small)
             }
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.tint)
+            .foregroundStyle(palette.button)
             .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -70,8 +71,10 @@ struct CommonMistakesView: View {
                 } footer: {
                     Text(group.theme.blurb)
                 }
+                .paperRow()
             }
         }
+        .paperBackground()
         .navigationTitle("Common mistakes")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -80,9 +83,9 @@ struct CommonMistakesView: View {
         .overlay {
             if groups.isEmpty {
                 if search.isEmpty {
-                    ContentUnavailableView("No mistakes to show", systemImage: "checkmark.seal")
+                    PaperEmptyState("No mistakes to show")
                 } else {
-                    ContentUnavailableView.search(text: search)
+                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.", glyph: "無")
                 }
             }
         }

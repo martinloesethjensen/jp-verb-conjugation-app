@@ -18,8 +18,25 @@ struct GrammarWidgetView: View {
         }
     }
 
+    /// Paper, ruled like the app's example cards, on the home screen (the board's grammar widget).
     @ViewBuilder private var background: some View {
-        WidgetTheme.background(isHome: isHome, palette: palette)
+        ZStack {
+            WidgetTheme.background(isHome: isHome, palette: palette)
+            if isHome { WidgetRuled(color: palette.rule) }
+        }
+    }
+
+    /// The example with the lesson's pattern underlined.
+    private func example(_ text: String, point: GrammarPoint) -> Text {
+        var attributed = AttributedString(text)
+        if let range = GrammarHighlight.range(in: text, patterns: GrammarHighlight.patterns(of: point)) {
+            let chars = Array(text)
+            let start = attributed.index(attributed.startIndex, offsetByCharacters: range.lowerBound)
+            let end = attributed.index(start, offsetByCharacters: min(range.count, chars.count - range.lowerBound))
+            attributed[start..<end].underlineStyle = .single
+            attributed[start..<end].inlinePresentationIntent = .stronglyEmphasized
+        }
+        return Text(attributed)
     }
 
     @ViewBuilder private var empty: some View {
@@ -36,21 +53,36 @@ struct GrammarWidgetView: View {
     private var isRectangular: Bool { false }
     #endif
 
-    private func levelName(_ level: JLPTLevel?) -> String {
-        level?.rawValue ?? ""
+    /// GRAMMAR, with the level as an outlined pill.
+    private func header(_ point: GrammarPoint) -> some View {
+        HStack {
+            WidgetCaption(text: "Grammar", color: palette.muted)
+            Spacer(minLength: 4)
+            if let level = point.jlpt?.rawValue {
+                Text(level)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(palette.muted)
+                    .padding(.horizontal, 6)
+                    .background(palette.card, in: Capsule())
+                    .overlay(Capsule().strokeBorder(palette.rule, lineWidth: 1))
+            }
+        }
     }
 
     @ViewBuilder private func content(for point: GrammarPoint) -> some View {
         if family == .systemMedium {
             VStack(alignment: .leading, spacing: 6) {
-                small(point)
-                if let example = point.usages.first?.examples.first {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(example.jp).font(.callout).foregroundStyle(palette.ink).lineLimit(1).minimumScaleFactor(0.7)
-                        Text(example.en).font(.caption2).foregroundStyle(palette.muted).lineLimit(1)
-                    }
+                header(point)
+                Text(point.title).font(.widgetHeadword(24)).foregroundStyle(palette.ink).lineLimit(1).minimumScaleFactor(0.6)
+                if let first = point.usages.first?.examples.first {
+                    example(first.jp, point: point)
+                        .font(.widgetSentence(17)).foregroundStyle(palette.ink).lineLimit(1).minimumScaleFactor(0.7)
+                    Text(first.en).font(.caption).foregroundStyle(palette.muted).lineLimit(1)
+                } else {
+                    Text(point.summary).font(.caption).foregroundStyle(palette.ink).lineLimit(2)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         } else if isRectangular {
             VStack(alignment: .leading, spacing: 1) {
                 Text(point.title).font(.headline).bold().lineLimit(1)
@@ -65,13 +97,13 @@ struct GrammarWidgetView: View {
     }
 
     private func small(_ point: GrammarPoint) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
+            header(point)
             Text(point.title)
-                .font(.title3.weight(.heavy))
+                .font(.widgetHeadword(22))
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
                 .foregroundStyle(palette.ink)
-            Text(levelName(point.jlpt)).font(.caption2).foregroundStyle(palette.muted)
             Text(point.summary).font(.caption).foregroundStyle(palette.ink).lineLimit(3)
             Spacer(minLength: 0)
         }
