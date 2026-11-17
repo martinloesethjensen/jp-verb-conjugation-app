@@ -1210,3 +1210,264 @@ impl ReviewStore for D1Store {
         Ok(())
     }
 }
+
+// --- CourseStore ----------------------------------------------------------------------------------
+
+use crate::course_store::*;
+use std::collections::BTreeSet;
+
+fn maybe_number(v: Option<i64>) -> JsValue {
+    v.map(number).unwrap_or(JsValue::NULL)
+}
+
+impl D1Store {
+    /// `(status, exported_at)` of a course, or `NotFound`.
+    async fn course_status(&self, id: &str) -> Result<(String, Option<String>), CourseError> {
+        let mut rows: Vec<CourseRow> = self.rows(SELECT_COURSE, &[text(""), text(id)]).await?;
+        rows.pop()
+            .map(|r| (r.status, r.exported_at))
+            .ok_or(CourseError::NotFound)
+    }
+
+    fn course_log(
+        &self,
+        (now, by): (&str, &str),
+        action: &str,
+        id: &str,
+        detail: &str,
+    ) -> Result<D1PreparedStatement, StoreError> {
+        self.statement(
+            INSERT_COURSE_AUDIT,
+            &[
+                text(now),
+                text(by),
+                text(action),
+                text(&audit_target(id)),
+                text(detail),
+                text(id),
+            ],
+        )
+    }
+}
+
+impl CourseStore for D1Store {
+    async fn create_course(
+        &self,
+        new: &NewCourse,
+        by: &str,
+        now: &str,
+    ) -> Result<String, CourseError> {
+        let copied = new.copied_from.as_ref().map(|v| v.to_string());
+        for _ in 0..ID_TRIES {
+            let id = new_course_id();
+            let insert = self.statement(
+                INSERT_COURSE,
+                &[
+                    text(&id),
+                    text(&new.title),
+                    text(&new.summary),
+                    text(by),
+                    maybe(new.follows_book.as_deref()),
+                    maybe(copied.as_deref()),
+                    text(now),
+                ],
+            )?;
+            let log = self.course_log(
+                (now, by),
+                "course.create",
+                &id,
+                &format!("title={}", new.title),
+            )?;
+            match self.db.batch(vec![insert, log]).await.map_err(backend) {
+                Ok(_) => return Ok(id),
+                Err(StoreError::Conflict) => continue,
+                Err(e) => return Err(e.into()),
+            }
+        }
+        Err(CourseError::Conflict)
+    }
+
+    async fn course(&self, id: &str, viewer: &str) -> Result<Option<Course>, CourseError> {
+        let mut rows: Vec<CourseRow> = self.rows(SELECT_COURSE, &[text(viewer), text(id)]).await?;
+        let Some(row) = rows.pop() else {
+            return Ok(None);
+        };
+        let lessons = self.rows(SELECT_LESSONS, &[text(id)]).await?;
+        let items = self.rows(SELECT_COURSE_ITEMS, &[text(id)]).await?;
+        Ok(Some(assemble_course(row, lessons, items)))
+    }
+
+    async fn courses(&self, viewer: &str) -> Result<Vec<CourseSummary>, CourseError> {
+        let rows: Vec<SummaryRow> = self.rows(SELECT_COURSES, &[text(viewer)]).await?;
+        Ok(rows.into_iter().map(CourseSummary::from).collect())
+    }
+
+    async fn save_course_meta(
+        &self,
+        id: &str,
+        meta: &CourseMeta,
+        by: &str,
+        now: &str,
+    ) -> Result<(), CourseError> {
+        if self.course_status(id).await?.0 != "draft" {
+            return Err(CourseError::NotDraft);
+        }
+        let update = self.statement(
+            UPDATE_COURSE_META,
+            &[
+                text(id),
+                text(&meta.title),
+                text(&meta.summary),
+                maybe(meta.follows_book.as_deref()),
+                text(now),
+            ],
+        )?;
+        let log = self.course_log(
+            (now, by),
+            "course.save",
+            id,
+            &format!("title={}", meta.title),
+        )?;
+        self.db.batch(vec![update, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn save_lessons(
+        &self,
+        course_id: &str,
+        lessons: &[LessonInput],
+        by: &str,
+        now: &str,
+    ) -> Result<Vec<String>, CourseError> {
+        if self.course_status(course_id).await?.0 != "draft" {
+            return Err(CourseError::NotDraft);
+        }
+        let stored: Vec<CourseItemRow> = self.rows(SELECT_COURSE_ITEMS, &[text(course_id)]).await?;
+        let keys = keys_to_check(lessons, &stored);
+        let found: Vec<KeyRow> = self
+            .rows(SELECT_LOADED_KEYS, &[text(&json_list(&keys))])
+            .await?;
+        let loaded: BTreeSet<String> = found.into_iter().map(|r| r.key).collect();
+        let plan = plan_outline(lessons, &stored, &loaded, &mut new_course_id)?;
+
+        // Every statement is guarded by the course still being a draft, so the batch is all or nothing.
+        let mut batch = vec![
+            self.statement(DELETE_COURSE_ITEMS, &[text(course_id)])?,
+            self.statement(DELETE_COURSE_LESSONS, &[text(course_id)])?,
+        ];
+        for l in &plan {
+            batch.push(self.statement(
+                INSERT_LESSON,
+                &[
+                    text(course_id),
+                    text(&l.id),
+                    number(l.position),
+                    text(&l.title),
+                    text(&l.goal),
+                    text(&l.note),
+                    maybe_number(l.textbook_lesson),
+                ],
+            )?);
+            for i in &l.items {
+                let t = &i.target;
+                batch.push(self.statement(
+                    INSERT_COURSE_ITEM,
+                    &[
+                        text(course_id),
+                        text(&l.id),
+                        number(i.position),
+                        text(&t.dataset),
+                        text(&t.kind),
+                        text(&t.item_id),
+                        maybe_number(i.proposal_id),
+                    ],
+                )?);
+            }
+        }
+        batch.push(self.statement(TOUCH_COURSE, &[text(course_id), text(now)])?);
+        let items: usize = plan.iter().map(|l| l.items.len()).sum();
+        batch.push(self.course_log(
+            (now, by),
+            "course.outline",
+            course_id,
+            &format!("lessons={} items={items}", plan.len()),
+        )?);
+        self.db.batch(batch).await.map_err(backend)?;
+        Ok(plan.into_iter().map(|l| l.id).collect())
+    }
+
+    async fn delete_draft(&self, id: &str, by: &str, now: &str) -> Result<(), CourseError> {
+        let (status, exported) = self.course_status(id).await?;
+        if status != "draft" || exported.is_some() {
+            return Err(CourseError::NotDraft);
+        }
+        let mut batch = Vec::new();
+        for sql in [
+            DELETE_DRAFT_ITEMS,
+            DELETE_DRAFT_LESSONS,
+            DELETE_DRAFT_COMMENTS,
+            DELETE_DRAFT,
+        ] {
+            batch.push(self.statement(sql, &[text(id)])?);
+        }
+        batch.push(self.statement(
+            INSERT_COURSE_DELETE_AUDIT,
+            &[
+                text(now),
+                text(by),
+                text("course.delete"),
+                text(&audit_target(id)),
+                text(""),
+                text(id),
+            ],
+        )?);
+        self.db.batch(batch).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn set_status(
+        &self,
+        id: &str,
+        from: &str,
+        to: &str,
+        own_words: bool,
+        by: &str,
+        now: &str,
+    ) -> Result<(), CourseError> {
+        if self.course_status(id).await?.0 != from {
+            return Err(CourseError::Conflict);
+        }
+        let update = self.statement(
+            UPDATE_COURSE_STATUS,
+            &[
+                text(id),
+                text(from),
+                text(to),
+                text(now),
+                number(own_words as i64),
+            ],
+        )?;
+        let log = self.course_log((now, by), "course.status", id, &format!("{from} -> {to}"))?;
+        self.db.batch(vec![update, log]).await.map_err(backend)?;
+        Ok(())
+    }
+
+    async fn search_items(
+        &self,
+        queries: &[String],
+        kinds: &[String],
+        limit: u32,
+    ) -> Result<Vec<CourseItem>, CourseError> {
+        let rows: Vec<SearchRow> = self
+            .rows(
+                SEARCH_ITEMS,
+                &[
+                    text(&json_list(queries)),
+                    text(&search_pairs(kinds)),
+                    number(limit as i64),
+                ],
+            )
+            .await?;
+        Ok(rows.into_iter().map(CourseItem::from).collect())
+    }
+}

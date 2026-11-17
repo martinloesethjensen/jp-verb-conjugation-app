@@ -5,6 +5,7 @@ pub mod add_routes;
 pub mod addition;
 pub mod app;
 pub mod auth;
+pub mod course_store;
 pub mod data;
 pub mod export_routes;
 pub mod items;
