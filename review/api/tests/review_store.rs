@@ -255,6 +255,8 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
         },
         MARTIN,
         T0,
+        &[],
+        "",
     )
     .await
     .unwrap();
@@ -263,7 +265,8 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
     assert_eq!(got.admin_edit, Some(serde_json::json!({"a": 2})));
     assert_eq!(got.decided_at.as_deref(), Some(T0));
     assert_eq!(
-        s.decide(a, false, OwnerEdit::default(), MARTIN, T0).await,
+        s.decide(a, false, OwnerEdit::default(), MARTIN, T0, &[], "")
+            .await,
         Err(StoreError::Conflict)
     );
 
@@ -272,13 +275,14 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
         .await
         .unwrap()
         .0;
-    s.decide(b, false, OwnerEdit::default(), MARTIN, T0)
+    s.decide(b, false, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     assert_eq!(s.withdraw(b, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(s.withdraw(9999, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(
-        s.decide(9999, true, OwnerEdit::default(), MARTIN, T0).await,
+        s.decide(9999, true, OwnerEdit::default(), MARTIN, T0, &[], "")
+            .await,
         Err(StoreError::NotFound)
     );
 }
@@ -491,7 +495,7 @@ async fn every_write_is_audited() {
         .await
         .unwrap()
         .0;
-    s.decide(b, true, OwnerEdit::default(), MARTIN, T0)
+    s.decide(b, true, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     let c = s
@@ -499,7 +503,7 @@ async fn every_write_is_audited() {
         .await
         .unwrap()
         .0;
-    s.decide(c, false, OwnerEdit::default(), MARTIN, T0)
+    s.decide(c, false, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     s.add_comment(c, "ok", MARTIN, T0).await.unwrap();
@@ -543,7 +547,7 @@ async fn a_decision_that_loses_a_race_writes_no_audit_row() {
         .await
         .unwrap()
         .0;
-    s.decide(id, true, OwnerEdit::default(), MARTIN, T0)
+    s.decide(id, true, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     let before = audit_actions(&s).len();

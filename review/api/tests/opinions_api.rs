@@ -182,7 +182,7 @@ async fn a_pick_must_be_a_suggestion_on_the_item() {
 async fn deciding_every_open_suggestion_ends_the_wait() {
     let s = seeded().await;
     let (_, sid, id) = asked(&s).await;
-    s.decide(sid, false, OwnerEdit::default(), MARTIN, T0)
+    s.decide(sid, false, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     let o = s.opinion(id, MARTIN).await.unwrap().unwrap();

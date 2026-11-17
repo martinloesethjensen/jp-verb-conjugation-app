@@ -618,6 +618,33 @@ pub const DECIDE: &str =
 /// ?4 detail, ?5 id.
 pub const INSERT_DECIDE_AUDIT: &str = "INSERT INTO audit_log (at, actor, action, target, detail) \
      SELECT ?1, ?2, ?3, 'suggestion/' || id, ?4 FROM suggestions WHERE id = ?5 AND status = 'open'";
+/// The other suggestions an accept supersedes, in the accept's batch after its own statements: each runs
+/// only while the accept (?4) went through at this `now` by this decider, and only on a suggestion still
+/// open. ?1 now, ?2 by, ?3 id, ?4 the accepted id, ?5 the comment.
+macro_rules! accepted_here {
+    () => {
+        "EXISTS (SELECT 1 FROM suggestions m WHERE m.id = ?4 AND m.status = 'accepted' \
+         AND m.decided_by = ?2 AND m.decided_at = ?1)"
+    };
+}
+pub const INSERT_SUPERSEDED_AUDIT: &str = concat!(
+    "INSERT INTO audit_log (at, actor, action, target, detail) \
+     SELECT ?1, ?2, 'suggestion.decline', 'suggestion/' || id, '' FROM suggestions \
+     WHERE id = ?3 AND status = 'open' AND ",
+    accepted_here!()
+);
+pub const DECLINE_SUPERSEDED: &str = concat!(
+    "UPDATE suggestions SET status = 'declined', decided_by = ?2, decided_at = ?1 \
+     WHERE id = ?3 AND status = 'open' AND ",
+    accepted_here!()
+);
+/// After `DECLINE_SUPERSEDED`: the reason, only where that decline happened.
+pub const INSERT_SUPERSEDED_COMMENT: &str = concat!(
+    "INSERT INTO comments (suggestion_id, author, body, created_at) SELECT ?3, ?2, ?5, ?1 \
+     WHERE EXISTS (SELECT 1 FROM suggestions WHERE id = ?3 AND status = 'declined' \
+     AND decided_by = ?2 AND decided_at = ?1) AND ",
+    accepted_here!()
+);
 /// As `INSERT_DECIDE_AUDIT`, for `WITHDRAW`: ?1 now, ?2 author, ?3 id.
 pub const INSERT_WITHDRAW_AUDIT: &str =
     "INSERT INTO audit_log (at, actor, action, target, detail) \
@@ -747,7 +774,7 @@ pub const INSERT_COMMENT: &str = "INSERT INTO comments (suggestion_id, author, b
      SELECT ?1, ?2, ?3, ?4 WHERE EXISTS (SELECT 1 FROM suggestions WHERE id = ?1)";
 
 macro_rules! suggestions_where {
-    ($where:literal, $order:literal) => {
+    ($where:expr, $order:literal) => {
         concat!(
             "SELECT s.id, s.action, s.dataset, s.kind, s.item_id, s.entry_id, s.item_title, s.author, ",
             "IFNULL(u.display_name, '') AS author_name, (s.author = ?1) AS mine, s.status, s.base_hash, s.proposed_json, ",
@@ -769,7 +796,7 @@ macro_rules! suggestions_where {
 }
 
 macro_rules! comments_where {
-    ($where:literal) => {
+    ($where:expr) => {
         concat!(
             "SELECT c.suggestion_id, IFNULL(u.display_name, '') AS author_name, (c.author = ?1) AS mine, c.body, c.created_at ",
             "FROM comments c LEFT JOIN users u ON u.email = c.author WHERE c.suggestion_id IN (SELECT s.id FROM suggestions s ",
@@ -797,9 +824,19 @@ pub const SELECT_ADDITIONS: &str = suggestions_where!(
 pub const SELECT_ADDITIONS_COMMENTS: &str = comments_where!(
     "WHERE s.dataset = ?2 AND s.action = 'add' AND s.kind = 'entry' AND ?1 IS NOT NULL"
 );
-/// ?1 viewer, ?2 status. Oldest first.
-pub const SELECT_INBOX: &str = suggestions_where!("WHERE s.status = ?2", "ORDER BY s.id");
-pub const SELECT_INBOX_COMMENTS: &str = comments_where!("WHERE s.status = ?2 AND ?1 IS NOT NULL");
+/// The inbox's filter. `waiting` is `open` for items with an open request for an opinion; `open` leaves
+/// those out. The other statuses ignore requests.
+macro_rules! inbox_where {
+    () => {
+        "WHERE s.status = IIF(?2 = 'waiting', 'open', ?2) AND (?2 NOT IN ('open', 'waiting') \
+         OR (?2 = 'waiting') = EXISTS (SELECT 1 FROM opinion_requests o WHERE o.dataset = s.dataset \
+         AND o.kind = s.kind AND o.item_id = s.item_id AND o.answered_at IS NULL AND o.cancelled_at IS NULL))"
+    };
+}
+/// ?1 viewer, ?2 status: open, waiting, accepted or declined. Oldest first.
+pub const SELECT_INBOX: &str = suggestions_where!(inbox_where!(), "ORDER BY s.id");
+pub const SELECT_INBOX_COMMENTS: &str =
+    comments_where!(concat!(inbox_where!(), " AND ?1 IS NOT NULL"));
 
 /// ?1 viewer, ?2 dataset, ?3 entry id.
 pub const SELECT_ENTRY_APPROVALS: &str = "SELECT a.kind, a.item_id, IFNULL(u.display_name, '') AS reviewer_name, \
@@ -1193,7 +1230,9 @@ pub trait ReviewStore {
     /// `NotFound` unless the suggestion is open; `Conflict` if it isn't the author's.
     async fn withdraw(&self, id: i64, author: &str, now: &str) -> Result<(), StoreError>;
     /// `NotFound` for an unknown id; `Conflict` unless it is open. `furigana_json`, when given, replaces
-    /// the readings the reviewer proposed.
+    /// the readings the reviewer proposed. An accept also declines each of `also_decline` that is still
+    /// open, as `by` at `now`, each with `reason` as a comment: all or none.
+    #[allow(clippy::too_many_arguments)]
     async fn decide(
         &self,
         id: i64,
@@ -1201,6 +1240,8 @@ pub trait ReviewStore {
         edit: OwnerEdit<'_>,
         by: &str,
         now: &str,
+        also_decline: &[i64],
+        reason: &str,
     ) -> Result<(), StoreError>;
     /// Records that `user` has seen these threads as of `now`. Unknown ids are skipped; no audit row
     /// (reading changes nothing).

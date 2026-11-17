@@ -829,6 +829,8 @@ impl ReviewStore for D1Store {
         edit: OwnerEdit<'_>,
         by: &str,
         now: &str,
+        also_decline: &[i64],
+        reason: &str,
     ) -> Result<(), StoreError> {
         let OwnerEdit {
             item_json: admin_edit_json,
@@ -867,7 +869,22 @@ impl ReviewStore for D1Store {
                 maybe(base_hash),
             ],
         )?;
-        let results = self.db.batch(vec![log, update]).await.map_err(backend)?;
+        let mut batch = vec![log, update];
+        if accept {
+            for other in also_decline {
+                let binds = [
+                    text(now),
+                    text(by),
+                    number(*other),
+                    number(id),
+                    text(reason),
+                ];
+                batch.push(self.statement(INSERT_SUPERSEDED_AUDIT, &binds[..4])?);
+                batch.push(self.statement(DECLINE_SUPERSEDED, &binds[..4])?);
+                batch.push(self.statement(INSERT_SUPERSEDED_COMMENT, &binds)?);
+            }
+        }
+        let results = self.db.batch(batch).await.map_err(backend)?;
         if changes(results.get(1)) == 0 {
             return Err(StoreError::Conflict);
         }

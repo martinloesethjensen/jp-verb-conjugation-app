@@ -782,6 +782,8 @@ impl ReviewStore for SqliteStore {
         edit: OwnerEdit<'_>,
         by: &str,
         now: &str,
+        also_decline: &[i64],
+        reason: &str,
     ) -> Result<(), StoreError> {
         let OwnerEdit {
             item_json: admin_edit_json,
@@ -825,6 +827,19 @@ impl ReviewStore for SqliteStore {
             == 0
         {
             return Err(StoreError::Conflict); // dropping tx rolls the audit row back
+        }
+        if accept {
+            for other in also_decline {
+                tx.execute(INSERT_SUPERSEDED_AUDIT, params![now, by, other, id])
+                    .map_err(backend)?;
+                tx.execute(DECLINE_SUPERSEDED, params![now, by, other, id])
+                    .map_err(backend)?;
+                tx.execute(
+                    INSERT_SUPERSEDED_COMMENT,
+                    params![now, by, other, id, reason],
+                )
+                .map_err(backend)?;
+            }
         }
         tx.commit().map_err(backend)
     }
