@@ -40,6 +40,27 @@ final class CoherencyPassTests: XCTestCase {
         XCTAssertEqual(CounterHighlight.range(in: "りんごをみっつください。", counter: tsu), 4..<7)
     }
 
+    func testOrdinaryWordsAndKanaPairs() {
+        XCTAssertNil(CounterHighlight.range(in: "つくえがあります。", counter: counter("つ")))
+        XCTAssertEqual(CounterHighlight.range(in: "ふたりとさんにん", counter: counter("人")), 0..<3)
+        XCTAssertEqual(CounterHighlight.range(in: "いっぽんとにほん", counter: counter("本")), 0..<4)
+    }
+
+    // MARK: Headword furigana
+
+    /// The counter's own reading, never the general dictionary's (人 is にん here, not ひと).
+    func testHeadwordUnitsCarryTheCountersReading() {
+        XCTAssertEqual(counter("人").headwordUnits, [TextUnit(text: "人", reading: "にん")])
+        XCTAssertEqual(counter("頭").headwordUnits, [TextUnit(text: "頭", reading: "とう")])
+        XCTAssertEqual(counter("つ").headwordUnits, [TextUnit(text: "つ")])
+        let months = Self.counters.first { $0.counter.hasPrefix("か") && $0.counter.count > 1 }
+        if let months {
+            XCTAssertEqual(months.headwordUnits.first, TextUnit(text: "か"), months.counter)
+            XCTAssertNil(months.headwordUnits.first?.reading)
+            XCTAssertNotNil(months.headwordUnits.last?.reading)
+        }
+    }
+
     // MARK: Tag counts
 
     func testTagCountsAreSortedAndLimited() {

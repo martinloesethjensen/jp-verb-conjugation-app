@@ -36,3 +36,29 @@ public enum CounterHighlight {
         return candidate.count > current.count ? candidate : current
     }
 }
+
+extension Counter {
+    /// The counter as ruby units with its own `reading` (人 → にん, 頭 → とう), never the general
+    /// furigana dictionary's, which reads counters as words (ひと, あたま). Kana the counter shares
+    /// with its reading at either end stays plain: か月 is か + 月 (げつ); つ has no ruby.
+    public var headwordUnits: [TextUnit] {
+        let text = Array(counter), kana = Array(reading)
+        func isKana(_ c: Character) -> Bool {
+            c.unicodeScalars.allSatisfy { (0x3040...0x30FF).contains($0.value) }
+        }
+        var lead = 0
+        while lead < text.count, lead < kana.count, isKana(text[lead]), text[lead] == kana[lead] { lead += 1 }
+        var trail = 0
+        while trail < text.count - lead, trail < kana.count - lead,
+              isKana(text[text.count - 1 - trail]), text[text.count - 1 - trail] == kana[kana.count - 1 - trail] { trail += 1 }
+        let core = String(text[lead..<(text.count - trail)])
+        let coreReading = String(kana[lead..<(kana.count - trail)])
+        var units: [TextUnit] = []
+        if lead > 0 { units.append(TextUnit(text: String(text[..<lead]))) }
+        if !core.isEmpty {
+            units.append(TextUnit(text: core, reading: core.allSatisfy(isKana) || coreReading.isEmpty ? nil : coreReading))
+        }
+        if trail > 0 { units.append(TextUnit(text: String(text[(text.count - trail)...]))) }
+        return units
+    }
+}

@@ -239,7 +239,8 @@ struct GrammarListView: View {
                 ReviewSummaryLine(noun: "lessons", summary: ReviewSummary(verbStore.grammarPoints.visible(in: currentLevels)))
             }
         }
-        // Always shown: with only the chips in the list (no course yet) the drawer would hide it.
+        // Not pinned: a pinned drawer turns the large title (and its motif) inline. With no course
+        // yet the list is short and the field stays hidden; By level, one tap away, has search.
         .inlineSearch(text: $search, prompt: "Search grammar…", focused: $searchFocused)
         .levelScopeBar(isActive: levelsHidden, scope: $scope)
         .onChange(of: search) { if search.isEmpty { scope = .mine } }
@@ -292,7 +293,7 @@ struct GrammarListView: View {
                 if hiddenMatchCount > 0 {
                     NoMatchInLevelsView(summary: summary, hiddenCount: hiddenMatchCount)
                 } else {
-                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.")
+                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.", glyph: "無")
                 }
             }
         }

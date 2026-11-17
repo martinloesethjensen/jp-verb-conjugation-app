@@ -80,7 +80,7 @@ struct CounterDetailView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                JapaneseText(counter.counter)
+                JapaneseText(units: counter.headwordUnits)
                     .font(.headword(.largeTitle, scale: 1.4))
                     .foregroundStyle(palette.ink)
                 // With furigana on, the reading is already over the counter.
@@ -174,7 +174,7 @@ struct CounterDetailView: View {
                 ForEach(store.related(to: counter)) { related in
                     NavigationLink(value: CounterDestination.counter(related, focus: nil)) {
                         HStack(spacing: 10) {
-                            JapaneseText(related.counter).font(.headword(.title3))
+                            JapaneseText(units: related.headwordUnits).font(.headword(.title3))
                             Text(related.meaning).font(.subheadline).foregroundStyle(palette.muted)
                             Spacer(minLength: 0)
                             RowChevron()

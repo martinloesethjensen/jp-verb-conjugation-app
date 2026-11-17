@@ -29,7 +29,7 @@ struct DirectoryRow: View {
             if typeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 12) {
-                        JapaneseText(counter.counter).font(.headword(.title2)).foregroundStyle(palette.ink)
+                        JapaneseText(units: counter.headwordUnits).font(.headword(.title2)).foregroundStyle(palette.ink)
                         if !showFurigana || counter.reading == counter.counter {
                             Text(counter.reading).font(.subheadline).foregroundStyle(palette.muted)
                         }
@@ -41,7 +41,7 @@ struct DirectoryRow: View {
                 }
             } else {
                 HStack(spacing: 12) {
-                    JapaneseText(counter.counter)
+                    JapaneseText(units: counter.headwordUnits)
                         .font(.headword(.title2))
                         .foregroundStyle(palette.ink)
                         .frame(minWidth: 32)
@@ -63,6 +63,10 @@ struct DirectoryRow: View {
         }
         .frame(minHeight: 44)
         .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(counter.sound == "irregular"
+            ? "\(counter.counter), \(counter.reading), \(counter.meaning), irregular"
+            : "\(counter.counter), \(counter.reading), \(counter.meaning)")
+        .accessibilityAddTraits(.isButton)
     }
 }

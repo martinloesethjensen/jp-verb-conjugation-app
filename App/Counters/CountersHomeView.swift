@@ -189,7 +189,7 @@ private struct CounterTile: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            JapaneseText(counter.counter)
+            JapaneseText(units: counter.headwordUnits)
                 .font(.headword(.title))
                 .foregroundStyle(palette.ink)
             Text(counter.meaning)
@@ -202,6 +202,8 @@ private struct CounterTile: View {
         .frame(maxWidth: .infinity, minHeight: 104)
         .paperCard(cornerRadius: 14, fillsWidth: true)
         .contentShape(RoundedRectangle(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(counter.counter), \(counter.reading), \(counter.meaning)")
+        .accessibilityAddTraits(.isButton)
     }
 }

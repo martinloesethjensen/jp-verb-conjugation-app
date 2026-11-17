@@ -17,12 +17,22 @@ struct PaperEmptyState<Actions: View>: View {
         self.actions = actions()
     }
 
+    /// Scrolls when it can't fit (accessibility sizes, small phones), so its buttons stay reachable.
     var body: some View {
+        ViewThatFits(in: .vertical) {
+            card
+            ScrollView { card }
+        }
+    }
+
+    private var card: some View {
         VStack(spacing: 12) {
-            JapaneseText(glyph)
-                .font(.headword(.largeTitle, scale: 1.6))
-                .foregroundStyle(palette.rule)
-                .accessibilityHidden(true)
+            if !typeSize.isAccessibilitySize {
+                JapaneseText(glyph)
+                    .font(.headword(.largeTitle, scale: 1.6))
+                    .foregroundStyle(palette.rule)
+                    .accessibilityHidden(true)
+            }
             // A search query or a name may be Japanese: furigana when it is on.
             JapaneseText(title)
                 .font(.title3.weight(.semibold))

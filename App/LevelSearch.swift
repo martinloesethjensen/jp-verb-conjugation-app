@@ -52,6 +52,6 @@ struct NoMatchInLevelsView: View {
     let hiddenCount: Int
 
     var body: some View {
-        PaperEmptyState("No match in \(summary)", message: "\(hiddenCount) in other levels. Switch to All levels in the bar above.")
+        PaperEmptyState("No match in \(summary)", message: "\(hiddenCount) in other levels. Switch to All levels in the bar above.", glyph: "無")
     }
 }

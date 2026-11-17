@@ -109,7 +109,7 @@ struct ThingChips: View {
                     openRoute(.counter(other.id))
                 } label: {
                     HStack {
-                        JapaneseText(other.counter).font(.headword(.title3))
+                        JapaneseText(units: other.headwordUnits).font(.headword(.title3))
                         Text(other.reading)
                         Text(other.meaning).font(.caption).foregroundStyle(palette.muted)
                     }

@@ -85,7 +85,7 @@ struct CommonMistakesView: View {
                 if search.isEmpty {
                     PaperEmptyState("No mistakes to show")
                 } else {
-                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.")
+                    PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.", glyph: "無")
                 }
             }
         }

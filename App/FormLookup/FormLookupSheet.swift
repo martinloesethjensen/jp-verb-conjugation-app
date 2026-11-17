@@ -66,7 +66,7 @@ struct FormLookupSheet: View {
                 .font(.subheadline)
                 .foregroundStyle(palette.muted)
         } else if items.isEmpty {
-            PaperEmptyState("No verb found", message: "The app doesn't recognise a verb in “\(text)”. It knows the verbs in its table and the endings its lessons teach.") {
+            PaperEmptyState("No verb found", message: "The app doesn't recognise a verb in “\(text)”. It knows the verbs in its table and the endings its lessons teach.", glyph: "無") {
                 if let url = TextLookupURL.jisho(text.trimmingCharacters(in: .whitespacesAndNewlines)) {
                     Link("Look up in Jisho", destination: url)
                 }

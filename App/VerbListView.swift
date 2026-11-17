@@ -185,7 +185,8 @@ struct VerbListView: View {
                             .font(.headline)
                             .frame(width: 24, height: 24)
                     }
-                    .buttonStyle(.paperSecondaryInline)
+                    // Floats over the list: chrome, so it keeps glass (spec rule 1).
+                    .buttonStyle(.glass)
                     .buttonBorderShape(.circle)
                     .padding(.trailing, 20)
                     .padding(.bottom, 12)
@@ -243,9 +244,9 @@ struct VerbListView: View {
 
     @ViewBuilder private var emptyState: some View {
         if !search.isEmpty && !hasFilters {
-            PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.")
+            PaperEmptyState("No results for “\(search)”", message: "Check the spelling or try a new search.", glyph: "無")
         } else {
-            PaperEmptyState("No verbs match", message: search.isEmpty ? "No verb fits these filters." : "No verb fits “\(search)” with these filters.") {
+            PaperEmptyState("No verbs match", message: search.isEmpty ? "No verb fits these filters." : "No verb fits “\(search)” with these filters.", glyph: "無") {
                 Button("Clear filters") { typeFilter = nil; teFilter = nil; favouritesOnly = false }
             }
         }
