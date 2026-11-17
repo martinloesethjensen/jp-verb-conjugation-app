@@ -70,8 +70,17 @@ class Replies {
 
 export const replies = new Replies();
 
-/** The line a list shows for a reply. */
-export function replyText(r: Reply): string {
+/** The line a list shows for a reply. `viewer` is the signed-in person's display name: an opinion request
+ * reads differently to the person asked than to an author who is only told of it. (The Worker sends no flag
+ * for this, only `asked_of_name`.) */
+export function replyText(r: Reply, viewer?: string): string {
+	if (r.what === 'opinion_asked') {
+		return viewer === undefined || r.asked_of_name === viewer
+			? `${r.by_name} asked for your opinion`
+			: `${r.by_name} asked ${r.asked_of_name} for a second opinion`;
+	}
+	if (r.what === 'opinion_answered') return `${r.by_name} gave a second opinion`;
+	if (r.what === 'opinion_cancelled') return `${r.by_name} cancelled the request for your opinion`;
 	if (r.what === 'accepted') return `${r.by_name} accepted your suggestion`;
 	if (r.what === 'declined') return `${r.by_name} declined your suggestion`;
 	return `${r.by_name} replied`;

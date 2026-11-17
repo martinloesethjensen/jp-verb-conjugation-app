@@ -193,7 +193,7 @@ export type Comment = { author_name: string; mine: boolean; body: string; create
 /** Something that happened in a thread the viewer is part of (review/api `reply_routes.rs`). */
 export type Reply = {
 	suggestion_id: number;
-	what: 'comment' | 'accepted' | 'declined';
+	what: 'comment' | 'accepted' | 'declined' | 'opinion_asked' | 'opinion_answered' | 'opinion_cancelled';
 	by_name: string;
 	at: string;
 	/** The comment, cut to 140 characters; empty for a decision. */
@@ -207,6 +207,8 @@ export type Reply = {
 	parent_kind: string | null;
 	parent_id: string | null;
 	unread: boolean;
+	/** Who was asked, on the opinion events; empty on the others. */
+	asked_of_name: string;
 };
 
 /** One person's preferences and onboarding progress (review/api `UserSettings`). */
@@ -282,6 +284,34 @@ export type Stamp = {
 	created_at: string;
 };
 
+/** A request for a second opinion on an item's open suggestions, as the viewer sees it (review/api `OpinionRequest`). */
+export type Opinion = {
+	id: number;
+	dataset: string;
+	kind: string;
+	item_id: string;
+	entry_id: string;
+	item_title: string;
+	/** The oldest open suggestion when it was asked: the thread the request appears in. */
+	anchor_id: number;
+	asked_by_name: string;
+	asked_of_name: string;
+	mine_asked: boolean;
+	mine_to_answer: boolean;
+	question: string;
+	created_at: string;
+	answered_at: string | null;
+	/** The suggestion the answer picked; null for "neither" (and while unanswered). */
+	pick: number | null;
+	answer: string;
+	cancelled_at: string | null;
+	/** Unanswered, not cancelled, and the item still has an open suggestion. */
+	waiting: boolean;
+};
+
+/** Someone who could be asked; `seen` is the first of these that applies to them on the item. */
+export type Candidate = { user: number; name: string; role: string; seen: 'approved' | 'suggested' | 'commented' | null };
+
 export type Review = {
 	parts: ReviewPart[];
 	approvals: Approval[];
@@ -289,6 +319,7 @@ export type Review = {
 	/** For an entry that takes a stamp: the pending stamp, and whether one can be made now. */
 	stamp: Stamp | null;
 	stampable: boolean;
+	opinions: Opinion[];
 };
 
 export type QueueSummary = {
@@ -332,6 +363,8 @@ export type InboxSuggestion = Suggestion & {
 	warning?: string;
 	/** A change whose every edited field is Japanese text: a native may decide it. */
 	japanese_only: boolean;
+	/** The request for a second opinion this item is waiting on (or has had), if any. */
+	opinion: Opinion | null;
 };
 
 type Edits = { edits?: Record<string, string>; furigana?: Record<string, string> };
@@ -426,7 +459,7 @@ export const setQueueNote = (queueId: number, target: Target, note: string) =>
 export const removeQueueItem = (queueId: number, target: Target) =>
 	request<Queue>('/api/admin/queues/remove', { queue_id: queueId, ...body(target) });
 
-export const getInbox = async (status: 'open' | 'accepted' | 'declined' = 'open') =>
+export const getInbox = async (status: 'open' | 'waiting' | 'accepted' | 'declined' = 'open') =>
 	(await request<{ suggestions: InboxSuggestion[] }>(`/api/inbox?${new URLSearchParams({ status })}`))
 		.suggestions;
 
@@ -434,7 +467,25 @@ export const decide = (
 	id: number,
 	decision: 'accept' | 'decline',
 	extra: Edits & { reply?: string; confirm?: boolean } = {}
-) => request<Suggestion & { warning?: string }>('/api/decide', { id, decision, ...extra });
+) => request<Suggestion & { warning?: string; declined?: number[] }>('/api/decide', { id, decision, ...extra });
+
+// --- Second opinions ----------------------------------------------------------------------------
+
+export const getCandidates = async (t: Target) =>
+	(await request<{ candidates: Candidate[] }>(`/api/opinion/candidates?${new URLSearchParams(body(t))}`)).candidates;
+
+/** Asks `user` (a candidate's number) for a second opinion; the new request's id. */
+export const askOpinion = async (t: Target, user: number, question: string) =>
+	(await request<{ id: number }>('/api/opinion/ask', { ...body(t), user, question })).id;
+
+export const cancelOpinion = async (id: number) => {
+	await request<unknown>('/api/opinion/cancel', { id });
+};
+
+/** `pick`: the suggestion chosen; null when neither works (then `text` says why). */
+export const answerOpinion = async (id: number, pick: number | null, text: string) => {
+	await request<unknown>('/api/opinion/answer', { id, pick, body: text });
+};
 
 /** The message to show for a failed request. */
 export function problem(error: unknown): string {

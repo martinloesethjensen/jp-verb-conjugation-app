@@ -151,6 +151,11 @@ type StampRow = {
 	content_hash: string; by: string; reviewer: string; created_at: string; exported_at: string | null;
 };
 const RANK: Record<string, number> = { owner: 0, teacher: 1, native: 2 };
+type OpinionRow = {
+	id: number; dataset: string; kind: string; item_id: string; entry_id: string; item_title: string; anchor_id: number;
+	asked_by: string; asked_of: string; question: string; created_at: string; answered_at: string | null;
+	pick: number | null; answer: string; cancelled_at: string | null;
+};
 type QueueRow = { id: number; title: string; description: string; archived: boolean };
 type QueueItem = { queue_id: number; dataset: string; kind: string; item_id: string; entry_id: string; title: string; note: string; position: number };
 
@@ -164,6 +169,7 @@ export function reviewMock(ctx: ReviewContext) {
 		const key = `${email}/${id}`;
 		if ((reads.get(key) ?? '') < at) reads.set(key, at);
 	};
+	const opinions: OpinionRow[] = [];
 	const queues: QueueRow[] = [];
 	const queueItems: QueueItem[] = [];
 	const skips: { queue_id: number; dataset: string; kind: string; item_id: string; reviewer: string }[] = [];
@@ -251,6 +257,20 @@ export function reviewMock(ctx: ReviewContext) {
 		};
 	};
 
+	const openOn = (t: { dataset: string; kind: string; item_id: string }) => suggestions.filter((s) => same(s, t) && s.status === 'open');
+	/** Unanswered, not cancelled, and the item still has an open suggestion. */
+	const isWaiting = (o: OpinionRow) => !o.answered_at && !o.cancelled_at && openOn(o).length > 0;
+	const waitingFor = (t: { dataset: string; kind: string; item_id: string }) => opinions.find((o) => same(o, t) && isWaiting(o));
+	/** The mock users have no numbers of their own; a person's number is their place in the list. */
+	const numberOf = (email: string) => ctx.users.findIndex((u) => u.email === email) + 1;
+	const opinionOut = (o: OpinionRow) => ({
+		id: o.id, dataset: o.dataset, kind: o.kind, item_id: o.item_id, entry_id: o.entry_id, item_title: o.item_title,
+		anchor_id: o.anchor_id, asked_by_name: nameOf(o.asked_by), asked_of_name: nameOf(o.asked_of),
+		mine_asked: o.asked_by === ctx.me.email, mine_to_answer: o.asked_of === ctx.me.email, question: o.question,
+		created_at: o.created_at, answered_at: o.answered_at, pick: o.pick, answer: o.answer, cancelled_at: o.cancelled_at,
+		waiting: isWaiting(o)
+	});
+
 	/** The same rule as review/api's reply events: others' comments in threads you're in, and decisions on
 	 * your suggestions by someone else. Newest first. */
 	function repliesFor(email: string) {
@@ -264,13 +284,28 @@ export function reviewMock(ctx: ReviewContext) {
 			const inThread = s.author === email || comments.some((c) => c.suggestion_id === s.id && c.author === email);
 			if (inThread) {
 				for (const c of comments.filter((c) => c.suggestion_id === s.id && c.author !== email)) {
-					out.push({ ...about(s), what: 'comment', by_name: nameOf(c.author), at: c.created_at, body: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body, unread: c.created_at > since(s) });
+					out.push({ ...about(s), asked_of_name: '', what: 'comment', by_name: nameOf(c.author), at: c.created_at, body: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body, unread: c.created_at > since(s) });
 				}
 			}
 			const decider = (s as Suggestion & { decided_by?: string }).decided_by;
 			if (s.author === email && (s.status === 'accepted' || s.status === 'declined') && decider && decider !== email && s.decided_at) {
-				out.push({ ...about(s), what: s.status, by_name: nameOf(decider), at: s.decided_at, body: '', unread: s.decided_at > since(s) });
+				out.push({ ...about(s), asked_of_name: '', what: s.status, by_name: nameOf(decider), at: s.decided_at, body: '', unread: s.decided_at > since(s) });
 			}
+		}
+		// Second opinions: the asked person hears of a request or its cancelling, the asker of the answer, and the
+		// authors of the item's suggestions (open when it was asked) of all three.
+		for (const o of opinions) {
+			const anchor = suggestions.find((s) => s.id === o.anchor_id);
+			if (!anchor) continue;
+			const author = suggestions.some(
+				(m) => m.author === email && same(m, o) && m.status !== 'withdrawn' && m.created_at <= o.created_at &&
+					(!m.decided_at || m.decided_at > o.created_at)
+			);
+			const event = (what: string, at: string, actor: string, text: string) =>
+				out.push({ ...about(anchor), what, by_name: nameOf(actor), at, body: text.length > 140 ? `${text.slice(0, 140)}…` : text, unread: at > since(anchor), asked_of_name: nameOf(o.asked_of) });
+			if (o.asked_of === email || (author && email !== o.asked_by)) event('opinion_asked', o.created_at, o.asked_by, o.question);
+			if (o.answered_at && (o.asked_by === email || (author && email !== o.asked_of))) event('opinion_answered', o.answered_at, o.asked_of, o.answer);
+			if (o.cancelled_at && o.asked_of === email) event('opinion_cancelled', o.cancelled_at, o.asked_by, o.question);
 		}
 		return out.sort((a, b) => b.at.localeCompare(a.at));
 	}
@@ -362,7 +397,8 @@ export function reviewMock(ctx: ReviewContext) {
 				approvals: approvals.filter((a) => a.dataset === dataset && a.entry_id === id).map(approvalOut),
 				suggestions: suggestions.filter((s) => s.dataset === dataset && s.entry_id === id).reverse().map(suggestionOut),
 				stamp: stampsHere(dataset) && pendingStamp(dataset, id) ? stampOut(pendingStamp(dataset, id)!) : null,
-				stampable: stampsHere(dataset) && !pendingStamp(dataset, id) && typeof stampReadiness(dataset, id) !== 'string'
+				stampable: stampsHere(dataset) && !pendingStamp(dataset, id) && typeof stampReadiness(dataset, id) !== 'string',
+				opinions: opinions.filter((o) => o.dataset === dataset && o.entry_id === id).map(opinionOut)
 			}];
 		}
 		if (path === '/admin/stampable' && method === 'GET') {
@@ -588,11 +624,75 @@ export function reviewMock(ctx: ReviewContext) {
 		};
 		if (path === '/inbox') {
 			const status = params.get('status') ?? 'open';
+			// An item waiting for a second opinion leaves Open and shows under Waiting.
+			const shown = (s: Suggestion) =>
+				status === 'open' ? s.status === 'open' && !waitingFor(s)
+				: status === 'waiting' ? s.status === 'open' && !!waitingFor(s)
+				: s.status === status;
 			return [200, {
-				suggestions: suggestions
-					.filter((s) => s.status === status)
-					.map((s) => ({ ...suggestionOut(s), current: currentOf(s), japanese_only: japaneseOnly(s) }))
+				suggestions: suggestions.filter(shown).map((s) => {
+					const asked = opinions.filter((o) => same(o, s) && !o.cancelled_at).at(-1);
+					return { ...suggestionOut(s), current: currentOf(s), japanese_only: japaneseOnly(s), opinion: asked ? opinionOut(asked) : null };
+				})
 			}];
+		}
+		const canAsk = ctx.me.role === 'admin' || ctx.me.role === 'teacher';
+		if (path === '/opinion/candidates' && method === 'GET') {
+			if (!canAsk) return [403, { error: "this account can't do that" }];
+			const t = { dataset: params.get('dataset') ?? '', kind: params.get('kind') ?? '', item_id: params.get('id') ?? '' };
+			const open = openOn(t);
+			const seenOf = (u: User) =>
+				approvals.some((a) => same(a, t) && a.reviewer === u.email) ? 'approved'
+				: suggestions.some((s) => same(s, t) && s.author === u.email) ? 'suggested'
+				: comments.some((c) => open.some((s) => s.id === c.suggestion_id) && c.author === u.email) ? 'commented'
+				: null;
+			const candidates = ctx.users
+				.filter((u) => u.email !== by && !open.some((s) => s.author === u.email))
+				.map((u) => ({ user: numberOf(u.email), name: u.display_name, role: u.role, seen: seenOf(u) }));
+			return [200, { candidates }];
+		}
+		if (path === '/opinion/ask' && method === 'POST') {
+			if (!canAsk) return [403, { error: "this account can't do that" }];
+			const t = targetOf(body);
+			const question = String(body.question ?? '').trim();
+			if (!question) return [400, { error: "the question can't be empty" }];
+			const current = find(t);
+			if (!current) return [404, { error: NOT_LOADED }];
+			const open = openOn(t);
+			if (!open.length) return [409, { error: 'nothing open to give an opinion on' }];
+			const asked = ctx.users[Number(body.user) - 1];
+			if (!asked) return [400, { error: 'no such reviewer' }];
+			if (asked.email === by) return [400, { error: "you can't ask yourself" }];
+			if (open.some((s) => s.author === asked.email)) return [400, { error: 'they wrote one of these suggestions' }];
+			if (waitingFor(t)) return [409, { error: 'someone was already asked about this item' }];
+			const o: OpinionRow = {
+				id: nextId++, ...t, entry_id: current.entry_id, item_title: current.title, anchor_id: open[0].id,
+				asked_by: by, asked_of: asked.email, question, created_at: now(), answered_at: null, pick: null, answer: '', cancelled_at: null
+			};
+			opinions.push(o);
+			markRead(by, o.anchor_id);
+			return [201, { id: o.id }];
+		}
+		if (path === '/opinion/cancel' || path === '/opinion/answer') {
+			const o = opinions.find((x) => x.id === Number(body.id));
+			if (!o) return [404, { error: 'no such request' }];
+			const answering = path === '/opinion/answer';
+			if (answering ? o.asked_of !== by : o.asked_by !== by) {
+				return [403, { error: answering ? 'only the person asked can answer' : 'only the person who asked can cancel' }];
+			}
+			if (o.answered_at || o.cancelled_at) return [409, { error: 'that request was already answered or cancelled' }];
+			if (!isWaiting(o)) return [409, { error: 'already decided' }];
+			if (!answering) {
+				o.cancelled_at = now();
+				return [200, {}];
+			}
+			const text = String(body.body ?? '').trim();
+			const pick = body.pick === null || body.pick === undefined ? null : Number(body.pick);
+			if (pick === null && !text) return [400, { error: 'say why neither works' }];
+			if (pick !== null && !openOn(o).some((s) => s.id === pick)) return [400, { error: 'pick one of the open suggestions' }];
+			Object.assign(o, { answered_at: now(), pick, answer: text });
+			markRead(by, o.anchor_id);
+			return [200, {}];
 		}
 		if (path === '/decide') {
 			if (!suggestion) return [404, { error: 'no such suggestion' }];
@@ -628,11 +728,19 @@ export function reviewMock(ctx: ReviewContext) {
 					if (!body.confirm) return [400, { error: warning }];
 				}
 			}
+			const declined: number[] = [];
+			if (body.decision === 'accept') {
+				// Accepting one change declines the other open suggestions on the same item.
+				for (const other of openOn(suggestion).filter((x) => x.id !== suggestion.id)) {
+					Object.assign(other, { status: 'declined', decided_at: now(), decided_by: by });
+					declined.push(other.id);
+				}
+			}
 			Object.assign(suggestion, { status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now(), decided_by: by });
 			markRead(by, suggestion.id);
 			const reply = String(body.reply ?? '').trim();
 			if (reply) comments.push({ suggestion_id: suggestion.id, author: by, body: reply, created_at: now() });
-			return [200, { ...suggestionOut(suggestion), warning }];
+			return [200, { ...suggestionOut(suggestion), warning, ...(body.decision === 'accept' ? { declined } : {}) }];
 		}
 		return undefined;
 	}
