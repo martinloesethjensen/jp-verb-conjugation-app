@@ -80,17 +80,24 @@ seal in the header.
 
 ## Roles
 
-Access roles widen from `admin | reviewer` to `admin | teacher | reviewer` (`users.role`).
-`public_role` (owner, teacher, native) stays a credit label only. Martin sets both.
+Access roles widen from `admin | reviewer` to `admin | teacher | reviewer` (`users.role`), and later
+gain `native` (step 3b). `public_role` (owner, teacher, native) stays a credit label only. Martin sets both.
 
-| Can… | Reviewer (native speakers) | Teacher | Owner (`admin`) |
-|---|---|---|---|
-| Approve items, suggest, note, comment, write courses | yes | yes | yes |
-| Accept or decline others' suggestions, approve others' courses | no | yes | yes |
-| Accept own suggestion or approve own course | no | no | no |
-| Ask for a second opinion | no | yes | yes |
-| Manage reviewers, roles and queues; export | no | no | yes |
-| Sign a data release | no | no | yes, locally (`make data-release`) |
+| Can… | Reviewer | Native (step 3b) | Teacher | Owner (`admin`) |
+|---|---|---|---|---|
+| Approve items, suggest, note, comment, write courses | yes | yes | yes | yes |
+| Accept or decline others' changes to Japanese fields of existing items | no | yes | yes | yes |
+| Accept or decline others' other suggestions (English, additions, removals, notes), approve others' courses | no | no | yes | yes |
+| Accept own suggestion or approve own course | no | no | no | no |
+| Ask for a second opinion | no | no | yes | yes |
+| Manage reviewers, roles and queues; export | no | no | no | yes |
+| Sign a data release | no | no | no | yes, locally (`make data-release`) |
+
+**Japanese fields** (decided 2026-11-11): a `change` suggestion qualifies only when every edited field is
+Japanese text (the Worker's list matching the web's `JAPANESE_FIELDS`: `jp`, `reading`, `kana`, `word`,
+`counter`, `wrong`, `kanji`, `dict` and the conjugated forms) and any furigana it adds. A suggestion that
+also touches English, a choice field or an id, and every `add`, `delete` and `note`, still needs a teacher
+or the owner. A native's "Edit then accept" may only edit the same Japanese fields.
 
 One teacher's acceptance is enough; there is no second check. `suggestions.decided_by` already
 records who decided, and the audit log covers every decision.
@@ -101,6 +108,17 @@ decisions left `/api/admin/*`, which only the owner's GitHub sign-in reaches, fo
 owner sets access roles on the Reviewers page (`POST /api/admin/users/access`, teacher or reviewer only; the
 owner's own role never changes there). Deciding one's own suggestion is refused for everyone, the owner
 included.
+
+**As built (step 3b, 2026-11-11):** `users.role` gained `native` (migration 0010), set on the Reviewers page
+as "also accept Japanese fixes" through the same `POST /api/admin/users/access`. `Need::Teacher` became
+`Need::Decider` (teachers, natives and the owner reach `/api/inbox` and `/api/decide`), and `/api/decide`
+checks what a native may decide: another person's `change` whose every edited field is in
+`review/api/src/japanese.rs`'s list (kept equal to the web's `JAPANESE_FIELDS` by a test), with edits only to
+those fields. "Edited" means different from the item as loaded now, leaving out `particle_blanks` (dropped by
+a `jp` edit, marked again at export), so a stale change whose item moved in another field goes to a teacher.
+Declining follows the same rule. The inbox returns `japanese_only` per suggestion and the page shows Accept,
+Edit then accept (Japanese fields only) and Decline where it is true, and "A teacher or Martin decides this
+one." elsewhere.
 
 ## Reply alerts
 
@@ -162,15 +180,16 @@ Teachers, native speakers and the owner write courses that learners pick in the 
 and II.
 
 - **Start:** from scratch; following a textbook (lesson numbers only, never the book's text or
-  examples, the same rule as `taught_in`); or copying a published course (the original author stays
-  credited).
+  examples, the same rule as `taught_in`); or copying a published course. A copy is independent (decided 2026-11-11): it is credited "Copied
+  from … by …", but later fixes to the original don't flow into it, and its author decides every change.
 - **Builder:** a lesson outline; per lesson a title, a "what learners can do after it" goal, items in
   teaching order and an optional note; "Add from the data" searches by English, kana, kanji or romaji
   and filters by Verbs, Words, Grammar, Counters, Examples.
 - **Only reviewed data:** items are stable ids from the published data. A missing word or sentence
   goes through "Suggest adding it". A missing grammar point goes through "Propose a new grammar point",
   which reuses today's add flow for `grammar/entry` and puts the proposal in the lesson as
-  "Proposed · waiting for a teacher". A course can't be approved while it holds unaccepted proposals.
+  "Proposed · waiting for a teacher". A course can't be approved while it holds unaccepted proposals. The author's own proposals need another
+  teacher or the owner, even inside their own course (decided 2026-11-11; the own-suggestion guard).
 - **Review:** Written → approved by a teacher who isn't the author (or the owner) → in the app with the
   next signed data release. Automatic checks: every lesson has items; every id exists; unreviewed
   counters are flagged; the author confirms nothing is copied from a textbook.
@@ -181,7 +200,67 @@ and II.
   It must stay free of Apple-only assumptions (see AGENTS.md, Android). The app's course picker
   and "start from this course" in My course get their own iOS design; *Course review* only sketches it.
 
-## Email (to investigate before building)
+### App design (step 8)
+
+Approved by the owner on 17 November 2026 from the canvas section "Courses in the app (iOS)" (boards
+`App…`: picker, overview, lesson, both in Light and Dark; start sheet; My course; update; withdrawal;
+offline, first sync and empty). iPhone only; iPad and macOS stay parked. File format:
+`2026-11-17-courses-data-design.md`.
+
+- **Picker:** My course's start screen becomes "Choose a course": *Textbooks* (Genki I, Genki II),
+  *From teachers and native speakers*, and *Your own* ("Start empty"). A course card shows its title,
+  credit, `LevelBadge`s, lesson count, summary, a "New" pill until opened once, and "Copied from “…”
+  by …" for copies. Credit is the author's public name and role ("Kenji · Teacher") or the role alone
+  ("A teacher"), as the author chose. Every row, Genki too, opens an overview first; nothing is added
+  until Start.
+- **Overview:** title, credit, level, summary, how many items of each kind, the lessons in order with
+  their goals, "Written by … Checked by a second teacher", and a pinned "Start this course" (`.paper`).
+- **Lesson:** "Lesson n of m", the goal as "After this lesson you can …", the author's note as a dashed
+  card, and the items in teaching order with `FilterChip`s by kind (All, Verbs, Words, Grammar,
+  Counters, Examples). Verbs carry their `TypeLabel`; examples sit on a ruled `paperCard` with the form
+  underlined (`VerbExampleCard` style) and speak on tap. Each item opens its existing page. The bottom
+  bar holds "Practise this lesson" and "Mark done". All Japanese goes through `JapaneseText`.
+- **My course holds all five kinds.** Today it holds grammar only; a lesson becomes typed item ids
+  (verb, word, grammar, counter, example). A course lesson is linked the way a textbook lesson is today:
+  My course stores only the learner's edits (added, removed, order) over the course lesson, keyed by
+  course id and the lesson's stable id, so a course update still flows in. Textbook lessons, course
+  lessons and the learner's own lessons sit side by side, grouped by source, under "Started from".
+- **Starting with a My course already:** a sheet offers "Add after your lessons" (the default; nothing
+  changes) or "Start over with this course" (removes the lessons and edits after a second
+  confirmation). Neither touches quiz history, favourites or the Word Bank.
+- **Done:** a new on-device mark per lesson, keyed by course id and lesson id (book id and lesson
+  number for Genki), with a progress bar in My course. Updates and withdrawals never clear it.
+- **Update** (a later signed release changes a started course): one calm notice card, no red, once per
+  update at the top of My course and on the course page ("… was updated. Your edits and done marks are
+  kept."), "Updated" and "New" pills on lessons, and a "What changed" sheet that the device diffs
+  against the copy it last saw. A done lesson stays done and says "1 new since you finished it". An
+  item the author removes stays if the learner added it themselves; a lesson the learner deleted stays
+  deleted. Nothing moves while a lesson or a quiz is open.
+- **Withdrawn:** the course becomes a tombstone in `courses.json`. The device turns its lessons into the
+  learner's own (names, items and done marks kept; the author's goals and notes dropped), shows "… is
+  no longer offered" once, and the picker stops listing it. An old link opens "No longer offered" with
+  "Open My course".
+- **States:** `courses.json` ships in the app bundle like the six other data files, so an offline first
+  launch still lists courses and a footnote says which data they are from. While a first sync runs, or
+  offline without the file, the reviewer section shows a quiet dashed row ("Getting courses…",
+  "Courses download with the app's data"). With no courses in the data, "No courses yet … They arrive
+  with a data update." Never an error or a retry button there; failures show in Settings › Data.
+- **Still open** (the boards' default in brackets): move My course out of the Grammar tab now that it
+  holds more than grammar [stays where it is; the Grammar tab's My course mode shows each lesson's
+  grammar]; "Practise this lesson" as one mixed quiz or the existing quizzes limited to the lesson [one
+  button, to decide when planning]; keep a withdrawn course's goals and notes [dropped]; whether "done"
+  is wanted at all [yes]; courses outside the learner's studied levels [all listed]; whether an example
+  needs its verb or word in the same lesson [no].
+
+## Email (deferred)
+
+**Decided 2026-11-11:** email notifications wait until after the other steps. When they are built, they go
+through **Resend's free tier** (an HTTP API the Worker calls with a secret key), not Cloudflare Email
+Sending. Re-check Resend's free-tier limits and domain setup (SPF, DKIM) when building; the opt-in, off by
+default, unsubscribe and suppression rules below still apply.
+
+The Cloudflare findings below are kept for reference.
+
 
 Checked on 8 November 2026 in the Cloudflare docs; Email Sending is in beta, so re-check before building.
 
@@ -206,6 +285,8 @@ Each step is its own plan and PR.
 2. **Phone layouts:** queue sheet and action bar, suggest form, inbox, browse.
 3. **Roles:** the `teacher` access role, accept and decline for teachers, the own-suggestion guard,
    copy changes.
+3b. **Natives accept Japanese fields:** the `native` access role (a migration), the Japanese-field rule in
+   `/api/decide`, the Reviewers page picker, and inbox buttons shown only on suggestions a native may decide.
 4. **Reply alerts:** `thread_reads`, the unread route, the bell, Home section, thread marker.
 5. **Settings and onboarding:** `user_settings`, the Settings page, the tour, the phone welcome, tips,
    keyboard shortcuts and help.
@@ -214,7 +295,7 @@ Each step is its own plan and PR.
 7. **Courses on the site:** tables, builder, review, grammar proposals.
 8. **Courses in the app:** `data/courses.json`, schema, docs spec, sync, picker. This needs an iOS
    design first.
-9. **Email**, after the investigation above.
+9. **Email** (deferred): opt-in notifications through Resend's free tier.
 
 ## Out of scope
 
@@ -222,8 +303,15 @@ Each step is its own plan and PR.
 - New example sentences written inside the course builder; they go through suggestions.
 - Changing who signs data releases.
 
+## Decided questions (2026-11-11)
+
+- **Natives accept Japanese fields:** yes, for changes to the Japanese text, readings and furigana of
+  existing items only; see Roles. Built as step 3b.
+- **Copied courses are independent:** credited to the original, but fixes don't flow through.
+- **No accepting your own proposals in your own course:** another teacher or the owner decides.
+
+- **Email waits, then uses Resend's free tier** instead of Cloudflare Email Sending.
+
 ## Open questions
 
-- Should native speakers get accept powers for Japanese-only fields later?
-- Does a copied course stay linked to its original, so fixes flow through, or become independent?
-- Should a teacher's acceptance on their own course's proposals count? (Today's rule: no.)
+None for now.

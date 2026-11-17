@@ -282,13 +282,13 @@ const ROUTES: &[Route] = &[
     Route {
         method: "GET",
         path: "/api/inbox",
-        need: Need::Teacher,
+        need: Need::Decider,
         handler: Handler::Inbox,
     },
     Route {
         method: "POST",
         path: "/api/decide",
-        need: Need::Teacher,
+        need: Need::Decider,
         handler: Handler::Decide,
     },
     Route {

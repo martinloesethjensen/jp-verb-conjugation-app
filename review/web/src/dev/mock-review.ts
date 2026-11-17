@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { canStamp } from '../lib/export.ts';
 import { partOf, partsOf } from '../lib/targets.ts';
 import type { Dataset } from '../lib/api.ts';
+import { JAPANESE_FIELDS } from '../lib/labels.ts';
 
 // The mock reads loosely typed JSON.
 type Json = { [key: string]: any };
@@ -13,7 +14,7 @@ type Entry = { item_id: string; title: string; jlpt: string | null; json: Json }
 type User = {
 	email: string;
 	display_name: string;
-	role: 'admin' | 'teacher' | 'reviewer';
+	role: 'admin' | 'teacher' | 'native' | 'reviewer';
 	public_role: 'owner' | 'teacher' | 'native';
 	public_name: string | null;
 };
@@ -570,13 +571,27 @@ export function reviewMock(ctx: ReviewContext) {
 			if (path === '/admin/queues/remove' && item) queueItems.splice(queueItems.indexOf(item), 1);
 			return [200, queueOut(queue)];
 		}
+		/** The target's JSON now, or null when it left the data. */
+		const currentOf = (s: Suggestion) => {
+			const current = find(s);
+			return current ? (s.kind === 'entry' ? current.value : partOf(current.value, s.kind, s.item_id) ?? null) : null;
+		};
+		/** As the Worker's `japanese_only`: a change whose every edited field (blanks aside) is Japanese. */
+		const japaneseOnly = (s: Suggestion) => {
+			const current = currentOf(s);
+			if (s.action !== 'change' || !current || !s.proposed) return false;
+			const keys = new Set([...Object.keys(current), ...Object.keys(s.proposed)]);
+			const edited = [...keys].filter(
+				(k) => k !== 'particle_blanks' && JSON.stringify(current[k]) !== JSON.stringify(s.proposed?.[k])
+			);
+			return edited.length > 0 && edited.every((k) => JAPANESE_FIELDS.has(k));
+		};
 		if (path === '/inbox') {
 			const status = params.get('status') ?? 'open';
 			return [200, {
-				suggestions: suggestions.filter((s) => s.status === status).map((s) => {
-					const current = find(s);
-					return { ...suggestionOut(s), current: current ? (s.kind === 'entry' ? current.value : partOf(current.value, s.kind, s.item_id) ?? current.value) : null };
-				})
+				suggestions: suggestions
+					.filter((s) => s.status === status)
+					.map((s) => ({ ...suggestionOut(s), current: currentOf(s), japanese_only: japaneseOnly(s) }))
 			}];
 		}
 		if (path === '/decide') {
@@ -585,6 +600,12 @@ export function reviewMock(ctx: ReviewContext) {
 				return [403, { error: 'someone else decides your own suggestion; withdraw it instead' }];
 			}
 			if (suggestion.status !== 'open') return [409, { error: DECIDED }];
+			if (ctx.me.role === 'native') {
+				const edits = Object.keys(body.edits ?? {});
+				if (!japaneseOnly(suggestion) || !edits.every((k) => JAPANESE_FIELDS.has(k))) {
+					return [403, { error: 'a teacher or Martin decides this one: it changes more than Japanese text' }];
+				}
+			}
 			const out = suggestionOut(suggestion);
 			let warning: string | undefined;
 			if (body.decision === 'accept') {

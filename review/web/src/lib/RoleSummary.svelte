@@ -6,6 +6,8 @@
 
 	const SUMMARY: Record<Role, string> = {
 		reviewer: 'Reviewer: you approve items, suggest changes, leave notes and reply.',
+		native:
+			"Native speaker: you also accept or decline other people's changes to Japanese fields.",
 		teacher: "Teacher: you also accept or decline other people's suggestions.",
 		admin: 'Owner: you also manage reviewers, queues, stamps and exports.'
 	};

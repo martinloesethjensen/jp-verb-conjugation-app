@@ -20,7 +20,8 @@ make review-build    # Worker bundle (review/api/build) and pages (review/web/bu
 ```
 
 For the pages, `npm run dev` in `review/web` serves them with a mock API that reads the repo's own `data/`
-(you're signed in as the owner; `MOCK_ROLE=reviewer npm run dev` signs you in as a reviewer, and
+(you're signed in as the owner; `MOCK_ROLE=reviewer npm run dev` signs you in as a reviewer, `MOCK_ROLE=teacher`
+as a teacher and `MOCK_ROLE=native` as a native speaker, and
 `MOCK_LOADED=1` starts with the data already loaded). `npm run build && npm run preview` serves the built site,
 with its content security policy, against the same mock.
 
@@ -38,6 +39,10 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   before it stop counting (approve them again), and open or accepted-but-unexported changes to verb entries
   show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
   are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
+- **Natives (2026-11-11)** need migration `0010_native_role.sql` (`npm run migrate`), which rebuilds `users`
+  with every row kept so the role can be `native`. Either order is safe; until it runs, making someone a
+  native fails with "the database is unavailable". (`0009` belongs to the settings step; wrangler applies
+  whichever is missing.)
 - **Settings and onboarding (2026-11-11)** need migration `0009_user_settings.sql` (`npm run migrate`). Run it
   just before or right after merging: until it runs, `/api/settings` fails, so shortcuts stay on and no tour or
   tips appear; every other page works. The Account page moved to `/settings` (`/account` redirects).
@@ -128,6 +133,13 @@ Each step says what to do and what you should see.
   Teachers sign in like every reviewer (email PIN, the "Reviewers" policy): the admin application (step 4)
   stays yours alone, so reviewers, queues, stamps and export are still owner-only. "Credited as" (how the app
   and the public repo name them) is separate; set it to "a teacher" too if that's how they should be credited.
+- **Natives:** set **Can** to "also accept Japanese fixes". A native accepts, edits then accepts, or declines
+  other people's changes to existing items when every field the change edits is Japanese text (a sentence,
+  reading, kana, spelling or counter) plus any furigana it adds. Anything that also touches English, a
+  choice or an id, and every addition, removal and note, still waits for a teacher or you; the inbox says so
+  on those, and the Worker refuses them. Their Edit then accept offers only the Japanese fields. The Worker
+  judges a change against the data as loaded now, so a change whose item later changed in another field
+  goes to a teacher.
 - **Nobody decides their own suggestion**, you included: a teacher decides yours, and you or another teacher
   decide a teacher's. Each can still withdraw their own.
 
