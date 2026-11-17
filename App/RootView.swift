@@ -43,6 +43,8 @@ struct RootView: View {
     @State private var pendingSpot: [SpotMistakeQuestion]?
     @State private var particleQuestions: [ParticleQuestion]?
     @State private var pendingParticles: [ParticleQuestion]?
+    @State private var verbPairQuestions: [VerbPairQuestion]?
+    @State private var pendingVerbPairs: [VerbPairQuestion]?
     @State private var incomingRoute: Route?
     /// A link that arrived during a quiz, waiting for "Leave the quiz?" to be answered.
     @State private var linkLeavingQuiz: URL?
@@ -69,7 +71,8 @@ struct RootView: View {
             ) == nil ? nil : route
         }
         guard quizLink != nil || route != nil else { return }
-        if !confirmed && (quiz != nil || connectionQuestions != nil || spotQuestions != nil || particleQuestions != nil) {
+        if !confirmed && (quiz != nil || connectionQuestions != nil || spotQuestions != nil || particleQuestions != nil
+            || verbPairQuestions != nil) {
             linkLeavingQuiz = url
             return
         }
@@ -87,6 +90,8 @@ struct RootView: View {
         pendingSpot = nil
         particleQuestions = nil
         pendingParticles = nil
+        verbPairQuestions = nil
+        pendingVerbPairs = nil
         linkArrivals += 1
         if let quizLink {
             let verbs = verbStore.verbs.visible(in: LevelSettings.load())
@@ -214,6 +219,10 @@ struct RootView: View {
                 particleQuestions = pendingParticles
                 self.pendingParticles = nil
             }
+            if let pendingVerbPairs {
+                verbPairQuestions = pendingVerbPairs
+                self.pendingVerbPairs = nil
+            }
         }) {
             if let topicSheetVerbs {
                 QuizTopicSheet(
@@ -221,11 +230,15 @@ struct RootView: View {
                     connectionPatterns: verbStore.grammarPoints.visible(in: LevelSettings.load()).filter(\.hasConnections).count,
                     spotMistakeQuestions: spotMistakeQuestions(count: .max).count,
                     particleQuestions: particleQuiz(count: .max).count,
+                    verbPairQuestions: verbPairQuiz(count: .max).count,
                     weakSpotCount: { weakPairs(in: $0).count },
                     resumable: quizSessions.resumable(verbs: verbStore.verbs) == nil ? nil : quizSessions.session,
                     onResume: resumeQuiz,
                     onStart: { verbs, selection in
-                        if case .particles = selection {
+                        if case .verbPairs = selection {
+                            let built = verbPairQuiz(count: quizQuestionCount)
+                            pendingVerbPairs = built.isEmpty ? nil : built
+                        } else if case .particles = selection {
                             let built = particleQuiz(count: quizQuestionCount)
                             pendingParticles = built.isEmpty ? nil : built
                         } else if case .spotMistake = selection {
@@ -261,6 +274,9 @@ struct RootView: View {
         .fullScreenCover(isPresented: particlePresentationBinding) {
             if let particleQuestions { particleScreen(particleQuestions) }
         }
+        .fullScreenCover(isPresented: verbPairPresentationBinding) {
+            if let verbPairQuestions { verbPairScreen(verbPairQuestions) }
+        }
         #else
         .sheet(isPresented: quizPresentationBinding) {
             if let quiz {
@@ -283,6 +299,12 @@ struct RootView: View {
         .sheet(isPresented: particlePresentationBinding) {
             if let particleQuestions {
                 particleScreen(particleQuestions)
+                    .frame(minWidth: 560, minHeight: 640)
+            }
+        }
+        .sheet(isPresented: verbPairPresentationBinding) {
+            if let verbPairQuestions {
+                verbPairScreen(verbPairQuestions)
                     .frame(minWidth: 560, minHeight: 640)
             }
         }
@@ -338,6 +360,21 @@ struct RootView: View {
             }
     }
 
+    private func verbPairScreen(_ questions: [VerbPairQuestion]) -> some View {
+        VerbPairQuizView(questions: questions, recorder: { quizHistory.record($0) },
+                         onDone: { verbPairQuestions = nil })
+            .alert("Leave the quiz?", isPresented: leavingQuizBinding) {
+                leaveQuizButtons
+            } message: {
+                Text("This quiz ends here. The answers you have given are kept in your progress.")
+            }
+    }
+
+    /// Verb pair questions from the transitive/intransitive pairs the level settings show.
+    private func verbPairQuiz(count: Int) -> [VerbPairQuestion] {
+        buildVerbPairQuestions(verbs: verbStore.verbs, levels: LevelSettings.load(), count: count)
+    }
+
     /// Particle questions from the marked blanks of the lessons and verbs the level settings show.
     private func particleQuiz(count: Int) -> [ParticleQuestion] {
         buildParticleQuestions(
@@ -390,7 +427,7 @@ struct RootView: View {
         case .weakSpots:
             // Takes the first N buildable pairs in rank order, then shuffles the quiz.
             return buildQuestions(pairs: weakPairs(in: verbs), among: verbs, count: quizQuestionCount, kinds: QuizQuestionKind.verbKinds).shuffled()
-        case .connections, .spotMistake, .particles:
+        case .connections, .spotMistake, .particles, .verbPairs:
             return []  // started from onStart instead
         }
     }
@@ -414,6 +451,13 @@ struct RootView: View {
         Binding(
             get: { connectionQuestions != nil },
             set: { isPresented in if !isPresented { connectionQuestions = nil } }
+        )
+    }
+
+    private var verbPairPresentationBinding: Binding<Bool> {
+        Binding(
+            get: { verbPairQuestions != nil },
+            set: { isPresented in if !isPresented { verbPairQuestions = nil } }
         )
     }
 

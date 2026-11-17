@@ -16,7 +16,7 @@ verbs look alike and differ in the particle: ドアを開ける (someone opens t
    〜す, 〜める/〜まる, the pairs where える is transitive, intransitive verbs for things that
    happened, てある/ている). Its examples mark を and が as `particle_blanks`, so the particle quiz
    already asks which particle each half takes. The pair card ends with a "Learn about" link to it.
-3. Later, a separate pull request: a quiz kind that asks which half fits a sentence.
+3. **The quiz:** Verb pairs in the quiz picker (see "The quiz" below).
 
 ## Data contract (`data/verbs.json`)
 
@@ -73,3 +73,29 @@ A "Transitive pair" card after "Common phrases" shows two rows, this verb first:
 
 The partner's row opens the partner's verb page. The card draws nothing when the verb has no pair or
 when the partner is not in the loaded data.
+
+## The quiz
+
+Each paired verb whose partner is loaded, with both halves visible under the level settings, makes
+two questions from its `pair` phrase. The phrase is split at the particle just before the verb's
+kanji or kana spelling (`箱に本` + `を` + `入れる`); a phrase that does not split that way makes none.
+
+| Blank | Prompt | Choices | Answer |
+|---|---|---|---|
+| `verb` | the phrase up to the particle, `会議が＿＿＿` | both verbs' `dict` forms, written in the quiz's script setting | this verb's `dict` |
+| `particle` | `会議＿＿＿始める` | を and が | this half's particle |
+
+The gloss is shown under the prompt. After answering, both phrases of the pair are shown, the
+transitive one first, with a link to the verb's page.
+
+Answers go into quiz history as attempts of kind **`verbPair`**:
+
+| Field | Value |
+|---|---|
+| `subject` | the verb's id (`つく:点く` for that verb) |
+| `formID` | what was blanked: `"verb"` or `"particle"` |
+| `errorTag` (wrong answers only) | `other_verb:<partner id>` for a verb blank, `wrong_particle:<particle>` for a particle blank |
+
+An older app build skips attempts of a kind it does not know. Verb pair attempts are not verb
+questions: they never make weak spots for the verb quiz. An Android client records the same kind,
+fields and error tags.

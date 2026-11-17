@@ -8,6 +8,7 @@ pub mod auth;
 pub mod data;
 pub mod export_routes;
 pub mod items;
+pub mod japanese;
 pub mod manifest;
 pub mod proposal;
 pub mod reply_routes;

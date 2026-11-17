@@ -1,5 +1,5 @@
 <script lang="ts">
-	// The inbox, for teachers and the owner: every suggestion as a red-pen correction, grouped by item so counter-suggestions
+	// The inbox, for teachers, natives and the owner (natives decide only Japanese-only changes): every suggestion as a red-pen correction, grouped by item so counter-suggestions
 	// sit side by side. Accepting only marks a suggestion accepted; nothing reaches data/ until export.
 	import { onMount } from 'svelte';
 	import { comment, decide, getInbox, problem, type Field, type InboxSuggestion } from '#lib/api.ts';
@@ -9,7 +9,7 @@
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
-	import { canDecide, ownSuggestionLine } from '#lib/roles.ts';
+	import { canDecide, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from '#lib/roles.ts';
 	import { getSession } from '#lib/session.ts';
 	import { editForm, suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
@@ -72,10 +72,12 @@
 	});
 
 	const adding = (s: InboxSuggestion) => s.action === 'add';
-	/** The fields a teacher or the owner edits: an addition's add form, otherwise the change form. */
+	/** The target's fields: an addition's add form, otherwise the change form. */
 	const fieldsOf = (s: InboxSuggestion) => (adding(s) ? addFields : fieldTable)[`${s.dataset}/${s.kind}`] ?? [];
+	/** What Edit then accept offers: a native only the Japanese fields. */
+	const editFields = (s: InboxSuggestion) => editableFields(me().role, fieldsOf(s));
 	const canEdit = (s: InboxSuggestion) =>
-		fieldsOf(s).length > 0 && s.action !== 'delete' && (adding(s) ? !s.gone : !!s.current);
+		editFields(s).length > 0 && s.action !== 'delete' && (adding(s) ? !s.gone : !!s.current);
 	const wholeRemoval = (s: InboxSuggestion) =>
 		s.action === 'delete' && s.kind === 'entry' && (s.dataset === 'verbs' || s.dataset === 'words');
 	const staleChange = (s: InboxSuggestion) => s.action === 'change' && s.stale;
@@ -122,7 +124,7 @@
 <h1>Suggestions</h1>
 
 {#if !allowed}
-	<p class="notice">Only teachers and Martin can open the inbox.</p>
+	<p class="notice">Only teachers, native speakers who accept Japanese fixes, and Martin can open the inbox.</p>
 {:else}
 
 <div class="tabs-scroll">
@@ -159,6 +161,8 @@
 						{#if s.status === 'open'}
 							{#if s.mine}
 								<p class="hint">{ownSuggestionLine(me().role)}</p>
+							{:else if !mayDecide(me().role, s)}
+								<p class="hint">{TEACHER_DECIDES}</p>
 							{:else if confirming?.id === s.id}
 								<p class="warning">{confirming.warning}</p>
 								<button type="button" class="danger" disabled={busy} onclick={() => accept(s)}>Accept and remove</button>
@@ -184,7 +188,7 @@
 				</SuggestionCard>
 				{#if editing === s.id && canEdit(s)}
 					<SuggestForm
-						fields={fieldsOf(s)}
+						fields={editFields(s)}
 						current={editForm(s).base}
 						initial={editForm(s).start}
 						{readings}

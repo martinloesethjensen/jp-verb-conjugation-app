@@ -109,6 +109,17 @@ owner sets access roles on the Reviewers page (`POST /api/admin/users/access`, t
 owner's own role never changes there). Deciding one's own suggestion is refused for everyone, the owner
 included.
 
+**As built (step 3b, 2026-11-11):** `users.role` gained `native` (migration 0010), set on the Reviewers page
+as "also accept Japanese fixes" through the same `POST /api/admin/users/access`. `Need::Teacher` became
+`Need::Decider` (teachers, natives and the owner reach `/api/inbox` and `/api/decide`), and `/api/decide`
+checks what a native may decide: another person's `change` whose every edited field is in
+`review/api/src/japanese.rs`'s list (kept equal to the web's `JAPANESE_FIELDS` by a test), with edits only to
+those fields. "Edited" means different from the item as loaded now, leaving out `particle_blanks` (dropped by
+a `jp` edit, marked again at export), so a stale change whose item moved in another field goes to a teacher.
+Declining follows the same rule. The inbox returns `japanese_only` per suggestion and the page shows Accept,
+Edit then accept (Japanese fields only) and Decline where it is true, and "A teacher or Martin decides this
+one." elsewhere.
+
 ## Reply alerts
 
 - **Who is told:** the author of a suggestion or note; anyone who commented in its thread; the author
@@ -181,6 +192,58 @@ and II.
   `schema/courses.schema.json` and a spec in `docs/`, signed with the batch like every data file.
   It must stay free of Apple-only assumptions (see AGENTS.md, Android). The app's course picker
   and "start from this course" in My course get their own iOS design; *Course review* only sketches it.
+
+### App design (step 8)
+
+Approved by the owner on 17 November 2026 from the canvas section "Courses in the app (iOS)" (boards
+`App…`: picker, overview, lesson, both in Light and Dark; start sheet; My course; update; withdrawal;
+offline, first sync and empty). iPhone only; iPad and macOS stay parked. File format:
+`2026-11-17-courses-data-design.md`.
+
+- **Picker:** My course's start screen becomes "Choose a course": *Textbooks* (Genki I, Genki II),
+  *From teachers and native speakers*, and *Your own* ("Start empty"). A course card shows its title,
+  credit, `LevelBadge`s, lesson count, summary, a "New" pill until opened once, and "Copied from “…”
+  by …" for copies. Credit is the author's public name and role ("Kenji · Teacher") or the role alone
+  ("A teacher"), as the author chose. Every row, Genki too, opens an overview first; nothing is added
+  until Start.
+- **Overview:** title, credit, level, summary, how many items of each kind, the lessons in order with
+  their goals, "Written by … Checked by a second teacher", and a pinned "Start this course" (`.paper`).
+- **Lesson:** "Lesson n of m", the goal as "After this lesson you can …", the author's note as a dashed
+  card, and the items in teaching order with `FilterChip`s by kind (All, Verbs, Words, Grammar,
+  Counters, Examples). Verbs carry their `TypeLabel`; examples sit on a ruled `paperCard` with the form
+  underlined (`VerbExampleCard` style) and speak on tap. Each item opens its existing page. The bottom
+  bar holds "Practise this lesson" and "Mark done". All Japanese goes through `JapaneseText`.
+- **My course holds all five kinds.** Today it holds grammar only; a lesson becomes typed item ids
+  (verb, word, grammar, counter, example). A course lesson is linked the way a textbook lesson is today:
+  My course stores only the learner's edits (added, removed, order) over the course lesson, keyed by
+  course id and the lesson's stable id, so a course update still flows in. Textbook lessons, course
+  lessons and the learner's own lessons sit side by side, grouped by source, under "Started from".
+- **Starting with a My course already:** a sheet offers "Add after your lessons" (the default; nothing
+  changes) or "Start over with this course" (removes the lessons and edits after a second
+  confirmation). Neither touches quiz history, favourites or the Word Bank.
+- **Done:** a new on-device mark per lesson, keyed by course id and lesson id (book id and lesson
+  number for Genki), with a progress bar in My course. Updates and withdrawals never clear it.
+- **Update** (a later signed release changes a started course): one calm notice card, no red, once per
+  update at the top of My course and on the course page ("… was updated. Your edits and done marks are
+  kept."), "Updated" and "New" pills on lessons, and a "What changed" sheet that the device diffs
+  against the copy it last saw. A done lesson stays done and says "1 new since you finished it". An
+  item the author removes stays if the learner added it themselves; a lesson the learner deleted stays
+  deleted. Nothing moves while a lesson or a quiz is open.
+- **Withdrawn:** the course becomes a tombstone in `courses.json`. The device turns its lessons into the
+  learner's own (names, items and done marks kept; the author's goals and notes dropped), shows "… is
+  no longer offered" once, and the picker stops listing it. An old link opens "No longer offered" with
+  "Open My course".
+- **States:** `courses.json` ships in the app bundle like the six other data files, so an offline first
+  launch still lists courses and a footnote says which data they are from. While a first sync runs, or
+  offline without the file, the reviewer section shows a quiet dashed row ("Getting courses…",
+  "Courses download with the app's data"). With no courses in the data, "No courses yet … They arrive
+  with a data update." Never an error or a retry button there; failures show in Settings › Data.
+- **Still open** (the boards' default in brackets): move My course out of the Grammar tab now that it
+  holds more than grammar [stays where it is; the Grammar tab's My course mode shows each lesson's
+  grammar]; "Practise this lesson" as one mixed quiz or the existing quizzes limited to the lesson [one
+  button, to decide when planning]; keep a withdrawn course's goals and notes [dropped]; whether "done"
+  is wanted at all [yes]; courses outside the learner's studied levels [all listed]; whether an example
+  needs its verb or word in the same lesson [no].
 
 ## Email (deferred)
 

@@ -1,7 +1,9 @@
 // The Worker's API (review/api). Same origin, behind Cloudflare Access: the browser's Access cookie is the
 // only credential, so every request just sends same-origin credentials.
 
-export type Role = 'admin' | 'teacher' | 'reviewer';
+export type Role = 'admin' | 'teacher' | 'native' | 'reviewer';
+/** What the owner sets on the Reviewers page: every role but their own. */
+export type AccessRole = Exclude<Role, 'admin'>;
 /** How someone is credited in the public repo. */
 export type PublicRole = 'owner' | 'teacher' | 'native';
 export type Me = {
@@ -74,7 +76,7 @@ export const setPublicName = (publicName: string | null) =>
 	request<Me>('/api/me/public-name', { public_name: publicName });
 
 /** Reviewer or teacher; the owner's own role never changes here. */
-export const setAccessRole = (email: string, role: 'teacher' | 'reviewer') =>
+export const setAccessRole = (email: string, role: AccessRole) =>
 	request<User>('/api/admin/users/access', { email, role });
 
 export const setPublicRole = (email: string, publicRole: PublicRole) =>
@@ -311,6 +313,8 @@ export type InboxSuggestion = Suggestion & {
 	current: Record<string, unknown> | null;
 	/** Set when accepting removes a whole verb or word. */
 	warning?: string;
+	/** A change whose every edited field is Japanese text: a native may decide it. */
+	japanese_only: boolean;
 };
 
 type Edits = { edits?: Record<string, string>; furigana?: Record<string, string> };

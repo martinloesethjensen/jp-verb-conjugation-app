@@ -10,6 +10,8 @@ pub enum Role {
     Admin,
     /// Accepts and declines other people's suggestions.
     Teacher,
+    /// Accepts and declines other people's changes to Japanese text (`crate::japanese`).
+    Native,
     Reviewer,
 }
 
@@ -18,6 +20,7 @@ impl Role {
         match self {
             Role::Admin => "admin",
             Role::Teacher => "teacher",
+            Role::Native => "native",
             Role::Reviewer => "reviewer",
         }
     }
@@ -26,13 +29,20 @@ impl Role {
         match text {
             "admin" => Some(Role::Admin),
             "teacher" => Some(Role::Teacher),
+            "native" => Some(Role::Native),
             "reviewer" => Some(Role::Reviewer),
             _ => None,
         }
     }
 
-    /// May accept and decline suggestions (never their own): teachers and the owner.
+    /// Opens the inbox and decides some suggestions (never their own): teachers, natives and the owner.
     pub fn can_decide(self) -> bool {
+        matches!(self, Role::Teacher | Role::Native | Role::Admin)
+    }
+
+    /// Decides every kind of suggestion: teachers and the owner. A native decides only Japanese-only
+    /// changes.
+    pub fn decides_all(self) -> bool {
         matches!(self, Role::Teacher | Role::Admin)
     }
 }
