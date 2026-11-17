@@ -1222,6 +1222,102 @@ impl SqliteStore {
         self.conn.borrow().execute_batch(sql).unwrap();
     }
 
+    /// The outline write behind `save_lessons` and `save_outline`: one transaction, so the meta (when given)
+    /// and the lessons are all written or none are.
+    fn write_outline(
+        &self,
+        course_id: &str,
+        meta: Option<&CourseMeta>,
+        lessons: &[LessonInput],
+        by: &str,
+        now: &str,
+    ) -> Result<Vec<String>, CourseError> {
+        self.require_draft(course_id)?;
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let stored: Vec<CourseItemRow> = query(&tx, SELECT_COURSE_ITEMS, params![course_id])?;
+        let keys = keys_to_check(lessons, &stored);
+        let found: Vec<KeyRow> = query(&tx, SELECT_LOADED_KEYS, params![json_list(&keys)])?;
+        let loaded: BTreeSet<String> = found.into_iter().map(|r| r.key).collect();
+        let known: Vec<LessonRow> = query(&tx, SELECT_LESSONS, params![course_id])?;
+        let known: BTreeSet<String> = known.into_iter().map(|l| l.id).collect();
+        let plan = plan_outline(lessons, &known, &stored, &loaded, &mut new_course_id)?;
+
+        if let Some(meta) = meta {
+            tx.execute(
+                UPDATE_COURSE_META,
+                params![course_id, meta.title, meta.summary, meta.follows_book, now],
+            )
+            .map_err(backend)?;
+            tx.execute(
+                INSERT_COURSE_AUDIT,
+                params![
+                    now,
+                    by,
+                    "course.save",
+                    audit_target(course_id),
+                    format!("title={}", meta.title),
+                    course_id
+                ],
+            )
+            .map_err(backend)?;
+        }
+        tx.execute(DELETE_COURSE_ITEMS, params![course_id])
+            .map_err(backend)?;
+        tx.execute(DELETE_COURSE_LESSONS, params![course_id])
+            .map_err(backend)?;
+        for l in &plan {
+            tx.execute(
+                INSERT_LESSON,
+                params![
+                    course_id,
+                    l.id,
+                    l.position,
+                    l.title,
+                    l.goal,
+                    l.note,
+                    l.textbook_lesson
+                ],
+            )
+            .map_err(backend)?;
+            for i in &l.items {
+                let t = &i.target;
+                tx.execute(
+                    INSERT_COURSE_ITEM,
+                    params![
+                        course_id,
+                        l.id,
+                        i.position,
+                        t.dataset,
+                        t.kind,
+                        t.item_id,
+                        i.proposal_id
+                    ],
+                )
+                .map_err(backend)?;
+            }
+        }
+        let n = tx
+            .execute(TOUCH_COURSE, params![course_id, now])
+            .map_err(backend)?;
+        require_written(n, CourseError::NotDraft)?; // dropping `tx` rolls the guarded no-ops back
+        let items: usize = plan.iter().map(|l| l.items.len()).sum();
+        tx.execute(
+            INSERT_COURSE_AUDIT,
+            params![
+                now,
+                by,
+                "course.outline",
+                audit_target(course_id),
+                format!("lessons={} items={items}", plan.len()),
+                course_id
+            ],
+        )
+        .map_err(backend)?;
+        tx.commit().map_err(backend)?;
+        Ok(plan.into_iter().map(|l| l.id).collect())
+    }
+
     fn course_status(&self, id: &str) -> Result<(String, Option<String>), CourseError> {
         let conn = self.conn.borrow();
         let mut rows: Vec<CourseRow> = query(&conn, SELECT_COURSE, params!["", id])?;
@@ -1343,71 +1439,18 @@ impl CourseStore for SqliteStore {
         by: &str,
         now: &str,
     ) -> Result<Vec<String>, CourseError> {
-        self.require_draft(course_id)?;
-        let mut conn = self.conn.borrow_mut();
-        let tx = conn.transaction().map_err(backend)?;
-        let stored: Vec<CourseItemRow> = query(&tx, SELECT_COURSE_ITEMS, params![course_id])?;
-        let keys = keys_to_check(lessons, &stored);
-        let found: Vec<KeyRow> = query(&tx, SELECT_LOADED_KEYS, params![json_list(&keys)])?;
-        let loaded: BTreeSet<String> = found.into_iter().map(|r| r.key).collect();
-        let known: Vec<LessonRow> = query(&tx, SELECT_LESSONS, params![course_id])?;
-        let known: BTreeSet<String> = known.into_iter().map(|l| l.id).collect();
-        let plan = plan_outline(lessons, &known, &stored, &loaded, &mut new_course_id)?;
+        self.write_outline(course_id, None, lessons, by, now)
+    }
 
-        tx.execute(DELETE_COURSE_ITEMS, params![course_id])
-            .map_err(backend)?;
-        tx.execute(DELETE_COURSE_LESSONS, params![course_id])
-            .map_err(backend)?;
-        for l in &plan {
-            tx.execute(
-                INSERT_LESSON,
-                params![
-                    course_id,
-                    l.id,
-                    l.position,
-                    l.title,
-                    l.goal,
-                    l.note,
-                    l.textbook_lesson
-                ],
-            )
-            .map_err(backend)?;
-            for i in &l.items {
-                let t = &i.target;
-                tx.execute(
-                    INSERT_COURSE_ITEM,
-                    params![
-                        course_id,
-                        l.id,
-                        i.position,
-                        t.dataset,
-                        t.kind,
-                        t.item_id,
-                        i.proposal_id
-                    ],
-                )
-                .map_err(backend)?;
-            }
-        }
-        let n = tx
-            .execute(TOUCH_COURSE, params![course_id, now])
-            .map_err(backend)?;
-        require_written(n, CourseError::NotDraft)?; // dropping `tx` rolls the guarded no-ops back
-        let items: usize = plan.iter().map(|l| l.items.len()).sum();
-        tx.execute(
-            INSERT_COURSE_AUDIT,
-            params![
-                now,
-                by,
-                "course.outline",
-                audit_target(course_id),
-                format!("lessons={} items={items}", plan.len()),
-                course_id
-            ],
-        )
-        .map_err(backend)?;
-        tx.commit().map_err(backend)?;
-        Ok(plan.into_iter().map(|l| l.id).collect())
+    async fn save_outline(
+        &self,
+        course_id: &str,
+        meta: &CourseMeta,
+        lessons: &[LessonInput],
+        by: &str,
+        now: &str,
+    ) -> Result<Vec<String>, CourseError> {
+        self.write_outline(course_id, Some(meta), lessons, by, now)
     }
 
     async fn delete_draft(&self, id: &str, by: &str, now: &str) -> Result<(), CourseError> {

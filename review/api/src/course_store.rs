@@ -23,6 +23,8 @@ pub enum CourseError {
     Conflict,
     /// The input is wrong: an item that isn't loaded, an unknown kind, a bad or repeated lesson id.
     Invalid(String),
+    /// An item (named for the message) that isn't in the loaded data.
+    NotLoaded(String),
     Backend(String),
 }
 
@@ -108,7 +110,10 @@ pub struct Course {
     pub id: String,
     pub title: String,
     pub summary: String,
+    /// The author's email: for the routes' checks only, never serialized.
+    #[serde(skip)]
     pub author: String,
+    /// Display name; empty when the user is gone. Never an email.
     pub author_name: String,
     pub mine: bool,
     pub status: String,
@@ -117,7 +122,9 @@ pub struct Course {
     pub own_words_at: Option<String>,
     /// The snapshot that ships; kept while an approved course is edited as a draft.
     pub approved: Option<Value>,
+    #[serde(skip)]
     pub approved_by: Option<String>,
+    pub approved_by_name: Option<String>,
     pub approved_at: Option<String>,
     pub submitted_at: Option<String>,
     pub exported_at: Option<String>,
@@ -132,6 +139,7 @@ pub struct CourseSummary {
     pub id: String,
     pub title: String,
     pub summary: String,
+    #[serde(skip)]
     pub author: String,
     pub author_name: String,
     pub mine: bool,
@@ -186,6 +194,7 @@ pub struct CourseRow {
     pub own_words_at: Option<String>,
     pub approved_json: Option<String>,
     pub approved_by: Option<String>,
+    pub approved_by_name: Option<String>,
     pub approved_at: Option<String>,
     pub submitted_at: Option<String>,
     pub exported_at: Option<String>,
@@ -344,6 +353,7 @@ pub fn assemble_course(
         own_words_at: row.own_words_at,
         approved: parse_json(row.approved_json),
         approved_by: row.approved_by,
+        approved_by_name: row.approved_by_name,
         approved_at: row.approved_at,
         submitted_at: row.submitted_at,
         exported_at: row.exported_at,
@@ -473,10 +483,7 @@ pub fn plan_outline(
             let stored_here = stored_key(&id, t);
             let in_course = l.id.is_some() && kept.contains(&stored_here);
             if !in_course && !loaded.contains(&key) {
-                return Err(CourseError::Invalid(format!(
-                    "{} isn't loaded",
-                    t.audit_name()
-                )));
+                return Err(CourseError::NotLoaded(t.audit_name()));
             }
             if seen.insert(key) {
                 items.push(PlannedItem {
@@ -536,9 +543,10 @@ macro_rules! when_draft {
 /// ?1 viewer, ?2 course id.
 pub const SELECT_COURSE: &str = concat!(
     "SELECT ",
-    "c.id, c.title, c.summary, c.author, IFNULL(u.display_name, c.author) AS author_name, \
+    "c.id, c.title, c.summary, c.author, IFNULL(u.display_name, '') AS author_name, \
      (c.author = ?1) AS mine, c.status, c.follows_book, c.copied_from_json, c.own_words_at, c.approved_json, \
-     c.approved_by, c.approved_at, c.submitted_at, c.exported_at, c.withdrawn_at, c.created_at, c.updated_at \
+     c.approved_by, (SELECT a.display_name FROM users a WHERE a.email = c.approved_by) AS approved_by_name, \
+     c.approved_at, c.submitted_at, c.exported_at, c.withdrawn_at, c.created_at, c.updated_at \
      FROM courses c LEFT JOIN users u ON u.email = c.author WHERE c.id = ?2"
 );
 
@@ -558,7 +566,7 @@ pub const SELECT_COURSE_ITEMS: &str = "SELECT ci.lesson_id, ci.dataset, ci.kind,
 
 /// ?1 viewer: every course, newest change first.
 pub const SELECT_COURSES: &str =
-    "SELECT c.id, c.title, c.summary, c.author, IFNULL(u.display_name, c.author) AS author_name, \
+    "SELECT c.id, c.title, c.summary, c.author, IFNULL(u.display_name, '') AS author_name, \
      (c.author = ?1) AS mine, c.status, c.follows_book, \
      (SELECT COUNT(*) FROM course_lessons l WHERE l.course_id = c.id) AS lessons, \
      (SELECT COUNT(*) FROM course_items i WHERE i.course_id = c.id) AS items, \
@@ -682,6 +690,17 @@ pub trait CourseStore {
         by: &str,
         now: &str,
     ) -> Result<(), CourseError>;
+
+    /// A draft's title, summary and book together with its whole outline, in ONE batch: all or nothing.
+    /// Audit `course.save` and `course.outline`.
+    async fn save_outline(
+        &self,
+        course_id: &str,
+        meta: &CourseMeta,
+        lessons: &[LessonInput],
+        by: &str,
+        now: &str,
+    ) -> Result<Vec<String>, CourseError>;
 
     /// Replaces a draft's whole outline in one batch (lesson ids, order, fields, items); returns the
     /// lesson ids in order. Audit `course.outline`.

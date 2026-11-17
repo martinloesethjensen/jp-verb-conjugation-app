@@ -437,3 +437,64 @@ async fn books_need_grammar_loaded() {
         .unwrap()
         .contains("grammar isn't loaded"));
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn no_email_is_ever_sent_to_a_reviewer() {
+    let s = seeded().await;
+    let id = create(&s, AIKO).await;
+    s.execute("UPDATE users SET display_name = 'Aiko' WHERE email = 'aiko@example.com'");
+    let approved = json!({"id": id, "title": "T", "summary": "", "levels": [], "lessons": []});
+    s.execute(&format!(
+        "UPDATE courses SET approved_json = '{approved}', approved_by = '{KEIKO}' WHERE id = '{id}'"
+    ));
+    // The owner's own courses and one by someone whose name is gone must not fall back to an email.
+    let other = create(&s, BEN).await;
+    s.execute(&format!(
+        "UPDATE courses SET author = 'gone@example.com' WHERE id = '{other}'"
+    ));
+    s.execute(&format!(
+        "UPDATE courses SET status = 'in_review' WHERE id IN ('{id}', '{other}')"
+    ));
+    for who in [AIKO, BEN, KEIKO] {
+        for response in [
+            get(&s, "/api/courses", who).await,
+            course(&s, &id, who).await,
+            course(&s, &other, who).await,
+        ] {
+            assert_eq!(response.status, 200, "{}", response.body);
+            let text = response.body.to_string();
+            assert!(!text.contains('@'), "{who} saw an email: {text}");
+        }
+    }
+    let c = course(&s, &id, BEN).await.body;
+    assert_eq!(c["author_name"], "Aiko");
+    assert_eq!(c["approved_by_name"], "Keiko");
+    assert_eq!(c["mine"], false);
+    assert_eq!(course(&s, &other, BEN).await.body["author_name"], "");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_approved_course_being_edited_can_still_be_copied() {
+    let s = seeded().await;
+    let id = create(&s, AIKO).await;
+    let approved =
+        json!({"id": id, "title": "Shipped", "summary": "", "levels": [], "lessons": []});
+    s.execute(&format!(
+        "UPDATE courses SET status = 'draft', approved_json = '{approved}' WHERE id = '{id}'"
+    ));
+    assert_eq!(
+        course(&s, &id, BEN).await.status,
+        404,
+        "its draft stays hidden"
+    );
+    let r = post(
+        &s,
+        "/api/course/create",
+        json!({"start": "copy", "title": "", "from": id}),
+        BEN,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    assert_eq!(r.body["title"], "Shipped");
+    assert_eq!(r.body["copied_from"]["title"], "Shipped");
+}

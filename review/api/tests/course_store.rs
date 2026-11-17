@@ -142,7 +142,7 @@ async fn save_lessons_replaces_outline_in_one_batch() {
         ),
     ];
     let err = s.save_lessons(&id, &bad, AIKO, T1).await.unwrap_err();
-    assert!(matches!(err, CourseError::Invalid(_)));
+    assert!(matches!(err, CourseError::NotLoaded(_)), "{err:?}");
     assert_eq!(
         s.course(&id, AIKO).await.unwrap().unwrap().lessons,
         c.lessons
@@ -208,7 +208,7 @@ async fn missing_items_are_reported() {
     let elsewhere = [lesson(None, "A", vec![v[0].clone()])];
     assert!(matches!(
         s.save_lessons(&id, &elsewhere, AIKO, T1).await,
-        Err(CourseError::Invalid(_))
+        Err(CourseError::NotLoaded(_))
     ));
 }
 
@@ -419,4 +419,58 @@ async fn a_guarded_write_that_changes_nothing_is_an_error() {
         )
         .unwrap();
     assert_eq!((meta, touch, status), (0, 0, 0));
+}
+
+#[tokio::test]
+async fn save_outline_writes_meta_and_lessons_together_or_not_at_all() {
+    let (s, v, _) = setup().await;
+    let id = new_course(&s).await;
+    let meta = CourseMeta {
+        title: "New title".into(),
+        summary: "New summary".into(),
+        follows_book: None,
+    };
+    let ok = vec![lesson(None, "One", vec![v[0].clone()])];
+    s.save_outline(&id, &meta, &ok, AIKO, T1).await.unwrap();
+    let c = s.course(&id, AIKO).await.unwrap().unwrap();
+    assert_eq!((c.title.as_str(), c.lessons.len()), ("New title", 1));
+    assert_eq!(
+        (audits(&s, "course.save"), audits(&s, "course.outline")),
+        (1, 1)
+    );
+
+    // A bad lesson leaves the title as it was.
+    let other = CourseMeta {
+        title: "Other".into(),
+        ..meta.clone()
+    };
+    let bad = vec![lesson(
+        None,
+        "Bad",
+        vec![Target {
+            item_id: "nowhere".into(),
+            ..v[0].clone()
+        }],
+    )];
+    let err = s
+        .save_outline(&id, &other, &bad, AIKO, T1)
+        .await
+        .unwrap_err();
+    assert!(matches!(err, CourseError::NotLoaded(_)));
+    let c = s.course(&id, AIKO).await.unwrap().unwrap();
+    assert_eq!((c.title.as_str(), c.lessons.len()), ("New title", 1));
+
+    // A course that isn't a draft changes nothing either.
+    s.execute(&format!(
+        "UPDATE courses SET status = 'in_review' WHERE id = '{id}'"
+    ));
+    let err = s
+        .save_outline(&id, &other, &ok, AIKO, T1)
+        .await
+        .unwrap_err();
+    assert_eq!(err, CourseError::NotDraft);
+    assert_eq!(
+        s.course(&id, AIKO).await.unwrap().unwrap().title,
+        "New title"
+    );
 }

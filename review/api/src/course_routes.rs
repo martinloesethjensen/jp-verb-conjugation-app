@@ -30,10 +30,8 @@ fn course_error(e: CourseError) -> ApiResponse {
         CourseError::NotFound => error(404, NO_COURSE),
         CourseError::NotDraft => error(409, NOT_DRAFT),
         CourseError::Conflict => error(409, "this course changed while you were saving; try again"),
-        CourseError::Invalid(message) => match message.strip_suffix(" isn't loaded") {
-            Some(name) => error(400, &format!("{name} is not in the loaded data")),
-            None => error(400, &message),
-        },
+        CourseError::Invalid(message) => error(400, &message),
+        CourseError::NotLoaded(name) => error(400, &format!("{name} is not in the loaded data")),
         CourseError::Backend(_) => error(500, "the database is unavailable"),
     }
 }
@@ -204,10 +202,11 @@ async fn start_textbook<S: Store + CourseStore>(
         })
         .collect();
     if !lessons.is_empty() {
-        store
-            .save_lessons(&id, &lessons, &by.email, now)
-            .await
-            .map_err(course_error)?;
+        if let Err(e) = store.save_lessons(&id, &lessons, &by.email, now).await {
+            // Don't leave a half-made draft behind.
+            let _ = store.delete_draft(&id, &by.email, now).await;
+            return Err(course_error(e));
+        }
     }
     Ok(id)
 }
@@ -220,7 +219,13 @@ async fn start_copy<S: Store + ReviewStore + CourseStore>(
     now: &str,
 ) -> Result<String, ApiResponse> {
     let from = required(body.from.clone(), "the course to copy")?;
-    let source = visible_course(store, &from, by).await?;
+    // A course with an approved version can be copied by anyone, whatever state its current edits are in;
+    // only that approved version is read.
+    let source = match store.course(&from, &by.email).await {
+        Ok(Some(c)) if c.approved.is_some() || can_see(&c.status, &c.author, by) => c,
+        Ok(_) => return Err(error(404, NO_COURSE)),
+        Err(e) => return Err(course_error(e)),
+    };
     let Some(approved) = source.approved.as_ref() else {
         return Err(error(400, "only an approved course can be copied"));
     };
@@ -270,10 +275,11 @@ async fn start_copy<S: Store + ReviewStore + CourseStore>(
         });
     }
     if !lessons.is_empty() {
-        store
-            .save_lessons(&id, &lessons, &by.email, now)
-            .await
-            .map_err(course_error)?;
+        if let Err(e) = store.save_lessons(&id, &lessons, &by.email, now).await {
+            // Don't leave a half-made draft behind.
+            let _ = store.delete_draft(&id, &by.email, now).await;
+            return Err(course_error(e));
+        }
     }
     Ok(id)
 }
@@ -398,11 +404,7 @@ pub async fn save<S: CourseStore>(
         lessons.push(tri!(lesson_input(lesson)));
     }
     tri!(store
-        .save_lessons(&body.id, &lessons, &by.email, now)
-        .await
-        .map_err(course_error));
-    tri!(store
-        .save_course_meta(&body.id, &meta, &by.email, now)
+        .save_outline(&body.id, &meta, &lessons, &by.email, now)
         .await
         .map_err(course_error));
     let saved = tri!(visible_course(store, &body.id, by).await);
