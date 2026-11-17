@@ -7,6 +7,8 @@
 use crate::access::{verify, AccessConfig, Jwk};
 use crate::add_routes;
 use crate::auth::{authorize, authorize_export, normalize_email, Need, Principal};
+use crate::course_routes;
+use crate::course_store::CourseStore;
 use crate::data::DataFile;
 use crate::export_routes;
 use crate::items::{extract_slice, slices};
@@ -88,6 +90,13 @@ enum Handler {
     Export,
     AdminExport,
     MarkExported,
+    Courses,
+    CourseGet,
+    CourseCreate,
+    CourseSave,
+    CourseDelete,
+    CourseSearch,
+    Books,
 }
 
 struct Route {
@@ -363,6 +372,48 @@ const ROUTES: &[Route] = &[
         need: Need::Admin,
         handler: Handler::MarkExported,
     },
+    Route {
+        method: "GET",
+        path: "/api/courses",
+        need: Need::Reviewer,
+        handler: Handler::Courses,
+    },
+    Route {
+        method: "GET",
+        path: "/api/course",
+        need: Need::Reviewer,
+        handler: Handler::CourseGet,
+    },
+    Route {
+        method: "POST",
+        path: "/api/course/create",
+        need: Need::Reviewer,
+        handler: Handler::CourseCreate,
+    },
+    Route {
+        method: "POST",
+        path: "/api/course/save",
+        need: Need::Reviewer,
+        handler: Handler::CourseSave,
+    },
+    Route {
+        method: "POST",
+        path: "/api/course/delete",
+        need: Need::Reviewer,
+        handler: Handler::CourseDelete,
+    },
+    Route {
+        method: "GET",
+        path: "/api/course/search",
+        need: Need::Reviewer,
+        handler: Handler::CourseSearch,
+    },
+    Route {
+        method: "GET",
+        path: "/api/books",
+        need: Need::Reviewer,
+        handler: Handler::Books,
+    },
 ];
 
 pub const MAX_DISPLAY_NAME: usize = 40;
@@ -382,7 +433,7 @@ fn store_error(e: StoreError) -> ApiResponse {
     }
 }
 
-pub async fn handle<S: Store + ReviewStore, R: Source>(
+pub async fn handle<S: Store + ReviewStore + CourseStore, R: Source>(
     req: ApiRequest,
     cfg: &AppConfig,
     keys: &[Jwk],
@@ -497,6 +548,17 @@ pub async fn handle<S: Store + ReviewStore, R: Source>(
         Handler::Stampable => stamp_routes::ready_list(store).await,
         Handler::Export | Handler::AdminExport => export_routes::batch(store).await,
         Handler::MarkExported => export_routes::mark(&req.body, &principal, store, today).await,
+        Handler::Courses => course_routes::list(&principal, store).await,
+        Handler::CourseGet => {
+            course_routes::get_one(param(&req.query, "id"), &principal, store).await
+        }
+        Handler::CourseCreate => course_routes::create(&req.body, &principal, store, today).await,
+        Handler::CourseSave => course_routes::save(&req.body, &principal, store, today).await,
+        Handler::CourseDelete => course_routes::delete(&req.body, &principal, store, today).await,
+        Handler::CourseSearch => {
+            course_routes::search(param(&req.query, "q"), param(&req.query, "kind"), store).await
+        }
+        Handler::Books => course_routes::list_books(store).await,
     }
 }
 
@@ -1090,11 +1152,8 @@ pub async fn finish_load_with_keys<S: Store, R: Source>(
     not_older(store, file, &load.version)
         .await
         .map_err(|e| (502, e))?;
-    let json = if file.is_browsable() {
-        None
-    } else {
-        Some(String::from_utf8(bytes).map_err(|_| (502, format!("{name} isn't UTF-8")))?)
-    };
+    let json = crate::data::stored_json(file, &bytes)
+        .map_err(|e| (502, format!("{name} isn't readable: {e}")))?;
     let snapshot = SnapshotFile {
         name: load.name.clone(),
         version: load.version.clone(),
