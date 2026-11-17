@@ -730,9 +730,12 @@ export function reviewMock(ctx: ReviewContext) {
 			}
 			const declined: number[] = [];
 			if (body.decision === 'accept') {
-				// Accepting one change declines the other open suggestions on the same item.
-				for (const other of openOn(suggestion).filter((x) => x.id !== suggestion.id)) {
+				// Accepting one change declines the other open changes and removals on the same item (not notes, not the
+				// decider's own), each with a comment saying why.
+				const others = openOn(suggestion).filter((x) => x.id !== suggestion.id && x.author !== by && (x.action === 'change' || x.action === 'delete'));
+				for (const other of others) {
 					Object.assign(other, { status: 'declined', decided_at: now(), decided_by: by });
+					comments.push({ suggestion_id: other.id, author: by, body: `Declined: ${nameOf(suggestion.author)}'s suggestion was accepted instead.`, created_at: now() });
 					declined.push(other.id);
 				}
 			}

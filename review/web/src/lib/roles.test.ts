@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { canDecide, decidesAll, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from './roles.ts';
+import { canAskOpinion, canDecide, decidesAll, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from './roles.ts';
 import type { Field } from './api.ts';
 
 test('teachers, natives and the owner open the inbox; only teachers and the owner decide everything', () => {
@@ -71,4 +71,11 @@ test('no page still calls the admin inbox or says Martin decides', () => {
 			expect(text, `${file}: ${old}`).not.toContain(old);
 		}
 	}
+});
+
+test('teachers and the owner ask for a second opinion; natives and reviewers do not', () => {
+	expect(canAskOpinion('admin')).toBe(true);
+	expect(canAskOpinion('teacher')).toBe(true);
+	expect(canAskOpinion('native')).toBe(false);
+	expect(canAskOpinion('reviewer')).toBe(false);
 });
