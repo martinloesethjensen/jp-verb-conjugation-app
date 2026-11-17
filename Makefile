@@ -6,7 +6,7 @@ PYTHON ?= python3
 PUSH   ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help install-deps data data-check kanji data-merge data-release sign verify sign-commit keygen \
+.PHONY: help icons install-deps data data-check kanji data-merge data-release sign verify sign-commit keygen \
         test test-py test-swift project check-project check audio-dry clean \
         review-test review-build review-pull
 
@@ -74,6 +74,14 @@ review-build: ## Build the review site's Worker bundle and static pages (deploy:
 	cd review/web && npm run build
 
 # --- Other -------------------------------------------------------------------
+
+icons: ## Regenerate the app icons, alternate icons and launch image (FONT=path to ShipporiMinchoB1-Bold.ttf; never committed)
+	@test -n "$(FONT)" || { echo "usage: make icons FONT=<ShipporiMinchoB1-Bold.ttf>"; exit 1; }
+	@mkdir -p .build/icons
+	@cp scripts/generate-icon.swift .build/icons/main.swift
+	xcrun swiftc -O -o .build/icons/generate-icon .build/icons/main.swift \
+	  Packages/VerbKit/Sources/VerbKit/Seal/StampShape.swift Packages/VerbKit/Sources/VerbKit/Seal/SVGPathData.swift
+	.build/icons/generate-icon --font "$(FONT)" "$(CURDIR)"
 
 project: ## Generate the Xcode project (needs xcodegen)
 	scripts/generate-project.sh

@@ -314,7 +314,7 @@ struct WordBankListView: View {
             if case .smart(let id)? = place, !ids.contains(id) { dismiss() }
         }
         .paperBackground()
-        .navigationTitle(title)
+        .motifTitle(title, showsMotif: place == nil)
         .navigationSubtitle(searchActive ? searchSubtitle(count: found.count) : subtitle)
         .toolbar { toolbar }
         .overlay { emptyState(found: found) }
