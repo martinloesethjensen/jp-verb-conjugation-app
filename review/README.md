@@ -38,6 +38,9 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   before it stop counting (approve them again), and open or accepted-but-unexported changes to verb entries
   show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
   are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
+- **Settings and onboarding (2026-11-11)** need migration `0009_user_settings.sql` (`npm run migrate`). Run it
+  just before or right after merging: until it runs, `/api/settings` fails, so shortcuts stay on and no tour or
+  tips appear; every other page works. The Account page moved to `/settings` (`/account` redirects).
 - **Reply alerts (2026-11-10)** need migration `0008_thread_reads.sql` (`npm run migrate`), which adds the
   `thread_reads` table and marks every thread people are already in as read. Run it just before or right after
   merging: until it runs, `/api/replies` fails and the bell stays empty, and every other page works.
@@ -152,6 +155,18 @@ or Martin accepts or declines your suggestion. Your own comments and decisions n
 bell in the header shows how many are new. On a computer the bell opens the newest; on a phone it goes to the
 Replies page (New and Earlier). Home lists new replies too. Opening a thread marks it read and shows a red "New
 since your last visit" line above what's new. Nothing is pushed: the site checks when a page opens.
+
+**Settings** (the name in the header) holds your name, your public credit, your role and Help: Show the tour
+again, Tips on pages and Keyboard shortcuts. Switches save as you change them.
+
+**Keyboard shortcuts** work on the queue page on a computer: A Looks right, S Suggest a change, X skip, N note,
+U undo, J/→ and K/← move, O open the entry, R reply, Esc cancel, ⌘Enter (Ctrl+Enter) send, ? help. Letters do
+nothing while you type in a field; removal has no shortcut. Settings can switch them off.
+
+**First run.** On a computer, Home welcomes a new reviewer; the five-step tour (the item list, the item, Looks
+right, Suggest a change, the bell) runs the first time they open a queue, skipping any step whose button isn't on
+the page. On a phone, four cards replace both. Skip ends either. One-time tips appear on the inbox and on threads.
+Show the tour again (Settings › Help) brings the welcome back next time Home opens.
 
 **The inbox** (Inbox in the header, for teachers and you) shows each change as a red-pen correction, grouped by item so
 counter-suggestions sit side by side. For each one: **Accept**, **Edit then accept** (fix it before accepting;

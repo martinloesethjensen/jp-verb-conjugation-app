@@ -94,6 +94,33 @@ impl D1Store {
 }
 
 impl Store for D1Store {
+    async fn settings(&self, user: &str) -> Result<UserSettings, StoreError> {
+        let rows: Vec<SettingsRow> = self.rows(SELECT_SETTINGS, &[text(user)]).await?;
+        Ok(rows
+            .into_iter()
+            .next()
+            .map(UserSettings::from)
+            .unwrap_or_default())
+    }
+
+    async fn save_settings(&self, user: &str, s: &UserSettings) -> Result<(), StoreError> {
+        let dismissed = serde_json::to_string(&s.tips_dismissed)
+            .map_err(|e| StoreError::Backend(e.to_string()))?;
+        let statement = self.statement(
+            UPSERT_SETTINGS,
+            &[
+                text(user),
+                maybe(s.welcome_seen_at.as_deref()),
+                maybe(s.tour_seen_at.as_deref()),
+                number(i64::from(s.tips_on)),
+                text(&dismissed),
+                number(i64::from(s.shortcuts_on)),
+            ],
+        )?;
+        self.db.batch(vec![statement]).await.map_err(backend)?;
+        Ok(())
+    }
+
     async fn user(&self, email: &str) -> Result<Option<User>, StoreError> {
         let statement = self
             .db

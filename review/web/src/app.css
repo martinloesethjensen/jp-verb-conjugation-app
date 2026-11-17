@@ -303,3 +303,13 @@ button.small {
 .quiet {
 	color: var(--muted);
 }
+
+/* The tour's current target (TourGuide adds and removes the class): raised above the dimmed page. */
+.tour-target {
+	position: relative;
+	z-index: 50;
+	outline: 3px solid var(--ink);
+	outline-offset: 4px;
+	border-radius: var(--radius-input);
+	background: var(--card);
+}

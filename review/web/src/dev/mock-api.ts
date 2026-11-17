@@ -121,6 +121,14 @@ function handler() {
 		{ email: 'owner@example.com', display_name: 'Martin', role: 'admin', active: true, public_role: 'owner', public_name: null }
 	];
 	let me = users.find((u) => u.role === (process.env.MOCK_ROLE ?? 'admin')) ?? users[2];
+	// Each mock user's settings, as review/api's user_settings (defaults until changed).
+	const allSettings = new Map<string, { welcome_seen_at: string | null; tour_seen_at: string | null; tips_on: boolean; tips_dismissed: string[]; shortcuts_on: boolean }>();
+	const settingsFor = (email: string) => {
+		if (!allSettings.has(email)) {
+			allSettings.set(email, { welcome_seen_at: null, tour_seen_at: null, tips_on: true, tips_dismissed: [], shortcuts_on: true });
+		}
+		return allSettings.get(email)!;
+	};
 	const data = publishedData();
 	if (process.env.MOCK_LOADED) for (const f of FILES) data.load(f);
 	const review = reviewMock({
@@ -189,6 +197,24 @@ function handler() {
 			return { email, display_name, role, public_role, public_name };
 		};
 		if (path === '/me' && req.method === 'GET') return send(200, meBody());
+		if (path === '/settings') {
+			const mine = settingsFor(me.email);
+			if (req.method === 'GET') return send(200, mine);
+			const keys = Object.keys(body);
+			const known = ['tips_on', 'shortcuts_on', 'tour', 'dismiss_tip'];
+			if (!keys.length || keys.some((k) => !known.includes(k))) return send(400, { error: 'the request body is not valid' });
+			if (body.dismiss_tip !== undefined && !['inbox', 'thread'].includes(String(body.dismiss_tip))) {
+				return send(400, { error: 'no tip has that id' });
+			}
+			const at = new Date().toISOString();
+			if (typeof body.tips_on === 'boolean') mine.tips_on = body.tips_on;
+			if (typeof body.shortcuts_on === 'boolean') mine.shortcuts_on = body.shortcuts_on;
+			if (body.tour === 'welcomed') mine.welcome_seen_at = at;
+			if (body.tour === 'done') Object.assign(mine, { welcome_seen_at: mine.welcome_seen_at ?? at, tour_seen_at: at });
+			if (body.tour === 'reset') Object.assign(mine, { welcome_seen_at: null, tour_seen_at: null });
+			if (body.dismiss_tip && !mine.tips_dismissed.includes(String(body.dismiss_tip))) mine.tips_dismissed.push(String(body.dismiss_tip));
+			return send(200, mine);
+		}
 		// Dev only: sign in as someone else without restarting, to try replies between people.
 		if (path === '/dev/as' && req.method === 'POST') {
 			const user = users.find((u) => u.email === body.email);

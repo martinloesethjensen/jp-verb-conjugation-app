@@ -26,7 +26,7 @@ test('admins see Reviewers; everyone sees their initial, name and Sign out', () 
 
 test('the phone account menu holds the same links', () => {
 	const { body } = render(SiteHeader, { props: { me: admin } });
-	expect(body).toMatch(/<details class="account-menu[^"]*"[\s\S]*href="\/account"[\s\S]*Sign out[\s\S]*<\/details>/);
+	expect(body).toMatch(/<details class="account-menu[^"]*"[\s\S]*href="\/settings"[\s\S]*Sign out[\s\S]*<\/details>/);
 });
 
 test('the phone account menu closes after navigating, on Escape and on an outside tap', () => {
@@ -53,4 +53,11 @@ test('teachers and the owner get an Inbox link; reviewers do not', () => {
 test('signed-in people get the replies bell', () => {
 	expect(render(SiteHeader, { props: { me: reviewer } }).body).toContain('class="bell');
 	expect(render(SiteHeader, { props: { me: null } }).body).not.toContain('class="bell');
+});
+
+test('the header links to Settings, not the old Account page', () => {
+	const { body } = render(SiteHeader, { props: { me: reviewer } });
+	expect(body).toContain('href="/settings"');
+	expect(body).toContain('>Settings<');
+	expect(body).not.toContain('href="/account"');
 });

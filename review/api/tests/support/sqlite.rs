@@ -118,6 +118,36 @@ impl SqliteStore {
 }
 
 impl Store for SqliteStore {
+    async fn settings(&self, user: &str) -> Result<UserSettings, StoreError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<SettingsRow> = query(&conn, SELECT_SETTINGS, params![user])?;
+        Ok(rows
+            .into_iter()
+            .next()
+            .map(UserSettings::from)
+            .unwrap_or_default())
+    }
+
+    async fn save_settings(&self, user: &str, s: &UserSettings) -> Result<(), StoreError> {
+        let dismissed = serde_json::to_string(&s.tips_dismissed)
+            .map_err(|e| StoreError::Backend(e.to_string()))?;
+        self.conn
+            .borrow()
+            .execute(
+                UPSERT_SETTINGS,
+                params![
+                    user,
+                    s.welcome_seen_at,
+                    s.tour_seen_at,
+                    s.tips_on,
+                    dismissed,
+                    s.shortcuts_on
+                ],
+            )
+            .map_err(backend)?;
+        Ok(())
+    }
+
     async fn user(&self, email: &str) -> Result<Option<User>, StoreError> {
         let conn = self.conn.borrow();
         let mut statement = conn.prepare(SELECT_USER).map_err(backend)?;

@@ -40,7 +40,7 @@
 				{#if me.role === 'admin'}
 					<a href="/admin" data-sveltekit-reload>Reviewers</a>
 				{/if}
-				<a class="who" href="/account" title="Change your name">
+				<a class="who" href="/settings" title="Settings">
 					<span class="initial" aria-hidden="true">{initial}</span>
 					<span class="who-name">{me.display_name}</span>
 				</a>
@@ -53,7 +53,7 @@
 				</summary>
 				<div class="panel">
 					<p class="panel-name">{me.display_name}</p>
-					<a href="/account">Your name</a>
+					<a href="/settings">Settings</a>
 					{#if canDecide(me.role)}
 						<a href="/inbox" data-sveltekit-reload>Inbox</a>
 					{/if}

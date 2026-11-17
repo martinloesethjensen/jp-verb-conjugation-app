@@ -9,9 +9,14 @@
 	import ReviewCard from '#lib/ReviewCard.svelte';
 	import Sheet from '#lib/Sheet.svelte';
 	import QueueItemList from '#lib/QueueItemList.svelte';
-	import { firstUndone, keyOf, type ItemFilter } from '#lib/queue-items.ts';
+	import KeyboardHelp from '#lib/KeyboardHelp.svelte';
+	import { filterItems, firstUndone, keyOf, type ItemFilter } from '#lib/queue-items.ts';
 	import { loadReference } from '#lib/reference.ts';
 	import { EntryReview } from '#lib/review.svelte.ts';
+	import { settings } from '#lib/settings.svelte.ts';
+	import { isTyping, sendButton, shortcutFor } from '#lib/shortcuts.ts';
+	import TourGuide from '#lib/TourGuide.svelte';
+	import { availableSteps, ONBOARDING_PHONE, shouldTour, type TourStep } from '#lib/tour.ts';
 
 	type Json = { [key: string]: any };
 	type Loaded = { entry: Json | null; review: EntryReview };
@@ -27,7 +32,7 @@
 	let itemsOpen = $state(false);
 
 	// Below 960px the list moves into the Items sheet; crossing back closes it.
-	const phone = new MediaQuery('max-width: 959px');
+	const phone = new MediaQuery(ONBOARDING_PHONE);
 	$effect(() => {
 		if (!phone.current) itemsOpen = false;
 	});
@@ -98,7 +103,78 @@
 		selected = null;
 	}
 
+	// The tour's highlighted steps, the first time someone who saw the welcome opens a queue. They wait for the
+	// card to render, then use whichever targets are on the page.
+	let tourSteps = $state<TourStep[] | null>(null);
+	$effect(() => {
+		if (tourSteps || !current || !shouldTour(settings.value, settings.loaded, phone.current)) return;
+		let frames = 0;
+		let handle = requestAnimationFrame(function look() {
+			if (document.querySelector('[data-tour="item"]') || ++frames > 300) {
+				tourSteps = availableSteps((t) => document.querySelector(`[data-tour="${t}"]`) !== null);
+			} else handle = requestAnimationFrame(look);
+		});
+		return () => cancelAnimationFrame(handle);
+	});
+
+	function endTour() {
+		tourSteps = [];
+		settings.change({ tour: 'done' }).catch(() => {});
+	}
+
+	// Keyboard shortcuts (desktop, unless switched off in Settings): a key presses the button that carries its
+	// `data-shortcut` in the current card, so it only ever does what the card offers.
+	let pane = $state<HTMLElement>();
+	let helpOpen = $state(false);
+
+	const usable = (el: HTMLElement) =>
+		el.getClientRects().length > 0 && !(el as HTMLButtonElement).disabled;
+
+	function move(step: 1 | -1) {
+		if (!data || !current) return;
+		const list = filterItems(data.items, filter);
+		const at = list.findIndex((i) => keyOf(i) === keyOf(current!));
+		const to = list[at + step];
+		if (to) choose(to);
+	}
+
+	function onkeydown(event: KeyboardEvent) {
+		if (phone.current || !settings.value.shortcuts_on || !data || event.defaultPrevented) return;
+		const action = shortcutFor(event, isTyping(event.target));
+		if (!action) return;
+		if (action === 'help') {
+			event.preventDefault();
+			helpOpen = true;
+			return;
+		}
+		if (helpOpen) return;
+		if (action === 'next' || action === 'previous') {
+			event.preventDefault();
+			move(action === 'next' ? 1 : -1);
+			return;
+		}
+		if (action === 'send') {
+			const button = sendButton((event.target as HTMLElement | null)?.closest?.('form') ?? null);
+			if (button) {
+				event.preventDefault();
+				button.click();
+			}
+			return;
+		}
+		const target = [...(pane?.querySelectorAll<HTMLElement>(`[data-shortcut="${action}"]`) ?? [])].find(usable);
+		if (!target) return;
+		event.preventDefault();
+		if (action === 'reply') target.focus();
+		else target.click();
+	}
+
 </script>
+
+<svelte:window {onkeydown} />
+{#if tourSteps?.length && shouldTour(settings.value, settings.loaded, phone.current)}
+	<TourGuide steps={tourSteps} ondone={endTour} />
+{/if}
+<KeyboardHelp open={helpOpen} onclose={() => (helpOpen = false)} />
 
 <svelte:head>
 	<title>{data?.queue.title ?? 'Queue'} · Kotoba Table review</title>
@@ -137,11 +213,11 @@
 	</Sheet>
 
 	<div class="layout">
-		<nav class="list card" aria-label="Items in this queue">
+		<nav class="list card" aria-label="Items in this queue" data-tour="list">
 			<QueueItemList items={data.items} currentKey={current && keyOf(current)} bind:filter onselect={choose} />
 		</nav>
 
-		<div class="card-pane">
+		<div class="card-pane" bind:this={pane}>
 			{#if current}
 				{#key keyOf(current)}
 					{#await entryFor(current)}

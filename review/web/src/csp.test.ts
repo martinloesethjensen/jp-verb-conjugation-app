@@ -10,6 +10,7 @@ const pages = [
 	'admin/queues.html',
 	'admin/export.html',
 	'account.html',
+	'settings.html',
 	'item.html',
 	'queue.html',
 	'add.html',

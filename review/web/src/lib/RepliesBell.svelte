@@ -31,7 +31,7 @@
 	{#if replies.unread}<span class="count">{replies.unread}</span>{/if}
 {/snippet}
 
-<details class="bell desktop" bind:open bind:this={panel}>
+<details class="bell desktop" data-tour="bell" bind:open bind:this={panel}>
 	<summary aria-label={label}>{@render bell()}</summary>
 	<div class="bell-panel">
 		<p class="heading">Replies</p>

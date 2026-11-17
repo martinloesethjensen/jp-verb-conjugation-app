@@ -55,7 +55,7 @@
 <article class="review-card">
 	<p class="what">
 		<span>{what}<span lang="ja">{owner}</span></span>
-		<a {href}>Open the whole entry <span aria-hidden="true">↗</span></a>
+		<a {href} data-shortcut="open">Open the whole entry <span aria-hidden="true">↗</span></a>
 	</p>
 	{#if item.note}
 		<p class="asks">
@@ -66,7 +66,9 @@
 		</p>
 	{/if}
 	{#if value}
-		<PartView dataset={item.dataset} kind={item.kind} {value} {readings} {forms} />
+		<div data-tour="item">
+			<PartView dataset={item.dataset} kind={item.kind} {value} {readings} {forms} />
+		</div>
 		<ReviewBar
 			{review}
 			kind={item.kind}

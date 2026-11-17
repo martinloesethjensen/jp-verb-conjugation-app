@@ -160,28 +160,28 @@
 			{#if approved && onnext}
 				<button type="button" class="primary" onclick={onnext}>Next item <span aria-hidden="true">→</span></button>
 				<span class="approved-note">You approved this.</span>
-				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id), onchange)}>Undo</button>
+				<button type="button" class="link" data-shortcut="undo" disabled={busy} onclick={() => run(() => review.undo(kind, id), onchange)}>Undo</button>
 			{:else if approved}
 				<button type="button" class="approved" disabled>Approved</button>
-				<button type="button" class="link" disabled={busy} onclick={() => run(() => review.undo(kind, id), onchange)}>Undo</button>
+				<button type="button" class="link" data-shortcut="undo" disabled={busy} onclick={() => run(() => review.undo(kind, id), onchange)}>Undo</button>
 			{:else}
-				<button type="button" class="primary" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? onchange : onaction)}
+				<button type="button" class="primary" data-shortcut="approve" data-tour="approve" disabled={busy} onclick={() => run(() => review.approve(kind, id), onnext ? onchange : onaction)}
 					><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" /></svg>Looks right</button
 				>
 			{/if}
 			{#if fields.length}
-				<button type="button" aria-expanded={mode === 'change'} onclick={() => open('change')}
+				<button type="button" data-shortcut="suggest" data-tour="suggest" aria-expanded={mode === 'change'} onclick={() => open('change')}
 					><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5l3 3-8 8H2.5v-3z" /></svg>Suggest a change</button
 				>
 			{/if}
 			<span class="spacer"></span>
 			{#if onskip}
-				<button type="button" class="link" disabled={busy} onclick={() => run(onskip)}>Not sure, skip</button>
+				<button type="button" class="link" data-shortcut="skip" disabled={busy} onclick={() => run(onskip)}>Not sure, skip</button>
 			{/if}
 			<button type="button" class="link" aria-expanded={mode === 'delete'} onclick={() => open('delete')}
 				>Suggest removing it</button
 			>
-			<button type="button" class="link" aria-expanded={mode === 'note'} onclick={() => open('note')}
+			<button type="button" class="link" data-shortcut="note" aria-expanded={mode === 'note'} onclick={() => open('note')}
 				>Leave a note</button
 			>
 		</div>
@@ -245,7 +245,7 @@
 				<button class="primary small" disabled={busy || (mode === 'note' && !comment.trim())}>
 					{mode === 'delete' ? 'Suggest removing it' : 'Send note'}
 				</button>
-				<button type="button" class="link" onclick={() => (mode = null)}>Cancel</button>
+				<button type="button" class="link" data-shortcut="cancel" onclick={() => (mode = null)}>Cancel</button>
 			</div>
 		</form>
 	{/snippet}

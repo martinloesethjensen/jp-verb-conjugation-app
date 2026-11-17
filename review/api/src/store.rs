@@ -199,8 +199,126 @@ pub const INSERT_AUDIT: &str =
 /// Users and their audit trail. `add_user` and `set_active` write their audit row in the same transaction
 /// as the change (`user.add` with `role=<role>`, `user.active` with `active=0|1`, `user.name` with
 /// `name=<new name>`).
+/// One person's preferences and onboarding progress (`user_settings`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct UserSettings {
+    pub welcome_seen_at: Option<String>,
+    pub tour_seen_at: Option<String>,
+    pub tips_on: bool,
+    pub tips_dismissed: Vec<String>,
+    pub shortcuts_on: bool,
+}
+
+impl Default for UserSettings {
+    fn default() -> Self {
+        UserSettings {
+            welcome_seen_at: None,
+            tour_seen_at: None,
+            tips_on: true,
+            tips_dismissed: Vec::new(),
+            shortcuts_on: true,
+        }
+    }
+}
+
+/// The one-time tips the site knows; `dismiss_tip` takes only these.
+pub const TIPS: &[&str] = &["inbox", "thread"];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TourStep {
+    Welcomed,
+    Done,
+    Reset,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SettingsChange {
+    #[serde(default)]
+    pub tips_on: Option<bool>,
+    #[serde(default)]
+    pub shortcuts_on: Option<bool>,
+    #[serde(default)]
+    pub tour: Option<TourStep>,
+    #[serde(default)]
+    pub dismiss_tip: Option<String>,
+}
+
+impl SettingsChange {
+    pub fn is_empty(&self) -> bool {
+        self.tips_on.is_none()
+            && self.shortcuts_on.is_none()
+            && self.tour.is_none()
+            && self.dismiss_tip.is_none()
+    }
+}
+
+impl UserSettings {
+    /// The settings after `change` at `now`. Done also counts as welcomed; Reset clears both; a tip is
+    /// listed once.
+    pub fn apply(mut self, change: &SettingsChange, now: &str) -> UserSettings {
+        if let Some(on) = change.tips_on {
+            self.tips_on = on;
+        }
+        if let Some(on) = change.shortcuts_on {
+            self.shortcuts_on = on;
+        }
+        match change.tour {
+            Some(TourStep::Welcomed) => self.welcome_seen_at = Some(now.into()),
+            Some(TourStep::Done) => {
+                self.welcome_seen_at.get_or_insert_with(|| now.into());
+                self.tour_seen_at = Some(now.into());
+            }
+            Some(TourStep::Reset) => (self.welcome_seen_at, self.tour_seen_at) = (None, None),
+            None => {}
+        }
+        if let Some(tip) = &change.dismiss_tip {
+            if !self.tips_dismissed.contains(tip) {
+                self.tips_dismissed.push(tip.clone());
+            }
+        }
+        self
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SettingsRow {
+    pub welcome_seen_at: Option<String>,
+    pub tour_seen_at: Option<String>,
+    pub tips_on: i64,
+    pub tips_dismissed: String,
+    pub shortcuts_on: i64,
+}
+
+impl From<SettingsRow> for UserSettings {
+    fn from(r: SettingsRow) -> UserSettings {
+        UserSettings {
+            welcome_seen_at: r.welcome_seen_at,
+            tour_seen_at: r.tour_seen_at,
+            tips_on: r.tips_on != 0,
+            tips_dismissed: serde_json::from_str(&r.tips_dismissed).unwrap_or_default(),
+            shortcuts_on: r.shortcuts_on != 0,
+        }
+    }
+}
+
+pub const SELECT_SETTINGS: &str =
+    "SELECT welcome_seen_at, tour_seen_at, tips_on, tips_dismissed, shortcuts_on \
+     FROM user_settings WHERE user = ?1";
+/// ?1 user, ?2 welcome_seen_at, ?3 tour_seen_at, ?4 tips_on, ?5 tips_dismissed (JSON), ?6 shortcuts_on.
+pub const UPSERT_SETTINGS: &str = "INSERT INTO user_settings \
+     (user, welcome_seen_at, tour_seen_at, tips_on, tips_dismissed, shortcuts_on) VALUES (?1, ?2, ?3, ?4, ?5, ?6) \
+     ON CONFLICT (user) DO UPDATE SET welcome_seen_at = excluded.welcome_seen_at, \
+     tour_seen_at = excluded.tour_seen_at, tips_on = excluded.tips_on, \
+     tips_dismissed = excluded.tips_dismissed, shortcuts_on = excluded.shortcuts_on";
+
 #[allow(async_fn_in_trait)]
 pub trait Store {
+    /// Defaults when the person has never changed anything.
+    async fn settings(&self, user: &str) -> Result<UserSettings, StoreError>;
+    /// Replaces the person's settings. No audit row: preferences aren't data changes.
+    async fn save_settings(&self, user: &str, settings: &UserSettings) -> Result<(), StoreError>;
     async fn user(&self, email: &str) -> Result<Option<User>, StoreError>;
     /// Ordered by display name, then email.
     async fn users(&self) -> Result<Vec<User>, StoreError>;

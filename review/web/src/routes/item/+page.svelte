@@ -1,6 +1,7 @@
 <script lang="ts">
 	// One entry with every authored field. The address is /item?dataset=…&id=…: prerendering can't
 	// see the query, so it is read once the page is in the browser.
+	import Tip from '#lib/Tip.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { ApiError, DATASETS, getItem, problem, type Dataset, type Field, type ItemResponse } from '#lib/api.ts';
@@ -172,6 +173,7 @@
 		<LevelPill level={item.jlpt} />
 	</header>
 	{#if reviewFailure}<p class="notice" role="alert">Reviews couldn't be loaded: {reviewFailure}</p>{/if}
+	{#if review?.suggestions.length}<Tip id="thread" />{/if}
 
 	{#if dataset === 'verbs'}
 		<section class="card fields">

@@ -5,6 +5,7 @@
 	import { ApiError, getMe, type Me } from '#lib/api.ts';
 	import { afterNavigate } from '$app/navigation';
 	import { replies } from '#lib/replies.svelte.ts';
+	import { settings } from '#lib/settings.svelte.ts';
 	import { setSession } from '#lib/session.ts';
 	import SiteHeader from '#lib/SiteHeader.svelte';
 	import type { LayoutProps } from './$types';
@@ -29,6 +30,7 @@
 			.then((user) => {
 				me = user;
 				replies.refresh();
+				settings.load();
 			})
 			.catch((error) => {
 				failure =
