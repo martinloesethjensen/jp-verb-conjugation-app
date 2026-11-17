@@ -209,6 +209,8 @@ export type Reply = {
 	unread: boolean;
 	/** Who was asked, on the opinion events; empty on the others. */
 	asked_of_name: string;
+	/** The viewer is the event's direct recipient, not an author being told of an opinion request. */
+	to_you: boolean;
 };
 
 /** One person's preferences and onboarding progress (review/api `UserSettings`). */

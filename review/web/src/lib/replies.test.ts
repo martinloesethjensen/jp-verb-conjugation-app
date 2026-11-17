@@ -30,6 +30,7 @@ function reply(over: Partial<Reply> = {}): Reply {
 		parent_id: null,
 		unread: true,
 		asked_of_name: '',
+		to_you: true,
 		...over
 	};
 }
@@ -43,8 +44,8 @@ describe('wording and grouping', () => {
 
 	test('replyText words the second-opinion events', () => {
 		const asked = reply({ what: 'opinion_asked', by_name: 'Keiko', asked_of_name: 'Ben' });
-		expect(replyText(asked, 'Ben')).toBe('Keiko asked for your opinion');
-		expect(replyText(asked, 'Aiko')).toBe('Keiko asked Ben for a second opinion');
+		expect(replyText({ ...asked, to_you: true })).toBe('Keiko asked for your opinion');
+		expect(replyText({ ...asked, to_you: false })).toBe('Keiko asked Ben for a second opinion');
 		expect(replyText(reply({ what: 'opinion_answered', by_name: 'Ben' }))).toBe('Ben gave a second opinion');
 		expect(replyText(reply({ what: 'opinion_cancelled', by_name: 'Keiko' }))).toBe('Keiko cancelled the request for your opinion');
 	});

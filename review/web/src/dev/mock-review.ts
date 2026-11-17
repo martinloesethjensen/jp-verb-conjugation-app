@@ -284,12 +284,12 @@ export function reviewMock(ctx: ReviewContext) {
 			const inThread = s.author === email || comments.some((c) => c.suggestion_id === s.id && c.author === email);
 			if (inThread) {
 				for (const c of comments.filter((c) => c.suggestion_id === s.id && c.author !== email)) {
-					out.push({ ...about(s), asked_of_name: '', what: 'comment', by_name: nameOf(c.author), at: c.created_at, body: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body, unread: c.created_at > since(s) });
+					out.push({ ...about(s), asked_of_name: '', to_you: true, what: 'comment', by_name: nameOf(c.author), at: c.created_at, body: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body, unread: c.created_at > since(s) });
 				}
 			}
 			const decider = (s as Suggestion & { decided_by?: string }).decided_by;
 			if (s.author === email && (s.status === 'accepted' || s.status === 'declined') && decider && decider !== email && s.decided_at) {
-				out.push({ ...about(s), asked_of_name: '', what: s.status, by_name: nameOf(decider), at: s.decided_at, body: '', unread: s.decided_at > since(s) });
+				out.push({ ...about(s), asked_of_name: '', to_you: true, what: s.status, by_name: nameOf(decider), at: s.decided_at, body: '', unread: s.decided_at > since(s) });
 			}
 		}
 		// Second opinions: the asked person hears of a request or its cancelling, the asker of the answer, and the
@@ -301,11 +301,11 @@ export function reviewMock(ctx: ReviewContext) {
 				(m) => m.author === email && same(m, o) && m.status !== 'withdrawn' && m.created_at <= o.created_at &&
 					(!m.decided_at || m.decided_at > o.created_at)
 			);
-			const event = (what: string, at: string, actor: string, text: string) =>
-				out.push({ ...about(anchor), what, by_name: nameOf(actor), at, body: text.length > 140 ? `${text.slice(0, 140)}…` : text, unread: at > since(anchor), asked_of_name: nameOf(o.asked_of) });
-			if (o.asked_of === email || (author && email !== o.asked_by)) event('opinion_asked', o.created_at, o.asked_by, o.question);
-			if (o.answered_at && (o.asked_by === email || (author && email !== o.asked_of))) event('opinion_answered', o.answered_at, o.asked_of, o.answer);
-			if (o.cancelled_at && o.asked_of === email) event('opinion_cancelled', o.cancelled_at, o.asked_by, o.question);
+			const event = (what: string, at: string, actor: string, text: string, direct: boolean) =>
+				out.push({ ...about(anchor), what, by_name: nameOf(actor), at, body: text.length > 140 ? `${text.slice(0, 140)}…` : text, unread: at > since(anchor), asked_of_name: nameOf(o.asked_of), to_you: direct });
+			if (o.asked_of === email || (author && email !== o.asked_by)) event('opinion_asked', o.created_at, o.asked_by, o.question, o.asked_of === email);
+			if (o.answered_at && (o.asked_by === email || (author && email !== o.asked_of))) event('opinion_answered', o.answered_at, o.asked_of, o.answer, o.asked_by === email);
+			if (o.cancelled_at && o.asked_of === email) event('opinion_cancelled', o.cancelled_at, o.asked_by, o.question, true);
 		}
 		return out.sort((a, b) => b.at.localeCompare(a.at));
 	}

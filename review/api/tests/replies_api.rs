@@ -256,6 +256,8 @@ async fn the_asked_person_and_the_authors_are_told_when_asked() {
         assert_eq!(asked[0]["body"], "Does this sound natural?");
         assert_eq!(asked[0]["suggestion_id"], id);
         assert_eq!(asked[0]["unread"], true);
+        // Ben is asked; Aiko only hears of it.
+        assert_eq!(asked[0]["to_you"], who == BEN, "{who}");
     }
     let (unread, list) = replies(&s, KEIKO).await;
     assert_eq!((unread, list.len()), (0, 0));
@@ -303,6 +305,8 @@ async fn the_asker_and_authors_are_told_the_answer() {
         assert_eq!(answered[0]["asked_of_name"], "Ben");
         assert_eq!(answered[0]["body"], "This one is natural.");
         assert_eq!(answered[0]["unread"], true);
+        // Keiko asked, so the answer is for her; Aiko only hears of it.
+        assert_eq!(answered[0]["to_you"], who == KEIKO, "{who}");
     }
     let (_, list) = replies(&s, BEN).await;
     assert!(of_kind(&list, "opinion_answered").is_empty());
@@ -320,6 +324,7 @@ async fn the_asked_person_is_told_of_a_cancel() {
     assert_eq!(cancelled.len(), 1);
     assert_eq!(cancelled[0]["by_name"], "Keiko");
     assert_eq!(cancelled[0]["asked_of_name"], "Ben");
+    assert_eq!(cancelled[0]["to_you"], true);
     let (_, list) = replies(&s, KEIKO).await;
     assert!(of_kind(&list, "opinion_cancelled").is_empty());
     let (_, list) = replies(&s, AIKO).await;

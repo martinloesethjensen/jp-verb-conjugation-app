@@ -673,6 +673,8 @@ pub struct Reply {
     pub unread: bool,
     /// Who was asked, on the opinion events; empty on the others.
     pub asked_of_name: String,
+    /// The viewer is the event's direct recipient, not an author being told of an opinion request.
+    pub to_you: bool,
 }
 
 pub const MAX_REPLY_BODY: usize = 140;
@@ -694,6 +696,7 @@ pub struct ReplyRow {
     pub parent_id: Option<String>,
     pub unread: i64,
     pub asked_of_name: String,
+    pub to_you: i64,
     pub total_unread: i64,
 }
 
@@ -720,6 +723,7 @@ impl From<ReplyRow> for Reply {
             parent_id: r.parent_id,
             unread: r.unread != 0,
             asked_of_name: r.asked_of_name,
+            to_you: r.to_you != 0,
         }
     }
 }
@@ -753,7 +757,7 @@ macro_rules! opinion_event {
             ", o.item_title, o.dataset, o.kind, o.item_id, o.entry_id, a.action, a.parent_kind, ",
             "a.parent_id, (o.",
             $at,
-            " > IFNULL(r.read_at, '')), IFNULL(ub.display_name, '') ",
+            " > IFNULL(r.read_at, '')), IFNULL(ub.display_name, ''), 1 ",
             "FROM opinion_requests o ",
             opinion_joins!($actor),
             "WHERE ",
@@ -780,7 +784,7 @@ macro_rules! opinion_event_authors {
             ", o.item_title, o.dataset, o.kind, o.item_id, o.entry_id, a.action, a.parent_kind, ",
             "a.parent_id, (o.",
             $at,
-            " > IFNULL(r.read_at, '')), IFNULL(ub.display_name, '') ",
+            " > IFNULL(r.read_at, '')), IFNULL(ub.display_name, ''), 0 ",
             "FROM (SELECT DISTINCT o2.id FROM suggestions m JOIN opinion_requests o2 ",
             "ON o2.dataset = m.dataset AND o2.kind = m.kind AND o2.item_id = m.item_id ",
             "WHERE m.author = ?1 AND m.created_at <= o2.created_at AND m.status <> 'withdrawn' ",
@@ -808,7 +812,7 @@ macro_rules! with_reply_events {
             "events AS (",
             "SELECT 'comment' AS what, 0 AS rank, c.id AS seq, s.id AS suggestion_id, c.created_at AS at, ",
             "IFNULL(u.display_name, '') AS by_name, c.body AS body, s.item_title, s.dataset, s.kind, s.item_id, ",
-            "s.entry_id, s.action, s.parent_kind, s.parent_id, (c.created_at > IFNULL(r.read_at, '')) AS unread, '' AS asked_of_name ",
+            "s.entry_id, s.action, s.parent_kind, s.parent_id, (c.created_at > IFNULL(r.read_at, '')) AS unread, '' AS asked_of_name, 1 AS to_you ",
             "FROM threads t JOIN comments c ON c.suggestion_id = t.id JOIN suggestions s ON s.id = t.id ",
             "LEFT JOIN users u ON u.email = c.author ",
             "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = t.id ",
@@ -816,7 +820,7 @@ macro_rules! with_reply_events {
             "UNION ALL ",
             "SELECT s.status, 1, s.id, s.id, s.decided_at, IFNULL(u.display_name, ''), '', s.item_title, s.dataset, ",
             "s.kind, s.item_id, s.entry_id, s.action, s.parent_kind, s.parent_id, ",
-            "(s.decided_at > IFNULL(r.read_at, '')), '' ",
+            "(s.decided_at > IFNULL(r.read_at, '')), '', 1 ",
             "FROM suggestions s LEFT JOIN users u ON u.email = s.decided_by ",
             "LEFT JOIN thread_reads r ON r.user = ?1 AND r.suggestion_id = s.id ",
             "WHERE s.author = ?1 AND s.status IN ('accepted', 'declined') AND s.decided_by <> ?1 ",
