@@ -45,7 +45,9 @@ struct FolderNameSheet: View {
                         Label(Self.message(error), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
                     }
                 }
+                .paperRow()
             }
+            .paperBackground()
             .navigationTitle(title)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

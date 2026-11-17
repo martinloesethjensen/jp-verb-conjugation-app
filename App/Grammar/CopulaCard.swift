@@ -41,24 +41,25 @@ struct RightForm: View {
 
 /// The だ / です table.
 struct CopulaSection: View {
+    @Environment(\.palette) private var palette
     var body: some View {
         Section {
             ForEach(Copula.rows, id: \.label) { row in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(row.label).font(.caption).foregroundStyle(.secondary)
+                    Text(row.label).font(.caption).foregroundStyle(palette.muted)
                     HStack(alignment: .top) {
                         cell(row.plain, alt: row.plainAlt, speak: false)
                         Spacer()
                         cell(row.polite, alt: row.politeAlt, speak: true)
                     }
                     if let note = row.note {
-                        Text(note).font(.caption).foregroundStyle(.secondary)
+                        Text(note).font(.caption).foregroundStyle(palette.muted)
                     }
                 }
                 .accessibilityElement(children: .contain)
             }
             ForEach(Copula.notes, id: \.self) { note in
-                JapaneseText(note).font(.callout).foregroundStyle(.secondary)
+                JapaneseText(note).font(.callout).foregroundStyle(palette.muted)
             }
         } header: {
             Text("だ / です (plain · polite)")
@@ -72,7 +73,7 @@ struct CopulaSection: View {
                 if speak { SpeakButton(text: text) }
             }
             if let alt {
-                JapaneseText(alt).font(.caption).foregroundStyle(.secondary)
+                JapaneseText(alt).font(.caption).foregroundStyle(palette.muted)
             }
         }
     }
@@ -80,6 +81,7 @@ struct CopulaSection: View {
 
 /// Polite adjective rows for the い- and な-adjective model words, with the ×高いでした trap.
 struct PoliteAdjectiveSection: View {
+    @Environment(\.palette) private var palette
     let iAdjective: SlotSource?
     let naAdjective: SlotSource?
 
@@ -101,7 +103,7 @@ struct PoliteAdjectiveSection: View {
                             .accessibilityLabel("Correct: \(right)")
                         }
                         Text("The past goes on the い\u{2060}-adjective, not on です.")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(palette.muted)
                     }
                 }
             }
@@ -117,11 +119,11 @@ struct PoliteAdjectiveSection: View {
 
     private func block(_ title: Text, rows: [PolitePair]) -> some View {
         Group {
-            title.font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            title.font(.subheadline.weight(.semibold)).foregroundStyle(palette.muted)
                 .accessibilityAddTraits(.isHeader)
             ForEach(rows, id: \.label) { row in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(row.label).font(.caption).foregroundStyle(.secondary)
+                    Text(row.label).font(.caption).foregroundStyle(palette.muted)
                     ViewThatFits(in: .horizontal) {
                         HStack(alignment: .top) {
                             plainCell(row)
@@ -140,7 +142,7 @@ struct PoliteAdjectiveSection: View {
     }
 
     private func plainCell(_ row: PolitePair) -> some View {
-        JapaneseText(row.plain).font(.callout).foregroundStyle(.secondary)
+        JapaneseText(row.plain).font(.callout).foregroundStyle(palette.muted)
     }
 
     private func politeCell(_ row: PolitePair) -> some View {
@@ -150,7 +152,7 @@ struct PoliteAdjectiveSection: View {
                 SpeakButton(text: row.polite)
             }
             if let alt = row.politeAlt {
-                JapaneseText(alt).font(.caption).foregroundStyle(.secondary)
+                JapaneseText(alt).font(.caption).foregroundStyle(palette.muted)
             }
         }
     }

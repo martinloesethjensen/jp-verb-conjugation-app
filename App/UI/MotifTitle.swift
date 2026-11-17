@@ -22,13 +22,15 @@ private struct MotifTitle: ViewModifier {
                 .navigationTitle(title)
                 .toolbar {
                     ToolbarItem(placement: .largeTitle) {
-                        HStack(alignment: .center) {
+                        // The motif follows the title rather than sitting at the far edge, where the
+                        // toolbar's buttons cover it once a subtitle lifts the large title.
+                        HStack(alignment: .lastTextBaseline, spacing: 10) {
                             // 早見表 is Japanese: furigana when it is on.
                             JapaneseText(title)
                                 .font(.largeTitle.bold())
                                 .foregroundStyle(palette.ink)
-                            Spacer(minLength: 8)
                             TitleMotifView()
+                            Spacer(minLength: 0)
                         }
                         // One heading, read as the title: not ruby fragments, not the motif.
                         .accessibilityElement(children: .ignore)

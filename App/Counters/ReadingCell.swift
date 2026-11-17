@@ -2,8 +2,8 @@ import SwiftUI
 import VerbKit
 
 /// One counted form: 三本 small above (large style only; in a table the row and column say it), the
-/// preferred reading, and any other accepted readings below. A number whose preferred reading is in the counter's `changed` list gets a tint over the
-/// whole reading and a corner dot, so the change never relies on colour alone.
+/// preferred reading, and any other accepted readings below. A number whose preferred reading is in the counter's `changed` list is bold and underlined in
+/// ink (`soundChangeMark`), so the change never relies on colour.
 ///
 /// Readings come straight from counters.json; nothing here asks the furigana dictionary, which
 /// would read 三本 as さん + ほん.
@@ -27,29 +27,21 @@ struct ReadingCell: View {
             if style == .large {
                 Text(counter.written(number))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
             Text(preferred)
-                .font(style == .large ? .title3.weight(.semibold) : .body.weight(.semibold))
+                .font(style == .large ? .title3 : .body)
+                .foregroundStyle(palette.ink)
+                .soundChangeMark(changed)
             if readings.count > 1 {
                 Text(readings.dropFirst().joined(separator: " · "))
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 4)
-        .background(changed ? Color.orange.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(alignment: .topTrailing) {
-            if changed {
-                Image(systemName: "circle.fill")
-                    .font(.system(size: 6))
-                    .foregroundStyle(.orange)
-                    .padding(6)
-                    .accessibilityHidden(true)
-            }
-        }
         .overlay {
             if highlighted {
                 RoundedRectangle(cornerRadius: 10).strokeBorder(palette.button, lineWidth: 2)

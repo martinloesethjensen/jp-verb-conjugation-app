@@ -35,6 +35,8 @@ struct WordBankListView: View {
 
     @AppStorage("wordBank.grouping") private var groupingRaw = WordBankGrouping.dateAdded.rawValue
     @State private var chosen = Set<UUID>()
+    /// The tag chip picked above the entries (canvas board "Proposed: Word Bank"); nil is All.
+    @State private var tagFilter: UUID?
     @State private var folderRequest: FolderNameRequest?
     @State private var editorRequest: WordBankEditorRequest?
     @State private var moveRequest: MoveRequest?
@@ -365,11 +367,61 @@ struct WordBankListView: View {
                     ForEach(store.smartFolders) { smartFolderRow($0) }
                 }
             }
-            ForEach(groups(of: entries)) { group in
+            if place != nil { tagChips }
+            ForEach(groups(of: shownEntries)) { group in
                 Section(group.title ?? (subfolders.isEmpty && place != nil ? "" : "Entries")) {
                     ForEach(group.entries) { entryRow($0) }
                 }
             }
+        }
+    }
+
+    /// The most used tags among these entries, at most six.
+    private var topTags: [WordBankTagCount] { WordBankTagCounts.top(entries, limit: 6) }
+
+    /// The picked tag, while it is still among the chips (a deleted tag falls back to All).
+    private var activeTagFilter: UUID? {
+        guard let tagFilter, topTags.contains(where: { $0.tagID == tagFilter }) else { return nil }
+        return tagFilter
+    }
+
+    private var shownEntries: [WordBankEntryValue] {
+        guard let tag = activeTagFilter else { return entries }
+        return entries.filter { $0.dialectTagIDs.contains(tag) || $0.customTagIDs.contains(tag) }
+    }
+
+    private func tagName(_ id: UUID) -> String? {
+        store.dialectTags.first { $0.id == id }?.name ?? store.customTags.first { $0.id == id }?.name
+    }
+
+    /// All, then the most used tags with their counts; hidden when no entry here has a tag.
+    @ViewBuilder private var tagChips: some View {
+        let tags = topTags.filter { tagName($0.tagID) != nil }
+        if !tags.isEmpty {
+            Section {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Button { tagFilter = nil } label: {
+                            FilterChip("All \(entries.count)", isOn: activeTagFilter == nil)
+                        }
+                        .buttonStyle(.plain)
+                        ForEach(tags, id: \.tagID) { tag in
+                            Button { tagFilter = tag.tagID } label: {
+                                FilterChip("\(tagName(tag.tagID) ?? "") \(tag.count)", isOn: activeTagFilter == tag.tagID)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 2)
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+            #if os(iOS)
+            .listSectionMargins(.horizontal, 0)
+            #endif
         }
     }
 
@@ -434,7 +486,7 @@ struct WordBankListView: View {
             HStack {
                 Label(title, systemImage: systemImage)
                 Spacer()
-                Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
+                Text("\(count)").foregroundStyle(palette.muted).monospacedDigit()
                 RowChevron()
             }
             .contentShape(Rectangle())
@@ -615,11 +667,11 @@ struct WordBankListView: View {
     /// No results: say so, offer ways out (drop a filter, widen the scope) and adding the text.
     private var noResults: some View {
         let ways = index.relaxations(of: query)
-        return ContentUnavailableView {
-            Label(trimmedSearch.isEmpty ? "No entries match" : "No results for “\(trimmedSearch)”", systemImage: "magnifyingglass")
-        } description: {
-            Text(ways.isEmpty ? "Try different words or fewer filters." : "Here are some ways to widen the search.")
-        } actions: {
+        return PaperEmptyState(
+            trimmedSearch.isEmpty ? "No entries match" : "No results for “\(trimmedSearch)”",
+            message: ways.isEmpty ? "Try different words or fewer filters." : "Here are some ways to widen the search.",
+            glyph: "無"
+        ) {
             ForEach(ways, id: \.self) { way in
                 if let token = way.dropping {
                     Button("Without \(token.title(in: store)) (\(way.count))") { tokens.removeAll { $0 == token } }
@@ -641,27 +693,21 @@ struct WordBankListView: View {
         if searchActive, found.isEmpty {
             noResults
         } else if store.entries.isEmpty && store.folders.isEmpty {
-            ContentUnavailableView {
-                Label("Your Word Bank is empty", systemImage: "books.vertical")
-            } description: {
-                Text("Save dialect words, phrases and sentences you learn outside the app.")
-            } actions: {
-                Button("Add your first entry") { editorRequest = WordBankEditorRequest(folderID: folderID) }
+            PaperEmptyState(
+                "Your Word Bank is empty",
+                message: "Save words you meet in class, in shows or on signs. Add a reading, a dialect tag and a note."
+            ) {
+                Button("Add a word") { editorRequest = WordBankEditorRequest(folderID: folderID) }
                     .buttonStyle(.paper)
+                Button("Import…") { importing = true }
+                    .buttonStyle(.paperSecondary)
             }
         } else if let folder = smartFolder, entries.isEmpty {
-            ContentUnavailableView {
-                Label("No entries match", systemImage: "gearshape.2")
-            } description: {
-                Text(folder.tagCount == 0 ? "This smart folder has no tags left. Edit it to pick some." : "Entries with these tags will show up here.")
-            } actions: {
+            PaperEmptyState("No entries match", message: folder.tagCount == 0 ? "This smart folder has no tags left. Edit it to pick some." : "Entries with these tags will show up here.") {
                 Button("Edit smart folder") { smartRequest = .edit(folder) }
             }
         } else if place != nil, subfolders.isEmpty, entries.isEmpty {
-            ContentUnavailableView(
-                folderID == nil ? "Nothing here yet" : "This folder is empty",
-                systemImage: folderID == nil ? "tray" : "folder"
-            )
+            PaperEmptyState(folderID == nil ? "Nothing here yet" : "This folder is empty")
         }
     }
 }

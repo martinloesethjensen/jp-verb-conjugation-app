@@ -33,6 +33,7 @@ extension View {
 /// Last row of a result list: items in hidden levels also match the search. Info only; the scope is
 /// changed by the user through the search scope bar.
 struct HiddenMatchesRow: View {
+    @Environment(\.palette) private var palette
     let count: Int
 
     var body: some View {
@@ -40,7 +41,7 @@ struct HiddenMatchesRow: View {
              ? "1 more in a hidden level. Switch to All levels in the bar above."
              : "\(count) more in hidden levels. Switch to All levels in the bar above.")
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(palette.muted)
             .selectionDisabled()
     }
 }
@@ -51,10 +52,6 @@ struct NoMatchInLevelsView: View {
     let hiddenCount: Int
 
     var body: some View {
-        ContentUnavailableView {
-            Label("No match in \(summary)", systemImage: "magnifyingglass")
-        } description: {
-            Text("\(hiddenCount) in other levels. Switch to All levels in the bar above.")
-        }
+        PaperEmptyState("No match in \(summary)", message: "\(hiddenCount) in other levels. Switch to All levels in the bar above.", glyph: "無")
     }
 }

@@ -111,7 +111,7 @@ struct QuizTopicSheet: View {
                                     Text("Resume \(resumable.topic.title)")
                                     Text(resumable.summary)
                                         .font(.subheadline)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(palette.muted)
                                 }
                                 Spacer()
                                 Image(systemName: "play.circle.fill")
@@ -123,6 +123,7 @@ struct QuizTopicSheet: View {
                     } footer: {
                         Text("A new verb quiz replaces the unfinished one.")
                     }
+                    .paperRow()
                 }
                 Section("Practise") {
                     row(
@@ -136,6 +137,7 @@ struct QuizTopicSheet: View {
                     }
                     row(title: "Everything", detail: Self.formsText(choices.reduce(0) { $0 + $1.count }), choice: .everything)
                 }
+                .paperRow()
                 Section {
                     row(
                         title: "Connections",
@@ -164,6 +166,7 @@ struct QuizTopicSheet: View {
                 } footer: {
                     Text("Connections: join verbs, adjectives and nouns to grammar patterns, しずか + ので. Spot the mistake: find the wrong form among correct ones. Particles: fill in the particle, 電車＿乗る. Verb pairs: pick the half that fits, ドアが＿ → 開く.")
                 }
+                .paperRow()
                 Section {
                     Picker("Show verbs as", selection: $scriptRaw) {
                         ForEach(QuizScript.allCases, id: \.self) { script in
@@ -173,17 +176,20 @@ struct QuizTopicSheet: View {
                 } footer: {
                     Text(QuizScript(storedValue: scriptRaw).explanation)
                 }
+                .paperRow()
                 // Only worth offering when there is a choice to make: some, but not all, verbs starred.
                 if !favouriteVerbs.isEmpty && favouriteVerbs.count < verbs.count {
                     Section {
                         Toggle("Favourites only (\(favouriteVerbs.count))", isOn: $favouritesOnly)
                             .paperSwitch()
                     }
+                    .paperRow()
                 }
             }
             .onChange(of: favouritesOnly) {
                 if !isAvailable(choice) { choice = .everything }
             }
+            .paperBackground()
             .navigationTitle("Quiz")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -209,11 +215,11 @@ struct QuizTopicSheet: View {
             choice = value
         } label: {
             HStack {
-                Text(title).foregroundStyle(enabled ? .primary : .secondary)
+                Text(title).foregroundStyle(enabled ? palette.ink : palette.muted)
                 Spacer()
-                Text(detail).foregroundStyle(.secondary)
+                Text(detail).foregroundStyle(palette.muted)
                 Image(systemName: choice == value ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(choice == value ? palette.button : Color.secondary)
+                    .foregroundStyle(choice == value ? palette.button : palette.muted)
             }
             // On the label, so the gap between title and detail is tappable too.
             .contentShape(Rectangle())

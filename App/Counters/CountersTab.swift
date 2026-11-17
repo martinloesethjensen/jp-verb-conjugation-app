@@ -137,7 +137,7 @@ struct CountersTab: View {
                             CounterDestinationView(destination: $0)
                         }
                 } else {
-                    ContentUnavailableView("Choose a Counter", systemImage: "textformat.123")
+                    PaperEmptyState("Choose a Counter")
                 }
             }
             // A new choice in the sidebar starts a fresh stack.

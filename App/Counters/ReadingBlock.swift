@@ -2,11 +2,12 @@ import SwiftUI
 import VerbKit
 
 /// The counter page's reading for the selected number: 三本 small above, the preferred reading large,
-/// other accepted readings below. A number whose sound changes gets the tint and corner dot used in every
-/// table, so the change never relies on colour alone. Tapping speaks the reading.
+/// other accepted readings below. A reading whose sound changes is bold and underlined in ink, as in every
+/// table. Tapping speaks the reading.
 struct ReadingBlock: View {
     let counter: Counter
     let number: CounterNumber
+    @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var readings: [String] { counter.readings(for: number) }
@@ -17,31 +18,24 @@ struct ReadingBlock: View {
         VStack(spacing: 4) {
             Text(counter.written(number))
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(palette.muted)
             if number.isExtended { UnreviewedLabel() }
             Text(preferred)
-                .font(.system(size: 44, weight: .bold, design: .rounded))
+                .font(.headword(.largeTitle, scale: 1.3))
+                .foregroundStyle(palette.ink)
+                .soundChangeMark(changed)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .contentTransition(reduceMotion ? .identity : .numericText())
             if readings.count > 1 {
                 Text(readings.dropFirst().joined(separator: " · "))
                     .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(changed ? Color.orange.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(alignment: .topTrailing) {
-            if changed {
-                Image(systemName: "circle.fill")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.orange)
-                    .padding(8)
-                    .accessibilityHidden(true)
-            }
-        }
+        .paperCard(cornerRadius: 12)
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .speakOnTap(preferred)
         .textActions(preferred)

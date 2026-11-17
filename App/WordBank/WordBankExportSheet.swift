@@ -16,6 +16,7 @@ struct WordBankExportRequest: Identifiable {
 /// Pick what to export, then share it or save it to Files. The archive is rebuilt when the
 /// choice changes, so what is shared is always what is selected.
 struct WordBankExportSheet: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(WordBankStore.self) private var store
     let request: WordBankExportRequest
@@ -50,9 +51,9 @@ struct WordBankExportSheet: View {
                             HStack {
                                 Text(option.title)
                                 Spacer()
-                                Text("\(count(option))").foregroundStyle(.secondary).monospacedDigit()
+                                Text("\(count(option))").foregroundStyle(palette.muted).monospacedDigit()
                                 if option.id == (self.option?.id) {
-                                    Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Selected")
+                                    Image(systemName: "checkmark").foregroundStyle(palette.button).accessibilityLabel("Selected")
                                 }
                             }
                             .contentShape(Rectangle())
@@ -60,6 +61,7 @@ struct WordBankExportSheet: View {
                         .buttonStyle(.plain)
                     }
                 }
+                .paperRow()
                 Section {
                     if let prepared {
                         ShareLink(item: prepared.url) { Label("Share…", systemImage: "square.and.arrow.up") }
@@ -70,7 +72,9 @@ struct WordBankExportSheet: View {
                 } footer: {
                     Text("A .wordbank file holds entries, folders and tags. Importing it again, here or on another device, never overwrites anything.")
                 }
+                .paperRow()
             }
+            .paperBackground()
             .navigationTitle("Export")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

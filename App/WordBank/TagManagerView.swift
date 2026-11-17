@@ -4,6 +4,7 @@ import VerbKit
 /// All tags, with how many entries use each. Add tags (the same suggestion field as the
 /// entry editor), rename, change a dialect's place or a custom tag's colour, or delete.
 struct TagManagerView: View {
+    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(WordBankStore.self) private var store
     @State private var adding = false
@@ -32,6 +33,7 @@ struct TagManagerView: View {
                                 .swipeActions { Button("Delete", systemImage: "trash", role: .destructive) { deletingDialect = tag } }
                         }
                     }
+                    .paperRow()
                 }
                 if !store.customTags.isEmpty {
                     Section("Tags") {
@@ -40,19 +42,17 @@ struct TagManagerView: View {
                                 .swipeActions { Button("Delete", systemImage: "trash", role: .destructive) { deletingCustom = tag } }
                         }
                     }
+                    .paperRow()
                 }
             }
             .overlay {
                 if store.dialectTags.isEmpty && store.customTags.isEmpty {
-                    ContentUnavailableView {
-                        Label("No tags yet", systemImage: "tag")
-                    } description: {
-                        Text("Tag entries with a dialect, like 関西弁, or anything else you like.")
-                    } actions: {
+                    PaperEmptyState("No tags yet", message: "Tag entries with a dialect, like 関西弁, or anything else you like.") {
                         Button("Add a tag") { adding = true }.buttonStyle(.paper)
                     }
                 }
             }
+            .paperBackground()
             .navigationTitle("Tags")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -100,7 +100,7 @@ struct TagManagerView: View {
             HStack {
                 pill
                 Spacer()
-                Text("\(count)").foregroundStyle(.secondary).monospacedDigit()
+                Text("\(count)").foregroundStyle(palette.muted).monospacedDigit()
                 RowChevron()
             }
             .contentShape(Rectangle())
@@ -132,6 +132,7 @@ private struct DialectTagEditSheet: View {
                     TextField("Romaji", text: Binding(get: { draft.romaji ?? "" }, set: { draft.romaji = $0.isEmpty ? nil : $0 }))
                         .autocorrectionDisabled()
                 }
+                .paperRow()
                 Section {
                     if draft.prefectures.count > 1 {
                         LabeledContent("Prefectures", value: draft.prefectures.map(\.name).joined(separator: "・"))
@@ -142,6 +143,7 @@ private struct DialectTagEditSheet: View {
                                 Section(region.name) {
                                     ForEach(region.prefectures, id: \.self) { Text($0.name).tag(Prefecture?.some($0)) }
                                 }
+                                .paperRow()
                             }
                         }
                     }
@@ -155,6 +157,7 @@ private struct DialectTagEditSheet: View {
                         Label(FolderNameSheet.message(error), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
                     }
                 }
+                .paperRow()
             }
             .navigationTitle("Edit Tag")
             #if os(iOS)
@@ -208,6 +211,7 @@ private struct CustomTagEditSheet: View {
                         Label(FolderNameSheet.message(error), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
                     }
                 }
+                .paperRow()
                 Section("Colour") {
                     Picker("Colour", selection: $draft.color) {
                         ForEach(CustomTagColor.allCases, id: \.self) { color in
@@ -217,6 +221,7 @@ private struct CustomTagEditSheet: View {
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
+                .paperRow()
             }
             .navigationTitle("Edit Tag")
             #if os(iOS)

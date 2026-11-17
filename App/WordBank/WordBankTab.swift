@@ -36,7 +36,7 @@ struct WordBankTab: View {
             if let selection, let entry = store.entries.first(where: { $0.id == selection }) {
                 WordBankDetailView(entry: entry, selection: $selection)
             } else {
-                ContentUnavailableView("Select an Entry", systemImage: "books.vertical")
+                PaperEmptyState("Select an Entry")
             }
         }
         .sheet(item: Binding(get: { transfer.pendingImport }, set: { transfer.pendingImport = $0 })) {

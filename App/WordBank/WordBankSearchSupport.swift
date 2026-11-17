@@ -204,6 +204,7 @@ struct WordBankSearchChips: View {
 /// "Standard: ありがとう" with the matched part in bold and the accent colour. VoiceOver reads
 /// the same words.
 struct MatchExplanationLabel: View {
+    @Environment(\.palette) private var palette
     let explanation: WordBankMatch.Explanation
 
     private static func name(_ field: WordBankField) -> String {
@@ -224,13 +225,13 @@ struct MatchExplanationLabel: View {
         var text = AttributedString(explanation.snippet)
         if let range = explanation.range, let matched = Range(range, in: text) {
             text[matched].inlinePresentationIntent = .stronglyEmphasized
-            text[matched].foregroundColor = .accentColor
+            text[matched].underlineStyle = .single
         }
         return text
     }
 
     var body: some View {
-        Text("\(Text("\(Self.name(explanation.field)): ").foregroundStyle(.secondary))\(Text(snippet))")
+        Text("\(Text("\(Self.name(explanation.field)): ").foregroundStyle(palette.muted))\(Text(snippet))")
             .font(.footnote)
             .lineLimit(2)
             .accessibilityLabel("Matched in \(Self.name(explanation.field)): \(explanation.snippet)")
@@ -241,6 +242,7 @@ struct MatchExplanationLabel: View {
 
 /// The last searches, newest first: tap to run one again, swipe to remove it.
 struct RecentSearchesSection: View {
+    @Environment(\.palette) private var palette
     @Environment(WordBankStore.self) private var store
     let searches: [WordBankQuery]
     let onPick: (WordBankQuery) -> Void
@@ -252,13 +254,13 @@ struct RecentSearchesSection: View {
             ForEach(searches, id: \.self) { query in
                 Button { onPick(query) } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: "clock.arrow.circlepath").foregroundStyle(.secondary).accessibilityHidden(true)
+                        Image(systemName: "clock.arrow.circlepath").foregroundStyle(palette.muted).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             if !query.text.isEmpty { Text(query.text) }
                             if !query.tokens.isEmpty {
                                 Text(query.tokens.map { $0.title(in: store) }.joined(separator: " · "))
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(palette.muted)
                             }
                         }
                         Spacer()

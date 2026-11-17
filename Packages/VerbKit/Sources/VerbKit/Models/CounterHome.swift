@@ -27,3 +27,15 @@ public func homeSections(_ sections: [CounterSection], counters visible: [Counte
         return rows.isEmpty ? nil : CounterHomeSection(section: section, rows: rows)
     }
 }
+
+/// The Counters home's "Start here" tiles (canvas board "Proposed: counters home").
+public enum CounterHome {
+    /// つ, 人, 本, 枚, 個, 匹, 台, 冊 and 杯, by their stable ids.
+    public static let startHereIDs = ["tsu", "nin", "hon", "mai", "ko", "hiki", "dai", "satsu", "hai"]
+
+    /// The start-here counters found among `counters`, in order; hidden levels drop tiles.
+    public static func startHere(_ counters: [Counter]) -> [Counter] {
+        let byID = Dictionary(counters.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return startHereIDs.compactMap { byID[$0] }
+    }
+}

@@ -4,6 +4,7 @@ import VerbKit
 /// A Japanese example whose English translation is hidden until tapped,
 /// so a grammar page doubles as self-testing.
 struct ExampleRow: View {
+    @Environment(\.palette) private var palette
     let example: GrammarExample
     /// What the speaker says when it should not be the written sentence (a counter example that
     /// overrides a reading, so the voice cannot choose the wrong one). Defaults to the sentence.
@@ -23,7 +24,7 @@ struct ExampleRow: View {
                         .multilineTextAlignment(.leading)
                     Text(revealed ? example.en : "Tap to show English")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(palette.muted)
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

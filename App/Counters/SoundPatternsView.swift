@@ -25,17 +25,13 @@ struct SoundPatternsView: View {
         let table = table
         Group {
             if table.columns.isEmpty && table.irregular.isEmpty {
-                ContentUnavailableView {
-                    Label("No Counters", systemImage: "waveform")
-                } description: {
-                    Text("Counters hidden by your level settings have no patterns to show.")
-                }
+                PaperEmptyState("No Counters", message: "Counters hidden by your level settings have no patterns to show.")
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Find the counter's first sound, then read across. Tap a number or a column.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(palette.muted)
                         tableView(table)
                         explanation(table)
                         exceptions(table)
@@ -85,7 +81,7 @@ struct SoundPatternsView: View {
                 Text(column.id.title).font(.subheadline.weight(.semibold))
                 Text(column.counters.map(\.counter).uniqued().joined(separator: " "))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .frame(minWidth: typeSize.isAccessibilitySize ? columnWidth : 0)
@@ -106,7 +102,7 @@ struct SoundPatternsView: View {
         } label: {
             Text(label(number))
                 .font(.headline)
-                .foregroundStyle(selected == number && selectedColumn == nil ? palette.button : .secondary)
+                .foregroundStyle(selected == number && selectedColumn == nil ? palette.button : palette.muted)
                 .frame(width: numberWidth, height: 44)
                 .contentShape(Rectangle())
         }
@@ -118,18 +114,13 @@ struct SoundPatternsView: View {
     @ViewBuilder private func cell(_ table: SoundPatternTable, _ number: CounterNumber, _ column: SoundColumnID) -> some View {
         if let cell = table.cell(number, column) {
             Text(cell.reading)
-                .font(.callout.weight(.semibold))
+                .font(.callout)
+                .foregroundStyle(palette.ink)
+                .soundChangeMark(cell.changed)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .frame(minWidth: typeSize.isAccessibilitySize ? columnWidth : 0)
-                .background(cell.changed ? Color.orange.opacity(0.18) : Color.clear, in: RoundedRectangle(cornerRadius: 8))
-                .overlay(alignment: .topTrailing) {
-                    if cell.changed {
-                        Image(systemName: "circle.fill").font(.system(size: 5)).foregroundStyle(.orange)
-                            .padding(3).accessibilityHidden(true)
-                    }
-                }
                 .overlay {
                     if selected == number && selectedColumn == nil {
                         RoundedRectangle(cornerRadius: 8).strokeBorder(palette.button.opacity(0.5), lineWidth: 1)
@@ -162,7 +153,7 @@ struct SoundPatternsView: View {
                             Text(counter.counter).font(.title3.weight(.semibold))
                                 .padding(.horizontal, 12).frame(minHeight: 44)
                         }
-                        .buttonStyle(.glass)
+                        .buttonStyle(.paperSecondaryInline)
                         .accessibilityLabel("\(counter.counter), \(counter.reading)")
                     }
                 }
@@ -170,7 +161,7 @@ struct SoundPatternsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .glassEffect(in: RoundedRectangle(cornerRadius: 16))
+        .background(palette.card, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(palette.rule, lineWidth: 1))
         .accessibilityElement(children: .contain)
     }
 
@@ -184,7 +175,7 @@ struct SoundPatternsView: View {
             }
         }
         .font(.footnote)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(palette.muted)
     }
 }
 

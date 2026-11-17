@@ -6,8 +6,12 @@ struct CounterWidgetView: View {
     @Environment(\.palette) private var palette
     let entry: CounterEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
-    private static let accent = Color(red: 0.992, green: 0.62, blue: 0.243)
+    /// The board's counter widget is ink with paper text; Clear and Tinted keep only the type.
+    private var inverted: Bool { renderingMode == .fullColor }
+    private var face: Color { inverted ? palette.paper : palette.ink }
+    private var faint: Color { inverted ? palette.paper.opacity(0.7) : palette.muted }
 
     var body: some View {
         Group {
@@ -18,7 +22,7 @@ struct CounterWidgetView: View {
             }
         }
         .containerBackground(for: .widget) {
-            WidgetTheme.background(isHome: true, palette: palette)
+            if inverted { palette.ink } else { WidgetTheme.background(isHome: true, palette: palette) }
         }
     }
 
@@ -32,7 +36,7 @@ struct CounterWidgetView: View {
             VStack(alignment: .leading, spacing: 4) {
                 header(counter)
                 Spacer(minLength: 0)
-                Text(changeLine(counter)).font(.caption2).foregroundStyle(palette.muted).lineLimit(2)
+                Text(changeLine(counter)).font(.caption2).foregroundStyle(faint).lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -40,9 +44,9 @@ struct CounterWidgetView: View {
 
     private func header(_ counter: Counter) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(counter.counter).font(.system(size: 44, weight: .bold)).foregroundStyle(palette.ink).minimumScaleFactor(0.6)
-            Text(counter.reading).font(.headline).foregroundStyle(palette.muted)
-            Text(counter.meaning).font(.caption).foregroundStyle(palette.muted).lineLimit(2)
+            WidgetCaption(text: "Counter", color: faint)
+            WidgetRuby(text: counter.counter, reading: counter.reading, size: 38, color: face, readingColor: faint)
+            Text(counter.meaning).font(.subheadline.weight(.semibold)).foregroundStyle(face).lineLimit(2)
         }
     }
 
@@ -58,17 +62,17 @@ struct CounterWidgetView: View {
             ForEach(CounterNumber.allCases) { number in
                 let changed = counter.isChanged(number)
                 VStack(spacing: 0) {
-                    Text(counter.written(number)).font(.system(size: 8)).foregroundStyle(palette.muted)
-                    Text(counter.readings(for: number).first ?? "").font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(palette.ink).minimumScaleFactor(0.6).lineLimit(1)
+                    Text(counter.written(number)).font(.system(size: 8)).foregroundStyle(faint)
+                    Text(counter.readings(for: number).first ?? "")
+                        .font(.system(size: 11, weight: changed ? .bold : .regular))
+                        .foregroundStyle(face).minimumScaleFactor(0.6).lineLimit(1)
+                        // A changed reading is underlined, as in the app (never colour alone).
+                        .underline(changed, color: face)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(counter.written(number)), \(counter.readings(for: number).first ?? "")\(changed ? ", sound changes" : "")")
                 .frame(maxWidth: .infinity, minHeight: 30)
-                .background(changed ? Self.accent.opacity(0.28) : palette.card, in: RoundedRectangle(cornerRadius: 6))
-                .overlay(alignment: .topTrailing) {
-                    if changed { Circle().fill(Self.accent).frame(width: 4, height: 4).padding(3) }
-                }
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(faint.opacity(0.4), lineWidth: 1))
             }
         }
     }

@@ -121,7 +121,7 @@ struct GrammarTab: View {
                 GrammarDetailView(point: selection, focusedPitfall: $focusedPitfall)
                     .id(selection.id)
             } else {
-                ContentUnavailableView("Select a Grammar Point", systemImage: "text.book.closed")
+                PaperEmptyState("Select a Grammar Point")
             }
         }
     }

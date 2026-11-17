@@ -12,6 +12,7 @@ struct CountersHomeView: View {
     @State private var search = ""
     @State private var scope: LevelScope = .mine
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.palette) private var palette
     @FocusState private var searchFocused: Bool
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
 
@@ -56,10 +57,10 @@ struct CountersHomeView: View {
     var body: some View {
         content
             .paperBackground()
-            .navigationTitle("Counters")
+            .motifTitle("Counters")
             .navigationSubtitle(scope == .mine ? summary : "")
             .inlineSearch(
-                text: $search, prompt: "Counters, 3本, sanbon, umbrella…", focused: $searchFocused, alwaysVisible: true
+                text: $search, prompt: "Counters, 3本, sanbon, umbrella…", focused: $searchFocused
             )
             .levelScopeBar(isActive: levelsHidden, scope: $scope)
             .onChange(of: search) { if search.isEmpty { scope = .mine } }
@@ -79,11 +80,7 @@ struct CountersHomeView: View {
 
     @ViewBuilder private var content: some View {
         if store.counters.isEmpty {
-            ContentUnavailableView {
-                Label("Counters Not Downloaded Yet", systemImage: "icloud.and.arrow.down")
-            } description: {
-                Text("Counters download in the background. Check your connection, then reopen the app.")
-            }
+            PaperEmptyState("Counters Not Downloaded Yet", message: "Counters download in the background. Check your connection, then reopen the app.")
         } else if search.isEmpty {
             directory
         } else {
@@ -96,16 +93,37 @@ struct CountersHomeView: View {
 
     /// The heading and its Compare link; stacked at accessibility sizes so neither is squeezed.
     private func sectionHeader(_ section: CounterHomeSection) -> some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading)) : AnyLayout(HStackLayout())
-        return layout {
-            Text(section.section.title)
-            if !typeSize.isAccessibilitySize { Spacer() }
+        SectionHeader(section.section.title) {
             if section.canCompare {
                 Button("Compare") { go(.section(section.section)) }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(.paperSecondaryInline)
                     .fixedSize(horizontal: true, vertical: false)
-                    .textCase(nil)
                     .accessibilityLabel("Compare \(section.section.title)")
+            }
+        }
+        .textCase(nil)
+    }
+
+    /// "Start here": the board's nine everyday counters as tiles, three across (one at
+    /// accessibility sizes); counters hidden by the level settings drop out.
+    @ViewBuilder private var startHere: some View {
+        let tiles = CounterHome.startHere(counters(in: settings))
+        if !tiles.isEmpty {
+            Section {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: typeSize.isAccessibilitySize ? 1 : 3),
+                    spacing: 8
+                ) {
+                    ForEach(tiles) { counter in
+                        Button { go(.counter(counter, focus: nil)) } label: { CounterTile(counter: counter) }
+                            .buttonStyle(.plain)
+                    }
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            } header: {
+                SectionHeader("Start here").textCase(nil)
             }
         }
     }
@@ -113,6 +131,7 @@ struct CountersHomeView: View {
     private var directory: some View {
         let sections = home
         return List {
+            startHere
             ForEach(sections) { section in
                 Section {
                     ForEach(section.rows) { row in
@@ -123,6 +142,7 @@ struct CountersHomeView: View {
                         }
                         .buttonStyle(.plain)
                         .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 2, trailing: 16))
+                        .paperRow()
                     }
                 } header: {
                     sectionHeader(section)
@@ -133,22 +153,57 @@ struct CountersHomeView: View {
                     Button {
                         go(.patterns)
                     } label: {
-                        Label("Why counters change sound", systemImage: "waveform")
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                            .contentShape(Rectangle())
+                        HStack {
+                            Label("Why counters change sound", systemImage: "waveform")
+                            Spacer(minLength: 0)
+                            RowChevron()
+                        }
+                        .foregroundStyle(palette.ink)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .paperRow()
                 }
                 ReviewSummaryLine(noun: "counters", summary: ReviewSummary(counters(in: settings)))
             }
         }
-        .listStyle(.plain)
+        #if os(iOS)
+        .listStyle(.insetGrouped)
+        #else
+        .listStyle(.inset)
+        #endif
+        .scrollContentBackground(.hidden)
         .overlay {
             if sections.isEmpty {
-                ContentUnavailableView(
-                    "No counters in your levels", systemImage: "line.3.horizontal.decrease.circle"
-                )
+                PaperEmptyState("No counters in your levels", message: "Show more levels in Settings to see them here.")
             }
         }
+    }
+}
+
+/// A "Start here" tile: the counter in Mincho over what it counts, on a paper card.
+private struct CounterTile: View {
+    let counter: Counter
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        VStack(spacing: 2) {
+            JapaneseText(units: counter.headwordUnits)
+                .font(.headword(.title))
+                .foregroundStyle(palette.ink)
+            Text(counter.meaning)
+                .font(.caption2)
+                .foregroundStyle(palette.muted)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .padding(.horizontal, 6)
+        }
+        .frame(maxWidth: .infinity, minHeight: 104)
+        .paperCard(cornerRadius: 14, fillsWidth: true)
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(counter.counter), \(counter.reading), \(counter.meaning)")
+        .accessibilityAddTraits(.isButton)
     }
 }

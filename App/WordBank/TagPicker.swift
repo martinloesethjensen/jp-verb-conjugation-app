@@ -50,6 +50,7 @@ struct TagPicker: View {
                             removeRow(TagPill(tag)) { customIDs?.wrappedValue.removeAll { $0 == tag.id } }
                         }
                     }
+                    .paperRow()
                 }
                 Section {
                     TextField("New tag…", text: $query)
@@ -63,8 +64,10 @@ struct TagPicker: View {
                         Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
                     }
                 }
+                .paperRow()
                 if trimmed.isEmpty { emptyFieldSections } else { suggestionSections }
             }
+            .paperBackground()
             .navigationTitle(applying ? "Tags" : "Add Tag")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -100,17 +103,20 @@ struct TagPicker: View {
         let ideas = related.filter { if case .dialect = $0 { true } else { false } }
         if !used.isEmpty {
             Section("Recently used") { ForEach(used, id: \.self) { suggestionRow($0) } }
+            .paperRow()
         }
         if !ideas.isEmpty {
             Section(appliedDialects.isEmpty ? "Dialects" : "Related dialects") {
                 ForEach(Array(ideas.prefix(12)), id: \.self) { suggestionRow($0) }
             }
+            .paperRow()
         }
         if used.isEmpty, ideas.isEmpty, !applying || (appliedDialects.isEmpty && appliedCustom.isEmpty) {
             Section {
                 Text("Type a dialect (kuma, osaka, 大阪弁) or any tag you like.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(.footnote).foregroundStyle(palette.muted)
             }
+            .paperRow()
         }
     }
 
@@ -121,17 +127,22 @@ struct TagPicker: View {
         )
         if !result.yours.isEmpty {
             Section("Already yours") { ForEach(result.yours, id: \.self) { suggestionRow($0) } }
+            .paperRow()
         }
         if !result.dialects.isEmpty {
             Section("Dialects") { ForEach(result.dialects, id: \.self) { suggestionRow($0) } }
+            .paperRow()
         }
         if !result.ideas.isEmpty {
             Section("Ideas") { ForEach(result.ideas, id: \.self) { suggestionRow($0) } }
+            .paperRow()
         }
         if result.isDuplicate {
-            Section { Label("Already exists", systemImage: "checkmark.circle").foregroundStyle(.secondary) }
+            Section { Label("Already exists", systemImage: "checkmark.circle").foregroundStyle(palette.muted) }
+            .paperRow()
         } else if !result.create.isEmpty {
             Section("Create “\(trimmed)”") { ForEach(result.create, id: \.self) { suggestionRow($0) } }
+            .paperRow()
         }
     }
 
@@ -164,10 +175,10 @@ struct TagPicker: View {
                     case .existingCustom(let tag): TagPill(tag)
                     case .dialect(let record):
                         Text(record.name).font(.body.weight(.semibold))
-                        Text(subtitle(record)).font(.caption).foregroundStyle(.secondary)
+                        Text(subtitle(record)).font(.caption).foregroundStyle(palette.muted)
                     case .prefecture(let prefecture):
                         Text(prefecture.name).font(.body.weight(.semibold))
-                        Text("Prefecture tag · \(prefecture.region.name)").font(.caption).foregroundStyle(.secondary)
+                        Text("Prefecture tag · \(prefecture.region.name)").font(.caption).foregroundStyle(palette.muted)
                     case .customIdea(let name, let color): TagPill(name, color: color.color, systemImage: "number")
                     case .createCustom(let name): Text("Tag “\(name)”").font(.body)
                     case .createDialect(let name, _): Text("Dialect tag “\(name)”…").font(.body)

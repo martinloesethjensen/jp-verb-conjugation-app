@@ -5,6 +5,7 @@ import WidgetKit
 /// The counter quiz: pick a thing's counter, or a counted form's reading. No timer, like the
 /// connection quiz. A wrong answer shows the pattern; the right reading can be heard.
 struct CounterQuizView: View {
+    @Environment(\.palette) private var palette
     @State private var model: CounterQuizModel
     @State private var confirmingQuit = false
     private let recorder: (QuizAttempt) -> Void
@@ -73,7 +74,7 @@ struct CounterQuizView: View {
                 if let symbol = question.symbol {
                     Image(systemName: symbol)
                         .font(.largeTitle)
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(palette.button)
                         .accessibilityHidden(true)
                 }
                 if question.kind == .counterAsk {
@@ -89,7 +90,7 @@ struct CounterQuizView: View {
                 }
                 Text(question.detail)
                     .italic()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(palette.muted)
             }
                 if question.kind == .counterReading, CounterNumber(key: question.formID)?.isExtended == true {
                     UnreviewedLabel()
@@ -131,7 +132,7 @@ struct CounterQuizView: View {
                 QuizMissedCard {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(question.prompt)  \(question.correct)").font(.headline)
-                        Text(question.explanation).font(.subheadline).foregroundStyle(.secondary)
+                        Text(question.explanation).font(.subheadline).foregroundStyle(palette.muted)
                     }
                 }
             }
