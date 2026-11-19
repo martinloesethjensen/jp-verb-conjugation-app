@@ -31,7 +31,13 @@
 - **Decided 2026-11-19 by the owner: step 8 PR 8.1 creates the file, schema and checks; step 7's PR 7E drops task E2 and its pull updates the existing file.**
 - **The disagreement that was — when the file first appears.** Step 7 decision 14 says "the file and its manifest entry appear only with the first pull that has a course; no feature PR creates `data/courses.json`", and its PR 7E (task E2) writes the schema and `update_data.py` checks "when present". This plan needs the file **before** any course exists: the app's empty state ("No courses yet … They arrive with a data update") and offline-first launch both need a bundled, signed file; without one the app can only show "Getting courses…" forever, and the sync can't tell "nothing published" from "not fetched". **Proposal:** PR 8.1 creates an empty `data/courses.json` (+ schema, checks, manifest entry, bundled copy) and takes over step 7's task E2; step 7's pull (E3) then updates an existing file. This answers step 7's own open question 5 ("Step 7 or 8 for the file?") as "the schema and checks move to step 8's first PR". The owner decides; if they keep step 7's order instead, PR 8.1 shrinks to the app side and the app shows "No courses yet" when the manifest has no `courses` entry (Task 2 handles both).
 
-## Open questions for the owner (boards' default in brackets; recommendation after)
+## Owner decisions (2026-11-19)
+
+- **courses.json timing:** "Empty file first, in PR 8.1". PR 8.1 adds the empty file, schema, checks, manifest entry and bundled copy, and takes over step 7's schema-and-checks task (PR 7E's task E2).
+- **The six open questions:** "Keep all six". The recommendations below stand.
+- **Building:** "Later, subagent-driven", except "build PR 8.1 in a separate session" now. PRs 8.2–8.6 wait until the owner says so.
+
+## Open questions for the owner (boards' default in brackets; recommendation after) — decided: all six kept
 
 1. Move My course out of the Grammar tab [stays; the Grammar tab's My course mode shows each lesson's grammar] — **keep the default.** The picker and lesson screens push from Settings › My course and from the Grammar tab's My course mode; a tab move can follow later without touching the model.
 2. "Practise this lesson": one mixed quiz, or the existing quizzes limited to the lesson [one button] — **one button that opens the existing quizzes limited to the lesson.** The app has five separate quiz models and screens (verb forms, particles, connections, counters, verb pairs), each with its own question type, results and history tags; a mixed quiz is a new quiz engine. The button builds the options the lesson supports (`LessonPractice`, Task 9): with one, it opens that quiz directly; with several, a small dialog lists them ("Verb forms · 3 verbs", "Particles · 2 grammar", "Counters · 1 counter"). A mixed quiz can come later on top of `LessonPractice`.
