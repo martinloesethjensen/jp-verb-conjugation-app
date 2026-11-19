@@ -1,7 +1,14 @@
 # `data/courses.json` — design
 
-Status: draft for build order step 8 of `2026-11-08-review-site-polish-design.md` (see its "App design
-(step 8)" note). Nothing here is built. `schema/courses.schema.json` will be written from this.
+Status: file, schema and checks built (step 8, PR 8.1); export pending (step 7). Written for build order
+step 8 of `2026-11-08-review-site-polish-design.md` (see its "App design (step 8)" note).
+
+As built (PR 8.1): `data/courses.json` starts empty (`"courses": []`, `"withdrawn": []`) and is required from
+now on, so a bundled, signed copy exists before any course does. `schema/courses.schema.json` is written from
+the Fields table, `check_courses` in `scripts/update_data.py` implements the Checks list (item ids are checked
+against the loaded verbs, words, grammar and counters, and example ids per file), and `make data` gives it a
+`courses` manifest entry and a bundled copy with a `courses.manifest.json` sidecar in
+`Packages/VerbKit/Sources/VerbKit/Resources/`. Step 7's export pull updates this existing file.
 
 ## Goal
 

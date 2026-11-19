@@ -10,7 +10,7 @@ import update_data
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = ROOT / "schema"
-NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms", "kanji")
+NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms", "kanji", "courses")
 
 
 def load_schema(name):
@@ -71,6 +71,38 @@ class SchemaTests(unittest.TestCase):
             with self.subTest(fixture["name"]):
                 problems = json_schema.validate(fixture["doc"], load_schema(fixture["dataset"]))
                 # Exactly one problem, so each fixture tests one rule (plan 3's Rust tests rely on that).
+                self.assertEqual(len(problems), 1, problems)
+                self.assertIn(fixture["error"], problems[0])
+
+
+class CoursesFixtureTests(unittest.TestCase):
+    def valid(self):
+        return json.loads((SCHEMA_DIR / "fixtures" / "courses" / "valid.json").read_text(encoding="utf-8"))
+
+    def problems(self, doc):
+        return json_schema.validate(doc, load_schema("courses"))
+
+    def test_the_valid_fixture_passes(self):
+        self.assertEqual(self.problems(self.valid()), [])
+
+    def test_an_id_of_five_characters_fails(self):
+        doc = self.valid()
+        doc["courses"][0]["id"] = "c7k2m"
+        self.assertEqual(len(self.problems(doc)), 1)
+
+    def test_a_role_of_admin_fails(self):
+        doc = self.valid()
+        doc["courses"][0]["author"]["role"] = "admin"
+        self.assertEqual(len(self.problems(doc)), 1)
+
+    def test_the_invalid_fixtures_are_rejected_for_the_stated_reason(self):
+        # Kept apart from fixtures/invalid.json, which the review site's Rust tests load for every dataset it
+        # serves; the review site does not serve courses yet.
+        fixtures = json.loads((SCHEMA_DIR / "fixtures" / "courses" / "invalid.json").read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(fixtures), 2)
+        for fixture in fixtures:
+            with self.subTest(fixture["name"]):
+                problems = self.problems(fixture["doc"])
                 self.assertEqual(len(problems), 1, problems)
                 self.assertIn(fixture["error"], problems[0])
 

@@ -54,6 +54,11 @@ It does nine things:
      match schema/kanji.schema.json and have an entry for every kanji the other files use. It gets a
      manifest entry and a bundled copy like the others. See
      docs/superpowers/specs/2026-11-07-kanji-stroke-order-design.md.
+ 12. Validates data/courses.json (courses written on the review site and exported; required, and empty
+     until the first course is approved): its schema, that every item id exists in the other files under
+     its kind, unique ids, that a followed textbook's lesson numbers are in range, and, against the
+     published copy, that no course is withdrawn and returns and no revision goes down. It gets a manifest
+     entry and a bundled copy like the others. See docs/superpowers/specs/2026-11-17-courses-data-design.md.
 
 Every manifest change must be re-signed (scripts/sign_manifest.py sign): the app
 refuses a manifest whose signature does not match its exact bytes. --ref TAG pins the
@@ -698,17 +703,145 @@ def check_verb_ids(verbs_doc):
     return problems
 
 
-def published_verbs_doc(ref=PUBLISHED_REF, repo=None):
-    """data/verbs.json as published at git `ref` (the last release on main), or None when git or
-    the ref is unavailable, for example a shallow clone that did not fetch main."""
+def published_data_doc(name, ref=PUBLISHED_REF, repo=None):
+    """data/<name>.json as published at git `ref` (the last release on main), or None when git or
+    the ref is unavailable, for example a shallow clone that did not fetch main, or the file is not there yet."""
     try:
         shown = subprocess.run(
-            ["git", "show", f"{ref}:data/verbs.json"], cwd=repo or Path(__file__).resolve().parent.parent,
+            ["git", "show", f"{ref}:data/{name}.json"], cwd=repo or Path(__file__).resolve().parent.parent,
             capture_output=True, text=True, check=True, timeout=30,
         ).stdout
         return json.loads(shown)
     except (OSError, subprocess.SubprocessError, ValueError):
         return None
+
+
+def published_verbs_doc(ref=PUBLISHED_REF, repo=None):
+    """data/verbs.json as published at git `ref`; see `published_data_doc`."""
+    return published_data_doc("verbs", ref, repo)
+
+
+def published_courses_doc(ref=PUBLISHED_REF, repo=None):
+    """data/courses.json as published at git `ref`; None until a release has it."""
+    return published_data_doc("courses", ref, repo)
+
+
+# --- Courses (courses.json) -------------------------------------------------
+# Spec: docs/superpowers/specs/2026-11-17-courses-data-design.md. A course holds ids of items in the same
+# release's other files; these checks are the ones the spec's "Checks" list names.
+
+COURSE_ITEM_KINDS = ("verb", "word", "grammar", "counter", "example")
+COURSE_EXAMPLE_FILES = ("verbs", "grammar", "counters")
+
+
+def course_item_ids(docs):
+    """The ids a course item can point at, from the loaded data documents (`verbs`, `words`, `grammar`,
+    `counters`): {kind: set of ids} and {file: set of example ids}."""
+    by_kind = {
+        "verb": {verb_id(v) for v in docs["verbs"]["verbs"]},
+        "word": {word_id(w) for w in docs["words"]["words"]},
+        "grammar": {p["id"] for p in docs["grammar"]["grammar"]},
+        "counter": {c["id"] for c in docs["counters"]["counters"]},
+    }
+    examples = {}
+    for name in COURSE_EXAMPLE_FILES:
+        examples[name] = {item["id"] for label, item in stable_ids.id_slots(name, docs[name])
+                          if " example " in label and "id" in item}
+    return by_kind, examples
+
+
+def check_course_lesson(where, lesson, by_kind, examples, follows, books):
+    problems = []
+    items = lesson.get("items") or []
+    if not items:
+        problems.append(f"{where}: has no items")
+    seen = set()
+    for item in items:
+        kind, item_id, within = item.get("kind"), item.get("id"), item.get("in")
+        shown = f"{kind} {item_id!r}" + (f" in {within}" if within else "")
+        key = (kind, within, item_id)
+        if key in seen:
+            problems.append(f"{where}: {shown} appears twice")
+        seen.add(key)
+        if kind == "example":
+            if within not in COURSE_EXAMPLE_FILES:
+                problems.append(f"{where}: {shown} needs `in` to be one of {', '.join(COURSE_EXAMPLE_FILES)}")
+            elif item_id not in examples[within]:
+                problems.append(f"{where}: {shown} is not an example id in {within}.json")
+        elif kind in by_kind:
+            if within is not None:
+                problems.append(f"{where}: {shown} has `in`, which only an example has")
+            if item_id not in by_kind[kind]:
+                problems.append(f"{where}: {shown} does not exist in the data")
+        else:
+            problems.append(f"{where}: {shown} has an unknown kind")
+    number = lesson.get("textbook_lesson")
+    if number is not None:
+        if follows is None:
+            problems.append(f"{where}: textbook_lesson {number} but the course does not follow a book")
+        elif follows in books:
+            book = books[follows]
+            first, last = book.get("first_lesson", 1), book["lessons"]
+            if not first <= number <= last:
+                problems.append(f"{where}: textbook_lesson {number} is outside {follows} lessons {first} to {last}")
+    return problems
+
+
+def check_courses(courses_doc, docs, books, published_doc):
+    """Problems with courses.json. `docs` holds the loaded `verbs`, `words`, `grammar` and `counters`
+    documents and `books` is grammar.json's `books`; `published_doc` is the published courses.json (None
+    skips the withdrawal and revision guards)."""
+    problems = []
+    by_kind, examples = course_item_ids(docs)
+    book_by_id = {book["id"]: book for book in books or []}
+    courses = courses_doc.get("courses") or []
+    withdrawn = courses_doc.get("withdrawn") or []
+
+    seen = set()
+    for course in courses:
+        if course["id"] in seen:
+            problems.append(f"course {course['id']}: id appears more than once")
+        seen.add(course["id"])
+    withdrawn_seen = set()
+    for course_id in withdrawn:
+        if course_id in withdrawn_seen:
+            problems.append(f"course {course_id}: id appears more than once in withdrawn")
+        withdrawn_seen.add(course_id)
+        if course_id in seen:
+            problems.append(f"course {course_id}: is both published and withdrawn")
+
+    for course in courses:
+        cid = course["id"]
+        lessons = course.get("lessons") or []
+        if not lessons:
+            problems.append(f"course {cid}: has no lessons")
+        follows = (course.get("follows") or {}).get("book")
+        if follows is not None and follows not in book_by_id:
+            problems.append(f"course {cid}: follows {follows!r}, which is not a book in grammar.json")
+        lesson_ids = set()
+        for lesson in lessons:
+            if lesson["id"] in lesson_ids:
+                problems.append(f"course {cid}: lesson id {lesson['id']} appears more than once")
+            lesson_ids.add(lesson["id"])
+            problems.extend(check_course_lesson(f"course {cid}, lesson {lesson['id']}", lesson,
+                                                by_kind, examples, follows, book_by_id))
+
+    if published_doc is not None:
+        now = {course["id"]: course for course in courses}
+        for course_id in published_doc.get("withdrawn") or []:
+            if course_id in now:
+                problems.append(f"course {course_id}: was withdrawn and cannot come back")
+            elif course_id not in withdrawn_seen:
+                problems.append(f"course {course_id}: was withdrawn and must stay in withdrawn")
+        for old in published_doc.get("courses") or []:
+            cid = old["id"]
+            if cid in now:
+                if now[cid]["revision"] < old["revision"]:
+                    problems.append(f"course {cid}: revision went down from {old['revision']} "
+                                    f"to {now[cid]['revision']}")
+            elif cid not in withdrawn_seen:
+                problems.append(f"course {cid}: was published and is gone; withdraw it instead")
+    return problems
 
 
 def check_published_ids(verbs_doc, published_doc):
@@ -1953,7 +2086,7 @@ def optional_entry(existing, name, data, forced_version, ref):
 def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, grammar_version=None,
                    furigana_bytes=None, furigana_version=None, ref=None, words_bytes=None, words_version=None,
                    counters_bytes=None, counters_version=None, forms_bytes=None, forms_version=None,
-                   kanji_bytes=None, kanji_version=None):
+                   kanji_bytes=None, kanji_version=None, courses_bytes=None, courses_version=None):
     """New manifest dict. A file's version is kept when its hash is
     unchanged, bumped (minor) when it changed, or forced by an explicit
     version. A grammar or furigana block that did not exist yet starts at
@@ -2032,6 +2165,8 @@ def build_manifest(existing, verbs_bytes, grammar_bytes, verbs_version=None, gra
         manifest["forms"] = optional_entry(existing, "forms", forms_bytes, forms_version, ref)
     if kanji_bytes is not None:
         manifest["kanji"] = optional_entry(existing, "kanji", kanji_bytes, kanji_version, ref)
+    if courses_bytes is not None:
+        manifest["courses"] = optional_entry(existing, "courses", courses_bytes, courses_version, ref)
     return manifest
 
 
@@ -2080,7 +2215,7 @@ def bundled_forms_manifest_path(bundled_forms_path):
 # One JSON Schema per published file (schema/README.md). They are checked against the files as they will be
 # written, so a generated field the schema doesn't know fails here rather than in a client.
 SCHEMA_DIR = Path(__file__).resolve().parent.parent / "schema"
-SCHEMA_NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms", "kanji")
+SCHEMA_NAMES = ("verbs", "words", "counters", "grammar", "furigana", "forms", "kanji", "courses")
 
 
 def schema_problems(name, doc, schema_dir=SCHEMA_DIR):
@@ -2098,14 +2233,16 @@ def check_schemas(docs, schema_dir=SCHEMA_DIR):
 def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigana_version=None,
         bundled_forms_path=None, ref=None, words_version=None, counters_version=None, published_verbs=None,
         forms_version=None, bundled_counters_path=None, bundled_data_dir=None, schema_dir=SCHEMA_DIR,
-        kanji_version=None):
+        kanji_version=None, courses_version=None, published_courses=None):
     """Returns (exit_code, messages). data/forms.json is always written and checked;
     `bundled_forms_path` is where the app's bundled copy (and forms.manifest.json beside it) is
     written and checked, and None leaves them alone; `bundled_counters_path` does the same for
     counters.json and counters.manifest.json, and `bundled_data_dir` for verbs, grammar, furigana and
     words (each `<name>.json` with `<name>.manifest.json`). `ref` pins the manifest entries
     to a release tag. `published_verbs` is the published verbs.json (see
-    `published_verbs_doc`) that no id may disappear from; None skips that check."""
+    `published_verbs_doc`) that no id may disappear from; None skips that check. `published_courses` is the
+    published courses.json (see `published_courses_doc`) that no course may be un-withdrawn or lose a
+    revision against; None skips those checks."""
     data_dir = Path(data_dir)
     verbs_path = data_dir / "verbs.json"
     grammar_path = data_dir / "grammar.json"
@@ -2232,8 +2369,28 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     kanji_path = data_dir / "kanji.json"
     kanji_bytes = kanji_path.read_bytes() if kanji_path.exists() else None
 
+    # data/courses.json is written by the review site's export and is required: empty until a first course is
+    # approved. Its schema is checked before its references, which index into the courses freely.
+    courses_path = data_dir / "courses.json"
+    if not courses_path.exists():
+        return 1, ["courses.json is missing"]
+    courses_bytes = courses_path.read_bytes()
+    try:
+        courses_doc = loads_without_duplicate_keys(courses_bytes.decode("utf-8"))
+    except ValueError as error:
+        return 1, [f"courses.json is invalid: {error}"]
+    problems = schema_problems("courses", courses_doc, schema_dir)
+    if problems:
+        return 1, capped("courses.json does not match schema/courses.schema.json:", problems)
+    problems = check_courses(courses_doc, {"verbs": verbs_doc, "words": words_doc or {"words": []},
+                                           "grammar": grammar_doc, "counters": counters_doc or {"counters": []}},
+                             grammar_doc.get("books"), published_courses)
+    if problems:
+        return 1, capped("courses.json is invalid:", problems)
+
     written = {"verbs": verbs_bytes, "words": words_bytes, "counters": counters_bytes, "grammar": grammar_bytes,
-               "furigana": furigana_bytes, "forms": forms_bytes, "kanji": kanji_bytes}
+               "furigana": furigana_bytes, "forms": forms_bytes, "kanji": kanji_bytes,
+               "courses": courses_bytes}
     for name in SCHEMA_NAMES:
         if written[name] is not None:
             problems = schema_problems(name, json.loads(written[name]), schema_dir)
@@ -2255,6 +2412,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
         counters_bytes=counters_bytes, counters_version=counters_version,
         forms_bytes=forms_bytes, forms_version=forms_version,
         kanji_bytes=kanji_bytes, kanji_version=kanji_version,
+        courses_bytes=courses_bytes, courses_version=courses_version,
     )
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
     # The bundled copy's entry: version and hash only (no ref), since the app never fetches it.
@@ -2291,7 +2449,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
     if bundled_data_dir is not None:
         entries = {"verbs": ({"version": manifest["version"], "sha256": manifest["sha256"]}, verbs_bytes)}
         for name, content in (("grammar", grammar_bytes), ("furigana", furigana_bytes), ("words", words_bytes),
-                              ("kanji", kanji_bytes)):
+                              ("kanji", kanji_bytes), ("courses", courses_bytes)):
             if name in manifest and content is not None:
                 entries[name] = ({"version": manifest[name]["version"], "sha256": manifest[name]["sha256"]}, content)
         for name, (entry, content) in entries.items():
@@ -2344,7 +2502,8 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
             + (f", words {manifest['words']['version']}" if "words" in manifest else "")
             + (f", counters {manifest['counters']['version']}" if "counters" in manifest else "")
             + f", forms {manifest['forms']['version']}"
-            + (f", kanji {manifest['kanji']['version']}" if "kanji" in manifest else "") + ")"
+            + (f", kanji {manifest['kanji']['version']}" if "kanji" in manifest else "")
+            + (f", courses {manifest['courses']['version']}" if "courses" in manifest else "") + ")"
         )
         messages.append("the manifest changed: re-sign it with scripts/sign_manifest.py sign")
     if not stale:
@@ -2362,24 +2521,27 @@ def main(argv=None):
     parser.add_argument("--words-version", help="force the words.json manifest version")
     parser.add_argument("--counters-version", help="force the counters.json manifest version")
     parser.add_argument("--forms-version", help="force the forms.json manifest version")
+    parser.add_argument("--courses-version", help="force the courses.json manifest version")
     parser.add_argument("--bundled-forms-path", default=str(DEFAULT_BUNDLED_FORMS_PATH),
                         help="where to write the app's bundled copy of data/forms.json")
     parser.add_argument("--bundled-counters-path", default=str(DEFAULT_BUNDLED_COUNTERS_PATH),
                         help="where to write the app's bundled copy of data/counters.json")
     parser.add_argument("--bundled-data-dir", default=str(DEFAULT_BUNDLED_DATA_DIR),
-                        help="where to write the app's bundled copies of verbs, grammar, furigana and words")
+                        help="where to write the app's bundled copies of verbs, grammar, furigana, words, kanji and courses")
     parser.add_argument("--ref", type=valid_ref, help="release tag the app fetches the data files from (see docs/security/data-signing.md)")
     parser.add_argument("--published-ref", default=PUBLISHED_REF,
                         help="git ref of the published data that no verb id may disappear from "
                              f"(default {PUBLISHED_REF}; '' skips the check; skipped if the ref is not available)")
     args = parser.parse_args(argv)
     published = published_verbs_doc(args.published_ref) if args.published_ref else None
+    published_courses = published_courses_doc(args.published_ref) if args.published_ref else None
     code, messages = run(args.data_dir, args.check, args.verbs_version, args.grammar_version,
                          args.furigana_version, bundled_forms_path=args.bundled_forms_path, ref=args.ref,
                          bundled_counters_path=args.bundled_counters_path,
                          bundled_data_dir=args.bundled_data_dir,
                          words_version=args.words_version, counters_version=args.counters_version,
-                         published_verbs=published, forms_version=args.forms_version)
+                         published_verbs=published, forms_version=args.forms_version,
+                         courses_version=args.courses_version, published_courses=published_courses)
     for line in messages:
         print(line)
     return code
