@@ -61,3 +61,24 @@ export function askedLine(
 /** The index `delta` steps from `from` in a list of `length`, wrapping round (arrow keys in a radiogroup). */
 export const stepIndex = (from: number, delta: number, length: number): number =>
 	length === 0 ? -1 : (((from + delta) % length) + length) % length;
+
+/** The pick list's value for "Neither". */
+export const NEITHER = 'neither';
+
+/** What the asked person sees: the form to answer, the "already decided" line, or only the status line. */
+export function cardMode(o: Pick<Opinion, 'mine_to_answer' | 'waiting' | 'answered_at' | 'cancelled_at'>): 'answer' | 'decided' | 'status' | 'none' {
+	if (o.cancelled_at) return 'none';
+	if (o.mine_to_answer && o.waiting) return 'answer';
+	if (o.mine_to_answer && !o.answered_at) return 'decided';
+	return o.waiting || o.answered_at ? 'status' : 'none';
+}
+
+/** The suggestions the asked person chooses between: the open ones that change the item (notes don't). */
+export const pickable = <T extends Pick<InboxSuggestion, 'status' | 'action'>>(suggestions: T[]): T[] =>
+	suggestions.filter((s) => s.status === 'open' && s.action !== 'note');
+
+/** Whether Send is enabled: a suggestion picked, or "Neither" with a reason. */
+export function canAnswer(pick: number | typeof NEITHER | null, body: string): boolean {
+	if (pick === null) return false;
+	return pick !== NEITHER || body.trim().length > 0;
+}
