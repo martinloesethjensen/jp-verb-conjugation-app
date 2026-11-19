@@ -1237,7 +1237,7 @@ impl SqliteStore {
         let tx = conn.transaction().map_err(backend)?;
         let stored: Vec<CourseItemRow> = query(&tx, SELECT_COURSE_ITEMS, params![course_id])?;
         let keys = keys_to_check(lessons, &stored);
-        let found: Vec<KeyRow> = query(&tx, SELECT_LOADED_KEYS, params![json_list(&keys)])?;
+        let found: Vec<KeyRow> = query(&tx, SELECT_LOADED_KEYS, params![targets_json(&keys)])?;
         let loaded: BTreeSet<String> = found.into_iter().map(|r| r.key).collect();
         let known: Vec<LessonRow> = query(&tx, SELECT_LESSONS, params![course_id])?;
         let known: BTreeSet<String> = known.into_iter().map(|l| l.id).collect();
@@ -1266,36 +1266,13 @@ impl SqliteStore {
             .map_err(backend)?;
         tx.execute(DELETE_COURSE_LESSONS, params![course_id])
             .map_err(backend)?;
-        for l in &plan {
-            tx.execute(
-                INSERT_LESSON,
-                params![
-                    course_id,
-                    l.id,
-                    l.position,
-                    l.title,
-                    l.goal,
-                    l.note,
-                    l.textbook_lesson
-                ],
-            )
-            .map_err(backend)?;
-            for i in &l.items {
-                let t = &i.target;
-                tx.execute(
-                    INSERT_COURSE_ITEM,
-                    params![
-                        course_id,
-                        l.id,
-                        i.position,
-                        t.dataset,
-                        t.kind,
-                        t.item_id,
-                        i.proposal_id
-                    ],
-                )
+        if !plan.is_empty() {
+            tx.execute(INSERT_LESSONS, params![course_id, lessons_json(&plan)])
                 .map_err(backend)?;
-            }
+        }
+        for chunk in item_chunks_json(&plan) {
+            tx.execute(INSERT_COURSE_ITEMS, params![course_id, chunk])
+                .map_err(backend)?;
         }
         let n = tx
             .execute(TOUCH_COURSE, params![course_id, now])
@@ -1453,6 +1430,12 @@ impl CourseStore for SqliteStore {
         self.write_outline(course_id, Some(meta), lessons, by, now)
     }
 
+    async fn loaded_targets(&self, targets: &[Target]) -> Result<Vec<Target>, CourseError> {
+        let conn = self.conn.borrow();
+        let found: Vec<KeyRow> = query(&conn, SELECT_LOADED_KEYS, params![targets_json(targets)])?;
+        Ok(loaded_subset(targets, &found))
+    }
+
     async fn delete_draft(&self, id: &str, by: &str, now: &str) -> Result<(), CourseError> {
         let (status, exported) = self.course_status(id)?;
         if status != "draft" || exported.is_some() {
@@ -1464,10 +1447,11 @@ impl CourseStore for SqliteStore {
             DELETE_DRAFT_ITEMS,
             DELETE_DRAFT_LESSONS,
             DELETE_DRAFT_COMMENTS,
-            DELETE_DRAFT,
         ] {
             tx.execute(sql, params![id]).map_err(backend)?;
         }
+        let n = tx.execute(DELETE_DRAFT, params![id]).map_err(backend)?;
+        require_written(n, CourseError::NotDraft)?; // dropping `tx` rolls the guarded no-ops back
         tx.execute(
             INSERT_COURSE_DELETE_AUDIT,
             params![now, by, "course.delete", audit_target(id), "", id],

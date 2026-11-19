@@ -235,7 +235,11 @@ async fn search_filters_by_kind_and_limits() {
         assert_eq!(item["course_kind"], "grammar");
     }
     let examples = search(&s, "a", "example").await;
-    assert!(examples.body["items"].as_array().unwrap().len() <= 40);
+    assert_eq!(
+        examples.body["items"].as_array().unwrap().len(),
+        40,
+        "capped at 40"
+    );
     assert_eq!(search(&s, "x", "nonsense").await.status, 400);
     assert_eq!(get(&s, "/api/course/search", AIKO).await.status, 400);
     assert_eq!(search(&s, "  ", "").await.body["items"], json!([]));
@@ -350,6 +354,7 @@ async fn a_copy_needs_an_approved_course_and_credits_its_author() {
     assert_eq!(r.status, 201, "{}", r.body);
     let id = r.body["id"].as_str().unwrap();
     assert_ne!(id, source);
+    assert_eq!(r.body["dropped"], 1, "the item that left the data");
     let c = course(&s, id, BEN).await.body;
     assert_eq!(c["status"], "draft");
     assert_eq!(c["title"], "Mine");
@@ -497,4 +502,30 @@ async fn an_approved_course_being_edited_can_still_be_copied() {
     assert_eq!(r.status, 201, "{}", r.body);
     assert_eq!(r.body["title"], "Shipped");
     assert_eq!(r.body["copied_from"]["title"], "Shipped");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_copy_keeps_the_textbook_link_and_credits_a_missing_author_as_native() {
+    let s = seeded().await;
+    let id = create(&s, AIKO).await;
+    let snapshot = json!({"id": id, "title": "Genki II", "summary": "", "levels": [],
+        "follows": {"book": "genki-2"},
+        "lessons": [{"id": "abcdef", "title": "L13", "goal": "g", "note": "", "textbook_lesson": 13, "items": []},
+                    {"id": "ghijkl", "title": "L14", "goal": "g", "note": "", "textbook_lesson": 14, "items": []}]});
+    s.execute(&format!(
+        "UPDATE courses SET status = 'approved', approved_json = '{snapshot}', author = 'gone@example.com' WHERE id = '{id}'"
+    ));
+    let r = post(
+        &s,
+        "/api/course/create",
+        json!({"start": "copy", "title": "Mine", "from": id}),
+        BEN,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    assert_eq!(r.body["dropped"], 0);
+    assert_eq!(r.body["follows_book"], "genki-2");
+    assert_eq!(r.body["lessons"][0]["textbook_lesson"], 13);
+    assert_eq!(r.body["lessons"][1]["textbook_lesson"], 14);
+    assert_eq!(r.body["copied_from"]["author"], json!({"role": "native"}));
 }

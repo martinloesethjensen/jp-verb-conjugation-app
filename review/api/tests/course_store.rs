@@ -340,8 +340,94 @@ async fn search_finds_loaded_items_by_kind() {
         .await
         .unwrap()
         .is_empty());
-    assert!(s.search_items(&[title], &[], 1).await.unwrap().len() <= 1);
-    let _ = w;
+    // Title and subtitle both fold case.
+    let subtitle: String = s
+        .conn
+        .borrow()
+        .query_row(
+            "SELECT subtitle FROM items WHERE dataset = 'words' AND kind = 'entry' AND item_id = ?1",
+            [&w.item_id],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert!(
+        subtitle.chars().any(|c| c.is_ascii_alphabetic()),
+        "{subtitle}"
+    );
+    let shouted = subtitle.to_ascii_uppercase();
+    let by_subtitle = s.search_items(&[shouted], &[], 1000).await.unwrap();
+    assert!(
+        by_subtitle.iter().any(|h| h.item_id == w.item_id),
+        "subtitle, upper-cased"
+    );
+    let title_case: String = s
+        .conn
+        .borrow()
+        .query_row(
+            "SELECT title FROM items WHERE dataset = 'words' AND kind = 'entry' AND item_id = ?1",
+            [&w.item_id],
+            |r| r.get(0),
+        )
+        .unwrap();
+    if title_case.chars().any(|c| c.is_ascii_alphabetic()) {
+        let q = title_case.to_ascii_uppercase();
+        let hits = s.search_items(&[q], &[], 1000).await.unwrap();
+        assert!(
+            hits.iter().any(|h| h.item_id == w.item_id),
+            "title, upper-cased"
+        );
+    }
+    assert_eq!(
+        s.search_items(&[title], &[], 1).await.unwrap().len(),
+        1,
+        "limit"
+    );
+}
+
+#[tokio::test]
+async fn loaded_targets_answers_in_one_query() {
+    let (s, v, w) = setup().await;
+    let ghost = Target {
+        item_id: "nowhere".into(),
+        ..v[0].clone()
+    };
+    let asked = vec![v[0].clone(), ghost, w.clone(), v[0].clone()];
+    let got = s.loaded_targets(&asked).await.unwrap();
+    assert_eq!(got.len(), 2, "{got:?}");
+    assert!(got.contains(&v[0]) && got.contains(&w));
+    assert!(s.loaded_targets(&[]).await.unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn a_big_outline_saves_in_bulk_with_its_order() {
+    let (s, v, w) = setup().await;
+    let id = new_course(&s).await;
+    let lessons: Vec<LessonInput> = (0..40)
+        .map(|n| lesson(None, &format!("L{n}"), vec![v[n % 3].clone(), w.clone()]))
+        .collect();
+    let ids = s.save_lessons(&id, &lessons, AIKO, T1).await.unwrap();
+    assert_eq!(ids.len(), 40);
+    let c = s.course(&id, AIKO).await.unwrap().unwrap();
+    assert_eq!(c.lessons.len(), 40);
+    for (n, l) in c.lessons.iter().enumerate() {
+        assert_eq!(l.title, format!("L{n}"));
+        assert_eq!(l.id, ids[n]);
+        assert_eq!(l.items[0].item_id, v[n % 3].item_id);
+        assert_eq!(l.items[1].item_id, w.item_id);
+    }
+}
+
+#[test]
+fn a_raced_delete_changes_nothing_and_says_so() {
+    let s = SqliteStore::new();
+    s.execute("INSERT INTO users (email, display_name, role, active, created_at) VALUES ('a@x.y','A','reviewer',1,'t')");
+    s.execute("INSERT INTO courses (id, title, author, status, created_at, updated_at) VALUES ('abcdef','T','a@x.y','approved','t','t')");
+    let n = s.conn.borrow().execute(DELETE_DRAFT, ["abcdef"]).unwrap();
+    assert_eq!(n, 0);
+    assert_eq!(
+        require_written(n, CourseError::NotDraft),
+        Err(CourseError::NotDraft)
+    );
 }
 
 #[test]

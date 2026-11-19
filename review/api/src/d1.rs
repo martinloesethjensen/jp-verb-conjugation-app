@@ -1216,12 +1216,7 @@ impl ReviewStore for D1Store {
 use crate::course_store::*;
 use std::collections::BTreeSet;
 
-fn maybe_number(v: Option<i64>) -> JsValue {
-    v.map(number).unwrap_or(JsValue::NULL)
-}
-
 impl D1Store {
-    /// `(status, exported_at)` of a course, or `NotFound`.
     /// The outline write behind `save_lessons` and `save_outline`: one batch, so the meta (when given) and
     /// the lessons are all written or none are.
     async fn write_outline(
@@ -1238,7 +1233,7 @@ impl D1Store {
         let stored: Vec<CourseItemRow> = self.rows(SELECT_COURSE_ITEMS, &[text(course_id)]).await?;
         let keys = keys_to_check(lessons, &stored);
         let found: Vec<KeyRow> = self
-            .rows(SELECT_LOADED_KEYS, &[text(&json_list(&keys))])
+            .rows(SELECT_LOADED_KEYS, &[text(&targets_json(&keys))])
             .await?;
         let loaded: BTreeSet<String> = found.into_iter().map(|r| r.key).collect();
         let known: Vec<LessonRow> = self.rows(SELECT_LESSONS, &[text(course_id)]).await?;
@@ -1270,34 +1265,14 @@ impl D1Store {
             self.statement(DELETE_COURSE_ITEMS, &[text(course_id)])?,
             self.statement(DELETE_COURSE_LESSONS, &[text(course_id)])?,
         ]);
-        for l in &plan {
+        if !plan.is_empty() {
             batch.push(self.statement(
-                INSERT_LESSON,
-                &[
-                    text(course_id),
-                    text(&l.id),
-                    number(l.position),
-                    text(&l.title),
-                    text(&l.goal),
-                    text(&l.note),
-                    maybe_number(l.textbook_lesson),
-                ],
+                INSERT_LESSONS,
+                &[text(course_id), text(&lessons_json(&plan))],
             )?);
-            for i in &l.items {
-                let t = &i.target;
-                batch.push(self.statement(
-                    INSERT_COURSE_ITEM,
-                    &[
-                        text(course_id),
-                        text(&l.id),
-                        number(i.position),
-                        text(&t.dataset),
-                        text(&t.kind),
-                        text(&t.item_id),
-                        maybe_number(i.proposal_id),
-                    ],
-                )?);
-            }
+        }
+        for chunk in item_chunks_json(&plan) {
+            batch.push(self.statement(INSERT_COURSE_ITEMS, &[text(course_id), text(&chunk)])?);
         }
         batch.push(self.statement(TOUCH_COURSE, &[text(course_id), text(now)])?);
         let items: usize = plan.iter().map(|l| l.items.len()).sum();
@@ -1313,6 +1288,7 @@ impl D1Store {
         Ok(plan.into_iter().map(|l| l.id).collect())
     }
 
+    /// `(status, exported_at)` of a course, or `NotFound`.
     async fn course_status(&self, id: &str) -> Result<(String, Option<String>), CourseError> {
         let mut rows: Vec<CourseRow> = self.rows(SELECT_COURSE, &[text(""), text(id)]).await?;
         rows.pop()
@@ -1445,6 +1421,13 @@ impl CourseStore for D1Store {
             .await
     }
 
+    async fn loaded_targets(&self, targets: &[Target]) -> Result<Vec<Target>, CourseError> {
+        let found: Vec<KeyRow> = self
+            .rows(SELECT_LOADED_KEYS, &[text(&targets_json(targets))])
+            .await?;
+        Ok(loaded_subset(targets, &found))
+    }
+
     async fn delete_draft(&self, id: &str, by: &str, now: &str) -> Result<(), CourseError> {
         let (status, exported) = self.course_status(id).await?;
         if status != "draft" || exported.is_some() {
@@ -1470,8 +1453,8 @@ impl CourseStore for D1Store {
                 text(id),
             ],
         )?);
-        self.db.batch(batch).await.map_err(backend)?;
-        Ok(())
+        let results = self.db.batch(batch).await.map_err(backend)?;
+        require_written(changes(results.get(3)), CourseError::NotDraft)
     }
 
     async fn set_status(

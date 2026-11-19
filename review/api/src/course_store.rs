@@ -396,17 +396,72 @@ fn stored_key(lesson: &str, t: &Target) -> String {
 
 /// The keys the backend must check against `items`: every item that isn't already in that lesson of the
 /// stored course.
-pub fn keys_to_check(inputs: &[LessonInput], stored: &[CourseItemRow]) -> Vec<String> {
+pub fn keys_to_check(inputs: &[LessonInput], stored: &[CourseItemRow]) -> Vec<Target> {
     let kept = kept_set(stored);
-    let mut keys = BTreeSet::new();
+    let mut seen = BTreeSet::new();
+    let mut targets = Vec::new();
     for l in inputs {
         for t in &l.items {
-            if !kept.contains(&stored_key(l.id.as_deref().unwrap_or(""), t)) {
-                keys.insert(item_key(t));
+            if !kept.contains(&stored_key(l.id.as_deref().unwrap_or(""), t))
+                && seen.insert(item_key(t))
+            {
+                targets.push(t.clone());
             }
         }
     }
-    keys.into_iter().collect()
+    targets
+}
+
+/// ?1 of `SELECT_LOADED_KEYS`: the targets as a JSON array of `{d, k, i}` (dataset, kind, item id).
+pub fn targets_json(targets: &[Target]) -> String {
+    let rows: Vec<Value> = targets
+        .iter()
+        .map(|t| serde_json::json!({ "d": t.dataset, "k": t.kind, "i": t.item_id }))
+        .collect();
+    Value::Array(rows).to_string()
+}
+
+/// The `targets` whose `item_key` is among the found `keys`, each once.
+pub fn loaded_subset(targets: &[Target], keys: &[KeyRow]) -> Vec<Target> {
+    let found: BTreeSet<&str> = keys.iter().map(|k| k.key.as_str()).collect();
+    let mut seen = BTreeSet::new();
+    targets
+        .iter()
+        .filter(|t| found.contains(item_key(t).as_str()) && seen.insert(item_key(t)))
+        .cloned()
+        .collect()
+}
+
+/// How many rows one bulk item insert carries.
+pub const ITEM_CHUNK: usize = 250;
+
+/// ?2 of `INSERT_LESSONS`: the planned lessons as a JSON array.
+pub fn lessons_json(plan: &[PlannedLesson]) -> String {
+    let rows: Vec<Value> = plan
+        .iter()
+        .map(|l| {
+            serde_json::json!({ "id": l.id, "position": l.position, "title": l.title, "goal": l.goal,
+                "note": l.note, "textbook_lesson": l.textbook_lesson })
+        })
+        .collect();
+    Value::Array(rows).to_string()
+}
+
+/// ?2 of `INSERT_COURSE_ITEMS`, in chunks of `ITEM_CHUNK` rows so a statement stays small.
+pub fn item_chunks_json(plan: &[PlannedLesson]) -> Vec<String> {
+    let rows: Vec<Value> = plan
+        .iter()
+        .flat_map(|l| {
+            l.items.iter().map(move |i| {
+                serde_json::json!({ "lesson_id": l.id, "position": i.position,
+                    "dataset": i.target.dataset, "kind": i.target.kind, "item_id": i.target.item_id,
+                    "proposal_id": i.proposal_id })
+            })
+        })
+        .collect();
+    rows.chunks(ITEM_CHUNK)
+        .map(|c| Value::Array(c.to_vec()).to_string())
+        .collect()
 }
 
 fn kept_set(stored: &[CourseItemRow]) -> BTreeSet<String> {
@@ -573,9 +628,12 @@ pub const SELECT_COURSES: &str =
      (c.approved_json IS NOT NULL) AS approved, c.updated_at \
      FROM courses c LEFT JOIN users u ON u.email = c.author ORDER BY c.updated_at DESC, c.id";
 
-/// ?1 JSON array of keys (`item_key`): those that are loaded items.
-pub const SELECT_LOADED_KEYS: &str = "SELECT dataset || char(31) || kind || char(31) || item_id AS key FROM items \
-     WHERE (dataset || char(31) || kind || char(31) || item_id) IN (SELECT value FROM json_each(?1))";
+/// ?1 `targets_json`: those that are loaded items, as `item_key`s. Joins on the three key columns so the
+/// `items` primary key is used.
+pub const SELECT_LOADED_KEYS: &str =
+    "SELECT i.dataset || char(31) || i.kind || char(31) || i.item_id AS key \
+     FROM json_each(?1) j JOIN items i ON i.dataset = json_extract(j.value, '$.d') \
+     AND i.kind = json_extract(j.value, '$.k') AND i.item_id = json_extract(j.value, '$.i')";
 
 /// ?1 JSON array of search texts, ?2 JSON array of `dataset/kind` pairs, ?3 limit: loaded items whose
 /// title or subtitle contains any text, ignoring ASCII case.
@@ -620,16 +678,20 @@ pub const DELETE_COURSE_ITEMS: &str =
 pub const DELETE_COURSE_LESSONS: &str =
     when_draft!("DELETE FROM course_lessons WHERE course_id = ?1 AND");
 
-/// ?1 course, ?2 lesson id, ?3 position, ?4 title, ?5 goal, ?6 note, ?7 textbook lesson.
-pub const INSERT_LESSON: &str = when_draft!(
+/// ?1 course, ?2 `lessons_json`: the whole outline's lessons in one statement.
+pub const INSERT_LESSONS: &str = when_draft!(
     "INSERT INTO course_lessons (course_id, id, position, title, goal, note, textbook_lesson) \
-     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7 WHERE"
+     SELECT ?1, json_extract(value, '$.id'), json_extract(value, '$.position'), json_extract(value, '$.title'), \
+     json_extract(value, '$.goal'), json_extract(value, '$.note'), json_extract(value, '$.textbook_lesson') \
+     FROM json_each(?2) WHERE"
 );
 
-/// ?1 course, ?2 lesson id, ?3 position, ?4 dataset, ?5 kind, ?6 item id, ?7 proposal id.
-pub const INSERT_COURSE_ITEM: &str = when_draft!(
+/// ?1 course, ?2 one chunk of `item_chunks_json`.
+pub const INSERT_COURSE_ITEMS: &str = when_draft!(
     "INSERT INTO course_items (course_id, lesson_id, position, dataset, kind, item_id, proposal_id) \
-     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7 WHERE"
+     SELECT ?1, json_extract(value, '$.lesson_id'), json_extract(value, '$.position'), json_extract(value, '$.dataset'), \
+     json_extract(value, '$.kind'), json_extract(value, '$.item_id'), json_extract(value, '$.proposal_id') \
+     FROM json_each(?2) WHERE"
 );
 
 /// ?1 id, ?2 from, ?3 to, ?4 now, ?5 1 to record "nothing is copied from a textbook" (`own_words_at`).
@@ -711,6 +773,9 @@ pub trait CourseStore {
         by: &str,
         now: &str,
     ) -> Result<Vec<String>, CourseError>;
+
+    /// Which of `targets` are loaded items, in one query.
+    async fn loaded_targets(&self, targets: &[Target]) -> Result<Vec<Target>, CourseError>;
 
     /// Deletes a never-exported draft with its lessons, items and comments. Audit `course.delete`.
     async fn delete_draft(&self, id: &str, by: &str, now: &str) -> Result<(), CourseError>;

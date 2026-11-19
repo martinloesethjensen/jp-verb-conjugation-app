@@ -5,7 +5,7 @@
 use crate::app::{error, parse, ApiResponse};
 use crate::auth::Principal;
 use crate::course_store::{
-    course_kind, kind_targets, Course, CourseError, CourseMeta, CourseStore, LessonInput,
+    course_kind, item_key, kind_targets, Course, CourseError, CourseMeta, CourseStore, LessonInput,
     NewCourse, COURSE_KINDS,
 };
 use crate::review_routes::{ok, text_field, tri, unavailable};
@@ -152,7 +152,13 @@ pub async fn create<S: Store + ReviewStore + CourseStore>(
                 .map_err(course_error))
         }
         "textbook" => tri!(start_textbook(&body, by, store, now).await),
-        "copy" => tri!(start_copy(&body, by, store, now).await),
+        "copy" => {
+            let (id, dropped) = tri!(start_copy(&body, by, store, now).await);
+            let course = tri!(visible_course(store, &id, by).await);
+            let mut body = json!(course);
+            body["dropped"] = json!(dropped);
+            return ok(201, body);
+        }
         _ => return error(400, "start must be scratch, textbook or copy"),
     };
     let course = tri!(visible_course(store, &course, by).await);
@@ -217,7 +223,7 @@ async fn start_copy<S: Store + ReviewStore + CourseStore>(
     by: &Principal,
     store: &S,
     now: &str,
-) -> Result<String, ApiResponse> {
+) -> Result<(String, usize), ApiResponse> {
     let from = required(body.from.clone(), "the course to copy")?;
     // A course with an approved version can be copied by anyone, whatever state its current edits are in;
     // only that approved version is read.
@@ -235,7 +241,7 @@ async fn start_copy<S: Store + ReviewStore + CourseStore>(
         .to_string();
     let credit = store.user(&source.author).await.map_err(unavailable)?;
     let mut author =
-        json!({ "role": credit.as_ref().map_or("reviewer", |u| u.public_role.as_str()) });
+        json!({ "role": credit.as_ref().map_or("native", |u| u.public_role.as_str()) });
     if let Some(name) = credit.as_ref().and_then(|u| u.public_name.as_deref()) {
         author["name"] = json!(name);
     }
@@ -247,22 +253,32 @@ async fn start_copy<S: Store + ReviewStore + CourseStore>(
     let new = NewCourse {
         title,
         summary: approved["summary"].as_str().unwrap_or("").to_string(),
-        follows_book: approved["follows"].as_str().map(String::from),
+        follows_book: approved["follows"]["book"].as_str().map(String::from),
         copied_from: Some(json!({ "title": source_title, "author": author })),
     };
     let id = store
         .create_course(&new, &by.email, now)
         .await
         .map_err(course_error)?;
+    // One lookup for every item; those no longer loaded are dropped from the copy.
+    let wanted: Vec<Vec<Target>> = approved["lessons"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .flat_map(|l| l["items"].as_array().into_iter().flatten())
+        .map(snapshot_targets)
+        .collect();
+    let all: Vec<Target> = wanted.iter().flatten().cloned().collect();
+    let loaded = store.loaded_targets(&all).await.map_err(course_error)?;
+    let loaded: BTreeSet<String> = loaded.iter().map(item_key).collect();
+    let mut dropped = 0;
     let mut lessons = Vec::new();
     for lesson in approved["lessons"].as_array().into_iter().flatten() {
         let mut items = Vec::new();
         for item in lesson["items"].as_array().into_iter().flatten() {
-            for target in snapshot_targets(item) {
-                // An item that has since left the loaded data can't be saved; the copy drops it.
-                if let Ok(Some(_)) = store.current_hash(&target).await {
-                    items.push(target);
-                }
+            match snapshot_targets(item).into_iter().next() {
+                Some(target) if loaded.contains(&item_key(&target)) => items.push(target),
+                _ => dropped += 1,
             }
         }
         lessons.push(LessonInput {
@@ -281,7 +297,7 @@ async fn start_copy<S: Store + ReviewStore + CourseStore>(
             return Err(course_error(e));
         }
     }
-    Ok(id)
+    Ok((id, dropped))
 }
 
 fn text_of(value: &Value, key: &str) -> String {
