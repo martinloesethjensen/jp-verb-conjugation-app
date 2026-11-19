@@ -6,7 +6,7 @@
 
 **Architecture:** `data/courses.json` becomes the eighth signed, bundled, synced data file, with its own concrete `CoursesSyncService` and a `CourseCatalogueStore` (VerbKit, UI-free). My course (`MyCourse`, already "edits over a linked lesson") grows from grammar ids to typed `ItemRef`s and from textbook links to textbook *or* course links, with done marks and the last-seen copy of each started course kept in the same on-device JSON. The App gets the picker, overview, start sheet, lesson screen, update and withdrawal surfaces, built from the existing paper components.
 
-**Tech Stack:** Swift 6 / SwiftUI (iOS 26), SwiftData, Swift Testing in `Packages/VerbKit`, Python 3 stdlib tooling in `scripts/`, JSON Schema in `schema/`.
+**Tech Stack:** Swift 6 / SwiftUI (iOS 26), SwiftData, XCTest in `Packages/VerbKit`, Python 3 stdlib tooling in `scripts/`, JSON Schema in `schema/`.
 
 **Spec:** `docs/superpowers/specs/2026-11-08-review-site-polish-design.md` § Courses › "App design (step 8)" (approved 2026-11-17), with the file format in `docs/superpowers/specs/2026-11-17-courses-data-design.md`. Boards: canvas section "Courses in the app (iOS)" (`App…` boards). Read `AGENTS.md` before any task.
 
@@ -28,7 +28,8 @@
 
 - **Shape agrees.** Step 7's approval snapshot is `{id, title, summary, levels, copied_from, follows, lessons:[{id,title,goal,note,textbook_lesson,items:[{kind,id,in?}]}]}`; its pull adds `revision`, `since`, `author` and `withdrawn`. That is the data draft's shape exactly. Item kinds map one-to-one (`example` with `in` = `verbs | grammar | counters`). `levels` is computed from items, which the app only reads.
 - **Ids agree.** Course and lesson ids are 6 characters from a subset of `[a-z0-9]`, never reused; reordering keeps lesson ids; a copy gets fresh ids. The schema pattern `^[a-z0-9]{6}$` covers both.
-- **One disagreement — when the file first appears.** Step 7 decision 14 says "the file and its manifest entry appear only with the first pull that has a course; no feature PR creates `data/courses.json`", and its PR 7E (task E2) writes the schema and `update_data.py` checks "when present". This plan needs the file **before** any course exists: the app's empty state ("No courses yet … They arrive with a data update") and offline-first launch both need a bundled, signed file; without one the app can only show "Getting courses…" forever, and the sync can't tell "nothing published" from "not fetched". **Proposal:** PR 8.1 creates an empty `data/courses.json` (+ schema, checks, manifest entry, bundled copy) and takes over step 7's task E2; step 7's pull (E3) then updates an existing file. This answers step 7's own open question 5 ("Step 7 or 8 for the file?") as "the schema and checks move to step 8's first PR". The owner decides; if they keep step 7's order instead, PR 8.1 shrinks to the app side and the app shows "No courses yet" when the manifest has no `courses` entry (Task 2 handles both).
+- **Decided 2026-11-19 by the owner: step 8 PR 8.1 creates the file, schema and checks; step 7's PR 7E drops task E2 and its pull updates the existing file.**
+- **The disagreement that was — when the file first appears.** Step 7 decision 14 says "the file and its manifest entry appear only with the first pull that has a course; no feature PR creates `data/courses.json`", and its PR 7E (task E2) writes the schema and `update_data.py` checks "when present". This plan needs the file **before** any course exists: the app's empty state ("No courses yet … They arrive with a data update") and offline-first launch both need a bundled, signed file; without one the app can only show "Getting courses…" forever, and the sync can't tell "nothing published" from "not fetched". **Proposal:** PR 8.1 creates an empty `data/courses.json` (+ schema, checks, manifest entry, bundled copy) and takes over step 7's task E2; step 7's pull (E3) then updates an existing file. This answers step 7's own open question 5 ("Step 7 or 8 for the file?") as "the schema and checks move to step 8's first PR". The owner decides; if they keep step 7's order instead, PR 8.1 shrinks to the app side and the app shows "No courses yet" when the manifest has no `courses` entry (Task 2 handles both).
 
 ## Open questions for the owner (boards' default in brackets; recommendation after)
 
@@ -74,7 +75,7 @@ Each PR builds, passes its tests and is reviewed on its own. 8.1 is a data PR (u
 
 **Files:**
 - Create: `data/courses.json`, `schema/courses.schema.json`, `schema/fixtures/courses/` (valid and invalid fixtures, following the existing fixture layout), `docs/superpowers/specs/2026-11-17-courses-data-design.md` (status line and "As built" note only)
-- Modify: `scripts/update_data.py` (docstring item 12, `build_manifest`, bundle writing), `scripts/test_update_data.py`, `scripts/test_schemas.py`, `schema/README.md`
+- Modify: `scripts/update_data.py` (docstring item 12, `build_manifest`, bundle writing), `scripts/test_update_data.py`, `scripts/test_schemas.py`, `schema/README.md`, `Packages/VerbKit/Package.swift` (`.copy("Resources/courses.json"), .copy("Resources/courses.manifest.json")`)
 - Generated by `make data`: `data/manifest.json`, `Packages/VerbKit/Sources/VerbKit/Resources/courses.json`, `…/Resources/courses.manifest.json`
 
 **Interfaces:**
@@ -180,7 +181,7 @@ Each PR builds, passes its tests and is reviewed on its own. 8.1 is a data PR (u
 **Files:**
 - Modify: `Packages/VerbKit/Sources/VerbKit/Courses/MyCourse.swift`, `…/Courses/CourseStore.swift`
 - Create: `…/Courses/KnownItems.swift`, `…/Courses/CourseContext.swift`
-- Test: `…/Tests/VerbKitTests/MyCourseTests.swift` (update), `MyCourseMigrationTests.swift` (new), fixture `…/Tests/VerbKitTests/Fixtures/myCourse-v1.json` (copy today's encoding: two Genki lessons, one renamed, one with `added`, `removed` and `order`, a custom lesson, one `removedBaseLessons` key)
+- Test: `…/Tests/VerbKitTests/MyCourseTests.swift` (update), `MyCourseMigrationTests.swift` (new), fixture `…/Tests/VerbKitTests/Fixtures/myCourse-v1.json` (listed in the test target's `resources` in `Package.swift`; copy today's encoding: two Genki lessons, one renamed, one with `added`, `removed` and `order`, a custom lesson, one `removedBaseLessons` key)
 
 **Interfaces:**
 - Produces:
