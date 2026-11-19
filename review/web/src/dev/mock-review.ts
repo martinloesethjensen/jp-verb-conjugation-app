@@ -655,7 +655,7 @@ export function reviewMock(ctx: ReviewContext) {
 			if (!canAsk) return [403, { error: "this account can't do that" }];
 			const t = targetOf(body);
 			const question = String(body.question ?? '').trim();
-			if (!question) return [400, { error: "the question can't be empty" }];
+			if (question.length > 2000) return [400, { error: 'the question is too long' }];
 			const current = find(t);
 			if (!current) return [404, { error: NOT_LOADED }];
 			const open = openOn(t);
