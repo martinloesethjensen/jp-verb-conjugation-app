@@ -65,3 +65,9 @@ test('everyone else sees the status line only', () => {
 	expect(answered).toContain("Yumi picked Kenji's suggestion");
 	expect(render(OpinionCard, { props: { opinion: { ...asker, cancelled_at: 'x', waiting: false }, ...props } }).body).not.toContain('Yumi');
 });
+
+test('a Japanese answer gets furigana', () => {
+	const answered = { ...opinion, mine_to_answer: false, waiting: false, answered_at: 'x', pick: 2, answer: '食べるが自然です。' };
+	const { body } = render(OpinionCard, { props: { opinion: answered, ...props, readings: { 食: 'た' } } });
+	expect(body).toContain('<ruby');
+});

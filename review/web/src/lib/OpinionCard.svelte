@@ -1,7 +1,6 @@
 <script lang="ts">
 	// A second-opinion request on the item page. The person asked sees the open suggestions and picks one, or
 	// says why neither works; anyone else sees where the request stands. It sits above the oldest suggestion's thread.
-	import { onMount } from 'svelte';
 	import { answerOpinion, problem, type Opinion, type Suggestion } from './api.ts';
 	import ErrorLine from './ErrorLine.svelte';
 	import Japanese from './Japanese.svelte';
@@ -27,7 +26,7 @@
 		current?: Json | null;
 		names?: string[];
 		readings?: Record<string, string>;
-		onanswered: () => void;
+		onanswered: () => Promise<void> | void;
 	} = $props();
 
 	const uid = $props.id();
@@ -43,6 +42,11 @@
 	// The values a radio can take, in order: each open suggestion, then Neither.
 	const values = $derived<(number | typeof NEITHER)[]>([...options.map((s) => s.id), NEITHER]);
 
+	// A reload can take the picked suggestion out of the open list.
+	$effect(() => {
+		if (pick !== null && !values.includes(pick)) pick = null;
+	});
+
 	// Seeing the request reads its thread: the bell's count for it clears, once the replies are in.
 	let marked = false;
 	$effect(() => {
@@ -52,7 +56,6 @@
 			replies.read(opinion.anchor_id);
 		}
 	});
-	onMount(() => {});
 
 	function key(event: KeyboardEvent) {
 		const delta = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
@@ -70,7 +73,7 @@
 		failure = null;
 		try {
 			await answerOpinion(opinion.id, pick === NEITHER ? null : pick, body.trim());
-			onanswered();
+			await onanswered();
 		} catch (e) {
 			failure = problem(e);
 		} finally {
@@ -136,7 +139,7 @@
 	<div class="opinion">
 		{#if opinion.answered_at}
 			<p class="line"><strong>{answeredLine(opinion, picked)}</strong></p>
-			{#if opinion.answer}<p class="muted">{opinion.answer}</p>{/if}
+			{#if opinion.answer}<p class="muted"><Japanese text={opinion.answer} {readings} prose /></p>{/if}
 		{:else}
 			<p class="line"><strong>{waitingLine(opinion)}</strong></p>
 			{@render question()}
