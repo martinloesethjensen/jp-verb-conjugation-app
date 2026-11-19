@@ -49,7 +49,7 @@ propose a new grammar point*.
 | 7B | Courses list and start (scratch / textbook / copy), builder desktop + phone add screen | — |
 | 7C | Send for review, checks, comments, approve / ask for changes, inbox row, reply events, courses tip | 0014_course_reads.sql |
 | 7D | Propose a new grammar point from a lesson (reuses `POST /api/add`) | — |
-| 7E | Export: `/api/export` carries courses; `review_pull.py` writes `data/courses.json`; schema; `update_data.py` checks; withdraw | — |
+| 7E | Export: `/api/export` carries courses; `review_pull.py` fills the existing `data/courses.json`; withdraw (needs step 8's PR 8.1) | — |
 
 ## Global Constraints
 
@@ -118,8 +118,9 @@ propose a new grammar point*.
     `revision` = published revision, +1 if the course object changed (1 if new); `since` = published value or the
     pull date; `author` from the export's credit; `withdrawn` = published ∪ site withdrawals of exported courses. A
     course whose items aren't all in the branch's data after the batch is applied is skipped and listed under
-    "Skipped". The file and its manifest entry appear only with the first pull that has a course; no feature PR
-    creates `data/courses.json`.
+    "Skipped". The empty `data/courses.json`, its schema, the `update_data.py` checks, the manifest entry and the
+    bundled copy come from step 8's PR 8.1 (owner, 2026-11-19: "Empty file first, in PR 8.1"); 7E only fills that file,
+    with the same shape and ids.
 
 ## Review Focus
 
@@ -288,21 +289,19 @@ approved-then-edited) courses and `withdrawn_courses: [ids]` of exported-then-wi
 `withdrawn_listed_only_when_exported_before`, `mark_exported_sets_course_exported_at`; `courses_api.rs`:
 `withdraw_by_author_or_owner_only`, `withdrawing_a_never_exported_course_leaves_no_tombstone`.
 
-### Task E2: schema and checks
-Create `schema/courses.schema.json` (subset in `schema/README.md`; `stableId`-like pattern `^[a-z0-9]{6}$`), add a
-row to `schema/README.md`, and in `scripts/update_data.py` validate `data/courses.json` **when present**: the
-data-design spec's Checks (ids exist by kind/file, ≥1 lesson/item, no duplicates, unique ids, withdrawn never
-returns, `textbook_lesson` only with `follows` and in range, revision never decreases against `--published-ref`),
-and give it a manifest entry when present. Tests in `scripts/test_update_data.py` and `scripts/test_schemas.py`
-with fixtures under `schema/fixtures/`: a valid file passes; each Check in
-the data-design spec has one failing fixture whose message names the JSON path; an absent file gives no manifest
-entry and no error; a present file gets a `courses` manifest entry with version and sha256.
+### Schema and checks: not here
 
-### Task E3: pull writes the file
+Step 8's PR 8.1 (plan `docs/superpowers/plans/2026-11-17-courses-in-the-app.md`, branch
+`claude/courses-app-plan-a6316b`) adds the empty `data/courses.json`, `schema/courses.schema.json`, the
+`update_data.py` checks, the manifest entry and the bundled copy. **7E starts only once PR 8.1 is on `main`.** If
+8.1's checks or schema disagree with what this plan's export produces, follow 8.1 and the data-design spec.
+
+### Task E2: pull fills the file
 `scripts/review_export.py` gains `apply_courses(batch, docs, published, today)` (decision 14) and the summary gains
-"Courses: …" and "Course ids: …" in its last line; `scripts/review_pull.py` writes `data/courses.json` (sorted
-keys as the draft shows, NFC). Tests in `scripts/test_review_export.py`: new course gets revision 1 and today's
-`since`; unchanged course keeps revision; changed course +1; `course_with_missing_item_is_skipped`; withdrawn union.
+"Courses: …" and "Course ids: …" in its last line; `scripts/review_pull.py` rewrites the existing `data/courses.json` (key order as
+the data-design spec shows, NFC) and runs `update_data.py`, whose 8.1 checks then guard it. Tests in `scripts/test_review_export.py`: new course gets revision 1 and today's
+`since`; unchanged course keeps revision; changed course +1; `course_with_missing_item_is_skipped`; withdrawn union;
+an empty published file (8.1's) fills correctly; the result passes 8.1's `update_data.py` checks.
 The Export page's "Tick these" accepts course ids. Update the data-design spec's status to "built (site side)",
 README Exporting, open PR 7E. Never run `make review-pull` to try it: tests use fixtures.
 
@@ -313,9 +312,8 @@ README Exporting, open PR 7E. Never run `make review-pull` to try it: tests use 
 2. **Who sees drafts?** Plan: author and owner only. Should teachers see drafts too (to help early)?
 3. **Who may withdraw a published course?** Plan: the author or the owner. Should a teacher be able to?
 4. **Levels computed, not chosen.** Plan computes `levels` from the items at approval. Or should authors pick them?
-5. **Step 7 or 8 for the file?** PR 7E puts `schema/courses.schema.json`, the `update_data.py` checks and the pull's
-   writer in step 7; bundling and sync stay in step 8. The first pull with an approved course then adds
-   `data/courses.json` and a manifest entry that the current app ignores. Confirm, or move 7E to step 8.
+5. ~~Step 7 or 8 for the file?~~ **Settled 2026-11-19:** the empty file, schema, checks, manifest entry and bundled
+   copy come first, in step 8's PR 8.1; 7E stays in step 7 and only fills the file.
 6. **"In the app since …"** on the list board needs the release a course shipped in. Step 6 Part B records releases
    from signed loads; courses.json isn't loaded by the site. Plan shows "Exported" with the date until then. Wire it to
    step 6's releases later?
