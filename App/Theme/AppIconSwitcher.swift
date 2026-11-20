@@ -1,4 +1,5 @@
 import VerbKit
+import os
 #if os(iOS)
 import UIKit
 #endif
@@ -24,10 +25,18 @@ enum AppIconSwitcher {
         #endif
     }
 
+    private static let log = Logger(subsystem: "dev.martinloeseth.jpverbconjugation", category: "AppIcon")
+    /// True while iOS is changing the icon: a second tap would queue a second alert.
+    private static var changing = false
+
     static func apply(_ change: IconChange?) {
         #if os(iOS)
-        guard let change, isSupported else { return }
-        UIApplication.shared.setAlternateIconName(change.name) { _ in }
+        guard let change, isSupported, !changing else { return }
+        changing = true
+        UIApplication.shared.setAlternateIconName(change.name) { error in
+            if let error { log.error("Changing the app icon failed: \(error.localizedDescription, privacy: .public)") }
+            Task { @MainActor in changing = false }
+        }
         #endif
     }
 }
