@@ -1917,7 +1917,7 @@
           ]
         }
       ],
-      "related": []
+      "related": ["te-kudasai"]
     },
     {
       "id": "te-mo-ii",
@@ -2306,6 +2306,281 @@
         }
       ],
       "related": ["te-mo-ii"]
+    },
+    {
+      "id": "te-kudasai",
+      "title": "〜てください",
+      "summary": "〜てください asks someone politely to do something: 見てください (please look). 〜てくださいませんか is softer, and the て-form on its own is the casual request.",
+      "keywords": ["please", "please do", "request", "could you", "asking someone"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 6, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "ib8ttu",
+          "heading": "Please do… (〜てください)",
+          "explanation": "Add ください to the て-form to ask someone to do something. It is polite but direct, so teachers, shop staff and signs use it all the time.",
+          "examples": [
+            { "id": "asvwj6", "jp": "ここに名前を書いてください。", "en": "Please write your name here.", "particle_blanks": [{ "particle": "に", "at": 2 }, { "particle": "を", "at": 5 }] },
+            { "id": "i9h32x", "jp": "もう少しゆっくり話してください。", "en": "Please speak a little more slowly." },
+            { "id": "rauajr", "jp": "窓を開けてください。", "en": "Please open the window.", "particle_blanks": [{ "particle": "を", "at": 1 }] }
+          ]
+        },
+        {
+          "id": "u6qzkm",
+          "heading": "Softer requests (〜てくださいませんか)",
+          "explanation": "To ask a favour, especially of someone you don't know well, turn it into a negative question: 〜てくださいませんか. 〜てもらえませんか is just as common.",
+          "examples": [
+            { "id": "52wbmd", "jp": "すみません、写真を撮ってくださいませんか。", "en": "Excuse me, could you take a photo for us?", "particle_blanks": [{ "particle": "を", "at": 8 }] },
+            { "id": "94bb7y", "jp": "この漢字の読み方を教えてもらえませんか。", "en": "Could you tell me how to read this kanji?", "particle_blanks": [{ "particle": "を", "at": 8 }] }
+          ]
+        },
+        {
+          "id": "ribiaz",
+          "heading": "Casual requests (〜て)",
+          "explanation": "Between friends and family, the て-form alone is a request. ね makes it softer.",
+          "examples": [
+            { "id": "gptbin", "jp": "ちょっと待って。", "en": "Wait a moment." },
+            { "id": "5hrbx6", "jp": "これ、見て。", "en": "Look at this." },
+            { "id": "aezxyk", "jp": "早く来てね。", "en": "Come soon, okay?" }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["te"],
+          "then": "ください",
+          "pattern": "て-form + ください",
+          "example": "書く → 書いてください / 待つ → 待ってください / 見る → 見てください / する → してください / 来る → 来てください",
+          "note": "For \"please don't\", use the ない-form + でください: 書かないでください (see 〜ないで・〜なくて)."
+        }
+      ],
+      "conjugations": [
+        {
+          "form": "〜てください",
+          "register": "polite"
+        },
+        {
+          "form": "〜てくださいませんか",
+          "register": "polite",
+          "note": "Softer: \"Could you…?\""
+        },
+        {
+          "form": "〜て",
+          "register": "casual",
+          "note": "Friends and family. Add ね to soften it."
+        }
+      ],
+      "pitfalls": [
+        {
+          "id": "2z657w",
+          "heading": "ください after a verb needs the て-form",
+          "explanation": "After a noun, ください asks for the thing: 水をください (Water, please). After a verb it must follow the て-form: 書いてください, not 書くください.",
+          "wrong": "書くください",
+          "examples": [
+            { "id": "yu2buf", "jp": "水をください。", "en": "Water, please.", "particle_blanks": [{ "particle": "を", "at": 1 }] },
+            { "id": "zkmw4c", "jp": "メニューを見せてください。", "en": "Please show me the menu.", "particle_blanks": [{ "particle": "を", "at": 4 }] }
+          ]
+        },
+        {
+          "id": "asi39s",
+          "heading": "〜てください can sound like an instruction",
+          "explanation": "〜てください is polite in form, but it still tells someone what to do. To ask a teacher or a stranger for a favour, 〜てくださいませんか or 〜ていただけませんか sounds more respectful.",
+          "examples": [
+            { "id": "6cfeh2", "jp": "先生、もう一度説明していただけませんか。", "en": "Could you explain it once more, please?" }
+          ]
+        }
+      ],
+      "related": ["nai-te", "te-kara"]
+    },
+    {
+      "id": "te-kara",
+      "title": "〜て・〜てから",
+      "summary": "The て-form links actions in the order they happen: 起きて、顔を洗って、朝ご飯を食べます. 〜てから stresses that one action comes first: \"after doing\".",
+      "keywords": ["and then", "after doing", "sequence", "first", "since"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 6, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "x8fjwh",
+          "heading": "One action after another (〜て)",
+          "explanation": "Join actions with the て-form, in the order they happen. Only the last verb shows the tense and politeness, and the て-forms before it share them.",
+          "examples": [
+            { "id": "raqtx7", "jp": "朝起きて、顔を洗って、ご飯を食べます。", "en": "I get up in the morning, wash my face and eat breakfast.", "particle_blanks": [{ "particle": "を", "at": 6 }, { "particle": "を", "at": 13 }] },
+            { "id": "8cmd3j", "jp": "昨日はデパートに行って、靴を買いました。", "en": "Yesterday I went to a department store and bought shoes.", "particle_blanks": [{ "particle": "に", "at": 7 }, { "particle": "を", "at": 13 }] },
+            { "id": "7kdv7k", "jp": "家に帰って、すぐ寝た。", "en": "I went home and went straight to bed.", "particle_blanks": [{ "particle": "に", "at": 1 }] }
+          ]
+        },
+        {
+          "id": "4cxa43",
+          "heading": "First this, then that (〜てから)",
+          "explanation": "〜てから says that the second action starts only once the first is done. It puts more weight on the order than 〜て alone.",
+          "examples": [
+            { "id": "vdqdpm", "jp": "手を洗ってから、食べてください。", "en": "Wash your hands first, then eat.", "particle_blanks": [{ "particle": "を", "at": 1 }] },
+            { "id": "fy4az6", "jp": "宿題をしてから、テレビを見ます。", "en": "I'll watch TV after I do my homework.", "particle_blanks": [{ "particle": "を", "at": 2 }, { "particle": "を", "at": 11 }] }
+          ]
+        },
+        {
+          "id": "979zx8",
+          "heading": "Since… (〜てから + a length of time)",
+          "explanation": "Followed by a length of time, 〜てから counts from that moment: \"it has been … since\".",
+          "examples": [
+            { "id": "rk7j8f", "jp": "日本に来てから、三年になります。", "en": "It's been three years since I came to Japan.", "particle_blanks": [{ "particle": "に", "at": 2 }] },
+            { "id": "8gz3yq", "jp": "結婚してから、ずっと大阪に住んでいます。", "en": "I've lived in Osaka ever since I got married.", "particle_blanks": [{ "particle": "に", "at": 12 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["te"],
+          "then": "から",
+          "pattern": "て-form + から",
+          "example": "食べる → 食べてから / 書く → 書いてから / 行く → 行ってから / する → してから",
+          "note": "For a plain sequence, use the て-form alone and go on to the next verb: 起きて、食べます."
+        }
+      ],
+      "conjugations": [],
+      "pitfalls": [
+        {
+          "id": "n7p92y",
+          "heading": "から after the dictionary form means \"because\"",
+          "explanation": "から after the dictionary form, the ます-form or the past gives a reason: 食べるから (because I eat). For \"after\", から must follow the て-form: 食べてから.",
+          "examples": [
+            { "id": "x4utu7", "jp": "ご飯を食べてから、出かけます。", "en": "I'll go out after I eat.", "particle_blanks": [{ "particle": "を", "at": 2 }] },
+            { "id": "thp6sc", "jp": "ご飯を食べるから、待ってください。", "en": "I'm going to eat, so please wait.", "particle_blanks": [{ "particle": "を", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "mxsdtj",
+          "heading": "〜て is not always \"and then\"",
+          "explanation": "The て-form can also give a reason or say how something is done: 疲れて、早く寝ました (I was tired, so I went to bed early), 歩いて学校に行きます (I walk to school). The verbs tell you which.",
+          "examples": [
+            { "id": "frv2kr", "jp": "疲れて、早く寝ました。", "en": "I was tired, so I went to bed early." },
+            { "id": "kkmz7t", "jp": "歩いて学校に行きます。", "en": "I walk to school.", "particle_blanks": [{ "particle": "に", "at": 5 }] }
+          ]
+        }
+      ],
+      "related": ["te-kudasai"]
+    },
+    {
+      "id": "ta-koto",
+      "title": "〜たことがある・〜たり",
+      "summary": "〜たことがある talks about experience: 日本に行ったことがあります (I have been to Japan). 〜たり〜たりする gives a few examples of what you do: 本を読んだり、映画を見たりします.",
+      "keywords": ["have ever", "have been to", "experience", "never", "things like", "and so on", "back and forth"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 11, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "fz744d",
+          "heading": "Experience (〜たことがある)",
+          "explanation": "Add ことがある to the た-form to say that you have done something at least once in your life. Ask with 〜たことがありますか.",
+          "examples": [
+            { "id": "i3wejp", "jp": "日本に行ったことがあります。", "en": "I've been to Japan.", "particle_blanks": [{ "particle": "に", "at": 2 }] },
+            { "id": "rvzdfw", "jp": "すしを食べたことがありますか。", "en": "Have you ever eaten sushi?", "particle_blanks": [{ "particle": "を", "at": 2 }] },
+            { "id": "bzq8cw", "jp": "着物を着たことがあります。", "en": "I've worn a kimono.", "particle_blanks": [{ "particle": "を", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "4g9ceh",
+          "heading": "Never (〜たことがない)",
+          "explanation": "With ない, it says that something has never happened: 〜たことがない in plain speech, 〜たことがありません politely.",
+          "examples": [
+            { "id": "c5jkce", "jp": "一度も飛行機に乗ったことがありません。", "en": "I've never been on a plane.", "particle_blanks": [{ "particle": "に", "at": 6 }] },
+            { "id": "p4m222", "jp": "そんなこと、聞いたことがない。", "en": "I've never heard of that." }
+          ]
+        },
+        {
+          "id": "4ypdkd",
+          "heading": "Doing things like… (〜たり〜たりする)",
+          "explanation": "List two or more typical actions with the た-form + り, and end with する. It says that these are examples, not everything you do.",
+          "examples": [
+            { "id": "z5cxsa", "jp": "週末は本を読んだり、映画を見たりします。", "en": "At weekends I read, watch films, that kind of thing.", "particle_blanks": [{ "particle": "を", "at": 4 }, { "particle": "を", "at": 12 }] },
+            { "id": "axqtb6", "jp": "日曜日は、掃除をしたり洗濯をしたりしました。", "en": "On Sunday I did things like cleaning and laundry.", "particle_blanks": [{ "particle": "を", "at": 7 }, { "particle": "を", "at": 13 }] }
+          ]
+        },
+        {
+          "id": "ncpbjn",
+          "heading": "Back and forth (〜たり〜たり)",
+          "explanation": "With two opposite verbs, 〜たり〜たり describes something that keeps changing: 行ったり来たり (going back and forth).",
+          "examples": [
+            { "id": "k5hyfe", "jp": "部屋の中を行ったり来たりしている。", "en": "Someone is pacing back and forth in the room.", "particle_blanks": [{ "particle": "を", "at": 4 }] },
+            { "id": "zr2rqv", "jp": "雨が降ったりやんだりしています。", "en": "It keeps raining on and off.", "particle_blanks": [{ "particle": "が", "at": 1 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plainPast"],
+          "then": "ことがある",
+          "pattern": "た-form + ことがある",
+          "example": "行く → 行ったことがある / 食べる → 食べたことがある / する → したことがある"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plainPast"],
+          "then": "り",
+          "pattern": "た-form + り … する",
+          "example": "読む → 読んだり / 見る → 見たり / 行く → 行ったり",
+          "note": "List two or more and end with する: 読んだり、見たりする. The tense and politeness go on する."
+        }
+      ],
+      "conjugations": [
+        {
+          "form": "〜たことがあります",
+          "register": "polite"
+        },
+        {
+          "form": "〜たことがありません",
+          "register": "polite",
+          "note": "Have never…"
+        },
+        {
+          "form": "〜たことがある",
+          "register": "casual"
+        },
+        {
+          "form": "〜たことがない",
+          "register": "casual",
+          "note": "Have never…"
+        },
+        {
+          "form": "〜たり〜たりします",
+          "register": "polite"
+        },
+        {
+          "form": "〜たり〜たりする",
+          "register": "casual"
+        }
+      ],
+      "pitfalls": [
+        {
+          "id": "umwpyh",
+          "heading": "Experience, not something that just happened",
+          "explanation": "〜たことがある is about your life so far. For something you did on a particular day, use the plain past: 昨日すしを食べました, not 昨日すしを食べたことがあります.",
+          "examples": [
+            { "id": "3tvgp2", "jp": "昨日、すしを食べました。", "en": "I ate sushi yesterday.", "particle_blanks": [{ "particle": "を", "at": 5 }] },
+            { "id": "2arvvg", "jp": "すしを食べたことがあります。", "en": "I've eaten sushi before.", "particle_blanks": [{ "particle": "を", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "iht4eu",
+          "heading": "End a 〜たり list with する",
+          "explanation": "A 〜たり list closes with する, which carries the tense: 本を読んだり、映画を見たりしました. Leaving it off, as in 読んだり、見ました, is a common mistake.",
+          "wrong": "読んだり、見ました",
+          "examples": [
+            { "id": "seimyj", "jp": "週末は本を読んだり、映画を見たりしました。", "en": "At the weekend I read, watched a film, and so on.", "particle_blanks": [{ "particle": "を", "at": 4 }, { "particle": "を", "at": 12 }] }
+          ]
+        }
+      ],
+      "related": []
     }
   ]
 }
