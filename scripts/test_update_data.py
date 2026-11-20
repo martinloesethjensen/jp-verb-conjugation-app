@@ -918,6 +918,7 @@ class RunTests(unittest.TestCase):
         (d / "furigana.json").write_text(json.dumps(valid_furigana(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (d / "manifest.json").write_text(json.dumps({"version": "1.0.0", "sha256": "x"}) + "\n", encoding="utf-8")
         (d / "words.json").write_text(json.dumps({"version": "1.0.0", "description": "d", "words": []}) + "\n", encoding="utf-8")
+        (d / "courses.json").write_text(json.dumps(EMPTY_COURSES, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return d
 
     def test_check_reports_stale_then_run_fixes_then_check_passes(self):
@@ -1380,6 +1381,204 @@ class KanjiDataTests(unittest.TestCase):
         d = self.make_dir()
         self.assertEqual(ud.run(d)[0], 0)
         self.assertNotIn("kanji", json.loads((d / "manifest.json").read_text(encoding="utf-8")))
+
+
+EMPTY_COURSES = {"version": "1.0.0",
+                 "description": "Courses written by teachers and native speakers, approved on the review site.",
+                 "courses": [], "withdrawn": []}
+
+
+class CoursesTests(unittest.TestCase):
+    def docs(self):
+        verbs = {"verbs": [{"dict": "たべる", "examples": [{"id": "vex234"}]},
+                           {"dict": "きる", "id": "きる:切る"}]}
+        words = {"words": [{"class": "adverb", "dict": "まいあさ"}]}
+        grammar = {"grammar": [{"id": "masu", "usages": [{"examples": [{"id": "gex234"}]}]}]}
+        counters = {"counters": [{"id": "ji", "examples": [{"id": "cex234"}]}]}
+        return {"verbs": verbs, "words": words, "grammar": grammar, "counters": counters}
+
+    BOOKS = [{"id": "genki-1", "lessons": 12}, {"id": "genki-2", "first_lesson": 13, "lessons": 23}]
+
+    def lesson(self, items=None, lesson_id="les234", **extra):
+        items = [{"kind": "verb", "id": "たべる"}] if items is None else items
+        return {"id": lesson_id, "title": "t", "goal": "g", "note": None, "textbook_lesson": None,
+                "items": items, **extra}
+
+    def course(self, lessons=None, course_id="crs234", **extra):
+        lessons = [self.lesson()] if lessons is None else lessons
+        return {"id": course_id, "revision": 1, "since": "2026-11-10", "title": "t", "summary": "s",
+                "levels": ["N5"], "author": {"role": "teacher"}, "copied_from": None, "follows": None,
+                "lessons": lessons, **extra}
+
+    def doc(self, courses=(), withdrawn=()):
+        return {**EMPTY_COURSES, "courses": list(courses), "withdrawn": list(withdrawn)}
+
+    def check(self, doc, published=None):
+        return ud.check_courses(doc, self.docs(), self.BOOKS, published)
+
+    def test_empty_courses_file_is_valid(self):
+        self.assertEqual(self.check(EMPTY_COURSES), [])
+
+    def test_a_valid_course_has_no_problems(self):
+        items = [{"kind": "verb", "id": "きる:切る"}, {"kind": "word", "id": "adverb:まいあさ"},
+                 {"kind": "grammar", "id": "masu"}, {"kind": "counter", "id": "ji"},
+                 {"kind": "example", "in": "verbs", "id": "vex234"},
+                 {"kind": "example", "in": "grammar", "id": "gex234"},
+                 {"kind": "example", "in": "counters", "id": "cex234"}]
+        self.assertEqual(self.check(self.doc([self.course([self.lesson(items)])])), [])
+
+    def test_course_item_must_exist(self):
+        doc = self.doc([self.course([self.lesson([{"kind": "verb", "id": "nosuchverb"}])])])
+        problems = self.check(doc)
+        self.assertEqual(len(problems), 1)
+        for part in ("crs234", "les234", "nosuchverb"):
+            self.assertIn(part, problems[0])
+
+    def test_an_item_must_exist_under_its_own_kind(self):
+        doc = self.doc([self.course([self.lesson([{"kind": "grammar", "id": "たべる"}])])])
+        self.assertEqual(len(self.check(doc)), 1)
+
+    def test_example_needs_in_and_must_live_there(self):
+        for item in ({"kind": "example", "id": "vex234"},
+                     {"kind": "example", "in": "grammar", "id": "vex234"},
+                     {"kind": "example", "in": "words", "id": "vex234"}):
+            with self.subTest(item=item):
+                problems = self.check(self.doc([self.course([self.lesson([item])])]))
+                self.assertEqual(len(problems), 1, problems)
+                self.assertIn("vex234", problems[0])
+
+    def test_only_an_example_has_in(self):
+        doc = self.doc([self.course([self.lesson([{"kind": "verb", "in": "verbs", "id": "たべる"}])])])
+        self.assertEqual(len(self.check(doc)), 1)
+
+    def test_duplicate_item_in_lesson(self):
+        item = {"kind": "verb", "id": "たべる"}
+        problems = self.check(self.doc([self.course([self.lesson([item, dict(item)])])]))
+        self.assertEqual(len(problems), 1)
+        self.assertIn("twice", problems[0])
+
+    def test_the_same_item_may_sit_in_two_lessons(self):
+        lessons = [self.lesson(lesson_id="les234"), self.lesson(lesson_id="les567")]
+        self.assertEqual(self.check(self.doc([self.course(lessons)])), [])
+
+    def test_empty_lesson(self):
+        problems = self.check(self.doc([self.course([self.lesson([])])]))
+        self.assertEqual(len(problems), 1)
+        self.assertIn("les234", problems[0])
+
+    def test_course_without_lessons(self):
+        problems = self.check(self.doc([self.course([])]))
+        self.assertEqual(len(problems), 1)
+        self.assertIn("crs234", problems[0])
+
+    def test_ids_unique(self):
+        problems = self.check(self.doc([self.course(), self.course()]))
+        self.assertTrue(any("crs234" in p and "more than once" in p for p in problems), problems)
+        problems = self.check(self.doc([self.course()], withdrawn=["crs234"]))
+        self.assertTrue(any("crs234" in p for p in problems), problems)
+        problems = self.check(self.doc([], withdrawn=["old234", "old234"]))
+        self.assertTrue(any("old234" in p for p in problems), problems)
+        lessons = [self.lesson(lesson_id="les234"), self.lesson(lesson_id="les234")]
+        problems = self.check(self.doc([self.course(lessons)]))
+        self.assertTrue(any("les234" in p and "more than once" in p for p in problems), problems)
+
+    def test_withdrawn_never_returns(self):
+        published = self.doc([], withdrawn=["crs234"])
+        problems = self.check(self.doc([self.course()]), published)
+        self.assertTrue(any("crs234" in p and "withdrawn" in p for p in problems), problems)
+        self.assertEqual(self.check(self.doc([], withdrawn=["crs234"]), published), [])
+
+    def test_a_published_withdrawal_stays(self):
+        problems = self.check(self.doc([]), self.doc([], withdrawn=["crs234"]))
+        self.assertTrue(any("crs234" in p for p in problems), problems)
+
+    def test_revision_never_decreases(self):
+        published = self.doc([self.course(revision=3)])
+        problems = self.check(self.doc([self.course(revision=2)]), published)
+        self.assertTrue(any("crs234" in p and "revision" in p for p in problems), problems)
+        self.assertEqual(self.check(self.doc([self.course(revision=3)]), published), [])
+        self.assertEqual(self.check(self.doc([self.course(revision=4)]), published), [])
+
+    def test_a_published_course_may_be_withdrawn_but_not_vanish(self):
+        published = self.doc([self.course()])
+        self.assertEqual(self.check(self.doc([], withdrawn=["crs234"]), published), [])
+        problems = self.check(self.doc([]), published)
+        self.assertTrue(any("crs234" in p for p in problems), problems)
+
+    def test_no_published_copy_skips_both_guards(self):
+        self.assertEqual(self.check(self.doc([self.course(revision=1)]), None), [])
+
+    def test_textbook_lesson_needs_follows_and_range(self):
+        follows = {"book": "genki-1"}
+        cases = [(None, 3, 1), (follows, 0, 1), (follows, 13, 1), (follows, 12, 0), (follows, 1, 0),
+                 ({"book": "genki-3"}, 1, 1), ({"book": "genki-2"}, 12, 1), ({"book": "genki-2"}, 13, 0)]
+        for follows_value, number, expected in cases:
+            with self.subTest(follows=follows_value, number=number):
+                doc = self.doc([self.course([self.lesson(textbook_lesson=number)], follows=follows_value)])
+                self.assertEqual(len(self.check(doc)), expected, self.check(doc))
+
+    def test_follows_without_a_textbook_lesson_is_fine(self):
+        self.assertEqual(self.check(self.doc([self.course(follows={"book": "genki-1"})])), [])
+
+    def test_run_checks_the_courses_file(self):
+        d = RunTests.make_dir(self)
+        doc = self.doc([self.course([self.lesson([{"kind": "verb", "id": "nosuchverb"}])])])
+        (d / "courses.json").write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True)
+        self.assertEqual(code, 1)
+        self.assertIn("courses.json", messages[0])
+        self.assertIn("nosuchverb", "\n".join(messages))
+
+    def test_run_requires_the_courses_file(self):
+        d = RunTests.make_dir(self)
+        (d / "courses.json").unlink()
+        self.assertEqual(ud.run(d, check=True)[0], 1)
+
+    def test_run_checks_the_schema(self):
+        d = RunTests.make_dir(self)
+        bad = self.course(course_id="short")
+        (d / "courses.json").write_text(json.dumps(self.doc([bad]), ensure_ascii=False) + "\n", encoding="utf-8")
+        code, messages = ud.run(d)
+        self.assertEqual(code, 1)
+        self.assertIn("schema/courses.schema.json", messages[0])
+
+    def test_run_passes_the_published_courses_to_the_checks(self):
+        d = RunTests.make_dir(self)
+        published = self.doc([self.course(revision=3)])
+        (d / "courses.json").write_text(json.dumps(self.doc([self.course(revision=2)]), ensure_ascii=False) + "\n",
+                                        encoding="utf-8")
+        code, messages = ud.run(d, check=True, published_courses=published)
+        self.assertEqual(code, 1)
+        self.assertIn("revision", "\n".join(messages))
+
+    def test_courses_manifest_entry_and_bundle(self):
+        result = ud.build_manifest({"version": "1.0.0", "sha256": "x"}, b"v", b"g", courses_bytes=b"c")
+        self.assertEqual(result["courses"], {"version": "1.0.0", "sha256": ud.sha256_hex(b"c")})
+        self.assertNotIn("courses", ud.build_manifest({}, b"v", b"g"))
+        d = RunTests.make_dir(self)
+        bundle = d / "bundle"
+        self.assertEqual(ud.run(d, bundled_data_dir=bundle)[0], 0)
+        manifest = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["courses"]["sha256"], ud.sha256_hex((d / "courses.json").read_bytes()))
+        self.assertEqual((bundle / "courses.json").read_bytes(), (d / "courses.json").read_bytes())
+        sidecar = json.loads((bundle / "courses.manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(sidecar, {"version": "1.0.0", "sha256": manifest["courses"]["sha256"]})
+        self.assertEqual(ud.run(d, check=True, bundled_data_dir=bundle), (0, ["data is up to date"]))
+        (bundle / "courses.json").write_text("{}\n", encoding="utf-8")
+        code, messages = ud.run(d, check=True, bundled_data_dir=bundle)
+        self.assertEqual(code, 1)
+        self.assertIn("the bundled courses.json", messages[0])
+
+    def test_courses_version_bumps_only_when_content_changes(self):
+        d = RunTests.make_dir(self)
+        ud.run(d)
+        ud.run(d)
+        self.assertEqual(json.loads((d / "manifest.json").read_text(encoding="utf-8"))["courses"]["version"], "1.0.0")
+        course = self.course([self.lesson([{"kind": "verb", "id": "する"}])])
+        (d / "courses.json").write_text(json.dumps(self.doc([course]), ensure_ascii=False, indent=2) + "\n",
+                                        encoding="utf-8")
+        self.assertEqual(ud.run(d)[0], 0)
+        self.assertEqual(json.loads((d / "manifest.json").read_text(encoding="utf-8"))["courses"]["version"], "1.1.0")
 
 
 class OtherFormsTests(unittest.TestCase):
@@ -2120,7 +2319,7 @@ class VerbIdTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             data_dir = Path(tmp)
             for name in ("verbs.json", "grammar.json", "furigana.json", "manifest.json", "words.json",
-                         "counters.json", "forms.json", "kanji.json"):
+                         "counters.json", "forms.json", "kanji.json", "courses.json"):
                 (data_dir / name).write_bytes((Path(__file__).resolve().parent.parent / "data" / name).read_bytes())
             published = json.loads((data_dir / "verbs.json").read_text(encoding="utf-8"))
             published["verbs"].append({"dict": "ぬく", "id": "ぬく:抜く"})
