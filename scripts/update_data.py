@@ -745,6 +745,7 @@ def course_item_ids(docs):
     }
     examples = {}
     for name in COURSE_EXAMPLE_FILES:
+        # Labels are built by stable_ids._examples as "<owner> example <n>" (nested ones keep " example " too).
         examples[name] = {item["id"] for label, item in stable_ids.id_slots(name, docs[name])
                           if " example " in label and "id" in item}
     return by_kind, examples
@@ -2392,7 +2393,7 @@ def run(data_dir, check=False, verbs_version=None, grammar_version=None, furigan
                "furigana": furigana_bytes, "forms": forms_bytes, "kanji": kanji_bytes,
                "courses": courses_bytes}
     for name in SCHEMA_NAMES:
-        if written[name] is not None:
+        if name != "courses" and written[name] is not None:  # courses.json was checked above, before check_courses
             problems = schema_problems(name, json.loads(written[name]), schema_dir)
             if problems:
                 return 1, capped(f"{name}.json does not match schema/{name}.schema.json:", problems)

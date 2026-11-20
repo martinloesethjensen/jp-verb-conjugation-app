@@ -8,7 +8,7 @@ now on, so a bundled, signed copy exists before any course does. `schema/courses
 the Fields table, `check_courses` in `scripts/update_data.py` implements the Checks list (item ids are checked
 against the loaded verbs, words, grammar and counters, and example ids per file), and `make data` gives it a
 `courses` manifest entry and a bundled copy with a `courses.manifest.json` sidecar in
-`Packages/VerbKit/Sources/VerbKit/Resources/`. Step 7's export pull updates this existing file.
+`Packages/VerbKit/Sources/VerbKit/Resources/`. Step 7's export pull updates this existing file. Course titles, goals and notes must use only kanji that `kanji.json` covers, or `make data` fails (relevant to step 7's export).
 
 ## Goal
 
