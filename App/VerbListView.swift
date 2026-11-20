@@ -114,6 +114,7 @@ struct VerbListView: View {
                             .buttonStyle(.plain)
                         }
                     }
+                    .paperRow()
                 }
 
                 Section {

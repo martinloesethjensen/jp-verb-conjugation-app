@@ -92,7 +92,7 @@ struct QuizProgressView: View {
                                 // The stored name is a `Verb.id`; show the verb's kana, not `きる:切る`.
                                 Text(verb(withID: weak.verb)?.dict ?? weak.verb).font(.body)
                                 if let kanji = kanji(forID: weak.verb) {
-                                    Text(kanji).font(.caption).foregroundStyle(palette.muted)
+                                    JapaneseText(kanji).font(.caption).foregroundStyle(palette.muted)
                                 }
                             }
                             Spacer()
@@ -110,7 +110,7 @@ struct QuizProgressView: View {
                             // A counter id the store no longer has shows as its id, never a crash.
                             if let counter = countersStore.counter(id: weak.counterID) {
                                 VStack(alignment: .leading) {
-                                    Text(counter.counter).font(.title3.weight(.bold))
+                                    JapaneseText(units: counter.headwordUnits).font(.headword(.title3))
                                     Text("\(counter.reading) · \(counter.meaning)").font(.caption).foregroundStyle(palette.muted)
                                 }
                             } else {
