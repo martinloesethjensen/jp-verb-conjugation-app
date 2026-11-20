@@ -30,7 +30,7 @@ pub fn doc(file: DataFile) -> Value {
 /// Replaces a file's snapshot with `bytes`, as a finished load would.
 pub async fn load_bytes(s: &SqliteStore, file: DataFile, bytes: &[u8]) {
     let rows = extract(file, bytes).unwrap();
-    let json = (!file.is_browsable()).then(|| String::from_utf8(bytes.to_vec()).unwrap());
+    let json = review_api::data::stored_json(file, bytes).unwrap();
     let snapshot = SnapshotFile {
         name: file.name().into(),
         version: "1".into(),
