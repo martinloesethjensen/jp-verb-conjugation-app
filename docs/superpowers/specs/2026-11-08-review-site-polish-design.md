@@ -138,8 +138,21 @@ request; only `thread_reads` is stored (migration 0008, which seeds a row for ev
 earlier activity counts as read). Writing a suggestion, comment or decision marks that thread read for its
 writer, and a thread card marks itself read when it shows something new. `GET /api/replies` returns the newest
 50 events (comments cut to 140 characters) and the unread count; `POST /api/replies/read` takes ids or `all`.
-The site checks when it loads and after each navigation. Second-opinion and course events come with steps 6
-and 7.
+The site checks when it loads and after each navigation. Course events come with step 7; second-opinion
+events came with step 6a (below).
+
+**As built (step 6a, 2026-11-19):** migration 0011 adds `opinion_requests`, with one open request per item
+(a unique index) and `anchor_id`, the oldest open suggestion when it was asked. Plan decisions that sharpen
+the design: natives and reviewers may be asked, as may anyone active except the asker and the authors of the
+item's open suggestions; only teachers and the owner ask. Waiting is derived, not stored: unanswered, not
+cancelled, and the item still has an open suggestion. The asked person answers on the item page with a pick or
+Neither (a reason is required for Neither); the asker can cancel. The opinion is advice only. Owner decision
+(2026-11-17): deciding while an item waits is allowed and ends the wait. The inbox lists Open, Waiting for an
+opinion, Accepted and Declined, and an item with two or more open change or delete suggestions shows that they
+disagree; accepting one declines the others the decider may decide (never their own; for a native, only
+Japanese-only ones), each with "Declined: {author}'s suggestion was accepted instead." Reply events
+`opinion_asked`, `opinion_answered` and `opinion_cancelled` go to the person asked, to the authors of
+suggestions open at the time, and to the asker; they point at the anchor thread, and opening it marks them read.
 
 ## Onboarding
 
