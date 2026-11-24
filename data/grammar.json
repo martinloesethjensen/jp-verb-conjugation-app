@@ -1811,7 +1811,7 @@
           "explanation": "The volitional states your will, so verbs for states or things that just happen have none: わかる (to understand), しる (to know), つかれる (to get tired). ある has あろう in writing, but it is rare in conversation."
         }
       ],
-      "related": []
+      "related": ["tsumori", "masen-ka"]
     },
     {
       "id": "nai-te",
@@ -2875,6 +2875,182 @@
         }
       ],
       "related": ["hou-ga-ii"]
+    },
+    {
+      "id": "tsumori",
+      "title": "〜つもり・〜予定",
+      "summary": "〜つもりです says what you intend to do: 日本へ行くつもりです (I plan to go to Japan). 〜予定です says what is scheduled or arranged: 会議は三時に始まる予定です.",
+      "keywords": ["intend to", "plan to", "going to", "planning", "plans", "schedule", "scheduled", "not going to"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 10, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "yyk33c",
+          "heading": "Intend to… (〜つもり)",
+          "explanation": "Add つもりです to the dictionary form to say what you have decided or intend to do.",
+          "examples": [
+            { "id": "t697gn", "jp": "夏休みに日本に行くつもりです。", "en": "I'm planning to go to Japan in the summer holidays.", "particle_blanks": [{ "particle": "に", "at": 3 }, { "particle": "に", "at": 6 }] },
+            { "id": "usi8qf", "jp": "来年、大学を卒業するつもりです。", "en": "I intend to graduate from university next year.", "particle_blanks": [{ "particle": "を", "at": 5 }] }
+          ]
+        },
+        {
+          "id": "penx8t",
+          "heading": "Intend not to… (〜ないつもり)",
+          "explanation": "With the ない-form, it says what you have decided not to do.",
+          "examples": [
+            { "id": "8pk9md", "jp": "今夜はお酒を飲まないつもりです。", "en": "I'm not going to drink tonight.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "を", "at": 5 }] },
+            { "id": "id6dbn", "jp": "もう、たばこは吸わないつもりです。", "en": "I don't intend to smoke any more.", "particle_blanks": [{ "particle": "は", "at": 6 }] }
+          ]
+        },
+        {
+          "id": "2wa4m6",
+          "heading": "Scheduled (〜予定)",
+          "explanation": "予定 means a plan or a schedule. Dictionary form + 予定です says what has been arranged, often by others, and a noun takes の: 旅行の予定.",
+          "examples": [
+            { "id": "9c2da9", "jp": "会議は三時に始まる予定です。", "en": "The meeting is scheduled to start at three.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "に", "at": 5 }] },
+            { "id": "vk87ae", "jp": "明日は友だちと映画を見る予定です。", "en": "I'm going to see a film with a friend tomorrow.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "と", "at": 6 }, { "particle": "を", "at": 9 }] },
+            { "id": "ywybmq", "jp": "週末は何か予定がありますか。", "en": "Do you have any plans for the weekend?", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "か", "at": 4 }, { "particle": "が", "at": 7 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plain"],
+          "then": "つもり",
+          "pattern": "dictionary form + つもりです",
+          "example": "行く → 行くつもりです / 卒業する → 卒業するつもりです"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plainNeg"],
+          "then": "つもり",
+          "pattern": "ない-form + つもりです",
+          "example": "飲む → 飲まないつもりです / 吸う → 吸わないつもりです"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plain"],
+          "then": "予定",
+          "pattern": "dictionary form + 予定です",
+          "example": "始まる → 始まる予定です / 見る → 見る予定です"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "の + 予定",
+          "example": "旅行 → 旅行の予定 / 会議 → 会議の予定"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜つもりです", "register": "polite" },
+        { "form": "〜つもりだ", "register": "casual" },
+        { "form": "〜つもりでした", "register": "polite", "note": "I meant to… (often: but I didn't)." },
+        { "form": "〜予定です", "register": "polite" }
+      ],
+      "pitfalls": [
+        {
+          "id": "dpfk5u",
+          "heading": "つもり follows the dictionary form",
+          "explanation": "つもり works like a noun, so the verb before it is in the short form: 行くつもりです, not 行きますつもりです. The politeness goes on です.",
+          "wrong": "行きますつもり",
+          "examples": [
+            { "id": "3trb35", "jp": "夏休みに日本に行くつもりです。", "en": "I'm planning to go to Japan in the summer holidays.", "particle_blanks": [{ "particle": "に", "at": 3 }, { "particle": "に", "at": 6 }] }
+          ]
+        },
+        {
+          "id": "p5ipma",
+          "heading": "Don't ask a teacher about their つもり",
+          "explanation": "〜つもりですか asks about someone's private intention, so to a teacher, a boss or a customer it sounds blunt. Ask about their 予定 instead.",
+          "examples": [
+            { "id": "y56dmn", "jp": "週末は何か予定がありますか。", "en": "Do you have any plans for the weekend?", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "か", "at": 4 }, { "particle": "が", "at": 7 }] }
+          ]
+        },
+        {
+          "id": "kaetsh",
+          "heading": "つもり or 予定?",
+          "explanation": "つもり is your own decision and can change. 予定 is something arranged or on the calendar, often involving other people.",
+          "examples": [
+            { "id": "b55mms", "jp": "会議は三時に始まる予定です。", "en": "The meeting is scheduled to start at three.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "に", "at": 5 }] }
+          ]
+        }
+      ],
+      "related": ["volitional"]
+    },
+    {
+      "id": "masen-ka",
+      "title": "〜ませんか",
+      "summary": "〜ませんか invites someone to do something: いっしょに映画を見ませんか (would you like to see a film with me?). It sounds softer than 〜ましょう.",
+      "keywords": ["would you like to", "won't you", "invitation", "invite", "why don't we", "how about"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 3, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "tu7iga",
+          "heading": "Inviting (〜ませんか)",
+          "explanation": "Add ませんか to the ます-stem. Although it is negative in form, it is a friendly invitation: \"Won't you…?\" or \"Would you like to…?\"",
+          "examples": [
+            { "id": "5zrz4h", "jp": "いっしょに昼ご飯を食べませんか。", "en": "Would you like to have lunch together?", "particle_blanks": [{ "particle": "に", "at": 4 }, { "particle": "を", "at": 8 }] },
+            { "id": "g2f2vh", "jp": "週末、映画を見に行きませんか。", "en": "Would you like to go and see a film this weekend?", "particle_blanks": [{ "particle": "を", "at": 5 }] },
+            { "id": "rp8grw", "jp": "明日、テニスをしませんか。", "en": "How about playing tennis tomorrow?", "particle_blanks": [{ "particle": "を", "at": 6 }] }
+          ]
+        },
+        {
+          "id": "cv2tye",
+          "heading": "Saying yes or no",
+          "explanation": "Accept with いいですね and 〜ましょう. To decline, Japanese rarely says いいえ: say ちょっと… and let it trail off, often with a reason.",
+          "examples": [
+            { "id": "f8gtud", "jp": "いいですね。行きましょう。", "en": "Sounds good. Let's go." },
+            { "id": "fvq3jn", "jp": "土曜日はちょっと…。", "en": "Saturday is a bit… (difficult).", "particle_blanks": [{ "particle": "は", "at": 3 }] },
+            { "id": "n6pc36", "jp": "すみません、明日はちょっと用事があるんです。", "en": "Sorry, I have something on tomorrow.", "particle_blanks": [{ "particle": "は", "at": 8 }, { "particle": "が", "at": 15 }] }
+          ]
+        },
+        {
+          "id": "wnahus",
+          "heading": "Casual: 〜ない?",
+          "explanation": "Among friends, use the plain negative with a rising tone: 行かない?",
+          "examples": [
+            { "id": "qetmb5", "jp": "いっしょに帰らない？", "en": "Want to go home together?", "particle_blanks": [{ "particle": "に", "at": 4 }] },
+            { "id": "hwjk6s", "jp": "コーヒー、飲まない？", "en": "Fancy a coffee?" }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["stem"],
+          "then": "ませんか",
+          "pattern": "ます-stem + ませんか",
+          "example": "食べる → 食べませんか / 行く → 行きませんか / する → しませんか / 来る → 来ませんか"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜ませんか", "register": "polite", "note": "Would you like to…?" },
+        { "form": "〜ない？", "register": "casual", "note": "With a rising tone." }
+      ],
+      "pitfalls": [
+        {
+          "id": "vbxq2i",
+          "heading": "ませんか attaches to the ます-stem",
+          "explanation": "Drop ます and add ませんか: 行きませんか, not 行くませんか.",
+          "wrong": "行くませんか",
+          "examples": [
+            { "id": "jbcxjb", "jp": "週末、映画を見に行きませんか。", "en": "Would you like to go and see a film this weekend?", "particle_blanks": [{ "particle": "を", "at": 5 }] }
+          ]
+        },
+        {
+          "id": "5t8w3h",
+          "heading": "Decline with ちょっと…",
+          "explanation": "Answering an invitation with いいえ or 行きません sounds cold. Say ちょっと… and leave the rest unsaid, or give a reason with 〜んです.",
+          "examples": [
+            { "id": "x545u9", "jp": "土曜日はちょっと…。", "en": "Saturday is a bit… (difficult).", "particle_blanks": [{ "particle": "は", "at": 3 }] }
+          ]
+        }
+      ],
+      "related": ["volitional"]
     }
   ]
 }
