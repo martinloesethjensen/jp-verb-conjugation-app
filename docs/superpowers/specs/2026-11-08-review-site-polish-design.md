@@ -144,9 +144,12 @@ events came with step 6a (below).
 **As built (step 6a, 2026-11-19):** migration 0011 adds `opinion_requests`, with one open request per item
 (a unique index) and `anchor_id`, the oldest open suggestion when it was asked. Plan decisions that sharpen
 the design: natives and reviewers may be asked, as may anyone active except the asker and the authors of the
-item's open suggestions; only teachers and the owner ask. Waiting is derived, not stored: unanswered, not
-cancelled, and the item still has an open suggestion. The asked person answers on the item page with a pick or
-Neither (a reason is required for Neither); the asker can cancel. The opinion is advice only. Owner decision
+item's open suggestions; only teachers and the owner ask, from the inbox. Notes don't count for asking, the
+anchor, the pick or waiting. A request is open while unanswered, not cancelled and not closed: the decision or
+withdrawal that leaves the item no open suggestion (other than notes) sets `closed_at` in the same batch, so a
+later suggestion starts afresh (fix wave, 2026-11-24). A closed request is not a cancellation and tells nobody.
+The asked person answers on the item page with a pick (never their own suggestion) or Neither (a reason is
+required for Neither); the asker can cancel. The opinion is advice only. Owner decision
 (2026-11-17): deciding while an item waits is allowed and ends the wait. The inbox lists Open, Waiting for an
 opinion, Accepted and Declined, and an item with two or more open change or delete suggestions shows that they
 disagree; accepting one declines the others the decider may decide (never their own; for a native, only

@@ -40,11 +40,13 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
   are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
 - **Second opinions (2026-11-19)** need migration `0011_opinions.sql` (`npm run migrate`), which adds the
-  `opinion_requests` table. Run it just before or right after merging: until it runs, every route that reads the
-  table fails with "the database is unavailable". That is `/api/inbox` (every status, because the Open and
-  Waiting filter reads it), `/api/review` (item pages list their opinions), `/api/replies` (the bell stays
-  empty) and the four `/api/opinion/*` routes. Queues, Home, Settings, suggesting, stamping and deciding through
-  `/api/decide` still work. Nothing else in the migration changes existing rows.
+  `opinion_requests` table. Run it **before merging**: it only adds a table and indexes, the Worker running now
+  ignores them, and the site deploys itself when the PR merges. Until it runs, the new Worker fails every route
+  that reads or writes the table with "the database is unavailable": `/api/review`, so item pages and the cards
+  in a queue don't load and nobody can review there; `/api/inbox` (every status: the Open and Waiting filter
+  reads it); `/api/decide` and withdrawing a suggestion (both close requests); `/api/replies`, so Home's
+  replies section and the bell fail; and the four `/api/opinion/*` routes. Nothing else in the migration
+  changes existing rows.
 - **Natives (2026-11-11)** need migration `0010_native_role.sql` (`npm run migrate`), which rebuilds `users`
   with every row kept so the role can be `native`. Either order is safe; until it runs, making someone a
   native fails with "the database is unavailable". (`0009` belongs to the settings step; wrangler applies
@@ -202,12 +204,15 @@ declined with the comment "Declined: <name>'s suggestion was accepted instead." 
 decide, so your own suggestions stay open, and a native's accept leaves alone any that aren't Japanese-only.
 
 **Second opinions.** Teachers and you can ask one person what they think of an item's open suggestions. On
-the item page, "Ask for a second opinion" lists anyone active except yourself and the authors of that item's
-open suggestions; natives and reviewers can be asked too. You add an optional question. An item has one open
-request at a time. The person asked sees it on the item page and answers by picking a suggestion or
-**Neither** (a reason is required for Neither; otherwise it is optional). You can cancel while it waits.
-The opinion is advice: a teacher or you still decide, and deciding while the item waits ends the wait. Nothing
-is stored for "waiting": an item waits while its request is unanswered, not cancelled, and has an open suggestion.
+the inbox, each group with open suggestions has an "Ask for a second opinion" button; it opens a panel listing
+anyone active except yourself and the authors of that item's open suggestions (natives and reviewers can be asked
+too). You add an optional question. An item has one open request at a time, and notes don't count: an item with
+only a note open can't be asked about. The person asked gets it under Replies and answers on the item page by
+picking a suggestion (not their own, and not a note) or **Neither** (a reason is required for Neither; otherwise
+it is optional). You can cancel while it waits. The opinion is advice: a teacher or you still decide. When the
+item's last open suggestion is decided or withdrawn, its unanswered request closes (`closed_at`, in the same
+write); nobody is told, the person asked sees "Already decided", and a later suggestion on the item starts
+afresh in Open and can be asked about again.
 
 Accepting only marks a suggestion accepted: nothing reaches
 `data/` until the export step (plan 6), and then only through your normal signed data PRs.
