@@ -240,7 +240,7 @@ final class RealGrammarDataTests: XCTestCase {
     /// words, each question with its answer among distinct choices.
     func testConnectionQuestionsBuildFromTheRealData() throws {
         let points = try loadGrammar().filter(\.hasConnections)
-        XCTAssertEqual(Set(points.map(\.id)), ["n-desu", "sugiru", "node", "hou-ga-ii", "tai", "volitional", "nai-te", "te-mo-ii", "te-kudasai", "te-kara", "ta-koto"])
+        XCTAssertEqual(Set(points.map(\.id)), ["n-desu", "sugiru", "node", "hou-ga-ii", "tai", "volitional", "nai-te", "te-mo-ii", "te-kudasai", "te-kara", "ta-koto", "mae-ni", "toki", "comparison"])
         let verbs = try loadVerbs()
         let words = try loadWords()
         for point in points {
