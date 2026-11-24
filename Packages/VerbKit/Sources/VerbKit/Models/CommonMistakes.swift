@@ -79,6 +79,8 @@ public enum CommonMistakes {
         "mae-ni#0": .joining, "mae-ni#1": .joining, "mae-ni#2": .lookAlike,
         "toki#0": .meaningAndRegister, "toki#1": .joining,
         "comparison#0": .meaningAndRegister, "comparison#1": .joining, "comparison#2": .lookAlike,
+        "tsumori#0": .joining, "tsumori#1": .meaningAndRegister, "tsumori#2": .lookAlike,
+        "masen-ka#0": .joining, "masen-ka#1": .meaningAndRegister,
         "teshimau#0": .meaningAndRegister, "teshimau#1": .lookAlike, "teshimau#2": .meaningAndRegister,
         "temiru#0": .meaningAndRegister, "temiru#1": .joining, "temiru#2": .meaningAndRegister,
         "sugiru#0": .joining, "sugiru#1": .meaningAndRegister, "sugiru#2": .lookAlike,
