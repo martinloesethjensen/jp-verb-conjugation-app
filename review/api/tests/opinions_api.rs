@@ -574,3 +574,199 @@ async fn the_question_and_answer_are_capped() {
     .await;
     assert_eq!(r.status, 400);
 }
+
+// --- Closing: a request ends with the item's last open suggestion -----------------------------------
+
+async fn inbox_of(s: &SqliteStore, status: &str) -> Vec<Value> {
+    let r = get(s, &format!("/api/inbox?status={status}"), MARTIN).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    r.body["suggestions"].as_array().unwrap().clone()
+}
+
+/// An open note on the example by `who`; returns its id.
+async fn note(s: &SqliteStore, who: &str) -> i64 {
+    let (id, hash) = example(s).await;
+    let r = post(
+        s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": id, "base_hash": hash,
+        "action": "note", "comment": "Hmm."}),
+        who,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    r.body["id"].as_i64().unwrap()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_request_closes_when_its_items_last_open_suggestion_is_decided() {
+    let s = seeded().await;
+    let aiko = suggest_en(&s, AIKO, "Aiko's English.").await;
+    let old = ask_via(&s, KEIKO, number(&s, BEN), "Which reads better?")
+        .await
+        .body["id"]
+        .as_i64()
+        .unwrap();
+    let d = post(
+        &s,
+        "/api/decide",
+        json!({"id": aiko, "decision": "accept"}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(d.status, 200, "{}", d.body);
+    let o = s.opinion(old, MARTIN).await.unwrap().unwrap();
+    assert!(o.closed_at.is_some() && o.cancelled_at.is_none() && !o.waiting);
+    assert_eq!(audit_count(&s, "opinion.close"), 1);
+    // Ben suggests a new change on the same item: it is open, not waiting on the old request.
+    let ben = suggest_en(&s, BEN, "Ben's English.").await;
+    let open: Vec<i64> = inbox_of(&s, "open")
+        .await
+        .iter()
+        .map(|r| r["id"].as_i64().unwrap())
+        .collect();
+    assert_eq!(open, vec![ben]);
+    assert!(inbox_of(&s, "waiting").await.is_empty());
+    assert!(inbox_of(&s, "open").await[0]["opinion"].is_null());
+    // The old request can't be answered or cancelled any more.
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": old, "pick": null, "body": "Neither."}),
+        BEN,
+    )
+    .await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (409, "already decided")
+    );
+    let r = post(&s, "/api/opinion/cancel", json!({"id": old}), KEIKO).await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (409, "already decided")
+    );
+    // A fresh ask goes through.
+    let r = ask_via(&s, KEIKO, number(&s, AIKO), "And now?").await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    // Closing isn't a cancellation: Ben hears of no cancelled request.
+    let replies = get(&s, "/api/replies", BEN).await;
+    assert!(!replies.body.to_string().contains("opinion_cancelled"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn withdrawing_the_last_open_suggestion_closes_the_request() {
+    let s = seeded().await;
+    let (_, sid, id) = asked(&s).await;
+    s.withdraw(sid, AIKO, T0).await.unwrap();
+    let o = s.opinion(id, MARTIN).await.unwrap().unwrap();
+    assert_eq!(o.closed_at.as_deref(), Some(T0));
+    assert_eq!(audit_count(&s, "opinion.close"), 1);
+    let t = target(&s).await;
+    suggest_en(&s, KEIKO, "Keiko's.").await;
+    s.ask_opinion(&t, BEN, "", MARTIN, T0).await.unwrap();
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_request_stays_open_while_another_suggestion_is_open() {
+    let s = seeded().await;
+    let (_, sid, id) = asked(&s).await;
+    suggest_en(&s, KEIKO, "Keiko's.").await;
+    s.decide(sid, false, OwnerEdit::default(), MARTIN, T0, &[], "")
+        .await
+        .unwrap();
+    let o = s.opinion(id, MARTIN).await.unwrap().unwrap();
+    assert!(o.closed_at.is_none() && o.waiting);
+    assert_eq!(audit_count(&s, "opinion.close"), 0);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_open_note_neither_keeps_a_request_waiting_nor_open() {
+    let s = seeded().await;
+    let (_, sid, id) = asked(&s).await;
+    note(&s, MARTIN).await;
+    s.decide(sid, false, OwnerEdit::default(), MARTIN, T0, &[], "")
+        .await
+        .unwrap();
+    let o = s.opinion(id, MARTIN).await.unwrap().unwrap();
+    assert!(o.closed_at.is_some() && !o.waiting);
+    assert!(inbox_of(&s, "waiting").await.is_empty());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_item_whose_only_open_suggestion_is_a_note_cannot_be_asked_about() {
+    let s = seeded().await;
+    note(&s, AIKO).await;
+    let r = ask_via(&s, KEIKO, number(&s, BEN), "Which?").await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (409, "nothing open to give an opinion on")
+    );
+    let t = target(&s).await;
+    assert_eq!(
+        s.ask_opinion(&t, BEN, "", KEIKO, T0).await,
+        Err(StoreError::Conflict)
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_anchor_is_the_oldest_open_change_not_a_note() {
+    let s = seeded().await;
+    note(&s, MARTIN).await;
+    let sid = suggest_en(&s, AIKO, "Better English.").await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    assert_eq!(s.opinion(id, KEIKO).await.unwrap().unwrap().anchor_id, sid);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_note_cannot_be_the_pick() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let n = note(&s, MARTIN).await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": n, "body": ""}),
+        BEN,
+    )
+    .await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (400, "pick one of the open suggestions")
+    );
+    assert_eq!(
+        s.answer_opinion(id, Some(n), "", BEN, T0).await,
+        Err(StoreError::Conflict)
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_asked_person_cannot_pick_their_own_suggestion() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "Better English.").await;
+    let id = ask_via(&s, KEIKO, number(&s, BEN), "").await.body["id"]
+        .as_i64()
+        .unwrap();
+    // Ben writes a suggestion after being asked.
+    let own = suggest_en(&s, BEN, "Ben's English.").await;
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": id, "pick": own, "body": ""}),
+        BEN,
+    )
+    .await;
+    assert_eq!(
+        (r.status, r.body["error"].as_str().unwrap()),
+        (400, "you can't pick your own suggestion")
+    );
+    assert_eq!(
+        s.answer_opinion(id, Some(own), "", BEN, T0).await,
+        Err(StoreError::Conflict)
+    );
+    assert!(s.opinion(id, BEN).await.unwrap().unwrap().waiting);
+}

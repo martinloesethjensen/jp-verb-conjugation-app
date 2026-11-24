@@ -705,7 +705,7 @@ pub async fn inbox<S: Store + ReviewStore>(
             targets.push(t);
         }
     }
-    // Newest first: the item's open request, else its newest answered one; never a cancelled one.
+    // Newest first: the item's open request, else its newest answered one; never a cancelled or closed one.
     let requests = tri!(store
         .opinions_for_targets(&targets, &by.email)
         .await
@@ -716,7 +716,7 @@ pub async fn inbox<S: Store + ReviewStore>(
             .filter(|o| o.dataset == s.dataset && o.kind == s.kind && o.item_id == s.item_id);
         let open = of_item
             .clone()
-            .find(|o| o.answered_at.is_none() && o.cancelled_at.is_none());
+            .find(|o| o.answered_at.is_none() && o.cancelled_at.is_none() && o.closed_at.is_none());
         open.or_else(|| of_item.find(|o| o.answered_at.is_some()))
     };
     let mut entries = BTreeMap::new();

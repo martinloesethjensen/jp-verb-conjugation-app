@@ -786,6 +786,20 @@ async fn accepting_never_declines_the_deciders_own_suggestion() {
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn a_natives_accept_declines_another_persons_japanese_only_change() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let (_, _, json) = example(&s).await;
+    let jp = json["jp"].as_str().unwrap();
+    let keiko = suggest_edits(&s, KEIKO, json!({ "jp": format!("{jp}ね") })).await;
+    let aiko = suggest_edits(&s, AIKO, json!({ "jp": format!("{jp}よ") })).await;
+    let r = ben_decides(&s, json!({"id": aiko, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["declined"], json!([keiko]));
+    assert_eq!(status_of(&s, &keiko), ("declined".into(), Some(BEN.into())));
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn a_native_accepting_leaves_changes_they_cannot_decide_open() {
     let s = seeded().await;
     make_native(&s).await;

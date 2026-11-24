@@ -915,13 +915,14 @@ pub const SELECT_ADDITIONS: &str = suggestions_where!(
 pub const SELECT_ADDITIONS_COMMENTS: &str = comments_where!(
     "WHERE s.dataset = ?2 AND s.action = 'add' AND s.kind = 'entry' AND ?1 IS NOT NULL"
 );
-/// The inbox's filter. `waiting` is `open` for items with an open request for an opinion; `open` leaves
-/// those out. The other statuses ignore requests.
+/// The inbox's filter. `waiting` is `open` for items with an open request for an opinion (unanswered, not
+/// cancelled, not closed); `open` leaves those out. The other statuses ignore requests.
 macro_rules! inbox_where {
     () => {
         "WHERE s.status = IIF(?2 = 'waiting', 'open', ?2) AND (?2 NOT IN ('open', 'waiting') \
          OR (?2 = 'waiting') = EXISTS (SELECT 1 FROM opinion_requests o WHERE o.dataset = s.dataset \
-         AND o.kind = s.kind AND o.item_id = s.item_id AND o.answered_at IS NULL AND o.cancelled_at IS NULL))"
+         AND o.kind = s.kind AND o.item_id = s.item_id AND o.answered_at IS NULL AND o.cancelled_at IS NULL \
+         AND o.closed_at IS NULL))"
     };
 }
 /// ?1 viewer, ?2 status: open, waiting, accepted or declined. Oldest first.
@@ -1075,7 +1076,10 @@ pub struct OpinionRequest {
     pub pick: Option<i64>,
     pub answer: String,
     pub cancelled_at: Option<String>,
-    /// Unanswered, not cancelled, and the item still has an open suggestion.
+    /// When the decision or withdrawal that closed the item's last open suggestion closed this unanswered
+    /// request. Not a cancellation: nobody is told.
+    pub closed_at: Option<String>,
+    /// Unanswered, not cancelled, not closed, and the item still has an open suggestion other than a note.
     pub waiting: bool,
 }
 
@@ -1098,6 +1102,7 @@ pub struct OpinionRow {
     pub pick: Option<i64>,
     pub answer: String,
     pub cancelled_at: Option<String>,
+    pub closed_at: Option<String>,
     pub waiting: i64,
 }
 
@@ -1121,6 +1126,7 @@ impl From<OpinionRow> for OpinionRequest {
             pick: r.pick,
             answer: r.answer,
             cancelled_at: r.cancelled_at,
+            closed_at: r.closed_at,
             waiting: r.waiting != 0,
         }
     }
@@ -1159,10 +1165,10 @@ macro_rules! opinions_select {
              IFNULL(ub.display_name, '') AS asked_by_name, \
              IFNULL(uo.display_name, '') AS asked_of_name, \
              o.asked_by = ?1 AS mine_asked, o.asked_of = ?1 AS mine_to_answer, \
-             o.question, o.created_at, o.answered_at, o.pick, o.answer, o.cancelled_at, \
-             (o.answered_at IS NULL AND o.cancelled_at IS NULL AND EXISTS ( \
+             o.question, o.created_at, o.answered_at, o.pick, o.answer, o.cancelled_at, o.closed_at, \
+             (o.answered_at IS NULL AND o.cancelled_at IS NULL AND o.closed_at IS NULL AND EXISTS ( \
                 SELECT 1 FROM suggestions s WHERE s.dataset = o.dataset AND s.kind = o.kind \
-                AND s.item_id = o.item_id AND s.status = 'open')) AS waiting \
+                AND s.item_id = o.item_id AND s.status = 'open' AND s.action <> 'note')) AS waiting \
              FROM opinion_requests o \
              LEFT JOIN users ub ON ub.email = o.asked_by LEFT JOIN users uo ON uo.email = o.asked_of ",
             $where,
@@ -1199,14 +1205,15 @@ pub const SELECT_OPINION_CANDIDATES: &str = "SELECT u.rowid AS user, u.display_n
 /// ?1 number.
 pub const SELECT_USER_NUMBER: &str = "SELECT email, role, active FROM users WHERE rowid = ?1";
 
-/// Opens a request on the item's oldest open suggestion unless one is already open, so no row back means
-/// a conflict (or nothing to ask about). ?1–?3 target, ?4 asker, ?5 asked of, ?6 question, ?7 now.
+/// Opens a request on the item's oldest open suggestion that isn't a note, unless one is already open, so no
+/// row back means a conflict (or nothing to ask about). ?1–?3 target, ?4 asker, ?5 asked of, ?6 question,
+/// ?7 now.
 pub const INSERT_OPINION: &str = "INSERT INTO opinion_requests \
      (dataset, kind, item_id, entry_id, item_title, anchor_id, asked_by, asked_of, question, created_at) \
      SELECT ?1, ?2, ?3, s.entry_id, s.item_title, s.id, ?4, ?5, ?6, ?7 FROM suggestions s \
-     WHERE s.dataset = ?1 AND s.kind = ?2 AND s.item_id = ?3 AND s.status = 'open' \
+     WHERE s.dataset = ?1 AND s.kind = ?2 AND s.item_id = ?3 AND s.status = 'open' AND s.action <> 'note' \
      AND NOT EXISTS (SELECT 1 FROM opinion_requests o WHERE o.dataset = ?1 AND o.kind = ?2 \
-        AND o.item_id = ?3 AND o.answered_at IS NULL AND o.cancelled_at IS NULL) \
+        AND o.item_id = ?3 AND o.answered_at IS NULL AND o.cancelled_at IS NULL AND o.closed_at IS NULL) \
      ORDER BY s.id LIMIT 1 RETURNING id";
 
 /// The request `INSERT_OPINION` just made, by its natural key: the item's one open request, from this
@@ -1214,7 +1221,8 @@ pub const INSERT_OPINION: &str = "INSERT INTO opinion_requests \
 macro_rules! just_asked {
     () => {
         "FROM opinion_requests o WHERE o.dataset = ?1 AND o.kind = ?2 AND o.item_id = ?3 \
-         AND o.answered_at IS NULL AND o.cancelled_at IS NULL AND o.asked_by = ?4 AND o.created_at = ?5"
+         AND o.answered_at IS NULL AND o.cancelled_at IS NULL AND o.closed_at IS NULL \
+         AND o.asked_by = ?4 AND o.created_at = ?5"
     };
 }
 /// ?1–?3 target, ?4 asker, ?5 now.
@@ -1230,25 +1238,28 @@ pub const READ_ASKED_THREAD: &str = concat!(
     " ON CONFLICT (user, suggestion_id) DO UPDATE SET read_at = MAX(read_at, excluded.read_at)"
 );
 
-/// ?1 id: who asked whom, and whether it is still open (neither answered nor cancelled).
+/// ?1 id: who asked whom, and whether it is still open (not answered, cancelled or closed).
 pub const SELECT_OPINION_STATE: &str = "SELECT asked_by, asked_of, \
-     (answered_at IS NULL AND cancelled_at IS NULL) AS open FROM opinion_requests WHERE id = ?1";
+     (answered_at IS NULL AND cancelled_at IS NULL AND closed_at IS NULL) AS open \
+     FROM opinion_requests WHERE id = ?1";
 
 /// ?1 id, ?2 asker, ?3 now.
 pub const CANCEL_OPINION: &str = "UPDATE opinion_requests SET cancelled_at = ?3 \
-     WHERE id = ?1 AND asked_by = ?2 AND answered_at IS NULL AND cancelled_at IS NULL";
+     WHERE id = ?1 AND asked_by = ?2 AND answered_at IS NULL AND cancelled_at IS NULL AND closed_at IS NULL";
 /// As `INSERT_WITHDRAW_AUDIT`, for `CANCEL_OPINION`: ?1 id, ?2 asker, ?3 now.
 pub const INSERT_CANCEL_AUDIT: &str = "INSERT INTO audit_log (at, actor, action, target, detail) \
      SELECT ?3, ?2, 'opinion.cancel', 'opinion/' || id, '' FROM opinion_requests \
-     WHERE id = ?1 AND asked_by = ?2 AND answered_at IS NULL AND cancelled_at IS NULL";
+     WHERE id = ?1 AND asked_by = ?2 AND answered_at IS NULL AND cancelled_at IS NULL AND closed_at IS NULL";
 
 /// What an answer needs to be written: the request is open, the answerer is who was asked, and a pick is
-/// a suggestion on the same item. ?1 id, ?2 by, ?3 pick.
+/// an open suggestion on the same item, not a note and not the answerer's own. ?1 id, ?2 by, ?3 pick.
 macro_rules! answerable {
     () => {
         "o.id = ?1 AND o.asked_of = ?2 AND o.answered_at IS NULL AND o.cancelled_at IS NULL \
+         AND o.closed_at IS NULL \
          AND (?3 IS NULL OR EXISTS (SELECT 1 FROM suggestions p WHERE p.id = ?3 AND p.dataset = o.dataset \
-            AND p.kind = o.kind AND p.item_id = o.item_id))"
+            AND p.kind = o.kind AND p.item_id = o.item_id AND p.status = 'open' AND p.action <> 'note' \
+            AND p.author <> ?2))"
     };
 }
 /// ?1 id, ?2 by, ?3 pick, ?4 now.
@@ -1271,10 +1282,35 @@ pub const ANSWER_OPINION: &str = concat!(
     answerable!()
 );
 
+/// The item's open requests that the decision or withdrawal of suggestion ?3 closes, in that write's batch
+/// after its own statements: only where it went through (decided or withdrawn by ?2 at ?1) and left the item
+/// no open suggestion other than a note. ?1 now, ?2 by, ?3 the suggestion.
+macro_rules! closed_here {
+    () => {
+        "o.answered_at IS NULL AND o.cancelled_at IS NULL AND o.closed_at IS NULL \
+         AND EXISTS (SELECT 1 FROM suggestions m WHERE m.id = ?3 AND m.dataset = o.dataset \
+            AND m.kind = o.kind AND m.item_id = o.item_id AND m.status <> 'open' \
+            AND m.decided_by = ?2 AND m.decided_at = ?1) \
+         AND NOT EXISTS (SELECT 1 FROM suggestions s WHERE s.dataset = o.dataset AND s.kind = o.kind \
+            AND s.item_id = o.item_id AND s.status = 'open' AND s.action <> 'note')"
+    };
+}
+/// The audit row for each request `CLOSE_OPINIONS` closes, written just before it.
+pub const INSERT_CLOSE_AUDIT: &str = concat!(
+    "INSERT INTO audit_log (at, actor, action, target, detail) \
+     SELECT ?1, ?2, 'opinion.close', 'opinion/' || o.id, 'suggestion/' || ?3 \
+     FROM opinion_requests o WHERE ",
+    closed_here!()
+);
+pub const CLOSE_OPINIONS: &str = concat!(
+    "UPDATE opinion_requests AS o SET closed_at = ?1 WHERE ",
+    closed_here!()
+);
+
 /// Review data. `viewer` is the asking user's email, used only for `mine` and queue progress; names come
 /// from `users.display_name`. Every write inserts its audit row in the same batch (actions
 /// `approval.add|remove`, `suggestion.add|withdraw|accept|decline`, `comment.add`,
-/// `queue.add|update|note|remove_item|skip`, `opinion.ask|cancel|answer`).
+/// `queue.add|update|note|remove_item|skip`, `opinion.ask|cancel|answer|close`).
 #[allow(async_fn_in_trait)]
 pub trait ReviewStore {
     /// `(content_hash, entry_id, title)` of a loaded target.

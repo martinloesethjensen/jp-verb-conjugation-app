@@ -772,6 +772,10 @@ impl ReviewStore for SqliteStore {
         {
             return Err(StoreError::NotFound); // dropping tx rolls the audit row back
         }
+        tx.execute(INSERT_CLOSE_AUDIT, params![now, author, id])
+            .map_err(backend)?;
+        tx.execute(CLOSE_OPINIONS, params![now, author, id])
+            .map_err(backend)?;
         tx.commit().map_err(backend)
     }
 
@@ -841,6 +845,10 @@ impl ReviewStore for SqliteStore {
                 .map_err(backend)?;
             }
         }
+        tx.execute(INSERT_CLOSE_AUDIT, params![now, by, id])
+            .map_err(backend)?;
+        tx.execute(CLOSE_OPINIONS, params![now, by, id])
+            .map_err(backend)?;
         tx.commit().map_err(backend)
     }
 

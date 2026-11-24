@@ -5,7 +5,7 @@
 use crate::app::{error, parse, ApiResponse};
 use crate::auth::Principal;
 use crate::review_routes::{loaded_target, ok, target, text_field, tri, unavailable};
-use crate::review_store::{ReviewStore, Target};
+use crate::review_store::{ReviewStore, Suggestion, Target};
 use crate::store::StoreError;
 use serde::Deserialize;
 use serde_json::json;
@@ -16,6 +16,7 @@ const NOTHING_OPEN: &str = "nothing open to give an opinion on";
 const NO_SUCH_REVIEWER: &str = "no such reviewer";
 const DECIDED: &str = "already decided";
 const CLOSED: &str = "that request was already answered or cancelled";
+const OWN_PICK: &str = "you can't pick your own suggestion";
 
 fn may_ask(by: &Principal) -> Result<(), ApiResponse> {
     if by.role.can_ask_opinion() {
@@ -25,21 +26,22 @@ fn may_ask(by: &Principal) -> Result<(), ApiResponse> {
     }
 }
 
-/// The ids of the item's open suggestions.
+/// The item's open suggestions an opinion is about: changes, removals and additions, not notes.
 async fn open_suggestions<S: ReviewStore>(
     store: &S,
     t: &Target,
     entry_id: &str,
     viewer: &str,
-) -> Result<Vec<i64>, ApiResponse> {
+) -> Result<Vec<Suggestion>, ApiResponse> {
     let (_, all) = store
         .entry_review(&t.dataset, entry_id, viewer)
         .await
         .map_err(unavailable)?;
     Ok(all
         .into_iter()
-        .filter(|s| s.status == "open" && s.kind == t.kind && s.item_id == t.item_id)
-        .map(|s| s.id)
+        .filter(|s| {
+            s.status == "open" && s.action != "note" && s.kind == t.kind && s.item_id == t.item_id
+        })
         .collect())
 }
 
@@ -131,6 +133,9 @@ pub async fn cancel<S: ReviewStore>(
     if !request.mine_asked {
         return error(403, "only the person who asked can cancel");
     }
+    if request.closed_at.is_some() {
+        return error(409, DECIDED);
+    }
     match store.cancel_opinion(body.id, &by.email, now).await {
         Ok(()) => ok(200, json!({})),
         Err(StoreError::NotFound) => error(409, CLOSED),
@@ -166,6 +171,10 @@ pub async fn answer<S: ReviewStore>(
     if request.answered_at.is_some() || request.cancelled_at.is_some() {
         return error(409, CLOSED);
     }
+    // Closed with the item's last open suggestion: the item was decided.
+    if request.closed_at.is_some() {
+        return error(409, DECIDED);
+    }
     if !request.waiting {
         return error(409, DECIDED);
     }
@@ -178,8 +187,10 @@ pub async fn answer<S: ReviewStore>(
                 item_id: request.item_id.clone(),
             };
             let open = tri!(open_suggestions(store, &t, &request.entry_id, &by.email).await);
-            if !open.contains(&pick) {
-                return error(400, "pick one of the open suggestions");
+            match open.iter().find(|s| s.id == pick) {
+                None => return error(400, "pick one of the open suggestions"),
+                Some(s) if s.mine => return error(400, OWN_PICK),
+                Some(_) => {}
             }
         }
         None => {}

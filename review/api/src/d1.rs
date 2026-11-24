@@ -815,7 +815,15 @@ impl ReviewStore for D1Store {
             &[text(now), text(author), number(id)],
         )?;
         let update = self.statement(WITHDRAW, &[number(id), text(author), text(now)])?;
-        let results = self.db.batch(vec![log, update]).await.map_err(backend)?;
+        // Then any request this leaves with nothing open closes, only if the withdrawal went through.
+        let close = [text(now), text(author), number(id)];
+        let close_log = self.statement(INSERT_CLOSE_AUDIT, &close)?;
+        let close = self.statement(CLOSE_OPINIONS, &close)?;
+        let results = self
+            .db
+            .batch(vec![log, update, close_log, close])
+            .await
+            .map_err(backend)?;
         if changes(results.get(1)) == 0 {
             return Err(StoreError::NotFound);
         }
@@ -884,6 +892,10 @@ impl ReviewStore for D1Store {
                 batch.push(self.statement(INSERT_SUPERSEDED_COMMENT, &binds)?);
             }
         }
+        // Last, a request left with nothing open closes, only where this decision went through.
+        let close = [text(now), text(by), number(id)];
+        batch.push(self.statement(INSERT_CLOSE_AUDIT, &close)?);
+        batch.push(self.statement(CLOSE_OPINIONS, &close)?);
         let results = self.db.batch(batch).await.map_err(backend)?;
         if changes(results.get(1)) == 0 {
             return Err(StoreError::Conflict);
