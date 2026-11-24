@@ -2,13 +2,21 @@
 	// What a second-opinion request says on an item: still waiting (with a way to cancel it for whoever asked),
 	// or answered (who picked which suggestion, or that neither works, and why).
 	import type { InboxSuggestion, Opinion } from './api.ts';
+	import Japanese from './Japanese.svelte';
 	import { answeredLine, askedLine, waitingLine } from './opinions.ts';
 
 	let {
 		opinion,
 		suggestions,
+		readings = {},
 		oncancel
-	}: { opinion: Opinion; suggestions: InboxSuggestion[]; oncancel: () => void } = $props();
+	}: {
+		opinion: Opinion;
+		suggestions: InboxSuggestion[];
+		/** Furigana for the question and the answer. */
+		readings?: Record<string, string>;
+		oncancel: () => void;
+	} = $props();
 
 	const picked = $derived(suggestions.find((s) => s.id === opinion.pick)?.author_name ?? null);
 	const answered = $derived(opinion.answered_at !== null);
@@ -17,11 +25,11 @@
 <div class="status">
 	{#if answered}
 		<p class="line"><strong>{answeredLine(opinion, picked)}</strong></p>
-		{#if opinion.answer}<p class="muted">{opinion.answer}</p>{/if}
+		{#if opinion.answer}<p class="muted"><Japanese text={opinion.answer} {readings} prose /></p>{/if}
 	{:else}
 		<p class="line"><span class="ring" aria-hidden="true"></span><strong>{waitingLine(opinion)}</strong></p>
 		<p class="muted">{askedLine(opinion, suggestions)}</p>
-		{#if opinion.question}<p class="muted">“{opinion.question}”</p>{/if}
+		{#if opinion.question}<p class="muted">“<Japanese text={opinion.question} {readings} prose />”</p>{/if}
 		{#if opinion.mine_asked}
 			<button type="button" class="link" onclick={oncancel}>Cancel the request</button>
 		{/if}

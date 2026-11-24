@@ -66,7 +66,7 @@ describe('the keymap', () => {
 });
 
 describe('where the keys land', () => {
-	const stub = { approvalsOf: () => [], suggestionsOf: () => [], approvedByMe: () => false, hashOf: () => 'h', isJustApproved: () => false } as unknown as EntryReview;
+	const stub = { approvalsOf: () => [], suggestionsOf: () => [], opinions: [], approvedByMe: () => false, hashOf: () => 'h', isJustApproved: () => false } as unknown as EntryReview;
 	const field = { name: 'en', input: 'text' as const, optional: false, choices: [] };
 
 	test('the review bar marks its buttons, but not removal', () => {

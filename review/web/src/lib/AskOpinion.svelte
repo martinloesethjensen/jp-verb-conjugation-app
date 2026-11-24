@@ -1,34 +1,47 @@
 <script lang="ts">
-	// The "Ask for a second opinion" panel under an item's open suggestions: pick a colleague, add a question,
-	// ask. They see both suggestions and pick one, or say why neither works; the asker still decides.
-	import { onMount, untrack } from 'svelte';
+	// "Ask for a second opinion" under an item's open suggestions: a button that opens the panel, where the asker
+	// picks a colleague, adds a question and asks. The people load when it opens, not before. The person asked
+	// sees the suggestions and picks one, or says why neither works; the asker still decides.
+	import { tick, untrack } from 'svelte';
 	import { askOpinion, getCandidates, problem, type Candidate, type Target } from './api.ts';
 	import ErrorLine from './ErrorLine.svelte';
-	import { askLabel, firstCandidate, seenNote, stepIndex } from './opinions.ts';
+	import { roleLabel } from './labels.ts';
+	import { askLabel, askLead, firstCandidate, seenNote, stepIndex } from './opinions.ts';
 
 	let {
 		target,
 		onasked,
+		count = 2,
+		open: startOpen = false,
 		candidates: given = null,
 		error = null
 	}: {
 		target: Target;
 		onasked: () => void;
-		/** The people who can be asked; loaded when not given (the given list is for tests). */
+		/** How many open suggestions the person asked will see. */
+		count?: number;
+		/** Whether the panel starts open (for tests). */
+		open?: boolean;
+		/** The people who can be asked; loaded when the panel opens if not given (the given list is for tests). */
 		candidates?: Candidate[] | null;
 		/** A message to start with (for tests). */
 		error?: string | null;
 	} = $props();
 
 	const uid = $props.id();
-	// The given list and message only seed the state.
+	// The given values only seed the state.
+	let opened = $state(untrack(() => startOpen));
 	let candidates = $state<Candidate[] | null>(untrack(() => given));
 	let chosen = $state<number | null>(untrack(() => (given ? firstCandidate(given) : null)));
 	let question = $state('');
 	let busy = $state(false);
 	let failure = $state<string | null>(untrack(() => error));
+	let heading = $state<HTMLElement>();
 
-	onMount(async () => {
+	async function open() {
+		opened = true;
+		await tick();
+		heading?.focus();
 		if (candidates) return;
 		try {
 			candidates = await getCandidates(target);
@@ -37,7 +50,7 @@
 			candidates = [];
 			failure = problem(e);
 		}
-	});
+	}
 
 	let group = $state<HTMLElement>();
 
@@ -68,10 +81,12 @@
 	}
 </script>
 
-{#if candidates === null || candidates.length || failure}
+{#if !opened}
+	<button type="button" class="open" aria-expanded="false" onclick={open}>Ask for a second opinion</button>
+{:else if candidates === null || candidates.length || failure}
 	<form class="ask" onsubmit={ask} aria-labelledby="{uid}-heading">
-		<h3 id="{uid}-heading">Ask for a second opinion</h3>
-		<p class="lead">They see both suggestions and pick one, or say why neither works. You still decide.</p>
+		<h3 id="{uid}-heading" tabindex="-1" bind:this={heading}>Ask for a second opinion</h3>
+		<p class="lead">{askLead(count)}</p>
 		{#if candidates === null}
 			<p class="lead">Loading…</p>
 		{:else if candidates.length}
@@ -88,7 +103,7 @@
 					>
 						<span class="initial" aria-hidden="true">{(Array.from(c.name.trim())[0] ?? '?').toUpperCase()}</span>
 						<span class="who"
-							><span class="name">{c.name}</span><span class="note">{c.role} · {seenNote(c)}</span></span
+							><span class="name">{c.name}</span><span class="note">{roleLabel(c.role)} · {seenNote(c)}</span></span
 						>
 					</button>
 				{/each}
@@ -97,6 +112,7 @@
 			<input id="{uid}-question" type="text" bind:value={question} autocomplete="off" />
 			<div class="row">
 				<button type="submit" class="primary" disabled={busy || chosen === null}>{askLabel(candidates, chosen)}</button>
+				<button type="button" class="link" onclick={() => (opened = false)}>Cancel</button>
 			</div>
 		{/if}
 		<ErrorLine message={failure} />
@@ -104,6 +120,11 @@
 {/if}
 
 <style>
+	.open {
+		min-height: 44px;
+		margin-top: 1rem;
+	}
+
 	.ask {
 		margin-top: 1rem;
 		padding: 1rem 1.25rem;
@@ -184,6 +205,10 @@
 	}
 
 	.row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
 		margin-top: 0.75rem;
 	}
 </style>

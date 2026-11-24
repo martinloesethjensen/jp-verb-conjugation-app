@@ -1,5 +1,5 @@
 // Second opinions: the wording and rules the pages share, kept out of the components so they can be tested.
-import type { Candidate, InboxSuggestion, Opinion } from './api.ts';
+import { problem, type Candidate, type InboxSuggestion, type Opinion } from './api.ts';
 import { shortDate } from './dates.ts';
 
 /** The banner over an item's open changes when several people want it changed differently; null when there
@@ -38,7 +38,8 @@ export function askLabel(candidates: Candidate[], chosen: number | null): string
 
 /** What an answered request says: who picked which suggestion, or that neither works. */
 export function answeredLine(o: Pick<Opinion, 'asked_of_name' | 'pick'>, authorOfPick: string | null): string {
-	return o.pick === null ? `${o.asked_of_name} thinks neither works` : `${o.asked_of_name} picked ${authorOfPick ?? 'a'}'s suggestion`;
+	if (o.pick === null) return `${o.asked_of_name} thinks neither works`;
+	return authorOfPick ? `${o.asked_of_name} picked ${authorOfPick}'s suggestion` : `${o.asked_of_name} picked a suggestion`;
 }
 
 /** The muted line under a waiting request: when, where it shows up, and who else is told (the suggestions' authors). */
@@ -65,6 +66,12 @@ export const stepIndex = (from: number, delta: number, length: number): number =
 /** The pick list's value for "Neither". */
 export const NEITHER = 'neither';
 
+/** The Ask panel's lead: what the person asked will see, for one open suggestion or several. */
+export const askLead = (count: number): string =>
+	count === 1
+		? 'They see the suggestion and say whether it works. You still decide.'
+		: 'They see both suggestions and pick one, or say why neither works. You still decide.';
+
 /** What the asked person sees: the form to answer, the "already decided" line, or only the status line. */
 export function cardMode(o: Pick<Opinion, 'mine_to_answer' | 'waiting' | 'answered_at' | 'cancelled_at'>): 'answer' | 'decided' | 'status' | 'none' {
 	if (o.cancelled_at) return 'none';
@@ -73,9 +80,29 @@ export function cardMode(o: Pick<Opinion, 'mine_to_answer' | 'waiting' | 'answer
 	return o.waiting || o.answered_at ? 'status' : 'none';
 }
 
-/** The suggestions the asked person chooses between: the open ones that change the item (notes don't). */
-export const pickable = <T extends Pick<InboxSuggestion, 'status' | 'action'>>(suggestions: T[]): T[] =>
+/** What a request is about: the item's open suggestions that change it (notes don't). */
+export const openChanges = <T extends Pick<InboxSuggestion, 'status' | 'action'>>(suggestions: T[]): T[] =>
 	suggestions.filter((s) => s.status === 'open' && s.action !== 'note');
+
+/** The suggestions the asked person chooses between: the open changes, less any they wrote themselves. */
+export const pickable = <T extends Pick<InboxSuggestion, 'status' | 'action' | 'mine'>>(suggestions: T[]): T[] =>
+	openChanges(suggestions).filter((s) => !s.mine);
+
+/** Sends an answer, then reloads; the message to show, or null. A failed reload after a sent answer says the
+ * answer went through, so nobody sends it twice. */
+export async function sendAnswer(send: () => Promise<unknown>, reload: () => Promise<void> | void): Promise<string | null> {
+	try {
+		await send();
+	} catch (e) {
+		return problem(e);
+	}
+	try {
+		await reload();
+	} catch {
+		return 'Your answer was sent; reload the page to see it.';
+	}
+	return null;
+}
 
 /** Whether Send is enabled: a suggestion picked, or "Neither" with a reason. */
 export function canAnswer(pick: number | typeof NEITHER | null, body: string): boolean {

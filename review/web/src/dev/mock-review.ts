@@ -154,7 +154,7 @@ const RANK: Record<string, number> = { owner: 0, teacher: 1, native: 2 };
 type OpinionRow = {
 	id: number; dataset: string; kind: string; item_id: string; entry_id: string; item_title: string; anchor_id: number;
 	asked_by: string; asked_of: string; question: string; created_at: string; answered_at: string | null;
-	pick: number | null; answer: string; cancelled_at: string | null;
+	pick: number | null; answer: string; cancelled_at: string | null; closed_at: string | null;
 };
 type QueueRow = { id: number; title: string; description: string; archived: boolean };
 type QueueItem = { queue_id: number; dataset: string; kind: string; item_id: string; entry_id: string; title: string; note: string; position: number };
@@ -258,9 +258,18 @@ export function reviewMock(ctx: ReviewContext) {
 	};
 
 	const openOn = (t: { dataset: string; kind: string; item_id: string }) => suggestions.filter((s) => same(s, t) && s.status === 'open');
-	/** Unanswered, not cancelled, and the item still has an open suggestion. */
-	const isWaiting = (o: OpinionRow) => !o.answered_at && !o.cancelled_at && openOn(o).length > 0;
+	/** What a request is about: the item's open suggestions other than notes. */
+	const openChangesOn = (t: { dataset: string; kind: string; item_id: string }) => openOn(t).filter((s) => s.action !== 'note');
+	/** Not answered, cancelled or closed. */
+	const isOpen = (o: OpinionRow) => !o.answered_at && !o.cancelled_at && !o.closed_at;
+	/** Open, and the item still has an open change. */
+	const isWaiting = (o: OpinionRow) => isOpen(o) && openChangesOn(o).length > 0;
 	const waitingFor = (t: { dataset: string; kind: string; item_id: string }) => opinions.find((o) => same(o, t) && isWaiting(o));
+	/** As the Worker: deciding or withdrawing the item's last open change closes its open request. */
+	const closeOpinions = (t: { dataset: string; kind: string; item_id: string }) => {
+		if (openChangesOn(t).length) return;
+		for (const o of opinions) if (same(o, t) && isOpen(o)) o.closed_at = now();
+	};
 	/** The mock users have no numbers of their own; a person's number is their place in the list. */
 	const numberOf = (email: string) => ctx.users.findIndex((u) => u.email === email) + 1;
 	const opinionOut = (o: OpinionRow) => ({
@@ -268,7 +277,7 @@ export function reviewMock(ctx: ReviewContext) {
 		anchor_id: o.anchor_id, asked_by_name: nameOf(o.asked_by), asked_of_name: nameOf(o.asked_of),
 		mine_asked: o.asked_by === ctx.me.email, mine_to_answer: o.asked_of === ctx.me.email, question: o.question,
 		created_at: o.created_at, answered_at: o.answered_at, pick: o.pick, answer: o.answer, cancelled_at: o.cancelled_at,
-		waiting: isWaiting(o)
+		closed_at: o.closed_at, waiting: isWaiting(o)
 	});
 
 	/** The same rule as review/api's reply events: others' comments in threads you're in, and decisions on
@@ -551,6 +560,7 @@ export function reviewMock(ctx: ReviewContext) {
 			if (!suggestion || suggestion.status !== 'open') return [409, { error: DECIDED }];
 			if (suggestion.author !== by) return [403, { error: 'only the person who suggested it can withdraw it' }];
 			Object.assign(suggestion, { status: 'withdrawn', decided_at: now() });
+			closeOpinions(suggestion);
 			return [200, suggestionOut(suggestion)];
 		}
 		if (path === '/replies' && method === 'GET') {
@@ -631,7 +641,7 @@ export function reviewMock(ctx: ReviewContext) {
 				: s.status === status;
 			return [200, {
 				suggestions: suggestions.filter(shown).map((s) => {
-					const asked = opinions.filter((o) => same(o, s) && !o.cancelled_at).at(-1);
+					const asked = opinions.filter((o) => same(o, s) && !o.cancelled_at && !o.closed_at).at(-1);
 					return { ...suggestionOut(s), current: currentOf(s), japanese_only: japaneseOnly(s), opinion: asked ? opinionOut(asked) : null };
 				})
 			}];
@@ -659,15 +669,17 @@ export function reviewMock(ctx: ReviewContext) {
 			const current = find(t);
 			if (!current) return [404, { error: NOT_LOADED }];
 			const open = openOn(t);
-			if (!open.length) return [409, { error: 'nothing open to give an opinion on' }];
+			const changes = openChangesOn(t);
+			if (!changes.length) return [409, { error: 'nothing open to give an opinion on' }];
 			const asked = ctx.users[Number(body.user) - 1];
 			if (!asked) return [400, { error: 'no such reviewer' }];
 			if (asked.email === by) return [400, { error: "you can't ask yourself" }];
 			if (open.some((s) => s.author === asked.email)) return [400, { error: 'they wrote one of these suggestions' }];
-			if (waitingFor(t)) return [409, { error: 'someone was already asked about this item' }];
+			if (opinions.some((o) => same(o, t) && isOpen(o))) return [409, { error: 'someone was already asked about this item' }];
 			const o: OpinionRow = {
-				id: nextId++, ...t, entry_id: current.entry_id, item_title: current.title, anchor_id: open[0].id,
-				asked_by: by, asked_of: asked.email, question, created_at: now(), answered_at: null, pick: null, answer: '', cancelled_at: null
+				id: nextId++, ...t, entry_id: current.entry_id, item_title: current.title, anchor_id: changes[0].id,
+				asked_by: by, asked_of: asked.email, question, created_at: now(), answered_at: null, pick: null, answer: '', cancelled_at: null,
+				closed_at: null
 			};
 			opinions.push(o);
 			markRead(by, o.anchor_id);
@@ -681,6 +693,7 @@ export function reviewMock(ctx: ReviewContext) {
 				return [403, { error: answering ? 'only the person asked can answer' : 'only the person who asked can cancel' }];
 			}
 			if (o.answered_at || o.cancelled_at) return [409, { error: 'that request was already answered or cancelled' }];
+			if (o.closed_at) return [409, { error: 'already decided' }];
 			if (!isWaiting(o)) return [409, { error: 'already decided' }];
 			if (!answering) {
 				o.cancelled_at = now();
@@ -689,7 +702,9 @@ export function reviewMock(ctx: ReviewContext) {
 			const text = String(body.body ?? '').trim();
 			const pick = body.pick === null || body.pick === undefined ? null : Number(body.pick);
 			if (pick === null && !text) return [400, { error: 'say why neither works' }];
-			if (pick !== null && !openOn(o).some((s) => s.id === pick)) return [400, { error: 'pick one of the open suggestions' }];
+			const picked = pick === null ? null : openChangesOn(o).find((s) => s.id === pick);
+			if (pick !== null && !picked) return [400, { error: 'pick one of the open suggestions' }];
+			if (picked && picked.author === by) return [400, { error: "you can't pick your own suggestion" }];
 			Object.assign(o, { answered_at: now(), pick, answer: text });
 			markRead(by, o.anchor_id);
 			return [200, {}];
@@ -732,7 +747,10 @@ export function reviewMock(ctx: ReviewContext) {
 			if (body.decision === 'accept') {
 				// Accepting one change declines the other open changes and removals on the same item (not notes, not the
 				// decider's own), each with a comment saying why.
-				const others = openOn(suggestion).filter((x) => x.id !== suggestion.id && x.author !== by && (x.action === 'change' || x.action === 'delete'));
+				const others = openOn(suggestion).filter(
+					(x) => x.id !== suggestion.id && x.author !== by && (x.action === 'change' || x.action === 'delete') &&
+						(ctx.me.role !== 'native' || japaneseOnly(x))
+				);
 				for (const other of others) {
 					Object.assign(other, { status: 'declined', decided_at: now(), decided_by: by });
 					comments.push({ suggestion_id: other.id, author: by, body: `Declined: ${nameOf(suggestion.author)}'s suggestion was accepted instead.`, created_at: now() });
@@ -740,6 +758,7 @@ export function reviewMock(ctx: ReviewContext) {
 				}
 			}
 			Object.assign(suggestion, { status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now(), decided_by: by });
+			closeOpinions(suggestion);
 			markRead(by, suggestion.id);
 			const reply = String(body.reply ?? '').trim();
 			if (reply) comments.push({ suggestion_id: suggestion.id, author: by, body: reply, created_at: now() });

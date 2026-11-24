@@ -1,11 +1,11 @@
 <script lang="ts">
 	// A second-opinion request on the item page. The person asked sees the open suggestions and picks one, or
-	// says why neither works; anyone else sees where the request stands. It sits above the oldest suggestion's thread.
-	import { answerOpinion, problem, type Opinion, type Suggestion } from './api.ts';
+	// says why neither works; anyone else sees where the request stands. It sits once above the item's suggestions.
+	import { answerOpinion, type Opinion, type Suggestion } from './api.ts';
 	import ErrorLine from './ErrorLine.svelte';
 	import Japanese from './Japanese.svelte';
 	import { KINDS } from './labels.ts';
-	import { answeredLine, canAnswer, cardMode, NEITHER, pickable, stepIndex, waitingLine } from './opinions.ts';
+	import { answeredLine, canAnswer, cardMode, NEITHER, pickable, sendAnswer, stepIndex, waitingLine } from './opinions.ts';
 	import RedPen from './RedPen.svelte';
 	import { replies } from './replies.svelte.ts';
 
@@ -71,14 +71,9 @@
 		if (!canAnswer(pick, body) || busy || pick === null) return;
 		busy = true;
 		failure = null;
-		try {
-			await answerOpinion(opinion.id, pick === NEITHER ? null : pick, body.trim());
-			await onanswered();
-		} catch (e) {
-			failure = problem(e);
-		} finally {
-			busy = false;
-		}
+		const chosen = pick === NEITHER ? null : pick;
+		failure = await sendAnswer(() => answerOpinion(opinion.id, chosen, body.trim()), onanswered);
+		busy = false;
 	}
 </script>
 

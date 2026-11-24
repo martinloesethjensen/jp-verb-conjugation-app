@@ -3,9 +3,10 @@ import { expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import ReviewBar from './ReviewBar.svelte';
 import type { EntryReview } from './review.svelte.ts';
+import { addition } from './fixtures.ts';
 
 const stub = (approved: boolean) =>
-	({ approvalsOf: () => [], suggestionsOf: () => [], approvedByMe: () => approved, hashOf: () => 'h', isJustApproved: () => false }) as unknown as EntryReview;
+	({ approvalsOf: () => [], suggestionsOf: () => [], opinions: [], approvedByMe: () => approved, hashOf: () => 'h', isJustApproved: () => false }) as unknown as EntryReview;
 const props = { kind: 'example', id: 'x', value: {}, fields: [], readings: {}, forms: {} };
 
 test('before approving, Looks right is the primary pill with a check icon', () => {
@@ -57,4 +58,19 @@ test('the More sheet shows errors itself, and the page line hides while a sheet 
 	const source = readFileSync(new URL('./ReviewBar.svelte', import.meta.url), 'utf8');
 	expect(source).toMatch(/<Sheet open=\{moreOpen\}[\s\S]*?<ErrorLine[\s\S]*?<\/Sheet>/);
 	expect(source).toMatch(/\{#if !sheetOpen\}<ErrorLine message=\{failure\} \{stale\} \/>\{\/if\}/);
+});
+
+test('the asked person keeps the answer card when the suggestion it was asked on is withdrawn', () => {
+	const opinion = {
+		id: 1, dataset: 'verbs', kind: 'example', item_id: 'x', entry_id: 'たべる', item_title: 't', anchor_id: 1,
+		asked_by_name: 'Keiko', asked_of_name: 'Ben', mine_asked: false, mine_to_answer: true, question: '',
+		created_at: '2026-11-17 09:00:00', answered_at: null, pick: null, answer: '', cancelled_at: null, closed_at: null, waiting: true
+	};
+	// Suggestion 1 (the anchor) was withdrawn, so only suggestion 2 is listed.
+	const later = { ...addition, id: 2, action: 'change' as const, item_id: 'x', author_name: 'Mio', proposed: { jp: 'x' } };
+	const review = { ...stub(false), suggestionsOf: () => [later], opinions: [opinion] } as unknown as EntryReview;
+	const { body } = render(ReviewBar, { props: { ...props, review } });
+	expect(body).toContain('Keiko asked for your opinion');
+	expect(body.indexOf('Keiko asked for your opinion')).toBeLessThan(body.indexOf('Mio'));
+	expect(body.match(/asked for your opinion/g)).toHaveLength(1);
 });

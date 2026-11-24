@@ -1,14 +1,14 @@
 import { expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import OpinionCard from './OpinionCard.svelte';
-import { canAnswer, cardMode, NEITHER, pickable } from './opinions.ts';
+import { canAnswer, cardMode, NEITHER, openChanges, pickable, sendAnswer } from './opinions.ts';
 import { addition } from './fixtures.ts';
-import type { Opinion, Suggestion } from './api.ts';
+import { problem, type Opinion, type Suggestion } from './api.ts';
 
 const opinion: Opinion = {
 	id: 1, dataset: 'verbs', kind: 'example', item_id: 'new001', entry_id: 'たべる', item_title: '食べてから寝ます。', anchor_id: 1,
 	asked_by_name: 'Martin', asked_of_name: 'Yumi', mine_asked: false, mine_to_answer: true, question: 'Which reads better?',
-	created_at: '2026-11-17 09:00:00', answered_at: null, pick: null, answer: '', cancelled_at: null, waiting: true
+	created_at: '2026-11-17 09:00:00', answered_at: null, pick: null, answer: '', cancelled_at: null, closed_at: null, waiting: true
 };
 const change = (id: number, author: string, jp: string): Suggestion => ({
 	...addition, id, action: 'change', author_name: author, proposed: { jp }
@@ -70,4 +70,19 @@ test('a Japanese answer gets furigana', () => {
 	const answered = { ...opinion, mine_to_answer: false, waiting: false, answered_at: 'x', pick: 2, answer: '食べるが自然です。' };
 	const { body } = render(OpinionCard, { props: { opinion: answered, ...props, readings: { 食: 'た' } } });
 	expect(body).toContain('<ruby');
+});
+
+test('the asked person cannot pick their own suggestion', () => {
+	const own = { ...suggestions[0], id: 5, mine: true };
+	expect(pickable([...suggestions, own]).map((s) => s.id)).toEqual([1, 2]);
+	expect(openChanges([...suggestions, own]).map((s) => s.id)).toEqual([1, 2, 5]);
+});
+
+test('a failed reload after a sent answer says the answer went through', async () => {
+	expect(await sendAnswer(async () => {}, async () => {})).toBeNull();
+	const refused = new Error('nope');
+	expect(await sendAnswer(async () => { throw refused; }, async () => {})).toBe(problem(refused));
+	expect(await sendAnswer(async () => {}, async () => { throw new Error('offline'); })).toBe(
+		'Your answer was sent; reload the page to see it.'
+	);
 });

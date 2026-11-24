@@ -8,7 +8,7 @@
 	import SuggestForm from '#lib/SuggestForm.svelte';
 	import InboxGroupHeader from '#lib/InboxGroupHeader.svelte';
 	import OpinionStatus from '#lib/OpinionStatus.svelte';
-	import { disagreement } from '#lib/opinions.ts';
+	import { disagreement, openChanges } from '#lib/opinions.ts';
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import Tip from '#lib/Tip.svelte';
 	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
@@ -77,9 +77,9 @@
 		return out;
 	});
 
-	/** The request on a group's item, if any, and whether the group still has open suggestions to ask about. */
+	/** The request on a group's item, if any, and whether the group still has open changes to ask about (notes don't count). */
 	const opinionOf = (items: InboxSuggestion[]) => items.find((s) => s.opinion)?.opinion ?? null;
-	const hasOpen = (items: InboxSuggestion[]) => items.some((s) => s.status === 'open');
+	const hasOpen = (items: InboxSuggestion[]) => openChanges(items).length > 0;
 
 	async function cancel(id: number) {
 		try {
@@ -244,11 +244,12 @@
 			{/each}
 			</div>
 			{#if opinion && (opinion.waiting || opinion.answered_at)}
-				<OpinionStatus {opinion} suggestions={group.items} oncancel={() => cancel(opinion.id)} />
+				<OpinionStatus {opinion} suggestions={group.items} {readings} oncancel={() => cancel(opinion.id)} />
 			{/if}
 			{#if mayAsk && hasOpen(group.items) && !opinion?.waiting}
 				<AskOpinion
 					target={{ dataset: first.dataset, kind: first.kind, id: first.item_id }}
+					count={openChanges(group.items).length}
 					onasked={() => show(status)}
 				/>
 			{/if}

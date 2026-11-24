@@ -307,7 +307,9 @@ export type Opinion = {
 	pick: number | null;
 	answer: string;
 	cancelled_at: string | null;
-	/** Unanswered, not cancelled, and the item still has an open suggestion. */
+	/** Set when the item's last open suggestion was decided or withdrawn while this was unanswered. */
+	closed_at: string | null;
+	/** Unanswered, not cancelled, not closed, and the item still has an open change (notes don't count). */
 	waiting: boolean;
 };
 
