@@ -24,5 +24,9 @@
   "kanji": {
     "version": "1.0.0",
     "sha256": "8c315064422e1d951c85278e4303227ffd4714e3b209655b21b0570e7b87dcd1"
+  },
+  "courses": {
+    "version": "1.0.0",
+    "sha256": "f7d7ef86e66ac61602798e0458b7be767bbd2ebf1dce4b392a2667ae4a055af7"
   }
 }
