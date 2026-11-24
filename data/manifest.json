@@ -2,12 +2,12 @@
   "version": "1.20.0",
   "sha256": "c67fe25469e381c7a96a3962647d6fc5882978bb25cdd7e7df59e5fc5a9ba80b",
   "grammar": {
-    "version": "1.20.0",
-    "sha256": "c9beb60409398dd5e022137e8adfca55d76e12741cdea8c663671147c3625fcf"
+    "version": "1.22.0",
+    "sha256": "ce6d24d88c4cb8bee5a5f2123c6405cca89f75ff96873faccc9a79288ea2f486"
   },
   "furigana": {
-    "version": "1.27.0",
-    "sha256": "02182a457a751b3ca64b631a08d06a8f9df786a8438c2d0ebd74ae823ee46d36"
+    "version": "1.29.0",
+    "sha256": "36122769ff19647de432527a45ebd04ba70569e03150a1dbf82cc866d89ca7ab"
   },
   "words": {
     "version": "1.0.0",
@@ -24,5 +24,9 @@
   "kanji": {
     "version": "1.0.0",
     "sha256": "8c315064422e1d951c85278e4303227ffd4714e3b209655b21b0570e7b87dcd1"
+  },
+  "courses": {
+    "version": "1.0.0",
+    "sha256": "f7d7ef86e66ac61602798e0458b7be767bbd2ebf1dce4b392a2667ae4a055af7"
   }
 }

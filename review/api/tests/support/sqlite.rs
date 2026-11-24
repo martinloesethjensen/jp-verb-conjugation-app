@@ -1363,3 +1363,310 @@ impl ReviewStore for SqliteStore {
         Ok(rows.into_iter().map(OpinionRequest::from).collect())
     }
 }
+
+// --- CourseStore ----------------------------------------------------------------------------------
+
+use review_api::course_store::*;
+use std::collections::BTreeSet;
+
+fn course_err(e: StoreError) -> CourseError {
+    e.into()
+}
+
+impl SqliteStore {
+    /// Runs SQL that has no rows to return, for tests that seed state (an approved course, say).
+    pub fn execute(&self, sql: &str) {
+        self.conn.borrow().execute_batch(sql).unwrap();
+    }
+
+    /// The outline write behind `save_lessons` and `save_outline`: one transaction, so the meta (when given)
+    /// and the lessons are all written or none are.
+    fn write_outline(
+        &self,
+        course_id: &str,
+        meta: Option<&CourseMeta>,
+        lessons: &[LessonInput],
+        by: &str,
+        now: &str,
+    ) -> Result<Vec<String>, CourseError> {
+        self.require_draft(course_id)?;
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let stored: Vec<CourseItemRow> = query(&tx, SELECT_COURSE_ITEMS, params![course_id])?;
+        let keys = keys_to_check(lessons, &stored);
+        let found: Vec<KeyRow> = query(&tx, SELECT_LOADED_KEYS, params![targets_json(&keys)])?;
+        let loaded: BTreeSet<String> = found.into_iter().map(|r| r.key).collect();
+        let known: Vec<LessonRow> = query(&tx, SELECT_LESSONS, params![course_id])?;
+        let known: BTreeSet<String> = known.into_iter().map(|l| l.id).collect();
+        let plan = plan_outline(lessons, &known, &stored, &loaded, &mut new_course_id)?;
+
+        if let Some(meta) = meta {
+            tx.execute(
+                UPDATE_COURSE_META,
+                params![course_id, meta.title, meta.summary, meta.follows_book, now],
+            )
+            .map_err(backend)?;
+            tx.execute(
+                INSERT_COURSE_AUDIT,
+                params![
+                    now,
+                    by,
+                    "course.save",
+                    audit_target(course_id),
+                    format!("title={}", meta.title),
+                    course_id
+                ],
+            )
+            .map_err(backend)?;
+        }
+        tx.execute(DELETE_COURSE_ITEMS, params![course_id])
+            .map_err(backend)?;
+        tx.execute(DELETE_COURSE_LESSONS, params![course_id])
+            .map_err(backend)?;
+        if !plan.is_empty() {
+            tx.execute(INSERT_LESSONS, params![course_id, lessons_json(&plan)])
+                .map_err(backend)?;
+        }
+        for chunk in item_chunks_json(&plan) {
+            tx.execute(INSERT_COURSE_ITEMS, params![course_id, chunk])
+                .map_err(backend)?;
+        }
+        let n = tx
+            .execute(TOUCH_COURSE, params![course_id, now])
+            .map_err(backend)?;
+        require_written(n, CourseError::NotDraft)?; // dropping `tx` rolls the guarded no-ops back
+        let items: usize = plan.iter().map(|l| l.items.len()).sum();
+        tx.execute(
+            INSERT_COURSE_AUDIT,
+            params![
+                now,
+                by,
+                "course.outline",
+                audit_target(course_id),
+                format!("lessons={} items={items}", plan.len()),
+                course_id
+            ],
+        )
+        .map_err(backend)?;
+        tx.commit().map_err(backend)?;
+        Ok(plan.into_iter().map(|l| l.id).collect())
+    }
+
+    fn course_status(&self, id: &str) -> Result<(String, Option<String>), CourseError> {
+        let conn = self.conn.borrow();
+        let mut rows: Vec<CourseRow> = query(&conn, SELECT_COURSE, params!["", id])?;
+        rows.pop()
+            .map(|r| (r.status, r.exported_at))
+            .ok_or(CourseError::NotFound)
+    }
+
+    fn require_draft(&self, id: &str) -> Result<(), CourseError> {
+        match self.course_status(id)?.0.as_str() {
+            "draft" => Ok(()),
+            _ => Err(CourseError::NotDraft),
+        }
+    }
+}
+
+impl CourseStore for SqliteStore {
+    async fn create_course(
+        &self,
+        new: &NewCourse,
+        by: &str,
+        now: &str,
+    ) -> Result<String, CourseError> {
+        let copied = new.copied_from.as_ref().map(|v| v.to_string());
+        for _ in 0..ID_TRIES {
+            let id = new_course_id();
+            let mut conn = self.conn.borrow_mut();
+            let tx = conn.transaction().map_err(backend)?;
+            let inserted = tx.execute(
+                INSERT_COURSE,
+                params![
+                    id,
+                    new.title,
+                    new.summary,
+                    by,
+                    new.follows_book,
+                    copied,
+                    now
+                ],
+            );
+            if let Err(e) = inserted {
+                match backend(e) {
+                    StoreError::Conflict => continue,
+                    other => return Err(course_err(other)),
+                }
+            }
+            tx.execute(
+                INSERT_COURSE_AUDIT,
+                params![
+                    now,
+                    by,
+                    "course.create",
+                    audit_target(&id),
+                    format!("title={}", new.title),
+                    id
+                ],
+            )
+            .map_err(backend)?;
+            tx.commit().map_err(backend)?;
+            return Ok(id);
+        }
+        Err(CourseError::Conflict)
+    }
+
+    async fn course(&self, id: &str, viewer: &str) -> Result<Option<Course>, CourseError> {
+        let conn = self.conn.borrow();
+        let mut rows: Vec<CourseRow> = query(&conn, SELECT_COURSE, params![viewer, id])?;
+        let Some(row) = rows.pop() else {
+            return Ok(None);
+        };
+        let lessons = query(&conn, SELECT_LESSONS, params![id])?;
+        let items = query(&conn, SELECT_COURSE_ITEMS, params![id])?;
+        Ok(Some(assemble_course(row, lessons, items)))
+    }
+
+    async fn courses(&self, viewer: &str) -> Result<Vec<CourseSummary>, CourseError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<SummaryRow> = query(&conn, SELECT_COURSES, params![viewer])?;
+        Ok(rows.into_iter().map(CourseSummary::from).collect())
+    }
+
+    async fn save_course_meta(
+        &self,
+        id: &str,
+        meta: &CourseMeta,
+        by: &str,
+        now: &str,
+    ) -> Result<(), CourseError> {
+        self.require_draft(id)?;
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let n = tx
+            .execute(
+                UPDATE_COURSE_META,
+                params![id, meta.title, meta.summary, meta.follows_book, now],
+            )
+            .map_err(backend)?;
+        require_written(n, CourseError::NotDraft)?;
+        tx.execute(
+            INSERT_COURSE_AUDIT,
+            params![
+                now,
+                by,
+                "course.save",
+                audit_target(id),
+                format!("title={}", meta.title),
+                id
+            ],
+        )
+        .map_err(backend)?;
+        tx.commit().map_err(backend)?;
+        Ok(())
+    }
+
+    async fn save_lessons(
+        &self,
+        course_id: &str,
+        lessons: &[LessonInput],
+        by: &str,
+        now: &str,
+    ) -> Result<Vec<String>, CourseError> {
+        self.write_outline(course_id, None, lessons, by, now)
+    }
+
+    async fn save_outline(
+        &self,
+        course_id: &str,
+        meta: &CourseMeta,
+        lessons: &[LessonInput],
+        by: &str,
+        now: &str,
+    ) -> Result<Vec<String>, CourseError> {
+        self.write_outline(course_id, Some(meta), lessons, by, now)
+    }
+
+    async fn loaded_targets(&self, targets: &[Target]) -> Result<Vec<Target>, CourseError> {
+        let conn = self.conn.borrow();
+        let found: Vec<KeyRow> = query(&conn, SELECT_LOADED_KEYS, params![targets_json(targets)])?;
+        Ok(loaded_subset(targets, &found))
+    }
+
+    async fn delete_draft(&self, id: &str, by: &str, now: &str) -> Result<(), CourseError> {
+        let (status, exported) = self.course_status(id)?;
+        if status != "draft" || exported.is_some() {
+            return Err(CourseError::NotDraft);
+        }
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        for sql in [
+            DELETE_DRAFT_ITEMS,
+            DELETE_DRAFT_LESSONS,
+            DELETE_DRAFT_COMMENTS,
+        ] {
+            tx.execute(sql, params![id]).map_err(backend)?;
+        }
+        let n = tx.execute(DELETE_DRAFT, params![id]).map_err(backend)?;
+        require_written(n, CourseError::NotDraft)?; // dropping `tx` rolls the guarded no-ops back
+        tx.execute(
+            INSERT_COURSE_DELETE_AUDIT,
+            params![now, by, "course.delete", audit_target(id), "", id],
+        )
+        .map_err(backend)?;
+        tx.commit().map_err(backend)?;
+        Ok(())
+    }
+
+    async fn set_status(
+        &self,
+        id: &str,
+        from: &str,
+        to: &str,
+        own_words: bool,
+        by: &str,
+        now: &str,
+    ) -> Result<(), CourseError> {
+        if self.course_status(id)?.0 != from {
+            return Err(CourseError::Conflict);
+        }
+        let mut conn = self.conn.borrow_mut();
+        let tx = conn.transaction().map_err(backend)?;
+        let n = tx
+            .execute(
+                UPDATE_COURSE_STATUS,
+                params![id, from, to, now, own_words as i64],
+            )
+            .map_err(backend)?;
+        require_written(n, CourseError::Conflict)?;
+        tx.execute(
+            INSERT_COURSE_AUDIT,
+            params![
+                now,
+                by,
+                "course.status",
+                audit_target(id),
+                format!("{from} -> {to}"),
+                id
+            ],
+        )
+        .map_err(backend)?;
+        tx.commit().map_err(backend)?;
+        Ok(())
+    }
+
+    async fn search_items(
+        &self,
+        queries: &[String],
+        kinds: &[String],
+        limit: u32,
+    ) -> Result<Vec<CourseItem>, CourseError> {
+        let conn = self.conn.borrow();
+        let rows: Vec<SearchRow> = query(
+            &conn,
+            SEARCH_ITEMS,
+            params![json_list(queries), search_pairs(kinds), limit],
+        )?;
+        Ok(rows.into_iter().map(CourseItem::from).collect())
+    }
+}

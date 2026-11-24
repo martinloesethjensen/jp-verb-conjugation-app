@@ -11,6 +11,7 @@ One [JSON Schema](https://json-schema.org/draft/2020-12) per published file in `
 | `furigana.schema.json` | `data/furigana.json` |
 | `forms.schema.json` | `data/forms.json` |
 | `kanji.schema.json` | `data/kanji.json` (built by `scripts/build_kanji.py`) |
+| `courses.schema.json` | `data/courses.json` (courses exported from the review site; ids only, see `docs/superpowers/specs/2026-11-17-courses-data-design.md`) |
 
 They are the contract for every client that reads `data/`: the iOS app's `Codable` models, the review site's
 Rust Worker (`review/api`), and an Android app later. `scripts/update_data.py` checks each file against its
@@ -43,4 +44,5 @@ grammar and counter examples are covered by their entry's stamp. A verb's stamp 
 
 `fixtures/invalid.json` is a list of small documents, each breaking exactly one rule:
 `{"name", "dataset", "doc", "error"}`, where `error` is part of the expected message. `scripts/test_schemas.py`
-checks the Python validator rejects each one for that reason; the review site's Rust tests use the same file.
+checks the Python validator rejects each one for that reason; the review site's Rust tests use the same file. `fixtures/courses/` holds `valid.json` and an `invalid.json` in the
+same format for `courses.schema.json`, which the review site does not serve yet.
