@@ -11,7 +11,7 @@
 use crate::store::StoreError;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Target {
@@ -996,11 +996,17 @@ pub fn assemble_contributions(
     rows: Vec<SuggestionRow>,
     extras: Vec<ContributionRow>,
     approvals: Vec<DatasetCountRow>,
-) -> Contributions {
+) -> Result<Contributions, StoreError> {
+    let extras: HashMap<i64, ContributionRow> = extras.into_iter().map(|e| (e.id, e)).collect();
     let suggestions = assemble(rows, Vec::new())
         .into_iter()
-        .filter_map(|suggestion| {
-            let e = extras.iter().find(|e| e.id == suggestion.id)?;
+        .map(|suggestion| {
+            let e = extras.get(&suggestion.id).ok_or_else(|| {
+                StoreError::Backend(format!(
+                    "suggestion {} has no contribution row",
+                    suggestion.id
+                ))
+            })?;
             let release = e.released_in.map(|id| ReleaseInfo {
                 id,
                 label: e.release_label.clone().unwrap_or_default(),
@@ -1014,7 +1020,7 @@ pub fn assemble_contributions(
                 }),
                 _ => None,
             };
-            Some(Contribution {
+            Ok(Contribution {
                 before: parse_json(e.before_json.clone()),
                 replies: e.replies as u32,
                 reason,
@@ -1022,30 +1028,35 @@ pub fn assemble_contributions(
                 suggestion,
             })
         })
-        .collect();
-    Contributions {
+        .collect::<Result<Vec<_>, StoreError>>()?;
+    Ok(Contributions {
         suggestions,
         approvals: approvals
             .into_iter()
             .map(|r| (r.dataset, r.n as u32))
             .collect(),
-    }
+    })
 }
 
+/// The viewer's own suggestions that aren't withdrawn (?1 viewer).
+macro_rules! contributions_where {
+    () => {
+        "WHERE s.author = ?1 AND s.status <> 'withdrawn'"
+    };
+}
 /// ?1 viewer: their suggestions that aren't withdrawn, newest first.
-pub const SELECT_CONTRIBUTIONS: &str = suggestions_where!(
-    "WHERE s.author = ?1 AND s.status <> 'withdrawn'",
-    "ORDER BY s.id DESC"
-);
+pub const SELECT_CONTRIBUTIONS: &str =
+    suggestions_where!(contributions_where!(), "ORDER BY s.id DESC");
 /// ?1 viewer: the same rows' release, recorded "before", comment count and decider's newest comment.
-pub const SELECT_CONTRIBUTION_EXTRAS: &str = "SELECT s.id, s.before_json, s.released_in, \
+pub const SELECT_CONTRIBUTION_EXTRAS: &str = concat!("SELECT s.id, s.before_json, s.released_in, \
      r.label AS release_label, r.first_loaded_at AS released_at, (r.manifest_sha256 IS NULL) AS earlier, \
      (SELECT COUNT(*) FROM comments c WHERE c.suggestion_id = s.id) AS replies, \
      (SELECT IFNULL(d.display_name, '') FROM users d WHERE d.email = s.decided_by) AS reason_by, \
      (SELECT c.body FROM comments c WHERE c.suggestion_id = s.id AND c.author = s.decided_by \
-      ORDER BY c.id DESC LIMIT 1) AS reason_body \
-     FROM suggestions s LEFT JOIN data_releases r ON r.id = s.released_in \
-     WHERE s.author = ?1 AND s.status <> 'withdrawn'";
+      AND c.created_at >= s.decided_at ORDER BY c.id DESC LIMIT 1) AS reason_body \
+     FROM suggestions s LEFT JOIN data_releases r ON r.id = s.released_in ",
+    contributions_where!()
+);
 /// ?1 viewer: their approvals per dataset.
 pub const SELECT_APPROVAL_COUNTS: &str =
     "SELECT dataset, COUNT(*) AS n FROM approvals WHERE reviewer = ?1 GROUP BY dataset ORDER BY dataset";

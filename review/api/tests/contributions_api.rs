@@ -254,3 +254,134 @@ async fn per_dataset_counts() {
         ])
     );
 }
+
+const LATER: &str = "2026-11-06T12:00:00Z";
+
+async fn decide_at(s: &SqliteStore, id: i64, decision: &str, reply: Option<&str>, now: &str) {
+    let mut body = json!({"id": id, "decision": decision});
+    if let Some(reply) = reply {
+        body["reply"] = json!(reply);
+    }
+    let r = post_at(s, "/api/decide", body, MARTIN, now).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_accepted_note_stays_accepted_and_is_never_released() {
+    let s = seeded().await;
+    let (_, hash) = {
+        let r = get(
+            &s,
+            &format!(
+                "/api/review?{}",
+                q(&[("dataset", "verbs"), ("id", "たべる")])
+            ),
+            AIKO,
+        )
+        .await;
+        (
+            0,
+            r.body["parts"][0]["content_hash"]
+                .as_str()
+                .unwrap()
+                .to_string(),
+        )
+    };
+    let r = post(
+        &s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "entry", "id": "たべる", "base_hash": hash,
+        "action": "note", "comment": "The kanji looks off."}),
+        AIKO,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    let note = r.body["id"].as_i64().unwrap();
+    decide(&s, note, "accept", None).await;
+    // Exported like the rest, then a newer load tries to claim it.
+    let r = post(
+        &s,
+        "/api/admin/exported",
+        json!({"suggestions": [note], "stamps": []}),
+        MARTIN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    {
+        use review_api::store::CLAIM_RELEASED_FOR_LOAD;
+        let conn = s.conn.borrow();
+        conn.execute(
+            "INSERT INTO snapshot_loads (load_id, name, version, sha256, slices, started_by, started_at) \
+             VALUES ('l1', 'verbs', '2', 'x', '1', ?1, ?2)",
+            rusqlite::params![MARTIN, T0],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO data_releases (manifest_sha256, label, first_loaded_at) VALUES ('sha-n', '2026.11.30', ?1)",
+            [T0],
+        )
+        .unwrap();
+        conn.execute(
+            CLAIM_RELEASED_FOR_LOAD,
+            rusqlite::params!["sha-n", "verbs", "l1"],
+        )
+        .unwrap();
+    }
+    let c = contributions(&s, AIKO).await;
+    assert_eq!(ids(&c["accepted"]), vec![note]);
+    assert_eq!(c["accepted"][0]["action"], "note");
+    assert_eq!(c["releases"], json!([]));
+    assert_eq!(
+        c["counts"],
+        json!({"approved": 0, "suggested": 1, "accepted": 1, "live": 0})
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_decline_without_a_reply_has_no_reason_even_after_earlier_comments() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, 0, "Declined.").await;
+    let r = post_at(
+        &s,
+        "/api/comment",
+        json!({"suggestion_id": id, "body": "Why this?"}),
+        MARTIN,
+        T0,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    decide_at(&s, id, "decline", None, LATER).await;
+    let c = contributions(&s, AIKO).await;
+    assert_eq!(c["declined"][0]["reason"], Value::Null);
+    assert_eq!(c["declined"][0]["replies"], 1);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_decline_with_a_reply_gives_that_reply() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, 0, "Declined.").await;
+    post_at(
+        &s,
+        "/api/comment",
+        json!({"suggestion_id": id, "body": "Why this?"}),
+        MARTIN,
+        T0,
+    )
+    .await;
+    decide_at(&s, id, "decline", Some("Too literal."), LATER).await;
+    let c = contributions(&s, AIKO).await;
+    assert_eq!(c["declined"][0]["reason"]["body"], "Too literal.");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_superseded_decline_gives_the_automatic_comment() {
+    let s = seeded().await;
+    let mine = suggest_en(&s, AIKO, 0, "Aiko's.").await;
+    let theirs = suggest_en(&s, BEN, 0, "Ben's.").await;
+    decide_at(&s, theirs, "accept", None, LATER).await;
+    let c = contributions(&s, AIKO).await;
+    assert_eq!(ids(&c["declined"]), vec![mine]);
+    let body = c["declined"][0]["reason"]["body"].as_str().unwrap();
+    assert!(body.starts_with("Declined:"), "{body}");
+    assert_eq!(c["declined"][0]["reason"]["by_name"], "Martin");
+}
