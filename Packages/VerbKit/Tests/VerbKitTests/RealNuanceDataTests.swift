@@ -60,7 +60,7 @@ final class RealNuanceDataTests: XCTestCase {
             ["n-desu", "potential", "certainty", "obligation", "appearance", "ppoi",
              "teiru", "teshimau", "temiru", "sugiru", "node", "hou-ga-ii",
              "tai", "volitional", "nai-te", "te-mo-ii", "nakereba", "imperative",
-             "te-kudasai", "te-kara", "ta-koto"]
+             "te-kudasai", "te-kara", "ta-koto", "mae-ni", "toki", "comparison", "tsumori", "masen-ka"]
         )
     }
 }

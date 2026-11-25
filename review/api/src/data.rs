@@ -66,6 +66,25 @@ impl DataFile {
     }
 }
 
+/// The JSON a load keeps next to the snapshot row: reference files whole, and from grammar only its
+/// `books` (the courses' textbooks; the points themselves are rows). Other browsable files keep none.
+pub fn stored_json(file: DataFile, bytes: &[u8]) -> Result<Option<String>, String> {
+    let text = || String::from_utf8(bytes.to_vec()).map_err(|_| "not UTF-8".to_string());
+    match file {
+        DataFile::Grammar => {
+            let doc: serde_json::Value =
+                serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+            let books = doc
+                .get("books")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!([]));
+            Ok(Some(serde_json::json!({ "books": books }).to_string()))
+        }
+        file if file.is_browsable() => Ok(None),
+        _ => text().map(Some),
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub enum Jlpt {
     N5,
