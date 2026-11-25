@@ -28,3 +28,6 @@ export const ownSuggestionLine = (role: Role) =>
 		: role === 'native'
 			? 'Yours. Someone else accepts it.'
 			: 'Yours. Another teacher or Martin accepts it.';
+
+/** Asks a colleague for a second opinion on an item's open suggestions: teachers and the owner. */
+export const canAskOpinion = (role: Role) => role === 'teacher' || role === 'admin';

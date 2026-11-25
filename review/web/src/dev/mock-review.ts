@@ -151,6 +151,11 @@ type StampRow = {
 	content_hash: string; by: string; reviewer: string; created_at: string; exported_at: string | null;
 };
 const RANK: Record<string, number> = { owner: 0, teacher: 1, native: 2 };
+type OpinionRow = {
+	id: number; dataset: string; kind: string; item_id: string; entry_id: string; item_title: string; anchor_id: number;
+	asked_by: string; asked_of: string; question: string; created_at: string; answered_at: string | null;
+	pick: number | null; answer: string; cancelled_at: string | null; closed_at: string | null;
+};
 type QueueRow = { id: number; title: string; description: string; archived: boolean };
 type QueueItem = { queue_id: number; dataset: string; kind: string; item_id: string; entry_id: string; title: string; note: string; position: number };
 
@@ -164,6 +169,7 @@ export function reviewMock(ctx: ReviewContext) {
 		const key = `${email}/${id}`;
 		if ((reads.get(key) ?? '') < at) reads.set(key, at);
 	};
+	const opinions: OpinionRow[] = [];
 	const queues: QueueRow[] = [];
 	const queueItems: QueueItem[] = [];
 	const skips: { queue_id: number; dataset: string; kind: string; item_id: string; reviewer: string }[] = [];
@@ -251,6 +257,29 @@ export function reviewMock(ctx: ReviewContext) {
 		};
 	};
 
+	const openOn = (t: { dataset: string; kind: string; item_id: string }) => suggestions.filter((s) => same(s, t) && s.status === 'open');
+	/** What a request is about: the item's open suggestions other than notes. */
+	const openChangesOn = (t: { dataset: string; kind: string; item_id: string }) => openOn(t).filter((s) => s.action !== 'note');
+	/** Not answered, cancelled or closed. */
+	const isOpen = (o: OpinionRow) => !o.answered_at && !o.cancelled_at && !o.closed_at;
+	/** Open, and the item still has an open change. */
+	const isWaiting = (o: OpinionRow) => isOpen(o) && openChangesOn(o).length > 0;
+	const waitingFor = (t: { dataset: string; kind: string; item_id: string }) => opinions.find((o) => same(o, t) && isWaiting(o));
+	/** As the Worker: deciding or withdrawing the item's last open change closes its open request. */
+	const closeOpinions = (t: { dataset: string; kind: string; item_id: string }) => {
+		if (openChangesOn(t).length) return;
+		for (const o of opinions) if (same(o, t) && isOpen(o)) o.closed_at = now();
+	};
+	/** The mock users have no numbers of their own; a person's number is their place in the list. */
+	const numberOf = (email: string) => ctx.users.findIndex((u) => u.email === email) + 1;
+	const opinionOut = (o: OpinionRow) => ({
+		id: o.id, dataset: o.dataset, kind: o.kind, item_id: o.item_id, entry_id: o.entry_id, item_title: o.item_title,
+		anchor_id: o.anchor_id, asked_by_name: nameOf(o.asked_by), asked_of_name: nameOf(o.asked_of),
+		mine_asked: o.asked_by === ctx.me.email, mine_to_answer: o.asked_of === ctx.me.email, question: o.question,
+		created_at: o.created_at, answered_at: o.answered_at, pick: o.pick, answer: o.answer, cancelled_at: o.cancelled_at,
+		closed_at: o.closed_at, waiting: isWaiting(o)
+	});
+
 	/** The same rule as review/api's reply events: others' comments in threads you're in, and decisions on
 	 * your suggestions by someone else. Newest first. */
 	function repliesFor(email: string) {
@@ -264,13 +293,28 @@ export function reviewMock(ctx: ReviewContext) {
 			const inThread = s.author === email || comments.some((c) => c.suggestion_id === s.id && c.author === email);
 			if (inThread) {
 				for (const c of comments.filter((c) => c.suggestion_id === s.id && c.author !== email)) {
-					out.push({ ...about(s), what: 'comment', by_name: nameOf(c.author), at: c.created_at, body: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body, unread: c.created_at > since(s) });
+					out.push({ ...about(s), asked_of_name: '', to_you: true, what: 'comment', by_name: nameOf(c.author), at: c.created_at, body: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body, unread: c.created_at > since(s) });
 				}
 			}
 			const decider = (s as Suggestion & { decided_by?: string }).decided_by;
 			if (s.author === email && (s.status === 'accepted' || s.status === 'declined') && decider && decider !== email && s.decided_at) {
-				out.push({ ...about(s), what: s.status, by_name: nameOf(decider), at: s.decided_at, body: '', unread: s.decided_at > since(s) });
+				out.push({ ...about(s), asked_of_name: '', to_you: true, what: s.status, by_name: nameOf(decider), at: s.decided_at, body: '', unread: s.decided_at > since(s) });
 			}
+		}
+		// Second opinions: the asked person hears of a request or its cancelling, the asker of the answer, and the
+		// authors of the item's suggestions (open when it was asked) of all three.
+		for (const o of opinions) {
+			const anchor = suggestions.find((s) => s.id === o.anchor_id);
+			if (!anchor) continue;
+			const author = suggestions.some(
+				(m) => m.author === email && same(m, o) && m.status !== 'withdrawn' && m.created_at <= o.created_at &&
+					(!m.decided_at || m.decided_at > o.created_at)
+			);
+			const event = (what: string, at: string, actor: string, text: string, direct: boolean) =>
+				out.push({ ...about(anchor), what, by_name: nameOf(actor), at, body: text.length > 140 ? `${text.slice(0, 140)}…` : text, unread: at > since(anchor), asked_of_name: nameOf(o.asked_of), to_you: direct });
+			if (o.asked_of === email || (author && email !== o.asked_by)) event('opinion_asked', o.created_at, o.asked_by, o.question, o.asked_of === email);
+			if (o.answered_at && (o.asked_by === email || (author && email !== o.asked_of))) event('opinion_answered', o.answered_at, o.asked_of, o.answer, o.asked_by === email);
+			if (o.cancelled_at && o.asked_of === email) event('opinion_cancelled', o.cancelled_at, o.asked_by, o.question, true);
 		}
 		return out.sort((a, b) => b.at.localeCompare(a.at));
 	}
@@ -362,7 +406,8 @@ export function reviewMock(ctx: ReviewContext) {
 				approvals: approvals.filter((a) => a.dataset === dataset && a.entry_id === id).map(approvalOut),
 				suggestions: suggestions.filter((s) => s.dataset === dataset && s.entry_id === id).reverse().map(suggestionOut),
 				stamp: stampsHere(dataset) && pendingStamp(dataset, id) ? stampOut(pendingStamp(dataset, id)!) : null,
-				stampable: stampsHere(dataset) && !pendingStamp(dataset, id) && typeof stampReadiness(dataset, id) !== 'string'
+				stampable: stampsHere(dataset) && !pendingStamp(dataset, id) && typeof stampReadiness(dataset, id) !== 'string',
+				opinions: opinions.filter((o) => o.dataset === dataset && o.entry_id === id).map(opinionOut)
 			}];
 		}
 		if (path === '/admin/stampable' && method === 'GET') {
@@ -515,6 +560,7 @@ export function reviewMock(ctx: ReviewContext) {
 			if (!suggestion || suggestion.status !== 'open') return [409, { error: DECIDED }];
 			if (suggestion.author !== by) return [403, { error: 'only the person who suggested it can withdraw it' }];
 			Object.assign(suggestion, { status: 'withdrawn', decided_at: now() });
+			closeOpinions(suggestion);
 			return [200, suggestionOut(suggestion)];
 		}
 		if (path === '/replies' && method === 'GET') {
@@ -588,11 +634,80 @@ export function reviewMock(ctx: ReviewContext) {
 		};
 		if (path === '/inbox') {
 			const status = params.get('status') ?? 'open';
+			// An item waiting for a second opinion leaves Open and shows under Waiting.
+			const shown = (s: Suggestion) =>
+				status === 'open' ? s.status === 'open' && !waitingFor(s)
+				: status === 'waiting' ? s.status === 'open' && !!waitingFor(s)
+				: s.status === status;
 			return [200, {
-				suggestions: suggestions
-					.filter((s) => s.status === status)
-					.map((s) => ({ ...suggestionOut(s), current: currentOf(s), japanese_only: japaneseOnly(s) }))
+				suggestions: suggestions.filter(shown).map((s) => {
+					const asked = opinions.filter((o) => same(o, s) && !o.cancelled_at && !o.closed_at).at(-1);
+					return { ...suggestionOut(s), current: currentOf(s), japanese_only: japaneseOnly(s), opinion: asked ? opinionOut(asked) : null };
+				})
 			}];
+		}
+		const canAsk = ctx.me.role === 'admin' || ctx.me.role === 'teacher';
+		if (path === '/opinion/candidates' && method === 'GET') {
+			if (!canAsk) return [403, { error: "this account can't do that" }];
+			const t = { dataset: params.get('dataset') ?? '', kind: params.get('kind') ?? '', item_id: params.get('id') ?? '' };
+			const open = openOn(t);
+			const seenOf = (u: User) =>
+				approvals.some((a) => same(a, t) && a.reviewer === u.email) ? 'approved'
+				: suggestions.some((s) => same(s, t) && s.author === u.email) ? 'suggested'
+				: comments.some((c) => open.some((s) => s.id === c.suggestion_id) && c.author === u.email) ? 'commented'
+				: null;
+			const candidates = ctx.users
+				.filter((u) => u.email !== by && !open.some((s) => s.author === u.email))
+				.map((u) => ({ user: numberOf(u.email), name: u.display_name, role: u.role, seen: seenOf(u) }));
+			return [200, { candidates }];
+		}
+		if (path === '/opinion/ask' && method === 'POST') {
+			if (!canAsk) return [403, { error: "this account can't do that" }];
+			const t = targetOf(body);
+			const question = String(body.question ?? '').trim();
+			if (question.length > 2000) return [400, { error: 'the question is too long' }];
+			const current = find(t);
+			if (!current) return [404, { error: NOT_LOADED }];
+			const open = openOn(t);
+			const changes = openChangesOn(t);
+			if (!changes.length) return [409, { error: 'nothing open to give an opinion on' }];
+			const asked = ctx.users[Number(body.user) - 1];
+			if (!asked) return [400, { error: 'no such reviewer' }];
+			if (asked.email === by) return [400, { error: "you can't ask yourself" }];
+			if (open.some((s) => s.author === asked.email)) return [400, { error: 'they wrote one of these suggestions' }];
+			if (opinions.some((o) => same(o, t) && isOpen(o))) return [409, { error: 'someone was already asked about this item' }];
+			const o: OpinionRow = {
+				id: nextId++, ...t, entry_id: current.entry_id, item_title: current.title, anchor_id: changes[0].id,
+				asked_by: by, asked_of: asked.email, question, created_at: now(), answered_at: null, pick: null, answer: '', cancelled_at: null,
+				closed_at: null
+			};
+			opinions.push(o);
+			markRead(by, o.anchor_id);
+			return [201, { id: o.id }];
+		}
+		if (path === '/opinion/cancel' || path === '/opinion/answer') {
+			const o = opinions.find((x) => x.id === Number(body.id));
+			if (!o) return [404, { error: 'no such request' }];
+			const answering = path === '/opinion/answer';
+			if (answering ? o.asked_of !== by : o.asked_by !== by) {
+				return [403, { error: answering ? 'only the person asked can answer' : 'only the person who asked can cancel' }];
+			}
+			if (o.answered_at || o.cancelled_at) return [409, { error: 'that request was already answered or cancelled' }];
+			if (o.closed_at) return [409, { error: 'already decided' }];
+			if (!isWaiting(o)) return [409, { error: 'already decided' }];
+			if (!answering) {
+				o.cancelled_at = now();
+				return [200, {}];
+			}
+			const text = String(body.body ?? '').trim();
+			const pick = body.pick === null || body.pick === undefined ? null : Number(body.pick);
+			if (pick === null && !text) return [400, { error: 'say why neither works' }];
+			const picked = pick === null ? null : openChangesOn(o).find((s) => s.id === pick);
+			if (pick !== null && !picked) return [400, { error: 'pick one of the open suggestions' }];
+			if (picked && picked.author === by) return [400, { error: "you can't pick your own suggestion" }];
+			Object.assign(o, { answered_at: now(), pick, answer: text });
+			markRead(by, o.anchor_id);
+			return [200, {}];
 		}
 		if (path === '/decide') {
 			if (!suggestion) return [404, { error: 'no such suggestion' }];
@@ -628,11 +743,26 @@ export function reviewMock(ctx: ReviewContext) {
 					if (!body.confirm) return [400, { error: warning }];
 				}
 			}
+			const declined: number[] = [];
+			if (body.decision === 'accept') {
+				// Accepting one change declines the other open changes and removals on the same item (not notes, not the
+				// decider's own), each with a comment saying why.
+				const others = openOn(suggestion).filter(
+					(x) => x.id !== suggestion.id && x.author !== by && (x.action === 'change' || x.action === 'delete') &&
+						(ctx.me.role !== 'native' || japaneseOnly(x))
+				);
+				for (const other of others) {
+					Object.assign(other, { status: 'declined', decided_at: now(), decided_by: by });
+					comments.push({ suggestion_id: other.id, author: by, body: `Declined: ${nameOf(suggestion.author)}'s suggestion was accepted instead.`, created_at: now() });
+					declined.push(other.id);
+				}
+			}
 			Object.assign(suggestion, { status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now(), decided_by: by });
+			closeOpinions(suggestion);
 			markRead(by, suggestion.id);
 			const reply = String(body.reply ?? '').trim();
 			if (reply) comments.push({ suggestion_id: suggestion.id, author: by, body: reply, created_at: now() });
-			return [200, { ...suggestionOut(suggestion), warning }];
+			return [200, { ...suggestionOut(suggestion), warning, ...(body.decision === 'accept' ? { declined } : {}) }];
 		}
 		return undefined;
 	}

@@ -2,25 +2,30 @@
 	// The inbox, for teachers, natives and the owner (natives decide only Japanese-only changes): every suggestion as a red-pen correction, grouped by item so counter-suggestions
 	// sit side by side. Accepting only marks a suggestion accepted; nothing reaches data/ until export.
 	import { onMount } from 'svelte';
-	import { comment, decide, getInbox, problem, type Field, type InboxSuggestion } from '#lib/api.ts';
+	import { cancelOpinion, comment, decide, getInbox, problem, type Field, type InboxSuggestion } from '#lib/api.ts';
+	import AskOpinion from '#lib/AskOpinion.svelte';
 	import ErrorLine from '#lib/ErrorLine.svelte';
 	import SuggestForm from '#lib/SuggestForm.svelte';
 	import InboxGroupHeader from '#lib/InboxGroupHeader.svelte';
+	import OpinionStatus from '#lib/OpinionStatus.svelte';
+	import { disagreement, openChanges } from '#lib/opinions.ts';
 	import SuggestionCard from '#lib/SuggestionCard.svelte';
 	import Tip from '#lib/Tip.svelte';
 	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
-	import { canDecide, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from '#lib/roles.ts';
+	import { canAskOpinion, canDecide, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from '#lib/roles.ts';
 	import { getSession } from '#lib/session.ts';
 	import { editForm, suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
 
 	const { me } = getSession();
 	const allowed = canDecide(me().role);
+	const mayAsk = canAskOpinion(me().role);
 
-	type Status = 'open' | 'accepted' | 'declined';
+	type Status = 'open' | 'waiting' | 'accepted' | 'declined';
 	const TABS: [Status, string][] = [
 		['open', 'Open'],
+		['waiting', 'Waiting for an opinion'],
 		['accepted', 'Accepted'],
 		['declined', 'Declined']
 	];
@@ -71,6 +76,19 @@
 		}
 		return out;
 	});
+
+	/** The request on a group's item, if any, and whether the group still has open changes to ask about (notes don't count). */
+	const opinionOf = (items: InboxSuggestion[]) => items.find((s) => s.opinion)?.opinion ?? null;
+	const hasOpen = (items: InboxSuggestion[]) => openChanges(items).length > 0;
+
+	async function cancel(id: number) {
+		try {
+			await cancelOpinion(id);
+			await show(status);
+		} catch (error) {
+			failure = problem(error);
+		}
+	}
 
 	const adding = (s: InboxSuggestion) => s.action === 'add';
 	/** The target's fields: an addition's add form, otherwise the change form. */
@@ -144,13 +162,25 @@
 {:else if suggestions === null}
 	<p class="quiet">Loading…</p>
 {:else if !suggestions.length}
-	<p class="quiet">{status === 'open' ? 'No open suggestions. Everything has been decided.' : `Nothing ${status} yet.`}</p>
+	<p class="quiet">{status === 'open' ? 'No open suggestions. Everything has been decided.' : status === 'waiting' ? 'Nothing is waiting for an opinion.' : `Nothing ${status} yet.`}</p>
 {:else}
 	{#each groups as group (group.key)}
 		{@const first = group.items[0]}
+		{@const opinion = opinionOf(group.items)}
+		{@const banner = status === 'declined' || status === 'accepted' ? null : disagreement(group.items)}
 		<section class="group">
 			<InboxGroupHeader {first} count={group.items.length} {readings} {forms} />
+			{#if banner}
+				<p class="banner">
+					<svg class="swap" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+						><path d="M4 8h15m-4-4 4 4-4 4" /><path d="M20 16H5m4-4-4 4 4 4" /></svg
+					>
+					<span><strong>{banner.slice(0, banner.lastIndexOf('. ') + 1)}</strong> {banner.slice(banner.lastIndexOf('. ') + 2)}</span>
+				</p>
+			{/if}
+			<div class="cards">
 			{#each group.items as s (s.id)}
+				<div class="item">
 				<SuggestionCard
 					suggestion={s}
 					current={s.current}
@@ -210,7 +240,19 @@
 					/>
 				{/if}
 				{#if actionError?.id === s.id}<ErrorLine message={actionError.message} />{/if}
+				</div>
 			{/each}
+			</div>
+			{#if opinion && (opinion.waiting || opinion.answered_at)}
+				<OpinionStatus {opinion} suggestions={group.items} {readings} oncancel={() => cancel(opinion.id)} />
+			{/if}
+			{#if mayAsk && hasOpen(group.items) && !opinion?.waiting}
+				<AskOpinion
+					target={{ dataset: first.dataset, kind: first.kind, id: first.item_id }}
+					count={openChanges(group.items).length}
+					onasked={() => show(status)}
+				/>
+			{/if}
 		</section>
 	{/each}
 {/if}
@@ -240,7 +282,7 @@
 	}
 
 	.group {
-		max-width: 46rem;
+		max-width: 62rem;
 		margin-bottom: 1.5rem;
 		padding: 1.25rem 1.5rem;
 		background: var(--card);
@@ -250,6 +292,32 @@
 
 
 
+
+	/* Counter-suggestions side by side when there is room. */
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 1rem;
+		align-items: start;
+	}
+
+	.item {
+		min-width: 0;
+	}
+
+	.banner {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin: 0 0 1rem;
+		padding: 0.75rem 1rem;
+		background: var(--well);
+		border-radius: var(--radius);
+	}
+
+	.swap {
+		flex: none;
+	}
 
 	@media (max-width: 720px) {
 		.group {

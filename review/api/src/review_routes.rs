@@ -140,10 +140,14 @@ pub async fn review<S: ReviewStore>(
         stamp = tri!(store.pending_stamp(&t).await.map_err(unavailable));
         stampable = stamp.is_none() && crate::stamp_routes::ready(store, &t).await.is_ok();
     }
+    let opinions = tri!(store
+        .opinions_for_entry(file.name(), &id, &by.email)
+        .await
+        .map_err(unavailable));
     ok(
         200,
         json!({ "parts": parts, "approvals": approvals, "suggestions": suggestions,
-                "stamp": stamp, "stampable": stampable }),
+                "stamp": stamp, "stampable": stampable, "opinions": opinions }),
     )
 }
 
@@ -683,10 +687,38 @@ pub async fn inbox<S: Store + ReviewStore>(
     store: &S,
 ) -> ApiResponse {
     let status = status.unwrap_or_else(|| "open".into());
-    if !matches!(status.as_str(), "open" | "accepted" | "declined") {
-        return error(400, "status is open, accepted or declined");
+    if !matches!(
+        status.as_str(),
+        "open" | "waiting" | "accepted" | "declined"
+    ) {
+        return error(400, "status is open, waiting, accepted or declined");
     }
     let suggestions = tri!(store.inbox(&status, &by.email).await.map_err(unavailable));
+    let mut targets: Vec<Target> = Vec::new();
+    for s in &suggestions {
+        let t = Target {
+            dataset: s.dataset.clone(),
+            kind: s.kind.clone(),
+            item_id: s.item_id.clone(),
+        };
+        if !targets.contains(&t) {
+            targets.push(t);
+        }
+    }
+    // Newest first: the item's open request, else its newest answered one; never a cancelled or closed one.
+    let requests = tri!(store
+        .opinions_for_targets(&targets, &by.email)
+        .await
+        .map_err(unavailable));
+    let opinion_of = |s: &Suggestion| {
+        let mut of_item = requests
+            .iter()
+            .filter(|o| o.dataset == s.dataset && o.kind == s.kind && o.item_id == s.item_id);
+        let open = of_item
+            .clone()
+            .find(|o| o.answered_at.is_none() && o.cancelled_at.is_none() && o.closed_at.is_none());
+        open.or_else(|| of_item.find(|o| o.answered_at.is_some()))
+    };
     let mut entries = BTreeMap::new();
     let mut out = Vec::with_capacity(suggestions.len());
     for s in suggestions {
@@ -695,6 +727,7 @@ pub async fn inbox<S: Store + ReviewStore>(
         let mut value = json!(s);
         value["current"] = current;
         value["japanese_only"] = json!(japanese_only);
+        value["opinion"] = json!(opinion_of(&s));
         out.push(value);
     }
     ok(200, json!({ "suggestions": out }))
@@ -802,6 +835,35 @@ pub async fn decide<S: Store + ReviewStore>(
     } else if edits.is_some() || body.furigana.is_some() {
         return error(400, "only an accept carries edits or readings");
     }
+    // An accept settles the item: the other open changes and removals on it are declined, except the
+    // decider's own and any a native may not decide.
+    let mut declined = Vec::new();
+    if accept && matches!(s.action.as_str(), "change" | "delete") {
+        let (_, all) = tri!(store
+            .entry_review(&s.dataset, &s.entry_id, &by.email)
+            .await
+            .map_err(unavailable));
+        let mut entries = BTreeMap::new();
+        for other in all {
+            let same_item = other.kind == s.kind && other.item_id == s.item_id && other.id != s.id;
+            if !same_item
+                || other.status != "open"
+                || other.mine
+                || !matches!(other.action.as_str(), "change" | "delete")
+            {
+                continue;
+            }
+            if by.role.decides_all()
+                || japanese_change(&other, &current_json(store, &mut entries, &other).await)
+            {
+                declined.push(other.id);
+            }
+        }
+    }
+    let reason = format!(
+        "Declined: {}'s suggestion was accepted instead.",
+        s.author_name
+    );
     match store
         .decide(
             s.id,
@@ -813,6 +875,8 @@ pub async fn decide<S: Store + ReviewStore>(
             },
             &by.email,
             now,
+            &declined,
+            &reason,
         )
         .await
     {
@@ -831,6 +895,9 @@ pub async fn decide<S: Store + ReviewStore>(
     let mut response = suggestion_response(store, s.id, &by.email, 200).await;
     if let Some(text) = warning {
         response.body["warning"] = json!(text);
+    }
+    if accept {
+        response.body["declined"] = json!(declined);
     }
     response
 }

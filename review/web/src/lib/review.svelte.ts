@@ -9,6 +9,7 @@ import {
 	withdrawApproval,
 	withdrawSuggestion,
 	type Approval,
+	type Opinion,
 	type ReviewPart,
 	type Suggestion,
 	type SuggestionAction,
@@ -23,6 +24,8 @@ export class EntryReview {
 	parts = $state<ReviewPart[]>([]);
 	approvals = $state<Approval[]>([]);
 	suggestions = $state<Suggestion[]>([]);
+	/** Second-opinion requests on this entry's parts. */
+	opinions = $state<Opinion[]>([]);
 	/** The target the viewer approved last in this visit, so its seal presses once. */
 	justApproved = $state<string | null>(null);
 
@@ -36,6 +39,7 @@ export class EntryReview {
 		this.parts = review.parts;
 		this.approvals = review.approvals;
 		this.suggestions = review.suggestions;
+		this.opinions = review.opinions;
 	}
 
 	target(kind: string, id: string): Target {

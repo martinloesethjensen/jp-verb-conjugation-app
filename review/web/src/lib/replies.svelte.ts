@@ -70,8 +70,16 @@ class Replies {
 
 export const replies = new Replies();
 
-/** The line a list shows for a reply. */
+/** The line a list shows for a reply. An opinion request reads differently to the person asked than to an
+ * author who is only told of it (`to_you`). */
 export function replyText(r: Reply): string {
+	if (r.what === 'opinion_asked') {
+		return r.to_you
+			? `${r.by_name} asked for your opinion`
+			: `${r.by_name} asked ${r.asked_of_name} for a second opinion`;
+	}
+	if (r.what === 'opinion_answered') return `${r.by_name} gave a second opinion`;
+	if (r.what === 'opinion_cancelled') return `${r.by_name} cancelled the request for your opinion`;
 	if (r.what === 'accepted') return `${r.by_name} accepted your suggestion`;
 	if (r.what === 'declined') return `${r.by_name} declined your suggestion`;
 	return `${r.by_name} replied`;

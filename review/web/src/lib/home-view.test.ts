@@ -70,7 +70,7 @@ test('the Browse tiles use a weight Shippori Mincho loads (500 or 700)', () => {
 const newReply = (id: number) => ({
 	suggestion_id: id, what: 'comment' as const, by_name: 'Ben', at: '2026-11-10T12:00:00.000Z', body: 'Hi',
 	item_title: '食べる', dataset: 'verbs', kind: 'entry', item_id: 'たべる', entry_id: 'たべる', action: 'note',
-	parent_kind: null, parent_id: null, unread: true
+	parent_kind: null, parent_id: null, unread: true, asked_of_name: '', to_you: true
 });
 
 test('new replies get a section and a phone banner', () => {

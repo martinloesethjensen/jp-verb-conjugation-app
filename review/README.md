@@ -39,6 +39,14 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   before it stop counting (approve them again), and open or accepted-but-unexported changes to verb entries
   show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
   are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
+- **Second opinions (2026-11-19)** need migration `0011_opinions.sql` (`npm run migrate`), which adds the
+  `opinion_requests` table. Run it **before merging**: it only adds a table and indexes, the Worker running now
+  ignores them, and the site deploys itself when the PR merges. Until it runs, the new Worker fails every route
+  that reads or writes the table with "the database is unavailable": `/api/review`, so item pages and the cards
+  in a queue don't load and nobody can review there; `/api/inbox` (every status: the Open and Waiting filter
+  reads it); `/api/decide` and withdrawing a suggestion (both close requests); `/api/replies`, so Home's
+  replies section and the bell fail; and the four `/api/opinion/*` routes. Nothing else in the migration
+  changes existing rows.
 - **Courses (2026-11-17)** need migration `0013_courses.sql` (`npm run migrate`). Run it just before or right
   after merging: until it runs, the course routes (`/api/courses`, `/api/course*`) fail with "the database is
   unavailable" and every other page works. `GET /api/books` reads the textbooks from the grammar's stored
@@ -167,7 +175,10 @@ Everyone sees everyone's seals and suggestions, by display name. A suggestion ma
 changed shows "Changed since"; one whose item left the data shows "No longer in the data".
 
 **Replies.** You're told when someone else comments in a thread you started or commented in, and when a teacher
-or Martin accepts or declines your suggestion. Your own comments and decisions never count. A red count on the
+or Martin accepts or declines your suggestion. Second opinions add four more: the person asked is told, the
+authors of the suggestions open at that time are told, the asker and those authors are told the answer, and
+the person asked is told if it is cancelled. They point at the item's oldest open suggestion when it was
+asked, and opening that thread marks them read. Your own comments and decisions never count. A red count on the
 bell in the header shows how many are new. On a computer the bell opens the newest; on a phone it goes to the
 Replies page (New and Earlier). Home lists new replies too. Opening a thread marks it read and shows a red "New
 since your last visit" line above what's new. Nothing is pushed: the site checks when a page opens.
@@ -189,6 +200,24 @@ counter-suggestions sit side by side. For each one: **Accept**, **Edit then acce
 this is the only way to accept a change made against older data), **Reply**, or **Decline**. Accepting the
 removal of a whole verb or word asks you to confirm, because saved favourites, quiz history and widgets that
 point at it are dropped when it is exported. Your own suggestions show without these buttons: someone else decides them.
+
+The inbox has four lists: Open, **Waiting for an opinion**, Accepted and Declined. Open leaves out items
+someone has been asked about; Waiting shows only those. When an item has two or more open changes or removals,
+the group says "… disagree. Accepting one declines the other(s)." Accepting one does that: the others are
+declined with the comment "Declined: <name>'s suggestion was accepted instead." You decline only what you may
+decide, so your own suggestions stay open, and a native's accept leaves alone any that aren't Japanese-only.
+
+**Second opinions.** Teachers and you can ask one person what they think of an item's open suggestions. On
+the inbox, each group with open suggestions has an "Ask for a second opinion" button; it opens a panel listing
+anyone active except yourself and the authors of that item's open suggestions (natives and reviewers can be asked
+too). You add an optional question. An item has one open request at a time, and notes don't count: an item with
+only a note open can't be asked about. The person asked gets it under Replies and answers on the item page by
+picking a suggestion (not their own, and not a note) or **Neither** (a reason is required for Neither; otherwise
+it is optional). You can cancel while it waits. The opinion is advice: a teacher or you still decide. When the
+item's last open suggestion is decided or withdrawn, its unanswered request closes (`closed_at`, in the same
+write); nobody is told, the person asked sees "Already decided", and a later suggestion on the item starts
+afresh in Open and can be asked about again.
+
 Accepting only marks a suggestion accepted: nothing reaches
 `data/` until the export step (plan 6), and then only through your normal signed data PRs.
 
@@ -288,8 +317,10 @@ stamp names the most senior reviewer who approved (owner, then teacher, then nat
    anything it skipped, or anything accepted since, stays waiting for the next pull.
 
 A change the pull skips as "the data changed since it was accepted" was built against older data: apply it by
-hand or have it suggested again. Two accepted changes to different fields of one item both land; if they set
-the same field differently, the later one is skipped.
+hand or have it suggested again. Accepting a change or removal declines the item's other open ones, so two
+accepted changes to one item only both land when they were accepted before the other was open, or when the
+decider couldn't decline the other (a native and a change outside the Japanese fields); then changes to
+different fields both land, and if they set the same field differently, the later one is skipped.
 
 A change to an entry that already had a stamp removes that stamp ("needs a new review"); stamp it again once it
 is approved.

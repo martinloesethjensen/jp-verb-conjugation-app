@@ -88,6 +88,8 @@ async fn accept_decline_and_reply() {
     let s = seeded().await;
     let a = suggest_en(&s, AIKO, "One.").await;
     let b = suggest_en(&s, AIKO, "Two.").await;
+    let r = decide(&s, json!({"id": b, "decision": "decline"})).await;
+    assert_eq!(r.body["status"], "declined");
     let r = decide(
         &s,
         json!({"id": a, "decision": "accept", "reply": "Thanks!"}),
@@ -97,8 +99,6 @@ async fn accept_decline_and_reply() {
     assert_eq!(r.body["status"], "accepted");
     assert_eq!(r.body["comments"].as_array().unwrap().len(), 1);
     assert_eq!(r.body["comments"][0]["author_name"], "Martin");
-    let r = decide(&s, json!({"id": b, "decision": "decline"})).await;
-    assert_eq!(r.body["status"], "declined");
     assert!(inbox(&s, "open").await.is_empty());
     assert_eq!(inbox(&s, "accepted").await.len(), 1);
     assert_eq!(inbox(&s, "declined").await.len(), 1);
@@ -141,7 +141,7 @@ async fn two_suggestions_on_one_item_are_decided_separately() {
     let s = seeded().await;
     let a = suggest_en(&s, AIKO, "Aiko's.").await;
     suggest_en(&s, BEN, "Ben's.").await;
-    decide(&s, json!({"id": a, "decision": "accept"})).await;
+    decide(&s, json!({"id": a, "decision": "decline"})).await;
     let open = inbox(&s, "open").await;
     assert_eq!(open.len(), 1);
     assert_eq!(open[0]["author_name"], "Ben");
@@ -627,4 +627,207 @@ async fn a_native_accepts_removing_a_words_optional_kanji() {
     let id = suggest_entry(&s, "words", "i-adjective:おおきい", json!({"kanji": ""})).await;
     let r = ben_decides(&s, json!({"id": id, "decision": "accept"})).await;
     assert_eq!(r.status, 200, "{}", r.body);
+}
+
+// --- Second opinions (step 6): waiting, the opinion on a row, and declining the others ----------------
+
+fn number(s: &SqliteStore, email: &str) -> i64 {
+    s.conn
+        .borrow()
+        .query_row("SELECT rowid FROM users WHERE email = ?1", [email], |r| {
+            r.get(0)
+        })
+        .unwrap()
+}
+
+/// `who` asks Ben about the example; returns the request's id.
+async fn ask_ben(s: &SqliteStore, who: &str) -> i64 {
+    let (id, _, _) = example(s).await;
+    let r = post(
+        s,
+        "/api/opinion/ask",
+        json!({"dataset": "verbs", "kind": "example", "id": id, "user": number(s, BEN),
+        "question": "Which reads better?"}),
+        who,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    r.body["id"].as_i64().unwrap()
+}
+
+fn status_of(s: &SqliteStore, id: &Value) -> (String, Option<String>) {
+    s.conn
+        .borrow()
+        .query_row(
+            "SELECT status, decided_by FROM suggestions WHERE id = ?1",
+            [id.as_i64().unwrap()],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap()
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_waiting_item_leaves_open_for_waiting() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "One.").await;
+    suggest_en(&s, AIKO, "Two.").await;
+    ask_ben(&s, KEIKO).await;
+    assert!(inbox(&s, "open").await.is_empty());
+    let waiting = inbox(&s, "waiting").await;
+    assert_eq!(waiting.len(), 2);
+    for row in &waiting {
+        assert_eq!(row["opinion"]["asked_of_name"], "Ben");
+    }
+    let r = get(&s, "/api/inbox?status=waiting", MARTIN).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_answered_opinion_returns_the_item_to_open_with_the_answer() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "One.").await;
+    let request = ask_ben(&s, KEIKO).await;
+    let r = post(
+        &s,
+        "/api/opinion/answer",
+        json!({"id": request, "pick": null, "body": "Neither."}),
+        BEN,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert!(inbox(&s, "waiting").await.is_empty());
+    let open = inbox(&s, "open").await;
+    assert_eq!(open.len(), 1);
+    assert_eq!(open[0]["opinion"]["answer"], "Neither.");
+    assert_eq!(open[0]["opinion"]["asked_of_name"], "Ben");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_cancelled_opinion_is_not_shown_and_a_row_without_one_has_null() {
+    let s = seeded().await;
+    suggest_en(&s, AIKO, "One.").await;
+    assert!(inbox(&s, "open").await[0]["opinion"].is_null());
+    let request = ask_ben(&s, KEIKO).await;
+    let r = post(&s, "/api/opinion/cancel", json!({"id": request}), KEIKO).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let open = inbox(&s, "open").await;
+    assert_eq!(open.len(), 1);
+    assert!(open[0]["opinion"].is_null());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn deciding_while_an_opinion_is_pending_ends_the_wait() {
+    let s = seeded().await;
+    let a = suggest_en(&s, AIKO, "One.").await;
+    ask_ben(&s, KEIKO).await;
+    let r = decide(&s, json!({"id": a, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert!(inbox(&s, "waiting").await.is_empty());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn accepting_one_of_two_declines_the_other_with_a_reason() {
+    let s = seeded().await;
+    let aiko = suggest_en(&s, AIKO, "Aiko's.").await;
+    let ben = suggest_en(&s, BEN, "Ben's.").await;
+    let r = decide(&s, json!({"id": aiko, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["declined"], json!([ben]));
+    assert_eq!(
+        status_of(&s, &ben),
+        ("declined".into(), Some(MARTIN.into()))
+    );
+    let declined = inbox(&s, "declined").await;
+    assert_eq!(declined.len(), 1);
+    let comments = declined[0]["comments"].as_array().unwrap();
+    assert_eq!(
+        comments.last().unwrap()["body"],
+        "Declined: Aiko's suggestion was accepted instead."
+    );
+    let audit: i64 = s
+        .conn
+        .borrow()
+        .query_row(
+            "SELECT COUNT(*) FROM audit_log WHERE action = 'suggestion.decline' AND target = ?1",
+            [format!("suggestion/{ben}")],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(audit, 1);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_plain_decline_or_accepting_alone_declines_nothing() {
+    let s = seeded().await;
+    let a = suggest_en(&s, AIKO, "One.").await;
+    let b = suggest_en(&s, BEN, "Two.").await;
+    let r = decide(&s, json!({"id": a, "decision": "decline"})).await;
+    assert_eq!(r.body["declined"], json!(null));
+    assert_eq!(status_of(&s, &b).0, "open");
+    let r = decide(&s, json!({"id": b, "decision": "accept"})).await;
+    assert_eq!(r.body["declined"], json!([]));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn accepting_never_declines_the_deciders_own_suggestion() {
+    let s = seeded().await;
+    let keiko = suggest_en(&s, KEIKO, "Keiko's.").await;
+    let aiko = suggest_en(&s, AIKO, "Aiko's.").await;
+    let r = post(
+        &s,
+        "/api/decide",
+        json!({"id": aiko, "decision": "accept"}),
+        KEIKO,
+    )
+    .await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["declined"], json!([]));
+    assert_eq!(status_of(&s, &keiko).0, "open");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_natives_accept_declines_another_persons_japanese_only_change() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let (_, _, json) = example(&s).await;
+    let jp = json["jp"].as_str().unwrap();
+    let keiko = suggest_edits(&s, KEIKO, json!({ "jp": format!("{jp}ね") })).await;
+    let aiko = suggest_edits(&s, AIKO, json!({ "jp": format!("{jp}よ") })).await;
+    let r = ben_decides(&s, json!({"id": aiko, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["declined"], json!([keiko]));
+    assert_eq!(status_of(&s, &keiko), ("declined".into(), Some(BEN.into())));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_native_accepting_leaves_changes_they_cannot_decide_open() {
+    let s = seeded().await;
+    make_native(&s).await;
+    let jp = suggest_jp(&s, AIKO).await;
+    let en = suggest_edits(&s, AIKO, json!({"en": "English."})).await;
+    let r = ben_decides(&s, json!({"id": jp, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["declined"], json!([]));
+    assert_eq!(status_of(&s, &en).0, "open");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn notes_and_additions_are_not_declined() {
+    let s = seeded().await;
+    let (id, hash, _) = example(&s).await;
+    let r = post(
+        &s,
+        "/api/suggest",
+        json!({"dataset": "verbs", "kind": "example", "id": id,
+        "base_hash": hash, "action": "note", "comment": "Hmm."}),
+        BEN,
+    )
+    .await;
+    assert_eq!(r.status, 201, "{}", r.body);
+    let note = r.body["id"].clone();
+    let a = suggest_en(&s, AIKO, "One.").await;
+    let r = decide(&s, json!({"id": a, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(r.body["declined"], json!([]));
+    assert_eq!(status_of(&s, &note).0, "open");
 }

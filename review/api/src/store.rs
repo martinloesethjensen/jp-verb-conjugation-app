@@ -40,6 +40,11 @@ impl Role {
         matches!(self, Role::Teacher | Role::Native | Role::Admin)
     }
 
+    /// Asks someone else for a second opinion on an item's open suggestions: teachers and the owner.
+    pub fn can_ask_opinion(self) -> bool {
+        matches!(self, Role::Teacher | Role::Admin)
+    }
+
     /// Decides every kind of suggestion: teachers and the owner. A native decides only Japanese-only
     /// changes.
     pub fn decides_all(self) -> bool {

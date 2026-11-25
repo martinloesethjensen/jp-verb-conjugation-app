@@ -4,6 +4,7 @@
 	import { MediaQuery } from 'svelte/reactivity';
 	import { isStale, problem, type Field } from './api.ts';
 	import ErrorLine from './ErrorLine.svelte';
+	import OpinionCard from './OpinionCard.svelte';
 	import Sheet from './Sheet.svelte';
 	import Seal from './Seal.svelte';
 	import SuggestForm from './SuggestForm.svelte';
@@ -61,6 +62,9 @@
 
 	const approvals = $derived(review.approvalsOf(kind, id));
 	const suggestions = $derived(review.suggestionsOf(kind, id));
+	// The item's requests, drawn once above its suggestions: the suggestion a request was asked on may since
+	// have been withdrawn. Reading marks still go by the request's anchor_id.
+	const opinions = $derived(review.opinions.filter((o) => o.kind === kind && o.item_id === id));
 	const approved = $derived(review.approvedByMe(kind, id));
 	const loaded = $derived(review.hashOf(kind, id) !== undefined);
 	const names = $derived(fields.map((f) => f.name));
@@ -251,6 +255,9 @@
 	{/snippet}
 	{#if !sheetOpen}<ErrorLine message={failure} {stale} />{/if}
 
+	{#each opinions as o (o.id)}
+		<OpinionCard opinion={o} {suggestions} current={value} {names} {readings} onanswered={() => review.load()} />
+	{/each}
 	{#each suggestions as s (s.id)}
 		<SuggestionCard
 			suggestion={s}

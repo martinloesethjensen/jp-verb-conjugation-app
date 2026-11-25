@@ -255,6 +255,8 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
         },
         MARTIN,
         T0,
+        &[],
+        "",
     )
     .await
     .unwrap();
@@ -263,7 +265,8 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
     assert_eq!(got.admin_edit, Some(serde_json::json!({"a": 2})));
     assert_eq!(got.decided_at.as_deref(), Some(T0));
     assert_eq!(
-        s.decide(a, false, OwnerEdit::default(), MARTIN, T0).await,
+        s.decide(a, false, OwnerEdit::default(), MARTIN, T0, &[], "")
+            .await,
         Err(StoreError::Conflict)
     );
 
@@ -272,13 +275,14 @@ async fn only_open_suggestions_can_be_decided_or_withdrawn() {
         .await
         .unwrap()
         .0;
-    s.decide(b, false, OwnerEdit::default(), MARTIN, T0)
+    s.decide(b, false, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     assert_eq!(s.withdraw(b, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(s.withdraw(9999, AIKO, T0).await, Err(StoreError::NotFound));
     assert_eq!(
-        s.decide(9999, true, OwnerEdit::default(), MARTIN, T0).await,
+        s.decide(9999, true, OwnerEdit::default(), MARTIN, T0, &[], "")
+            .await,
         Err(StoreError::NotFound)
     );
 }
@@ -491,7 +495,7 @@ async fn every_write_is_audited() {
         .await
         .unwrap()
         .0;
-    s.decide(b, true, OwnerEdit::default(), MARTIN, T0)
+    s.decide(b, true, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     let c = s
@@ -499,7 +503,7 @@ async fn every_write_is_audited() {
         .await
         .unwrap()
         .0;
-    s.decide(c, false, OwnerEdit::default(), MARTIN, T0)
+    s.decide(c, false, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     s.add_comment(c, "ok", MARTIN, T0).await.unwrap();
@@ -543,7 +547,7 @@ async fn a_decision_that_loses_a_race_writes_no_audit_row() {
         .await
         .unwrap()
         .0;
-    s.decide(id, true, OwnerEdit::default(), MARTIN, T0)
+    s.decide(id, true, OwnerEdit::default(), MARTIN, T0, &[], "")
         .await
         .unwrap();
     let before = audit_actions(&s).len();
@@ -578,6 +582,91 @@ async fn a_decision_that_loses_a_race_writes_no_audit_row() {
     drop(conn);
     assert_eq!((logged, changed, withdrawn_log, withdrawn), (0, 0, 0, 0));
     assert_eq!(audit_actions(&s).len(), before);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn the_extra_declines_write_nothing_when_the_accept_lost() {
+    use review_api::review_store::{
+        DECLINE_SUPERSEDED, INSERT_SUPERSEDED_AUDIT, INSERT_SUPERSEDED_COMMENT,
+    };
+    const T1: &str = "2026-11-05T12:00:01Z";
+    let s = setup().await;
+    let t = target("words", "entry", II);
+    let h = hash(&s, &t).await;
+    let a = s
+        .add_suggestion(&change(&t, &h, r#"{"a":1}"#), AIKO, T0)
+        .await
+        .unwrap()
+        .0;
+    let b = s
+        .add_suggestion(&change(&t, &h, r#"{"b":1}"#), BEN, T0)
+        .await
+        .unwrap()
+        .0;
+    // The first tab declined Aiko's at T0; the second tab's accept of it, at T1, lost.
+    s.decide(a, false, OwnerEdit::default(), MARTIN, T0, &[], "")
+        .await
+        .unwrap();
+    let before = audit_actions(&s).len();
+    let run = |sql: &str, p: &[&dyn rusqlite::ToSql]| s.conn.borrow().execute(sql, p).unwrap();
+    let reason = "Declined: Aiko's suggestion was accepted instead.";
+    let logged = run(INSERT_SUPERSEDED_AUDIT, rusqlite::params![T1, MARTIN, b, a]);
+    let declined = run(DECLINE_SUPERSEDED, rusqlite::params![T1, MARTIN, b, a]);
+    let commented = run(
+        INSERT_SUPERSEDED_COMMENT,
+        rusqlite::params![T1, MARTIN, b, a, reason],
+    );
+    let comments: i64 = s
+        .conn
+        .borrow()
+        .query_row("SELECT COUNT(*) FROM comments", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!((logged, declined, commented, comments), (0, 0, 0, 0));
+    assert_eq!(audit_actions(&s).len(), before);
+    assert_eq!(
+        s.suggestion(b, MARTIN).await.unwrap().unwrap().status,
+        "open"
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn closing_a_request_writes_nothing_unless_this_decision_applied() {
+    use review_api::review_store::{CLOSE_OPINIONS, INSERT_CLOSE_AUDIT};
+    const T1: &str = "2026-11-05T12:00:01Z";
+    let s = setup().await;
+    let t = target("words", "entry", II);
+    let h = hash(&s, &t).await;
+    let a = s
+        .add_suggestion(&change(&t, &h, r#"{"a":1}"#), AIKO, T0)
+        .await
+        .unwrap()
+        .0;
+    let request = s.ask_opinion(&t, BEN, "", MARTIN, T0).await.unwrap();
+    // Another tab declined it at T0 without closing the request (as a Worker from before 0011 would).
+    s.conn
+        .borrow()
+        .execute(
+            "UPDATE suggestions SET status = 'declined', decided_by = ?2, decided_at = ?3 WHERE id = ?1",
+            rusqlite::params![a, MARTIN, T0],
+        )
+        .unwrap();
+    let before = audit_actions(&s).len();
+    let run = |sql: &str, p: &[&dyn rusqlite::ToSql]| s.conn.borrow().execute(sql, p).unwrap();
+    // This decision, at T1, lost: neither statement applies.
+    let logged = run(INSERT_CLOSE_AUDIT, rusqlite::params![T1, MARTIN, a]);
+    let closed = run(CLOSE_OPINIONS, rusqlite::params![T1, MARTIN, a]);
+    assert_eq!((logged, closed), (0, 0));
+    // Nor someone else's at T0.
+    let logged = run(INSERT_CLOSE_AUDIT, rusqlite::params![T0, BEN, a]);
+    let closed = run(CLOSE_OPINIONS, rusqlite::params![T0, BEN, a]);
+    assert_eq!((logged, closed), (0, 0));
+    // The decision that did apply closes it, with its audit row.
+    let logged = run(INSERT_CLOSE_AUDIT, rusqlite::params![T0, MARTIN, a]);
+    let closed = run(CLOSE_OPINIONS, rusqlite::params![T0, MARTIN, a]);
+    assert_eq!((logged, closed), (1, 1));
+    assert_eq!(audit_actions(&s).len(), before + 1);
+    let o = s.opinion(request, MARTIN).await.unwrap().unwrap();
+    assert_eq!(o.closed_at.as_deref(), Some(T0));
 }
 
 #[tokio::test(flavor = "current_thread")]
