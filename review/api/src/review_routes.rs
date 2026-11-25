@@ -655,7 +655,7 @@ struct DecideBody {
 
 /// The target's current JSON, from its entry: null when it left the data, or on a store error (for
 /// listings; `decide` uses `target_json`, which reports the error).
-async fn current_json<S: Store>(
+pub(crate) async fn current_json<S: Store>(
     store: &S,
     entries: &mut BTreeMap<(String, String), Option<Value>>,
     s: &Suggestion,

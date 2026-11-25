@@ -1053,6 +1053,14 @@ impl ReviewStore for SqliteStore {
         Ok(assemble(rows, comments))
     }
 
+    async fn contributions(&self, viewer: &str) -> Result<Contributions, StoreError> {
+        let conn = self.conn.borrow();
+        let rows = query(&conn, SELECT_CONTRIBUTIONS, params![viewer])?;
+        let extras = query(&conn, SELECT_CONTRIBUTION_EXTRAS, params![viewer])?;
+        let approvals = query(&conn, SELECT_APPROVAL_COUNTS, params![viewer])?;
+        Ok(assemble_contributions(rows, extras, approvals))
+    }
+
     async fn review_counts(&self, dataset: &str) -> Result<Vec<(String, u32, u32)>, StoreError> {
         let conn = self.conn.borrow();
         let rows: Vec<CountRow> = query(&conn, SELECT_REVIEW_COUNTS, params![dataset])?;

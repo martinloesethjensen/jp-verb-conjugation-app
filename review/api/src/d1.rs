@@ -1086,6 +1086,14 @@ impl ReviewStore for D1Store {
         Ok(assemble(rows, comments))
     }
 
+    async fn contributions(&self, viewer: &str) -> Result<Contributions, StoreError> {
+        let binds = [text(viewer)];
+        let rows = self.rows(SELECT_CONTRIBUTIONS, &binds).await?;
+        let extras = self.rows(SELECT_CONTRIBUTION_EXTRAS, &binds).await?;
+        let approvals = self.rows(SELECT_APPROVAL_COUNTS, &binds).await?;
+        Ok(assemble_contributions(rows, extras, approvals))
+    }
+
     async fn review_counts(&self, dataset: &str) -> Result<Vec<(String, u32, u32)>, StoreError> {
         let rows: Vec<CountRow> = self.rows(SELECT_REVIEW_COUNTS, &[text(dataset)]).await?;
         Ok(rows

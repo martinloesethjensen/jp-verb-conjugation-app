@@ -934,6 +934,122 @@ pub const SELECT_INBOX: &str = suggestions_where!(inbox_where!(), "ORDER BY s.id
 pub const SELECT_INBOX_COMMENTS: &str =
     comments_where!(concat!(inbox_where!(), " AND ?1 IS NOT NULL"));
 
+// --- Your contributions ----------------------------------------------------------------------------
+
+/// The extra columns a contribution carries beyond `SuggestionRow`; both are read by suggestion id.
+#[derive(Debug, Deserialize)]
+pub struct ContributionRow {
+    pub id: i64,
+    pub before_json: Option<String>,
+    pub released_in: Option<i64>,
+    pub release_label: Option<String>,
+    pub released_at: Option<String>,
+    /// The backfill row for releases the site never recorded.
+    pub earlier: Option<i64>,
+    pub replies: i64,
+    pub reason_by: Option<String>,
+    pub reason_body: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DatasetCountRow {
+    pub dataset: String,
+    pub n: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Reason {
+    pub by_name: String,
+    pub body: String,
+}
+
+/// One of the viewer's suggestions, with what the contributions page adds to it.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Contribution {
+    pub suggestion: Suggestion,
+    /// The target's JSON when it was accepted; `None` for older accepts and for the rest.
+    pub before: Option<Value>,
+    pub replies: u32,
+    /// The decider's newest comment, for a declined suggestion.
+    pub reason: Option<Reason>,
+    pub release: Option<ReleaseInfo>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ReleaseInfo {
+    pub id: i64,
+    pub label: String,
+    pub loaded_at: Option<String>,
+    /// The "Earlier releases" row: listed last.
+    pub earlier: bool,
+}
+
+/// Everything `GET /api/contributions` reads: the viewer's non-withdrawn suggestions (newest first) and how
+/// many approvals they have in each dataset. Never anyone else's rows.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Contributions {
+    pub suggestions: Vec<Contribution>,
+    pub approvals: Vec<(String, u32)>,
+}
+
+pub fn assemble_contributions(
+    rows: Vec<SuggestionRow>,
+    extras: Vec<ContributionRow>,
+    approvals: Vec<DatasetCountRow>,
+) -> Contributions {
+    let suggestions = assemble(rows, Vec::new())
+        .into_iter()
+        .filter_map(|suggestion| {
+            let e = extras.iter().find(|e| e.id == suggestion.id)?;
+            let release = e.released_in.map(|id| ReleaseInfo {
+                id,
+                label: e.release_label.clone().unwrap_or_default(),
+                loaded_at: e.released_at.clone(),
+                earlier: e.earlier.unwrap_or(0) != 0,
+            });
+            let reason = match (&e.reason_by, &e.reason_body) {
+                (by, Some(body)) if suggestion.status == "declined" => Some(Reason {
+                    by_name: by.clone().unwrap_or_default(),
+                    body: body.clone(),
+                }),
+                _ => None,
+            };
+            Some(Contribution {
+                before: parse_json(e.before_json.clone()),
+                replies: e.replies as u32,
+                reason,
+                release,
+                suggestion,
+            })
+        })
+        .collect();
+    Contributions {
+        suggestions,
+        approvals: approvals
+            .into_iter()
+            .map(|r| (r.dataset, r.n as u32))
+            .collect(),
+    }
+}
+
+/// ?1 viewer: their suggestions that aren't withdrawn, newest first.
+pub const SELECT_CONTRIBUTIONS: &str = suggestions_where!(
+    "WHERE s.author = ?1 AND s.status <> 'withdrawn'",
+    "ORDER BY s.id DESC"
+);
+/// ?1 viewer: the same rows' release, recorded "before", comment count and decider's newest comment.
+pub const SELECT_CONTRIBUTION_EXTRAS: &str = "SELECT s.id, s.before_json, s.released_in, \
+     r.label AS release_label, r.first_loaded_at AS released_at, (r.manifest_sha256 IS NULL) AS earlier, \
+     (SELECT COUNT(*) FROM comments c WHERE c.suggestion_id = s.id) AS replies, \
+     (SELECT IFNULL(d.display_name, '') FROM users d WHERE d.email = s.decided_by) AS reason_by, \
+     (SELECT c.body FROM comments c WHERE c.suggestion_id = s.id AND c.author = s.decided_by \
+      ORDER BY c.id DESC LIMIT 1) AS reason_body \
+     FROM suggestions s LEFT JOIN data_releases r ON r.id = s.released_in \
+     WHERE s.author = ?1 AND s.status <> 'withdrawn'";
+/// ?1 viewer: their approvals per dataset.
+pub const SELECT_APPROVAL_COUNTS: &str =
+    "SELECT dataset, COUNT(*) AS n FROM approvals WHERE reviewer = ?1 GROUP BY dataset ORDER BY dataset";
+
 /// ?1 viewer, ?2 dataset, ?3 entry id.
 pub const SELECT_ENTRY_APPROVALS: &str = "SELECT a.kind, a.item_id, IFNULL(u.display_name, '') AS reviewer_name, \
      (a.reviewer = ?1) AS mine, (i.content_hash IS NOT NULL AND i.content_hash = a.content_hash) AS current, a.created_at \
@@ -1415,6 +1531,8 @@ pub trait ReviewStore {
     async fn add_stamp(&self, s: &NewStamp, actor: &str, now: &str) -> Result<(), StoreError>;
     /// Deletes the pending stamp (audit row `stamp.withdraw`); false when there was none.
     async fn withdraw_stamp(&self, t: &Target, actor: &str, now: &str) -> Result<bool, StoreError>;
+    /// The viewer's own suggestions and approvals, for "Your contributions".
+    async fn contributions(&self, viewer: &str) -> Result<Contributions, StoreError>;
     /// Suggestions in a status, oldest first.
     async fn inbox(&self, status: &str, viewer: &str) -> Result<Vec<Suggestion>, StoreError>;
     /// `(entry_id, approved targets, open suggestions)` per entry of a dataset.
