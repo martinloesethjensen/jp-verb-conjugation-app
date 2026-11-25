@@ -150,8 +150,7 @@ struct SoundPatternsView: View {
                 WrappingFlowLayout {
                     ForEach(shown.uniqued(by: \.id)) { counter in
                         NavigationLink(value: CounterDestination.counter(counter, focus: columns == nil ? selected : nil)) {
-                            Text(counter.counter).font(.title3.weight(.semibold))
-                                .padding(.horizontal, 12).frame(minHeight: 44)
+                            JapaneseText(units: counter.headwordUnits).font(.headword(.title3))
                         }
                         .buttonStyle(.paperSecondaryInline)
                         .accessibilityLabel("\(counter.counter), \(counter.reading)")

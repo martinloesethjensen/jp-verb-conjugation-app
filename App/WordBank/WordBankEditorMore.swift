@@ -20,11 +20,17 @@ struct WordBankEditorMore: View {
                     .padding(12)
                     if draft.kind == .word {
                         PaperDivider()
-                        Picker("Word class", selection: $draft.wordClass) {
-                            Text("None").tag(WordClass?.none)
-                            ForEach(WordClass.allCases, id: \.self) { Text($0.rawValue.capitalized).tag(WordClass?.some($0)) }
+                        // A menu picker outside a Form shows only its value, so the label is drawn here.
+                        HStack {
+                            Text("Word class").foregroundStyle(palette.muted)
+                            Spacer(minLength: 8)
+                            Picker("Word class", selection: $draft.wordClass) {
+                                Text("None").tag(WordClass?.none)
+                                ForEach(WordClass.allCases, id: \.self) { Text($0.rawValue.capitalized).tag(WordClass?.some($0)) }
+                            }
+                            .labelsHidden()
+                            .tint(palette.ink)
                         }
-                        .tint(palette.ink)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
                     }

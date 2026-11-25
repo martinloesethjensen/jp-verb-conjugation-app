@@ -75,6 +75,7 @@ struct WordBankEditor: View {
                 .frame(maxWidth: 640)
                 .frame(maxWidth: .infinity)
             }
+            .scrollDismissesKeyboard(.interactively)
             .paperBackground()
             .navigationTitle(isNew ? "New word" : "Edit word")
             #if os(iOS)

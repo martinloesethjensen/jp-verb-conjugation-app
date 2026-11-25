@@ -64,6 +64,7 @@ struct CopulaSection: View {
         } header: {
             Text("だ / です (plain · polite)")
         }
+        .paperRow()
     }
 
     private func cell(_ text: String, alt: String?, speak: Bool) -> some View {
@@ -115,6 +116,7 @@ struct PoliteAdjectiveSection: View {
         } footer: {
             Text("Words change with the example words above.")
         }
+        .paperRow()
     }
 
     private func block(_ title: Text, rows: [PolitePair]) -> some View {

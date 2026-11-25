@@ -14,6 +14,7 @@ private struct MotifTitle: ViewModifier {
     let title: String
     let showsMotif: Bool
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     func body(content: Content) -> some View {
         #if os(iOS)
@@ -29,7 +30,10 @@ private struct MotifTitle: ViewModifier {
                             JapaneseText(title)
                                 .font(.largeTitle.bold())
                                 .foregroundStyle(palette.ink)
-                            TitleMotifView()
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.6)
+                            // At accessibility sizes the title needs the whole width.
+                            if !typeSize.isAccessibilitySize { TitleMotifView() }
                             Spacer(minLength: 0)
                         }
                         // One heading, read as the title: not ruby fragments, not the motif.

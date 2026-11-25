@@ -183,8 +183,10 @@ struct WordBankDetailView: View {
         case .spelling: "From the kanji spelling."
         case .text, .mixed: nil
         }
-        let tap = kanji.contains { kanjiStore?.entry(for: $0) != nil }
-            ? "Tap for stroke order." : "Tap a kanji to open it in Jisho."
+        let withData = kanji.filter { kanjiStore?.entry(for: $0) != nil }.count
+        let tap = withData == kanji.count ? "Tap for stroke order."
+            : withData == 0 ? "Tap a kanji to open it in Jisho."
+            : "Tap for stroke order, or Jisho where there is none."
         return [source, tap].compactMap { $0 }.joined(separator: " ")
     }
 
