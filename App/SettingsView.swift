@@ -180,6 +180,11 @@ struct SettingsView: View {
                      : "Verb of the day: the verb the widget shows. Review: only when you have weak spots. Streak keeper: only on days you haven't practised yet.")
             }
             .paperRow()
+            // Notifications turned off in iOS Settings after a switch was turned on.
+            .task {
+                let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+                reminderDenied = status == .denied && (reminderEnabled || reviewReminder || streakReminder)
+            }
             Section {
                 Toggle("Suggest while typing", isOn: $wordBankSuggestions)
                     .paperSwitch()

@@ -40,15 +40,20 @@ enum ReminderScheduler {
         center.removePendingNotificationRequests(
             withIdentifiers: pending.map(\.identifier).filter { id in identifierPrefixes.contains { id.hasPrefix($0) } }
         )
+        if Task.isCancelled { return }
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
 
         let visible = verbs.visible(in: LevelSettings.load())
         let pool = visible.isEmpty ? verbs : visible
-        await scheduleStudyReminders(pool: pool, attempts: attempts, center: center)
-        guard defaults.bool(forKey: enabledKey) else { return }
+        // Weak spots count over the visible verbs only, as the Weak spots quiz the link opens does.
+        await scheduleStudyReminders(pool: visible, attempts: attempts, center: center)
+        // A newer refresh (a quiz answer, a setting) replaced this one: its adds must not land
+        // after that refresh removed what was pending.
+        guard defaults.bool(forKey: enabledKey), !Task.isCancelled else { return }
         let minutes = defaults.object(forKey: minutesKey) as? Int ?? defaultMinutes
         for item in DailyReminder.items(verbs: pool, now: .now, minutesAfterMidnight: minutes) {
+            if Task.isCancelled { return }
             let content = UNMutableNotificationContent()
             content.title = item.title
             content.body = item.body
@@ -71,6 +76,7 @@ extension ReminderScheduler {
             .filter { forms.contains($0.formID) }
             .count
         for item in StudyReminderPlan.items(attempts: attempts, weakCount: weakCount, settings: settings, now: .now) {
+            if Task.isCancelled { return }
             let content = UNMutableNotificationContent()
             content.title = StudyReminderText.title(item.kind)
             content.body = StudyReminderText.body(item.kind)

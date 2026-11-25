@@ -29,7 +29,7 @@ final class StudyReminderPlanTests: XCTestCase {
     }
 
     func testReviewIsDailyWhileThereAreWeakSpots() {
-        // 19:00 on the 25th: today's 18:00 has passed, so 14 days from the 26th.
+        // 19:00 on the 25th: today's 18:00 has passed, so the rest of the 14-day window, the 26th to 8 December.
         let items = StudyReminderPlan.items(attempts: practised(on: [24]), weakCount: 8, settings: reviewOnly, now: date(25, 19), calendar: calendar)
         XCTAssertEqual(items.count, 13, "the 26th…8th Dec: 14 days from today minus today")
         XCTAssertEqual(items.first?.kind, .review(count: 8))
