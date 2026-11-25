@@ -39,6 +39,10 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   before it stop counting (approve them again), and open or accepted-but-unexported changes to verb entries
   show as stale (export skips them; apply by hand or suggest again). Examples, phrases, counters and grammar
   are unaffected. Before deploying such a change, check D1 for approvals and suggestions on verb entries.
+- **Courses (2026-11-17)** need migration `0013_courses.sql` (`npm run migrate`). Run it just before or right
+  after merging: until it runs, the course routes (`/api/courses`, `/api/course*`) fail with "the database is
+  unavailable" and every other page works. `GET /api/books` reads the textbooks from the grammar's stored
+  `books`, which a load now keeps: until grammar is loaded again, it answers 409 "grammar isn't loaded".
 - **Natives (2026-11-11)** need migration `0010_native_role.sql` (`npm run migrate`), which rebuilds `users`
   with every row kept so the role can be `native`. Either order is safe; until it runs, making someone a
   native fails with "the database is unavailable". (`0009` belongs to the settings step; wrangler applies

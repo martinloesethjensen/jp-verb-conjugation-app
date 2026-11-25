@@ -1615,7 +1615,7 @@
           ]
         }
       ],
-      "related": []
+      "related": ["comparison"]
     },
     {
       "id": "tai",
@@ -1811,7 +1811,7 @@
           "explanation": "The volitional states your will, so verbs for states or things that just happen have none: わかる (to understand), しる (to know), つかれる (to get tired). ある has あろう in writing, but it is rare in conversation."
         }
       ],
-      "related": []
+      "related": ["tsumori", "masen-ka"]
     },
     {
       "id": "nai-te",
@@ -2465,7 +2465,7 @@
           ]
         }
       ],
-      "related": ["te-kudasai"]
+      "related": ["te-kudasai", "mae-ni"]
     },
     {
       "id": "ta-koto",
@@ -2581,6 +2581,476 @@
         }
       ],
       "related": []
+    },
+    {
+      "id": "mae-ni",
+      "title": "〜前に・〜後で",
+      "summary": "〜前に says what you do before something: 寝る前に (before going to bed). 〜後で says what you do after it: 食べた後で (after eating). On its own, 後で means \"later\".",
+      "keywords": ["before", "after", "later", "afterwards", "before doing", "after doing"],
+      "jlpt": "N5",
+      "usages": [
+        {
+          "id": "cs2evs",
+          "heading": "Before doing something (〜前に)",
+          "explanation": "Add 前に to the dictionary form. The verb stays in the dictionary form even when the sentence is about the past.",
+          "examples": [
+            { "id": "ejkec7", "jp": "寝る前に、歯をみがきます。", "en": "I brush my teeth before going to bed.", "particle_blanks": [{ "particle": "を", "at": 6 }] },
+            { "id": "4v3s9y", "jp": "日本に行く前に、日本語を勉強しました。", "en": "Before I went to Japan, I studied Japanese.", "particle_blanks": [{ "particle": "に", "at": 2 }, { "particle": "を", "at": 11 }] }
+          ]
+        },
+        {
+          "id": "9tgewe",
+          "heading": "After doing something (〜後で)",
+          "explanation": "Add 後で to the た-form. The verb stays in the た-form even when the sentence is about the future. On its own, 後で means \"later\".",
+          "examples": [
+            { "id": "bkfv9z", "jp": "授業が終わった後で、図書館に行きます。", "en": "After class, I'll go to the library.", "particle_blanks": [{ "particle": "が", "at": 2 }, { "particle": "に", "at": 13 }] },
+            { "id": "n5vkqr", "jp": "晩ご飯を食べた後で、テレビを見ました。", "en": "After dinner, I watched TV.", "particle_blanks": [{ "particle": "を", "at": 3 }, { "particle": "を", "at": 13 }] },
+            { "id": "xjdug4", "jp": "後で電話します。", "en": "I'll call you later." }
+          ]
+        },
+        {
+          "id": "cy2tvz",
+          "heading": "Before and after a noun",
+          "explanation": "With a noun, put の in between: 食事の前に, 仕事の後で.",
+          "examples": [
+            { "id": "8an4u3", "jp": "食事の前に、手を洗ってください。", "en": "Please wash your hands before eating.", "particle_blanks": [{ "particle": "の", "at": 2 }, { "particle": "を", "at": 7 }] },
+            { "id": "hsivk3", "jp": "仕事の後で、友だちと会います。", "en": "I'm meeting a friend after work.", "particle_blanks": [{ "particle": "の", "at": 2 }, { "particle": "と", "at": 9 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plain"],
+          "then": "前に",
+          "pattern": "dictionary form + 前に",
+          "example": "寝る → 寝る前に / 行く → 行く前に / する → する前に"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plainPast"],
+          "then": "後で",
+          "pattern": "た-form + 後で",
+          "example": "食べる → 食べた後で / 終わる → 終わった後で / する → した後で"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "の + 前に / の + 後で",
+          "example": "食事 → 食事の前に / 仕事 → 仕事の後で"
+        }
+      ],
+      "conjugations": [],
+      "pitfalls": [
+        {
+          "id": "d7bbn3",
+          "heading": "前に always takes the dictionary form",
+          "explanation": "Even in a story about the past, the verb before 前に stays in the dictionary form: 行く前に, not 行った前に. The tense goes at the end of the sentence.",
+          "wrong": "行った前に",
+          "examples": [
+            { "id": "z542ha", "jp": "日本に行く前に、日本語を勉強しました。", "en": "Before I went to Japan, I studied Japanese.", "particle_blanks": [{ "particle": "に", "at": 2 }, { "particle": "を", "at": 11 }] }
+          ]
+        },
+        {
+          "id": "q5hmhq",
+          "heading": "後で always takes the た-form",
+          "explanation": "Even about the future, the verb before 後で is in the た-form: 食べた後で, not 食べる後で.",
+          "wrong": "食べる後で",
+          "examples": [
+            { "id": "y4icu6", "jp": "宿題をした後で、遊びます。", "en": "I'll play after I've done my homework.", "particle_blanks": [{ "particle": "を", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "3dpdvc",
+          "heading": "後で or 〜てから?",
+          "explanation": "Both can mean \"after\". 〜てから stresses the order (first this, then that), and 〜た後で puts the weight on the time after. Only 〜てから means \"since\", with a length of time.",
+          "examples": [
+            { "id": "dgdqrp", "jp": "日本に来てから、一年になります。", "en": "It's been a year since I came to Japan.", "particle_blanks": [{ "particle": "に", "at": 2 }, { "particle": "に", "at": 10 }] }
+          ]
+        }
+      ],
+      "related": ["te-kara", "toki"]
+    },
+    {
+      "id": "toki",
+      "title": "〜とき",
+      "summary": "〜とき means \"when…\" or \"at the time…\": 暇なとき (when I'm free), 子供のとき (when I was a child). Before a verb, the tense says which action comes first.",
+      "keywords": ["when", "at the time", "while", "whenever", "time"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-2", "lesson": 16, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "m4gucg",
+          "heading": "When… (with a verb)",
+          "explanation": "Put the short form of the verb before とき. The second half says what happens at that time.",
+          "examples": [
+            { "id": "vmiedq", "jp": "道がわからないとき、地図を見ます。", "en": "When I don't know the way, I look at a map.", "particle_blanks": [{ "particle": "が", "at": 1 }, { "particle": "を", "at": 12 }] },
+            { "id": "9f5dp3", "jp": "寝るとき、電気を消します。", "en": "I turn off the light when I go to bed.", "particle_blanks": [{ "particle": "を", "at": 7 }] }
+          ]
+        },
+        {
+          "id": "bg2xt2",
+          "heading": "The tense inside とき",
+          "explanation": "The tense before とき shows the order, not when the sentence happens. The dictionary form means the とき action has not happened yet; the た-form means it already has.",
+          "examples": [
+            { "id": "5jyqti", "jp": "日本に行くとき、かばんを買いました。", "en": "I bought a bag for my trip to Japan (before going).", "particle_blanks": [{ "particle": "に", "at": 2 }, { "particle": "を", "at": 11 }] },
+            { "id": "mfkrr6", "jp": "日本に行ったとき、かばんを買いました。", "en": "When I went to Japan, I bought a bag (there).", "particle_blanks": [{ "particle": "に", "at": 2 }, { "particle": "を", "at": 12 }] },
+            { "id": "hpysgd", "jp": "うちに帰ったとき、「ただいま」と言います。", "en": "When I get home, I say ただいま.", "particle_blanks": [{ "particle": "に", "at": 2 }, { "particle": "と", "at": 15 }] }
+          ]
+        },
+        {
+          "id": "2cbrgk",
+          "heading": "With adjectives and nouns",
+          "explanation": "い-adjectives attach directly, な-adjectives keep な, and nouns take の: 寒いとき, 暇なとき, 子供のとき.",
+          "examples": [
+            { "id": "bkia94", "jp": "暇なとき、何をしますか。", "en": "What do you do when you're free?", "particle_blanks": [{ "particle": "を", "at": 6 }] },
+            { "id": "ju48ge", "jp": "子供のとき、よく川で泳ぎました。", "en": "As a child, I often swam in the river.", "particle_blanks": [{ "particle": "の", "at": 2 }, { "particle": "で", "at": 9 }] },
+            { "id": "9arxua", "jp": "寒いときは、温かいお茶がいいです。", "en": "When it's cold, hot tea is nice.", "particle_blanks": [{ "particle": "は", "at": 4 }, { "particle": "が", "at": 11 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "とき",
+          "pattern": "short form + とき",
+          "example": "行く → 行くとき / 行った → 行ったとき / わからない → わからないとき"
+        },
+        {
+          "word_class": "i-adjective",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "とき",
+          "pattern": "short form + とき",
+          "example": "寒い → 寒いとき / 若かった → 若かったとき"
+        },
+        {
+          "word_class": "na-adjective",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "da_to_na": true,
+          "then": "とき",
+          "pattern": "short form (だ → な) + とき",
+          "example": "暇だ → 暇なとき / 元気だった → 元気だったとき"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "の + とき",
+          "example": "子供 → 子供のとき / 休み → 休みのとき"
+        }
+      ],
+      "conjugations": [],
+      "pitfalls": [
+        {
+          "id": "e24v4f",
+          "heading": "The tense shows the order",
+          "explanation": "行くとき means before you arrive or on the way; 行ったとき means after you got there. Choose the tense by which action comes first, not by whether the sentence is about the past.",
+          "examples": [
+            { "id": "nr3vd5", "jp": "日本に行ったとき、かばんを買いました。", "en": "When I went to Japan, I bought a bag (there).", "particle_blanks": [{ "particle": "に", "at": 2 }, { "particle": "を", "at": 12 }] }
+          ]
+        },
+        {
+          "id": "nbnftr",
+          "heading": "Nouns take の, な-adjectives keep な",
+          "explanation": "とき works like a noun, so the word before it is joined the way a noun is modified: 子供のとき and 暇なとき, not 子供とき or 暇とき.",
+          "wrong": "子供とき",
+          "examples": [
+            { "id": "8p647g", "jp": "子供のとき、よく川で泳ぎました。", "en": "As a child, I often swam in the river.", "particle_blanks": [{ "particle": "の", "at": 2 }, { "particle": "で", "at": 9 }] }
+          ]
+        }
+      ],
+      "related": ["mae-ni"]
+    },
+    {
+      "id": "comparison",
+      "title": "より・〜のほうが・いちばん",
+      "summary": "Compare two things with より and のほうが: 電車はバスより速いです (the train is faster than the bus). Pick the top of three or more with いちばん.",
+      "keywords": ["comparison", "than", "more", "better", "most", "the best", "which", "compare"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 10, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "vmp47x",
+          "heading": "A is more … than B (AはBより)",
+          "explanation": "より means \"than\". Put it after the thing being compared against: AはBより + adjective.",
+          "examples": [
+            { "id": "hggtxf", "jp": "東京は大阪より大きいです。", "en": "Tokyo is bigger than Osaka.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "より", "at": 5 }] },
+            { "id": "gsc9td", "jp": "今日は昨日より暑いです。", "en": "Today is hotter than yesterday.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "より", "at": 5 }] }
+          ]
+        },
+        {
+          "id": "g3wpid",
+          "heading": "Which of the two? (どちら・のほうが)",
+          "explanation": "Ask with AとBとどちらが…ですか. Answer with Aのほうが…, where ほう means \"side\". より can come first: BよりAのほうが….",
+          "examples": [
+            { "id": "dfvctm", "jp": "肉と魚とどちらが好きですか。", "en": "Which do you like better, meat or fish?", "particle_blanks": [{ "particle": "と", "at": 1 }, { "particle": "と", "at": 3 }, { "particle": "が", "at": 7 }] },
+            { "id": "9vnc67", "jp": "魚のほうが好きです。", "en": "I like fish better.", "particle_blanks": [{ "particle": "の", "at": 1 }, { "particle": "が", "at": 4 }] },
+            { "id": "zkdpvb", "jp": "バスより電車のほうが速いです。", "en": "The train is faster than the bus.", "particle_blanks": [{ "particle": "より", "at": 2 }, { "particle": "の", "at": 6 }, { "particle": "が", "at": 9 }] }
+          ]
+        },
+        {
+          "id": "kbs9av",
+          "heading": "The most (いちばん)",
+          "explanation": "For three or more, ask 〜の中で、何・どれ・だれ・どこがいちばん…ですか, and answer with いちばん.",
+          "examples": [
+            { "id": "gx78ug", "jp": "果物の中で何がいちばん好きですか。", "en": "Which fruit do you like best?", "particle_blanks": [{ "particle": "の", "at": 2 }, { "particle": "で", "at": 4 }, { "particle": "が", "at": 6 }] },
+            { "id": "fdfn2q", "jp": "りんごがいちばん好きです。", "en": "I like apples best.", "particle_blanks": [{ "particle": "が", "at": 3 }] },
+            { "id": "uzggsx", "jp": "家族の中で、父がいちばん背が高いです。", "en": "My father is the tallest in my family.", "particle_blanks": [{ "particle": "の", "at": 2 }, { "particle": "で", "at": 4 }, { "particle": "が", "at": 7 }, { "particle": "が", "at": 13 }] }
+          ]
+        },
+        {
+          "id": "xj99uy",
+          "heading": "Comparing actions",
+          "explanation": "To compare actions, put the dictionary form before より and ほうが.",
+          "examples": [
+            { "id": "cy2a6q", "jp": "外で食べるより、家で作るほうが好きです。", "en": "I'd rather cook at home than eat out.", "particle_blanks": [{ "particle": "で", "at": 1 }, { "particle": "より", "at": 5 }, { "particle": "で", "at": 9 }, { "particle": "が", "at": 14 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "noun",
+          "pattern": "noun + より",
+          "example": "バス → バスより"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "noun + のほうが",
+          "example": "電車 → 電車のほうが"
+        },
+        {
+          "word_class": "i-adjective",
+          "pattern": "いちばん + adjective",
+          "example": "高い → いちばん高い"
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "いちばん + adjective",
+          "example": "好き → いちばん好き / 有名 → いちばん有名"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plain"],
+          "then": "より",
+          "pattern": "dictionary form + より",
+          "example": "食べる → 食べるより / 行く → 行くより"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plain"],
+          "then": "ほうが",
+          "pattern": "dictionary form + ほうが",
+          "example": "作る → 作るほうが / 歩く → 歩くほうが"
+        }
+      ],
+      "conjugations": [],
+      "pitfalls": [
+        {
+          "id": "scaaby",
+          "heading": "より goes after the one with less",
+          "explanation": "The noun before より is what the other is compared against: 東京は大阪より大きい says Tokyo is the bigger one. Learners often swap the two.",
+          "examples": [
+            { "id": "5huqay", "jp": "東京は大阪より大きいです。", "en": "Tokyo is bigger than Osaka.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "より", "at": 5 }] }
+          ]
+        },
+        {
+          "id": "4jjyhy",
+          "heading": "A noun needs の before ほう",
+          "explanation": "ほう works like a noun, so a noun before it takes の: 電車のほうが, not 電車ほうが. Verbs and adjectives attach directly: 作るほうが, 安いほうが.",
+          "wrong": "電車ほうが",
+          "examples": [
+            { "id": "i2kkqm", "jp": "バスより電車のほうが速いです。", "en": "The train is faster than the bus.", "particle_blanks": [{ "particle": "より", "at": 2 }, { "particle": "の", "at": 6 }, { "particle": "が", "at": 9 }] }
+          ]
+        },
+        {
+          "id": "ptua5f",
+          "heading": "どちら for two, 何・どれ for three or more",
+          "explanation": "With two choices, ask どちらが (or どちらのほうが). With three or more, ask with 何, どれ, だれ or どこ and いちばん; どちらがいちばん is a common mix-up.",
+          "wrong": "どちらがいちばん",
+          "examples": [
+            { "id": "3j6rhi", "jp": "スポーツの中で何がいちばん好きですか。", "en": "Which sport do you like best?", "particle_blanks": [{ "particle": "の", "at": 4 }, { "particle": "で", "at": 6 }, { "particle": "が", "at": 8 }] }
+          ]
+        }
+      ],
+      "related": ["hou-ga-ii"]
+    },
+    {
+      "id": "tsumori",
+      "title": "〜つもり・〜予定",
+      "summary": "〜つもりです says what you intend to do: 日本へ行くつもりです (I plan to go to Japan). 〜予定です says what is scheduled or arranged: 会議は三時に始まる予定です.",
+      "keywords": ["intend to", "plan to", "going to", "planning", "plans", "schedule", "scheduled", "not going to"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 10, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "yyk33c",
+          "heading": "Intend to… (〜つもり)",
+          "explanation": "Add つもりです to the dictionary form to say what you have decided or intend to do.",
+          "examples": [
+            { "id": "t697gn", "jp": "夏休みに日本に行くつもりです。", "en": "I'm planning to go to Japan in the summer holidays.", "particle_blanks": [{ "particle": "に", "at": 3 }, { "particle": "に", "at": 6 }] },
+            { "id": "usi8qf", "jp": "来年、大学を卒業するつもりです。", "en": "I intend to graduate from university next year.", "particle_blanks": [{ "particle": "を", "at": 5 }] }
+          ]
+        },
+        {
+          "id": "penx8t",
+          "heading": "Intend not to… (〜ないつもり)",
+          "explanation": "With the ない-form, it says what you have decided not to do.",
+          "examples": [
+            { "id": "8pk9md", "jp": "今夜はお酒を飲まないつもりです。", "en": "I'm not going to drink tonight.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "を", "at": 5 }] },
+            { "id": "id6dbn", "jp": "もう、たばこは吸わないつもりです。", "en": "I don't intend to smoke any more.", "particle_blanks": [{ "particle": "は", "at": 6 }] }
+          ]
+        },
+        {
+          "id": "2wa4m6",
+          "heading": "Scheduled (〜予定)",
+          "explanation": "予定 means a plan or a schedule. Dictionary form + 予定です says what has been arranged, often by others, and a noun takes の: 旅行の予定.",
+          "examples": [
+            { "id": "9c2da9", "jp": "会議は三時に始まる予定です。", "en": "The meeting is scheduled to start at three.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "に", "at": 5 }] },
+            { "id": "vk87ae", "jp": "明日は友だちと映画を見る予定です。", "en": "I'm going to see a film with a friend tomorrow.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "と", "at": 6 }, { "particle": "を", "at": 9 }] },
+            { "id": "ywybmq", "jp": "週末は何か予定がありますか。", "en": "Do you have any plans for the weekend?", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "か", "at": 4 }, { "particle": "が", "at": 7 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plain"],
+          "then": "つもり",
+          "pattern": "dictionary form + つもりです",
+          "example": "行く → 行くつもりです / 卒業する → 卒業するつもりです"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plainNeg"],
+          "then": "つもり",
+          "pattern": "ない-form + つもりです",
+          "example": "飲む → 飲まないつもりです / 吸う → 吸わないつもりです"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plain"],
+          "then": "予定",
+          "pattern": "dictionary form + 予定です",
+          "example": "始まる → 始まる予定です / 見る → 見る予定です"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "の + 予定",
+          "example": "旅行 → 旅行の予定 / 会議 → 会議の予定"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜つもりです", "register": "polite" },
+        { "form": "〜つもりだ", "register": "casual" },
+        { "form": "〜つもりでした", "register": "polite", "note": "I meant to… (often: but I didn't)." },
+        { "form": "〜予定です", "register": "polite" }
+      ],
+      "pitfalls": [
+        {
+          "id": "dpfk5u",
+          "heading": "つもり follows the dictionary form",
+          "explanation": "つもり works like a noun, so the verb before it is in the short form: 行くつもりです, not 行きますつもりです. The politeness goes on です.",
+          "wrong": "行きますつもり",
+          "examples": [
+            { "id": "3trb35", "jp": "夏休みに日本に行くつもりです。", "en": "I'm planning to go to Japan in the summer holidays.", "particle_blanks": [{ "particle": "に", "at": 3 }, { "particle": "に", "at": 6 }] }
+          ]
+        },
+        {
+          "id": "p5ipma",
+          "heading": "Don't ask a teacher about their つもり",
+          "explanation": "〜つもりですか asks about someone's private intention, so to a teacher, a boss or a customer it sounds blunt. Ask about their 予定 instead.",
+          "examples": [
+            { "id": "y56dmn", "jp": "週末は何か予定がありますか。", "en": "Do you have any plans for the weekend?", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "か", "at": 4 }, { "particle": "が", "at": 7 }] }
+          ]
+        },
+        {
+          "id": "kaetsh",
+          "heading": "つもり or 予定?",
+          "explanation": "つもり is your own decision and can change. 予定 is something arranged or on the calendar, often involving other people.",
+          "examples": [
+            { "id": "b55mms", "jp": "会議は三時に始まる予定です。", "en": "The meeting is scheduled to start at three.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "に", "at": 5 }] }
+          ]
+        }
+      ],
+      "related": ["volitional"]
+    },
+    {
+      "id": "masen-ka",
+      "title": "〜ませんか",
+      "summary": "〜ませんか invites someone to do something: いっしょに映画を見ませんか (would you like to see a film with me?). It sounds softer than 〜ましょう.",
+      "keywords": ["would you like to", "won't you", "invitation", "invite", "why don't we", "how about"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 3, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "tu7iga",
+          "heading": "Inviting (〜ませんか)",
+          "explanation": "Add ませんか to the ます-stem. Although it is negative in form, it is a friendly invitation: \"Won't you…?\" or \"Would you like to…?\"",
+          "examples": [
+            { "id": "5zrz4h", "jp": "いっしょに昼ご飯を食べませんか。", "en": "Would you like to have lunch together?", "particle_blanks": [{ "particle": "に", "at": 4 }, { "particle": "を", "at": 8 }] },
+            { "id": "g2f2vh", "jp": "週末、映画を見に行きませんか。", "en": "Would you like to go and see a film this weekend?", "particle_blanks": [{ "particle": "を", "at": 5 }] },
+            { "id": "rp8grw", "jp": "明日、テニスをしませんか。", "en": "How about playing tennis tomorrow?", "particle_blanks": [{ "particle": "を", "at": 6 }] }
+          ]
+        },
+        {
+          "id": "cv2tye",
+          "heading": "Saying yes or no",
+          "explanation": "Accept with いいですね and 〜ましょう. To decline, Japanese rarely says いいえ: say ちょっと… and let it trail off, often with a reason.",
+          "examples": [
+            { "id": "f8gtud", "jp": "いいですね。行きましょう。", "en": "Sounds good. Let's go." },
+            { "id": "fvq3jn", "jp": "土曜日はちょっと…。", "en": "Saturday is a bit… (difficult).", "particle_blanks": [{ "particle": "は", "at": 3 }] },
+            { "id": "n6pc36", "jp": "すみません、明日はちょっと用事があるんです。", "en": "Sorry, I have something on tomorrow.", "particle_blanks": [{ "particle": "は", "at": 8 }, { "particle": "が", "at": 15 }] }
+          ]
+        },
+        {
+          "id": "wnahus",
+          "heading": "Casual: 〜ない?",
+          "explanation": "Among friends, use the plain negative with a rising tone: 行かない?",
+          "examples": [
+            { "id": "qetmb5", "jp": "いっしょに帰らない？", "en": "Want to go home together?", "particle_blanks": [{ "particle": "に", "at": 4 }] },
+            { "id": "hwjk6s", "jp": "コーヒー、飲まない？", "en": "Fancy a coffee?" }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["stem"],
+          "then": "ませんか",
+          "pattern": "ます-stem + ませんか",
+          "example": "食べる → 食べませんか / 行く → 行きませんか / する → しませんか / 来る → 来ませんか"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜ませんか", "register": "polite", "note": "Would you like to…?" },
+        { "form": "〜ない？", "register": "casual", "note": "With a rising tone." }
+      ],
+      "pitfalls": [
+        {
+          "id": "vbxq2i",
+          "heading": "ませんか attaches to the ます-stem",
+          "explanation": "Drop ます and add ませんか: 行きませんか, not 行くませんか.",
+          "wrong": "行くませんか",
+          "examples": [
+            { "id": "jbcxjb", "jp": "週末、映画を見に行きませんか。", "en": "Would you like to go and see a film this weekend?", "particle_blanks": [{ "particle": "を", "at": 5 }] }
+          ]
+        },
+        {
+          "id": "5t8w3h",
+          "heading": "Decline with ちょっと…",
+          "explanation": "Answering an invitation with いいえ or 行きません sounds cold. Say ちょっと… and leave the rest unsaid, or give a reason with 〜んです.",
+          "examples": [
+            { "id": "x545u9", "jp": "土曜日はちょっと…。", "en": "Saturday is a bit… (difficult).", "particle_blanks": [{ "particle": "は", "at": 3 }] }
+          ]
+        }
+      ],
+      "related": ["volitional"]
     }
   ]
 }

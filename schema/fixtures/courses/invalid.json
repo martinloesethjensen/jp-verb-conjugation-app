@@ -1,0 +1,140 @@
+[
+  {
+    "name": "course id of five characters",
+    "dataset": "courses",
+    "doc": {
+      "version": "1.0.0",
+      "description": "Courses written by teachers and native speakers, approved on the review site.",
+      "courses": [
+        {
+          "id": "c7k2m",
+          "revision": 3,
+          "since": "2026-11-10",
+          "title": "Everyday verbs in 10 lessons",
+          "summary": "The N5 verbs you need for a normal day, one routine at a time.",
+          "levels": [
+            "N5"
+          ],
+          "author": {
+            "name": "Kenji",
+            "role": "teacher"
+          },
+          "copied_from": {
+            "title": "Verbs for beginners",
+            "author": {
+              "role": "native"
+            }
+          },
+          "follows": {
+            "book": "genki-1"
+          },
+          "lessons": [
+            {
+              "id": "l4x9ta",
+              "title": "Morning routine",
+              "goal": "Say what you do each morning.",
+              "note": "Learn the ます forms first.",
+              "textbook_lesson": 3,
+              "items": [
+                {
+                  "kind": "verb",
+                  "id": "おきる"
+                },
+                {
+                  "kind": "word",
+                  "id": "adverb:まいあさ"
+                },
+                {
+                  "kind": "grammar",
+                  "id": "masu"
+                },
+                {
+                  "kind": "counter",
+                  "id": "ji"
+                },
+                {
+                  "kind": "example",
+                  "in": "verbs",
+                  "id": "8iij9b"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "withdrawn": [
+        "p0lite"
+      ]
+    },
+    "error": "does not match"
+  },
+  {
+    "name": "course author role admin",
+    "dataset": "courses",
+    "doc": {
+      "version": "1.0.0",
+      "description": "Courses written by teachers and native speakers, approved on the review site.",
+      "courses": [
+        {
+          "id": "c7k2mq",
+          "revision": 3,
+          "since": "2026-11-10",
+          "title": "Everyday verbs in 10 lessons",
+          "summary": "The N5 verbs you need for a normal day, one routine at a time.",
+          "levels": [
+            "N5"
+          ],
+          "author": {
+            "name": "Kenji",
+            "role": "admin"
+          },
+          "copied_from": {
+            "title": "Verbs for beginners",
+            "author": {
+              "role": "native"
+            }
+          },
+          "follows": {
+            "book": "genki-1"
+          },
+          "lessons": [
+            {
+              "id": "l4x9ta",
+              "title": "Morning routine",
+              "goal": "Say what you do each morning.",
+              "note": "Learn the ます forms first.",
+              "textbook_lesson": 3,
+              "items": [
+                {
+                  "kind": "verb",
+                  "id": "おきる"
+                },
+                {
+                  "kind": "word",
+                  "id": "adverb:まいあさ"
+                },
+                {
+                  "kind": "grammar",
+                  "id": "masu"
+                },
+                {
+                  "kind": "counter",
+                  "id": "ji"
+                },
+                {
+                  "kind": "example",
+                  "in": "verbs",
+                  "id": "8iij9b"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "withdrawn": [
+        "p0lite"
+      ]
+    },
+    "error": "is not one of"
+  }
+]
