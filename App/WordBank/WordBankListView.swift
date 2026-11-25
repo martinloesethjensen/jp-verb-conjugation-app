@@ -294,6 +294,8 @@ struct WordBankListView: View {
             text: $searchText, tokens: $tokens, suggested: $suggestedTokens, scope: $searchScope,
             focused: $searchFocused, hasScopes: folderID != nil, onSubmit: recordSearch
         ))
+        // Picked rows hidden by another tag chip would still be moved or deleted.
+        .onChange(of: tagFilter) { chosen = [] }
         .onChange(of: searchText) {
             refreshSuggestions()
             if !searchActive { searchScope = .thisFolder }
@@ -367,8 +369,9 @@ struct WordBankListView: View {
                     ForEach(store.smartFolders) { smartFolderRow($0) }
                 }
             }
-            if place != nil { tagChips }
-            ForEach(groups(of: shownEntries)) { group in
+            let top = topTags
+            if place != nil { tagChips(top) }
+            ForEach(groups(of: shownEntries(top))) { group in
                 Section(group.title ?? (subfolders.isEmpty && place != nil ? "" : "Entries")) {
                     ForEach(group.entries) { entryRow($0) }
                 }
@@ -380,13 +383,13 @@ struct WordBankListView: View {
     private var topTags: [WordBankTagCount] { WordBankTagCounts.top(entries, limit: 6) }
 
     /// The picked tag, while it is still among the chips (a deleted tag falls back to All).
-    private var activeTagFilter: UUID? {
-        guard let tagFilter, topTags.contains(where: { $0.tagID == tagFilter }) else { return nil }
+    private func activeTagFilter(_ top: [WordBankTagCount]) -> UUID? {
+        guard let tagFilter, top.contains(where: { $0.tagID == tagFilter }) else { return nil }
         return tagFilter
     }
 
-    private var shownEntries: [WordBankEntryValue] {
-        guard let tag = activeTagFilter else { return entries }
+    private func shownEntries(_ top: [WordBankTagCount]) -> [WordBankEntryValue] {
+        guard let tag = activeTagFilter(top) else { return entries }
         return entries.filter { $0.dialectTagIDs.contains(tag) || $0.customTagIDs.contains(tag) }
     }
 
@@ -395,19 +398,20 @@ struct WordBankListView: View {
     }
 
     /// All, then the most used tags with their counts; hidden when no entry here has a tag.
-    @ViewBuilder private var tagChips: some View {
-        let tags = topTags.filter { tagName($0.tagID) != nil }
+    @ViewBuilder private func tagChips(_ top: [WordBankTagCount]) -> some View {
+        let tags = top.filter { tagName($0.tagID) != nil }
+        let active = activeTagFilter(top)
         if !tags.isEmpty {
             Section {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         Button { tagFilter = nil } label: {
-                            FilterChip("All \(entries.count)", isOn: activeTagFilter == nil)
+                            FilterChip("All \(entries.count)", isOn: active == nil)
                         }
                         .buttonStyle(.plain)
                         ForEach(tags, id: \.tagID) { tag in
                             Button { tagFilter = tag.tagID } label: {
-                                FilterChip("\(tagName(tag.tagID) ?? "") \(tag.count)", isOn: activeTagFilter == tag.tagID)
+                                FilterChip("\(tagName(tag.tagID) ?? "") \(tag.count)", isOn: active == tag.tagID)
                             }
                             .buttonStyle(.plain)
                         }

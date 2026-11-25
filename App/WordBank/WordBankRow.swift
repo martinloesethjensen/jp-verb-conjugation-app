@@ -38,7 +38,8 @@ struct WordBankRow: View {
             }
             let tags = tags
             if !tags.isEmpty || entry.equivalents.first != nil {
-                HStack(spacing: 6) {
+                // Wraps, so pills and the standard form never truncate at large text sizes.
+                WrappingFlowLayout(spacing: 6) {
                     ForEach(tags.indices, id: \.self) { tags[$0] }
                     if let equivalent = entry.equivalents.first {
                         HStack(spacing: 2) {

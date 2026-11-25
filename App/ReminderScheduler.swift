@@ -7,30 +7,53 @@ enum ReminderScheduler {
     static let enabledKey = "reminderEnabled"
     static let minutesKey = "reminderMinutes"
     static let defaultMinutes = 9 * 60
-    private static let identifierPrefix = "verb-of-the-day-"
+    static let reviewEnabledKey = "reviewReminderEnabled"
+    static let reviewMinutesKey = "reviewReminderMinutes"
+    static let streakEnabledKey = "streakReminderEnabled"
+    static let streakMinutesKey = "streakReminderMinutes"
+    /// Every request this app schedules; a refresh replaces them all.
+    private static let identifierPrefixes = ["verb-of-the-day-", "review-", "streak-"]
 
     /// True when the user allowed notifications.
     static func requestAuthorization() async -> Bool {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
-    /// Replaces our pending notifications with the next few days, or only removes them when the
-    /// reminder is off. Uses the same pool as the verb widget: the verbs at the visible levels.
-    static func refresh(verbs: [Verb]) async {
+    /// The Review and Streak keeper settings, with their defaults.
+    static var studySettings: StudyReminderSettings {
+        let defaults = UserDefaults.appGroup
+        return StudyReminderSettings(
+            reviewEnabled: defaults.bool(forKey: reviewEnabledKey),
+            reviewMinutes: defaults.object(forKey: reviewMinutesKey) as? Int ?? StudyReminderSettings.reviewDefaultMinutes,
+            streakEnabled: defaults.bool(forKey: streakEnabledKey),
+            streakMinutes: defaults.object(forKey: streakMinutesKey) as? Int ?? StudyReminderSettings.streakDefaultMinutes
+        )
+    }
+
+    /// Replaces our pending notifications: Verb of the day for the next few days (the verb widget's
+    /// pool, the verbs at the visible levels), then Review and Streak keeper from the quiz history.
+    /// Only removes them when the switches are off or notifications aren't allowed.
+    static func refresh(verbs: [Verb], attempts: [QuizAttempt]) async {
         let center = UNUserNotificationCenter.current()
         let defaults = UserDefaults.appGroup
         let pending = await center.pendingNotificationRequests()
         center.removePendingNotificationRequests(
-            withIdentifiers: pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
+            withIdentifiers: pending.map(\.identifier).filter { id in identifierPrefixes.contains { id.hasPrefix($0) } }
         )
-        guard defaults.bool(forKey: enabledKey) else { return }
+        if Task.isCancelled { return }
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
 
         let visible = verbs.visible(in: LevelSettings.load())
         let pool = visible.isEmpty ? verbs : visible
+        // Weak spots count over the visible verbs only, as the Weak spots quiz the link opens does.
+        await scheduleStudyReminders(pool: visible, attempts: attempts, center: center)
+        // A newer refresh (a quiz answer, a setting) replaced this one: its adds must not land
+        // after that refresh removed what was pending.
+        guard defaults.bool(forKey: enabledKey), !Task.isCancelled else { return }
         let minutes = defaults.object(forKey: minutesKey) as? Int ?? defaultMinutes
         for item in DailyReminder.items(verbs: pool, now: .now, minutesAfterMidnight: minutes) {
+            if Task.isCancelled { return }
             let content = UNMutableNotificationContent()
             content.title = item.title
             content.body = item.body
@@ -38,6 +61,46 @@ enum ReminderScheduler {
             content.userInfo = ["url": item.url.absoluteString]
             let trigger = UNCalendarNotificationTrigger(dateMatching: item.fireDate, repeats: false)
             try? await center.add(UNNotificationRequest(identifier: item.identifier, content: content, trigger: trigger))
+        }
+    }
+}
+
+extension ReminderScheduler {
+    /// Review ("8 forms to review") and Streak keeper, per `StudyReminderPlan`.
+    fileprivate static func scheduleStudyReminders(pool: [Verb], attempts: [QuizAttempt], center: UNUserNotificationCenter) async {
+        let settings = studySettings
+        guard settings.reviewEnabled || settings.streakEnabled else { return }
+        let forms = Set(QuizForm.all.map(\.id))
+        let weakCount = QuizProgress(attempts: attempts)
+            .weakPairs(among: Set(pool.map(\.id)))
+            .filter { forms.contains($0.formID) }
+            .count
+        for item in StudyReminderPlan.items(attempts: attempts, weakCount: weakCount, settings: settings, now: .now) {
+            if Task.isCancelled { return }
+            let content = UNMutableNotificationContent()
+            content.title = StudyReminderText.title(item.kind)
+            content.body = StudyReminderText.body(item.kind)
+            content.sound = .default
+            content.userInfo = ["url": item.url.absoluteString]
+            let trigger = UNCalendarNotificationTrigger(dateMatching: item.fireDate, repeats: false)
+            try? await center.add(UNNotificationRequest(identifier: item.identifier, content: content, trigger: trigger))
+        }
+    }
+}
+
+/// The study reminders' wording (spec "Wording").
+enum StudyReminderText {
+    static func title(_ kind: StudyReminderKind) -> String {
+        switch kind {
+        case .review: "Time to review"
+        case let .streak(days): days == 1 ? "Keep your streak going" : "Keep your \(days)-day streak"
+        }
+    }
+
+    static func body(_ kind: StudyReminderKind) -> String {
+        switch kind {
+        case let .review(count): (count == 1 ? "1 form" : "\(count) forms") + " to review. Tap for a Weak spots quiz."
+        case .streak: "One quick quiz keeps it going."
         }
     }
 }
