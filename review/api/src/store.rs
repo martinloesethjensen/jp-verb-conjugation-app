@@ -112,7 +112,8 @@ pub struct SnapshotFile {
 
 /// The release a finishing load belongs to: its signed manifest's SHA-256, the UTC day it is loaded
 /// (`YYYY.MM.DD`, the label unless that day already has a release) and whether the file's version is
-/// newer than the one loaded before (only then does the load claim exported suggestions).
+/// newer than the one loaded before (only then does the load record the release and claim exported
+/// suggestions; the first newer file of a release records its row and the others share it).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReleaseClaim {
     pub manifest_sha256: String,
@@ -214,7 +215,7 @@ pub const UPSERT_SNAPSHOT_FILE_FOR_LOAD: &str = "INSERT OR REPLACE INTO snapshot
 pub const INSERT_AUDIT_FOR_LOAD: &str =
     "INSERT INTO audit_log (at, actor, action, target, detail) \
      SELECT ?1, ?2, ?3, ?4, ?5 WHERE EXISTS (SELECT 1 FROM snapshot_loads WHERE load_id = ?6)";
-/// The load's manifest as a release, unless already recorded: ?1 manifest SHA-256, ?2 the UTC day
+/// A newer load's manifest as a release, unless already recorded: ?1 manifest SHA-256, ?2 the UTC day
 /// (`YYYY.MM.DD`), ?3 now, ?4 load id. The label is the day, or `day-N` for the next free N.
 pub const INSERT_RELEASE_FOR_LOAD: &str = "INSERT OR IGNORE INTO data_releases (manifest_sha256, label, first_loaded_at) \
      SELECT ?1, CASE WHEN NOT EXISTS (SELECT 1 FROM data_releases WHERE label = ?2) THEN ?2 \
@@ -428,7 +429,7 @@ pub trait Store {
     /// In one batch: the staged rows replace the dataset's items, `snapshot_files` and the audit log
     /// are updated, and the load and its staging are removed. `NotFound` (and no change at all) when
     /// the load no longer exists, e.g. a newer begin discarded it or it was already finished.
-    /// Also records `release` (once per manifest) and, when the load is `newer`, files the dataset's
+    /// When the load is `newer`, also records `release` (once per manifest) and files the dataset's
     /// exported suggestions under it.
     async fn finish_load(
         &self,

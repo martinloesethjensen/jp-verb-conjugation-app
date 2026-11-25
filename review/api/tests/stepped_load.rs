@@ -403,3 +403,20 @@ async fn a_second_release_on_one_day_gets_a_suffix() {
         ["2026.11.07", "2026.11.07-2", "2026.11.07-3"]
     );
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_same_version_load_from_another_manifest_records_no_release() {
+    // GitHub's cache serves an older signed manifest the site never recorded: verbs' version is the
+    // one already loaded, so no phantom release takes today's label.
+    let (s, src) = (seeded().await, FakeSource::published());
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "verbs", T0).await;
+    let id = exported(&s, "change", "verbs", "2026-11-06T10:00:00Z");
+    let key = bump(&src, "grammar");
+    load_at(&s, &src, &key, "verbs", "2026-11-07T09:30:00Z").await;
+    assert_eq!(release_labels(&s), ["2026.11.05"]);
+    assert_eq!(released_in(&s, id), None);
+    let key = bump(&src, "verbs");
+    load_at(&s, &src, &key, "verbs", "2026-11-07T10:00:00Z").await;
+    assert_eq!(release_labels(&s), ["2026.11.05", "2026.11.07"]);
+}

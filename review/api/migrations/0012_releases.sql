@@ -1,7 +1,8 @@
 -- Data releases (step 6, "Your contributions"): the signed manifests the site has loaded, and which release
 -- carried each exported suggestion. A release is the SHA-256 of the signed manifest.json bytes, labelled
--- YYYY.MM.DD from the UTC day the site first loaded it (YYYY.MM.DD-2, -3 for a second on one day). A finished
--- load of a dataset whose version is newer than the one before claims that dataset's exported, unclaimed,
+-- YYYY.MM.DD from the UTC day the site first loaded a newer file from it (YYYY.MM.DD-2, -3 for a second on one
+-- day). A finished load of a dataset whose version is newer than the one before records the release and claims
+-- that dataset's exported, unclaimed,
 -- non-note suggestions: main's manifest stays unsigned between a merged review-pull PR and the owner's next
 -- make data-release, so the first newer load after "Mark exported" is the release that carried it.
 -- before_json is the target's JSON when the suggestion was accepted (none for older or declined ones).

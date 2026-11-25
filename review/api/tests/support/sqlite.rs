@@ -499,12 +499,12 @@ impl Store for SqliteStore {
             params![now, actor, "snapshot.import", target, detail, load.load_id],
         )
         .map_err(backend)?;
-        tx.execute(
-            INSERT_RELEASE_FOR_LOAD,
-            params![release.manifest_sha256, release.date, now, load.load_id],
-        )
-        .map_err(backend)?;
         if release.newer {
+            tx.execute(
+                INSERT_RELEASE_FOR_LOAD,
+                params![release.manifest_sha256, release.date, now, load.load_id],
+            )
+            .map_err(backend)?;
             tx.execute(
                 CLAIM_RELEASED_FOR_LOAD,
                 params![release.manifest_sha256, file.name, load.load_id],

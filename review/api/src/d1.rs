@@ -536,17 +536,21 @@ impl Store for D1Store {
                     id.clone(),
                 ])
                 .map_err(backend)?,
-            self.db
-                .prepare(INSERT_RELEASE_FOR_LOAD)
-                .bind(&[
-                    release.manifest_sha256.as_str().into(),
-                    release.date.as_str().into(),
-                    now.into(),
-                    id.clone(),
-                ])
-                .map_err(backend)?,
         ];
+        // Only a newer file records its release: an older signed manifest served from a cache, with
+        // this file's version unchanged, must not become a phantom release.
         if release.newer {
+            statements.push(
+                self.db
+                    .prepare(INSERT_RELEASE_FOR_LOAD)
+                    .bind(&[
+                        release.manifest_sha256.as_str().into(),
+                        release.date.as_str().into(),
+                        now.into(),
+                        id.clone(),
+                    ])
+                    .map_err(backend)?,
+            );
             statements.push(
                 self.db
                     .prepare(CLAIM_RELEASED_FOR_LOAD)

@@ -857,3 +857,32 @@ async fn accepting_records_the_text_before() {
     assert_eq!(before_json(&s, &accepted), Some(current));
     assert_eq!(before_json(&s, &declined), None);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_accept_that_cannot_read_the_target_changes_nothing() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, "One.").await;
+    // Reading the entry's JSON now fails, as a transient D1 error would.
+    s.conn
+        .borrow()
+        .execute(
+            "ALTER TABLE items RENAME COLUMN json TO json_unreadable",
+            [],
+        )
+        .unwrap();
+    let r = decide(&s, json!({"id": id, "decision": "accept"})).await;
+    assert_eq!(
+        (r.status, r.body),
+        (500, json!({"error": "the database is unavailable"}))
+    );
+    let status: String = s
+        .conn
+        .borrow()
+        .query_row(
+            "SELECT status FROM suggestions WHERE id = ?1",
+            [id.as_i64().unwrap()],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(status, "open");
+}
