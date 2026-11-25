@@ -495,6 +495,7 @@ impl Store for D1Store {
         load: &SnapshotLoad,
         file: &SnapshotFile,
         json: Option<&str>,
+        release: &ReleaseClaim,
         actor: &str,
         now: &str,
     ) -> Result<(), StoreError> {
@@ -535,7 +536,28 @@ impl Store for D1Store {
                     id.clone(),
                 ])
                 .map_err(backend)?,
+            self.db
+                .prepare(INSERT_RELEASE_FOR_LOAD)
+                .bind(&[
+                    release.manifest_sha256.as_str().into(),
+                    release.date.as_str().into(),
+                    now.into(),
+                    id.clone(),
+                ])
+                .map_err(backend)?,
         ];
+        if release.newer {
+            statements.push(
+                self.db
+                    .prepare(CLAIM_RELEASED_FOR_LOAD)
+                    .bind(&[
+                        release.manifest_sha256.as_str().into(),
+                        file.name.as_str().into(),
+                        id.clone(),
+                    ])
+                    .map_err(backend)?,
+            );
+        }
         // The load row goes last: while it exists every statement above applies, and afterwards none.
         for sql in [DELETE_STAGING, DELETE_SLICES, DELETE_LOAD] {
             statements.push(
@@ -844,6 +866,7 @@ impl ReviewStore for D1Store {
             item_json: admin_edit_json,
             furigana_json,
             base_hash,
+            before_json,
         } = edit;
         match self.status(id).await? {
             None => return Err(StoreError::NotFound),
@@ -875,6 +898,7 @@ impl ReviewStore for D1Store {
                 text(now),
                 maybe(furigana_json),
                 maybe(base_hash),
+                maybe(before_json),
             ],
         )?;
         let mut batch = vec![log, update];

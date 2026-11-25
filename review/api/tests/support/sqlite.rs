@@ -467,6 +467,7 @@ impl Store for SqliteStore {
         load: &SnapshotLoad,
         file: &SnapshotFile,
         json: Option<&str>,
+        release: &ReleaseClaim,
         actor: &str,
         now: &str,
     ) -> Result<(), StoreError> {
@@ -498,6 +499,18 @@ impl Store for SqliteStore {
             params![now, actor, "snapshot.import", target, detail, load.load_id],
         )
         .map_err(backend)?;
+        tx.execute(
+            INSERT_RELEASE_FOR_LOAD,
+            params![release.manifest_sha256, release.date, now, load.load_id],
+        )
+        .map_err(backend)?;
+        if release.newer {
+            tx.execute(
+                CLAIM_RELEASED_FOR_LOAD,
+                params![release.manifest_sha256, file.name, load.load_id],
+            )
+            .map_err(backend)?;
+        }
         tx.execute(DELETE_STAGING, params![load.load_id])
             .map_err(backend)?;
         tx.execute(DELETE_SLICES, params![load.load_id])
@@ -793,6 +806,7 @@ impl ReviewStore for SqliteStore {
             item_json: admin_edit_json,
             furigana_json,
             base_hash,
+            before_json,
         } = edit;
         let mut conn = self.conn.borrow_mut();
         let status: Vec<StatusRow> = query(&conn, SELECT_STATUS, params![id])?;
@@ -824,7 +838,8 @@ impl ReviewStore for SqliteStore {
                     by,
                     now,
                     furigana_json,
-                    base_hash
+                    base_hash,
+                    before_json
                 ],
             )
             .map_err(backend)?

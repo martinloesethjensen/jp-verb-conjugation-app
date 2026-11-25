@@ -771,8 +771,8 @@ pub async fn decide<S: Store + ReviewStore>(
         return error(409, DECIDED);
     }
     let edits = body.edits.filter(|e| !e.is_empty());
+    let current = current_json(store, &mut BTreeMap::new(), &s).await;
     if !by.role.decides_all() {
-        let current = current_json(store, &mut BTreeMap::new(), &s).await;
         let japanese_edits = edits
             .as_ref()
             .is_none_or(|e| e.keys().all(|key| crate::japanese::is_japanese_field(key)));
@@ -860,6 +860,9 @@ pub async fn decide<S: Store + ReviewStore>(
             }
         }
     }
+    // What the target said when accepted, for the shipped change's strike-through; none for a decline
+    // or a target that isn't in the data (an addition, or one that left it).
+    let before = (accept && !current.is_null()).then(|| current.to_string());
     let reason = format!(
         "Declined: {}'s suggestion was accepted instead.",
         s.author_name
@@ -872,6 +875,7 @@ pub async fn decide<S: Store + ReviewStore>(
                 item_json: admin_edit.as_deref(),
                 furigana_json: furigana.as_deref(),
                 base_hash: base.as_deref(),
+                before_json: before.as_deref(),
             },
             &by.email,
             now,

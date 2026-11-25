@@ -607,12 +607,16 @@ pub struct OwnerEdit<'a> {
     pub item_json: Option<&'a str>,
     pub furigana_json: Option<&'a str>,
     pub base_hash: Option<&'a str>,
+    /// On an accept, the target's JSON at that moment (what "Your contributions" strikes through once
+    /// it ships). Not an edit, but it travels with the accept the same way.
+    pub before_json: Option<&'a str>,
 }
 
+/// ?8 the target's JSON before the accept (NULL on a decline).
 pub const DECIDE: &str =
     "UPDATE suggestions SET status = ?2, admin_edit_json = ?3, decided_by = ?4, \
-     decided_at = ?5, furigana_json = IFNULL(?6, furigana_json), base_hash = IFNULL(?7, base_hash) \
-     WHERE id = ?1 AND status = 'open'";
+     decided_at = ?5, furigana_json = IFNULL(?6, furigana_json), base_hash = IFNULL(?7, base_hash), \
+     before_json = ?8 WHERE id = ?1 AND status = 'open'";
 /// A decision's audit row, written before `DECIDE` in the same batch and only while the suggestion is
 /// still open, so a decision that loses a race to another tab logs nothing. ?1 now, ?2 by, ?3 action,
 /// ?4 detail, ?5 id.
