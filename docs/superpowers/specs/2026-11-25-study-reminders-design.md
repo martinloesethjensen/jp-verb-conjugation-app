@@ -1,6 +1,6 @@
 # Study reminders — design
 
-Status: agreed 2026-11-25, not built. Extends the opt-in Verb of the day reminder
+Status: agreed and built 2026-11-25. Extends the opt-in Verb of the day reminder
 (`ReminderScheduler`, `DailyReminder`) with two more local notifications. No server: everything is
 scheduled on the device, like today's reminder.
 

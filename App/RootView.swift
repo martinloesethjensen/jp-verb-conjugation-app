@@ -14,6 +14,10 @@ struct RootView: View {
     @AppStorage(FuriganaSetting.defaultsKey, store: .appGroup) private var showFurigana = true
     @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
     @AppStorage(ReminderScheduler.minutesKey, store: .appGroup) private var reminderMinutes = ReminderScheduler.defaultMinutes
+    @AppStorage(ReminderScheduler.reviewEnabledKey, store: .appGroup) private var reviewReminder = false
+    @AppStorage(ReminderScheduler.reviewMinutesKey, store: .appGroup) private var reviewMinutes = StudyReminderSettings.reviewDefaultMinutes
+    @AppStorage(ReminderScheduler.streakEnabledKey, store: .appGroup) private var streakReminder = false
+    @AppStorage(ReminderScheduler.streakMinutesKey, store: .appGroup) private var streakMinutes = StudyReminderSettings.streakDefaultMinutes
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @Environment(\.scenePhase) private var scenePhase
     @State private var reminderRouter = ReminderRouter.shared
@@ -93,7 +97,16 @@ struct RootView: View {
         verbPairQuestions = nil
         pendingVerbPairs = nil
         linkArrivals += 1
-        if let quizLink {
+        if let quizLink, quizLink.weakSpots {
+            // The Review reminder: a Weak spots quiz, or the topic sheet when none are left.
+            let verbs = verbStore.verbs.visible(in: LevelSettings.load())
+            let questions = questions(for: .weakSpots, verbs: verbs)
+            if questions.isEmpty {
+                topicSheetVerbs = verbs
+            } else {
+                quiz = QuizLaunch(questions: questions, topic: .weakSpots)
+            }
+        } else if let quizLink {
             let verbs = verbStore.verbs.visible(in: LevelSettings.load())
             let topics = quizLink.topic.map { Set([$0]) } ?? Set(QuizTopic.allCases)
             let questions = buildQuestions(verbs: verbs, topics: topics, count: quizQuestionCount, kinds: QuizQuestionKind.verbKinds)
@@ -130,10 +143,18 @@ struct RootView: View {
             reminderRouter.pendingURL = nil
             open(url)
         }
-        // Keep the next days of reminders current: the pick depends on the verbs and levels.
-        .task(id: ReminderRefresh(verbs: verbStore.verbs, enabled: reminderEnabled, minutes: reminderMinutes, hiddenLevels: hiddenLevelsRaw, phase: scenePhase == .active)) {
+        // Keep the next days of reminders current: the picks depend on the verbs, the levels and
+        // the quiz history (weak spots, streak, whether today is practised).
+        .task(id: ReminderRefresh(
+            verbs: verbStore.verbs, enabled: reminderEnabled, minutes: reminderMinutes, hiddenLevels: hiddenLevelsRaw,
+            study: StudyReminderSettings(
+                reviewEnabled: reviewReminder, reviewMinutes: reviewMinutes,
+                streakEnabled: streakReminder, streakMinutes: streakMinutes
+            ),
+            answers: quizHistory.attempts.count, phase: scenePhase == .active
+        )) {
             guard scenePhase == .active else { return }
-            await ReminderScheduler.refresh(verbs: verbStore.verbs)
+            await ReminderScheduler.refresh(verbs: verbStore.verbs, attempts: quizHistory.attempts)
         }
         .onContinueUserActivity(CSSearchableItemActionType) { activity in
             if let url = SpotlightIndexer.url(from: activity) { open(url) }
@@ -504,5 +525,7 @@ private struct ReminderRefresh: Equatable {
     var enabled: Bool
     var minutes: Int
     var hiddenLevels: String
+    var study: StudyReminderSettings
+    var answers: Int
     var phase: Bool
 }

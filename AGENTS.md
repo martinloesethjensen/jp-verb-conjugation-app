@@ -111,7 +111,8 @@ Run `make` for the full list. Common ones:
 | `FuriganaSetting.defaultsKey` | The "Show furigana" App Group key |
 | `SpeechText.spoken/clipName` | Clean text for TTS and the recorded-clip filename contract |
 | `DataVersion.isOlder(_:than:)` | Reject replayed/older manifests |
-| `Route`, `Route+URL`, `QuizLink` | Navigation and deep links (`verbtable://`) |
+| `Route`, `Route+URL`, `QuizLink` | Navigation and deep links (`verbtable://`); `QuizLink.weakSpots` is `verbtable://quiz/weak` |
+| `StudyReminderPlan`, `StudyReminderSettings`, `StudyReminderKind` | Which Review and Streak keeper notifications to schedule (wording in App's `StudyReminderText`; spec: `docs/superpowers/specs/2026-11-25-study-reminders-design.md`) |
 | `FavouriteVerbs` | Persisted favourite ids |
 | `FolderTree` | Word Bank folder queries (descendants, paths, moves) |
 | `WordBankArchive`, `WordBankImportPlanner`, `WordBankTransfer`, `WordBankEntryCombiner`, `WordBankSmartFolder`, `WordBankBackupStore` | Import/export/merge/backup logic |

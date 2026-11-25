@@ -20,32 +20,39 @@ struct SettingsView: View {
     @AppStorage(LevelSettings.defaultsKey, store: .appGroup) private var hiddenLevelsRaw = ""
     @AppStorage(ReminderScheduler.enabledKey, store: .appGroup) private var reminderEnabled = false
     @AppStorage(ReminderScheduler.minutesKey, store: .appGroup) private var reminderMinutes = ReminderScheduler.defaultMinutes
+    @AppStorage(ReminderScheduler.reviewEnabledKey, store: .appGroup) private var reviewReminder = false
+    @AppStorage(ReminderScheduler.reviewMinutesKey, store: .appGroup) private var reviewMinutes = StudyReminderSettings.reviewDefaultMinutes
+    @AppStorage(ReminderScheduler.streakEnabledKey, store: .appGroup) private var streakReminder = false
+    @AppStorage(ReminderScheduler.streakMinutesKey, store: .appGroup) private var streakMinutes = StudyReminderSettings.streakDefaultMinutes
     @State private var reminderDenied = false
     @State private var showingBackups = false
 
-    private var reminderToggle: Binding<Bool> {
+    /// A reminder switch: turning it on asks for notification permission first and stays off
+    /// when it is denied (the footer then says how to allow it).
+    private func reminderToggle(_ value: Binding<Bool>) -> Binding<Bool> {
         Binding(
-            get: { reminderEnabled },
+            get: { value.wrappedValue },
             set: { on in
-                guard on else { reminderEnabled = false; return }
+                guard on else { value.wrappedValue = false; return }
                 Task {
                     let allowed = await ReminderScheduler.requestAuthorization()
                     reminderDenied = !allowed
-                    reminderEnabled = allowed
+                    value.wrappedValue = allowed
                 }
             }
         )
     }
 
-    private var reminderTime: Binding<Date> {
+    /// A reminder time stored as minutes after midnight.
+    private func reminderTime(_ minutes: Binding<Int>) -> Binding<Date> {
         Binding(
             get: {
-                let minutes = DailyReminder.clampedMinutes(reminderMinutes)
-                return Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now
+                let clamped = DailyReminder.clampedMinutes(minutes.wrappedValue)
+                return Calendar.current.date(bySettingHour: clamped / 60, minute: clamped % 60, second: 0, of: .now) ?? .now
             },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                reminderMinutes = (parts.hour ?? 9) * 60 + (parts.minute ?? 0)
+                minutes.wrappedValue = (parts.hour ?? 9) * 60 + (parts.minute ?? 0)
             }
         )
     }
@@ -150,17 +157,27 @@ struct SettingsView: View {
             }
             .paperRow()
             Section {
-                Toggle("Verb of the day", isOn: reminderToggle)
+                Toggle("Verb of the day", isOn: reminderToggle($reminderEnabled))
                     .paperSwitch()
                 if reminderEnabled {
-                    DatePicker("Time", selection: reminderTime, displayedComponents: .hourAndMinute)
+                    DatePicker("Time", selection: reminderTime($reminderMinutes), displayedComponents: .hourAndMinute)
+                }
+                Toggle("Review", isOn: reminderToggle($reviewReminder))
+                    .paperSwitch()
+                if reviewReminder {
+                    DatePicker("Time", selection: reminderTime($reviewMinutes), displayedComponents: .hourAndMinute)
+                }
+                Toggle("Streak keeper", isOn: reminderToggle($streakReminder))
+                    .paperSwitch()
+                if streakReminder {
+                    DatePicker("Time", selection: reminderTime($streakMinutes), displayedComponents: .hourAndMinute)
                 }
             } header: {
-                Text("Daily reminder")
+                Text("Reminders")
             } footer: {
                 Text(reminderDenied
                      ? "Notifications are turned off for this app. Allow them in \(settingsApp) > Notifications."
-                     : "A notification with the same verb the widget shows. Tap it to open the verb.")
+                     : "Verb of the day: the verb the widget shows. Review: only when you have weak spots. Streak keeper: only on days you haven't practised yet.")
             }
             .paperRow()
             Section {
