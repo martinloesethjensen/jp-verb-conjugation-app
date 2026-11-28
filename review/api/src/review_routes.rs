@@ -653,32 +653,41 @@ struct DecideBody {
     confirm: bool,
 }
 
-/// The target's current JSON, from its entry: null when it left the data.
-async fn current_json<S: Store>(
+/// The target's current JSON, from its entry: null when it left the data, or on a store error (for
+/// listings; `decide` uses `target_json`, which reports the error).
+pub(crate) async fn current_json<S: Store>(
     store: &S,
     entries: &mut BTreeMap<(String, String), Option<Value>>,
     s: &Suggestion,
 ) -> Value {
+    target_json(store, entries, s).await.unwrap_or(Value::Null)
+}
+
+/// The target's current JSON, from its entry: null when it left the data. A store error is an error
+/// (and isn't cached).
+async fn target_json<S: Store>(
+    store: &S,
+    entries: &mut BTreeMap<(String, String), Option<Value>>,
+    s: &Suggestion,
+) -> Result<Value, StoreError> {
     let key = (s.dataset.clone(), s.entry_id.clone());
     if !entries.contains_key(&key) {
         let entry = store
             .entry(&s.dataset, &s.entry_id)
-            .await
-            .ok()
-            .flatten()
+            .await?
             .and_then(|(json, _)| serde_json::from_str::<Value>(&json).ok());
         entries.insert(key.clone(), entry);
     }
     let Some(entry) = entries[&key].as_ref() else {
-        return Value::Null;
+        return Ok(Value::Null);
     };
-    match Kind::parse(&s.kind) {
+    Ok(match Kind::parse(&s.kind) {
         Some(Kind::Entry) => entry.clone(),
         Some(kind) => crate::proposal::find_part(entry, kind, &s.item_id)
             .cloned()
             .unwrap_or(Value::Null),
         None => Value::Null,
-    }
+    })
 }
 
 pub async fn inbox<S: Store + ReviewStore>(
@@ -771,8 +780,10 @@ pub async fn decide<S: Store + ReviewStore>(
         return error(409, DECIDED);
     }
     let edits = body.edits.filter(|e| !e.is_empty());
+    let current = tri!(target_json(store, &mut BTreeMap::new(), &s)
+        .await
+        .map_err(unavailable));
     if !by.role.decides_all() {
-        let current = current_json(store, &mut BTreeMap::new(), &s).await;
         let japanese_edits = edits
             .as_ref()
             .is_none_or(|e| e.keys().all(|key| crate::japanese::is_japanese_field(key)));
@@ -853,13 +864,22 @@ pub async fn decide<S: Store + ReviewStore>(
             {
                 continue;
             }
-            if by.role.decides_all()
-                || japanese_change(&other, &current_json(store, &mut entries, &other).await)
-            {
+            if by.role.decides_all() {
+                declined.push(other.id);
+                continue;
+            }
+            let theirs = tri!(target_json(store, &mut entries, &other)
+                .await
+                .map_err(unavailable));
+            if japanese_change(&other, &theirs) {
                 declined.push(other.id);
             }
         }
     }
+    // What the target said when decided: an accepted change's strike-through once it ships, and what a
+    // decline was declined against. None for a target that isn't in the data (an addition, or one that
+    // left it).
+    let before = (!current.is_null()).then(|| current.to_string());
     let reason = format!(
         "Declined: {}'s suggestion was accepted instead.",
         s.author_name
@@ -872,6 +892,7 @@ pub async fn decide<S: Store + ReviewStore>(
                 item_json: admin_edit.as_deref(),
                 furigana_json: furigana.as_deref(),
                 base_hash: base.as_deref(),
+                before_json: before.as_deref(),
             },
             &by.email,
             now,

@@ -2,7 +2,7 @@ mod support;
 
 use review_api::data::DataFile;
 use review_api::items::{extract, ItemRow};
-use review_api::store::{SnapshotFile, Store};
+use review_api::store::{ReleaseClaim, SnapshotFile, Store};
 use serde_json::Value;
 use support::sqlite::SqliteStore;
 
@@ -190,6 +190,21 @@ fn count(store: &SqliteStore, table: &str) -> i64 {
         .unwrap()
 }
 
+fn release() -> ReleaseClaim {
+    ReleaseClaim {
+        manifest_sha256: "m".into(),
+        date: "2026.11.05".into(),
+        newer: true,
+    }
+}
+
+fn releases(s: &SqliteStore) -> i64 {
+    s.conn
+        .borrow()
+        .query_row("SELECT COUNT(*) FROM data_releases", [], |r| r.get(0))
+        .unwrap()
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn a_finish_overtaken_by_a_newer_begin_changes_nothing() {
     // finish A passed its checks; then begin B discarded A before A's batch ran.
@@ -204,12 +219,16 @@ async fn a_finish_overtaken_by_a_newer_begin_changes_nothing() {
         .unwrap();
     let mut file = snapshot(DataFile::Words, &[]);
     file.version = "99.0.0".into();
-    assert!(s.finish_load(&a, &file, None, OWNER, T0).await.is_err());
+    assert!(s
+        .finish_load(&a, &file, None, &release(), OWNER, T0)
+        .await
+        .is_err());
     assert_eq!(
         s.entries("words").await.unwrap().len(),
         32,
         "the loaded rows are untouched"
     );
+    assert_eq!(releases(&s), 0, "no release is recorded");
     assert_eq!(
         s.snapshot_file("words").await.unwrap().unwrap().version,
         version_of(DataFile::Words)
@@ -224,9 +243,15 @@ async fn finishing_the_same_load_twice_keeps_the_data() {
     s.begin_load(&a).await.unwrap();
     stage_all(&s, &a, DataFile::Words, &bytes).await;
     let file = snapshot(DataFile::Words, &[]);
-    s.finish_load(&a, &file, None, OWNER, T0).await.unwrap();
-    assert!(s.finish_load(&a, &file, None, OWNER, T0).await.is_err());
+    s.finish_load(&a, &file, None, &release(), OWNER, T0)
+        .await
+        .unwrap();
+    assert!(s
+        .finish_load(&a, &file, None, &release(), OWNER, T0)
+        .await
+        .is_err());
     assert_eq!(s.entries("words").await.unwrap().len(), 32);
+    assert_eq!(releases(&s), 1);
 }
 
 #[tokio::test(flavor = "current_thread")]

@@ -20,7 +20,8 @@ import {
 	suggest,
 	previewQueue,
 	addItem,
-	getAdditions
+	getAdditions,
+	decline
 } from './api.ts';
 
 function respond(status: number, body?: unknown) {
@@ -237,5 +238,24 @@ describe('add api', () => {
 		const fetch = respond(200, { suggestions: [] });
 		expect(await getAdditions('verbs')).toEqual([]);
 		expect(calls(fetch)[0][0]).toBe('/api/additions?dataset=verbs');
+	});
+});
+
+describe('decline', () => {
+	test("sends the card's reply draft as the reply, trimmed, so it becomes the reason", async () => {
+		const fetch = respond(200, { id: 3 });
+		await decline(3, '  Too literal.\n');
+		expect(calls(fetch)[0][0]).toBe('/api/decide');
+		expect(JSON.parse((calls(fetch)[0][1] as RequestInit).body as string)).toEqual({
+			id: 3,
+			decision: 'decline',
+			reply: 'Too literal.'
+		});
+	});
+
+	test('an empty draft sends no reply', async () => {
+		const fetch = respond(200, { id: 3 });
+		await decline(3, '  ');
+		expect(JSON.parse((calls(fetch)[0][1] as RequestInit).body as string)).toEqual({ id: 3, decision: 'decline' });
 	});
 });

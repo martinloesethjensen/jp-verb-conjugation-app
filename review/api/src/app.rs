@@ -17,7 +17,9 @@ use crate::review_routes::{self, tri, QueueItemAction};
 use crate::review_store::ReviewStore;
 use crate::source::Source;
 use crate::stamp_routes;
-use crate::store::{NewUser, PublicRole, Role, SnapshotFile, SnapshotLoad, Store, StoreError};
+use crate::store::{
+    NewUser, PublicRole, ReleaseClaim, Role, SnapshotFile, SnapshotLoad, Store, StoreError,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -80,6 +82,7 @@ enum Handler {
     Decide,
     Replies,
     ReadReplies,
+    Contributions,
     OpinionCandidates,
     AskOpinion,
     CancelOpinion,
@@ -315,6 +318,12 @@ const ROUTES: &[Route] = &[
         path: "/api/settings",
         need: Need::Reviewer,
         handler: Handler::ChangeSettings,
+    },
+    Route {
+        method: "GET",
+        path: "/api/contributions",
+        need: Need::Reviewer,
+        handler: Handler::Contributions,
     },
     Route {
         method: "GET",
@@ -562,6 +571,9 @@ pub async fn handle<S: Store + ReviewStore + CourseStore, R: Source>(
         Handler::Settings => crate::settings_routes::settings(&principal, store).await,
         Handler::ChangeSettings => {
             crate::settings_routes::change(&req.body, &principal, store, today).await
+        }
+        Handler::Contributions => {
+            crate::contribution_routes::contributions(&principal, store).await
         }
         Handler::Replies => crate::reply_routes::replies(&principal, store).await,
         Handler::ReadReplies => {
@@ -1012,13 +1024,14 @@ pub struct LoadStarted {
     pub slices: usize,
 }
 
-/// The signed manifest's entry for `file` and the file's bytes, after checking the signature, the
-/// ref and the file's SHA-256 (with the source's hasher: Web Crypto in the Worker).
+/// The signed manifest's entry for `file`, the file's bytes and the manifest's SHA-256 (the release's
+/// identity), after checking the signature, the ref and the file's SHA-256 (with the source's hasher:
+/// Web Crypto in the Worker).
 async fn published<R: Source>(
     file: DataFile,
     source: &R,
     keys: &[&str],
-) -> Result<(manifest::Entry, Vec<u8>), String> {
+) -> Result<(manifest::Entry, Vec<u8>, String), String> {
     let name = file.file_name();
     let manifest_bytes = source
         .get(&manifest::manifest_url())
@@ -1051,11 +1064,13 @@ async fn published<R: Source>(
             "{name} doesn't match its signed manifest; try again in a minute"
         ));
     }
-    Ok((entry, bytes))
+    let manifest_sha256 = source.sha256(&manifest_bytes).await;
+    Ok((entry, bytes, manifest_sha256))
 }
 
-/// Refuses a version older than the one already loaded (a replayed manifest or a reset branch).
-async fn not_older<S: Store>(store: &S, file: DataFile, version: &str) -> Result<(), String> {
+/// Refuses a version older than the one already loaded (a replayed manifest or a reset branch). `true`
+/// when `version` is strictly newer: nothing was loaded before, or an older version was.
+async fn not_older<S: Store>(store: &S, file: DataFile, version: &str) -> Result<bool, String> {
     let loaded = store
         .snapshot_file(file.name())
         .await
@@ -1066,28 +1081,31 @@ async fn not_older<S: Store>(store: &S, file: DataFile, version: &str) -> Result
             file.file_name(),
             current.version
         )),
-        _ => Ok(()),
+        Some(current) => Ok(manifest::is_older(&current.version, version)),
+        None => Ok(true),
     }
 }
 
-/// The load `load_id`, with its file re-verified and still the version and hash it began with.
+/// The load `load_id`, with its file re-verified and still the version and hash it began with, and
+/// the SHA-256 of the manifest it was verified against.
 async fn running<S: Store, R: Source>(
     load_id: &str,
     store: &S,
     source: &R,
     keys: &[&str],
-) -> Result<(SnapshotLoad, DataFile, Vec<u8>), (u16, String)> {
+) -> Result<(SnapshotLoad, DataFile, Vec<u8>, String), (u16, String)> {
     let load = store
         .load(load_id)
         .await
         .map_err(|_| (500, "the database is unavailable".to_string()))?
         .ok_or((409, NOT_RUNNING.to_string()))?;
     let file = DataFile::parse_name(&load.name).ok_or((409, NOT_RUNNING.to_string()))?;
-    let (entry, bytes) = published(file, source, keys).await.map_err(|e| (502, e))?;
+    let (entry, bytes, manifest_sha256) =
+        published(file, source, keys).await.map_err(|e| (502, e))?;
     if entry.version != load.version || entry.sha256 != load.sha256 {
         return Err((409, CHANGED.to_string()));
     }
-    Ok((load, file, bytes))
+    Ok((load, file, bytes, manifest_sha256))
 }
 
 /// `<dataset>-<16 random hex digits>`: unique even for two loads begun in the same second.
@@ -1121,7 +1139,7 @@ pub async fn begin_load_with_keys<S: Store, R: Source>(
     now: &str,
 ) -> Result<LoadStarted, String> {
     let name = file.file_name();
-    let (entry, bytes) = published(file, source, keys).await?;
+    let (entry, bytes, _) = published(file, source, keys).await?;
     not_older(store, file, &entry.version).await?;
     let slices =
         slices(file, &bytes).map_err(|e| format!("{name} doesn't fit the data schema: {e}"))?;
@@ -1155,7 +1173,7 @@ pub async fn load_slice_with_keys<S: Store, R: Source>(
     source: &R,
     keys: &[&str],
 ) -> Result<usize, (u16, String)> {
-    let (load, file, bytes) = running(load_id, store, source, keys).await?;
+    let (load, file, bytes, _) = running(load_id, store, source, keys).await?;
     let slice = load
         .slices
         .get(index as usize)
@@ -1182,7 +1200,7 @@ pub async fn finish_load_with_keys<S: Store, R: Source>(
     actor: &str,
     now: &str,
 ) -> Result<SnapshotFile, (u16, String)> {
-    let (load, file, bytes) = running(load_id, store, source, keys).await?;
+    let (load, file, bytes, manifest_sha256) = running(load_id, store, source, keys).await?;
     let name = file.file_name();
     let done = store
         .slices_done(load_id)
@@ -1194,9 +1212,14 @@ pub async fn finish_load_with_keys<S: Store, R: Source>(
             format!("not every part of {name} was loaded; start again"),
         ));
     }
-    not_older(store, file, &load.version)
+    let newer = not_older(store, file, &load.version)
         .await
         .map_err(|e| (502, e))?;
+    let release = ReleaseClaim {
+        manifest_sha256,
+        date: now.get(..10).unwrap_or(now).replace('-', "."),
+        newer,
+    };
     let json = crate::data::stored_json(file, &bytes)
         .map_err(|e| (502, format!("{name} isn't readable: {e}")))?;
     let snapshot = SnapshotFile {
@@ -1209,7 +1232,7 @@ pub async fn finish_load_with_keys<S: Store, R: Source>(
         imported_by: actor.to_string(),
     };
     store
-        .finish_load(&load, &snapshot, json.as_deref(), actor, now)
+        .finish_load(&load, &snapshot, json.as_deref(), &release, actor, now)
         .await
         .map_err(|e| match e {
             StoreError::NotFound => (409, NOT_RUNNING.to_string()),

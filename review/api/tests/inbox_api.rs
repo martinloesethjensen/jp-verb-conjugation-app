@@ -831,3 +831,59 @@ async fn notes_and_additions_are_not_declined() {
     assert_eq!(r.body["declined"], json!([]));
     assert_eq!(status_of(&s, &note).0, "open");
 }
+
+fn before_json(s: &SqliteStore, id: &Value) -> Option<Value> {
+    s.conn
+        .borrow()
+        .query_row(
+            "SELECT before_json FROM suggestions WHERE id = ?1",
+            [id.as_i64().unwrap()],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .unwrap()
+        .map(|json| serde_json::from_str(&json).unwrap())
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn deciding_records_the_text_before() {
+    let s = seeded().await;
+    let (_, _, current) = example(&s).await;
+    let declined = suggest_en(&s, AIKO, "One.").await;
+    let accepted = suggest_en(&s, AIKO, "Two.").await;
+    let r = decide(&s, json!({"id": declined, "decision": "decline"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    let r = decide(&s, json!({"id": accepted, "decision": "accept"})).await;
+    assert_eq!(r.status, 200, "{}", r.body);
+    assert_eq!(before_json(&s, &accepted), Some(current.clone()));
+    // A decline keeps it too: the text the suggestion was declined against.
+    assert_eq!(before_json(&s, &declined), Some(current));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn an_accept_that_cannot_read_the_target_changes_nothing() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, "One.").await;
+    // Reading the entry's JSON now fails, as a transient D1 error would.
+    s.conn
+        .borrow()
+        .execute(
+            "ALTER TABLE items RENAME COLUMN json TO json_unreadable",
+            [],
+        )
+        .unwrap();
+    let r = decide(&s, json!({"id": id, "decision": "accept"})).await;
+    assert_eq!(
+        (r.status, r.body),
+        (500, json!({"error": "the database is unavailable"}))
+    );
+    let status: String = s
+        .conn
+        .borrow()
+        .query_row(
+            "SELECT status FROM suggestions WHERE id = ?1",
+            [id.as_i64().unwrap()],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(status, "open");
+}

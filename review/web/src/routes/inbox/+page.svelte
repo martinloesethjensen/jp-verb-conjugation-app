@@ -2,7 +2,7 @@
 	// The inbox, for teachers, natives and the owner (natives decide only Japanese-only changes): every suggestion as a red-pen correction, grouped by item so counter-suggestions
 	// sit side by side. Accepting only marks a suggestion accepted; nothing reaches data/ until export.
 	import { onMount } from 'svelte';
-	import { cancelOpinion, comment, decide, getInbox, problem, type Field, type InboxSuggestion } from '#lib/api.ts';
+	import { cancelOpinion, comment, decide, decline, getInbox, problem, type Field, type InboxSuggestion } from '#lib/api.ts';
 	import AskOpinion from '#lib/AskOpinion.svelte';
 	import ErrorLine from '#lib/ErrorLine.svelte';
 	import SuggestForm from '#lib/SuggestForm.svelte';
@@ -13,7 +13,7 @@
 	import Tip from '#lib/Tip.svelte';
 	import { DATASET_TITLES, groupTitle } from '#lib/labels.ts';
 	import { loadReference } from '#lib/reference.ts';
-	import { canAskOpinion, canDecide, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from '#lib/roles.ts';
+	import { canAskOpinion, canDecide, declineLabel, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from '#lib/roles.ts';
 	import { getSession } from '#lib/session.ts';
 	import { editForm, suggestionHref } from '#lib/targets.ts';
 	import type { Dataset } from '#lib/api.ts';
@@ -189,7 +189,7 @@
 					{forms}
 					oncomment={(text) => reply(s, text)}
 				>
-					{#snippet actions()}
+					{#snippet actions({ draft, clear })}
 						{#if s.status === 'open'}
 							{#if s.mine}
 								<p class="hint">{ownSuggestionLine(me().role)}</p>
@@ -212,7 +212,16 @@
 										>Edit then accept</button
 									>
 								{/if}
-								<button type="button" disabled={busy} onclick={() => act(s, () => decide(s.id, 'decline'))}>Decline</button>
+								<!-- The reply box's text goes with the decline: it is the reason the author sees. -->
+								<button
+									type="button"
+									disabled={busy}
+									onclick={() =>
+										act(s, async () => {
+											await decline(s.id, draft);
+											clear();
+										})}>{declineLabel(draft)}</button
+								>
 								{#if staleChange(s)}<span class="hint">{ACCEPT_STALE}</span>{/if}
 							{/if}
 						{/if}

@@ -145,7 +145,13 @@ type Suggestion = {
 	author: string; status: string; base_hash: string; proposed: Json | null; furigana: Json | null; dropped_blanks: number;
 	comment: string; admin_edit: Json | null; created_at: string; decided_at: string | null;
 	parent_kind?: string | null; parent_id?: string | null; exported_at?: string | null;
+	decided_by?: string;
+	/** The target's JSON when decided (review/api `before_json`). */
+	before?: Json | null;
+	/** The release that carried it (review/api `released_in`). */
+	released_in?: number | null;
 };
+type ReleaseRow = { id: number; label: string; loaded_at: string };
 type StampRow = {
 	id: number; dataset: string; kind: string; item_id: string; entry_id: string; item_title: string;
 	content_hash: string; by: string; reviewer: string; created_at: string; exported_at: string | null;
@@ -176,6 +182,30 @@ export function reviewMock(ctx: ReviewContext) {
 	const stamps: StampRow[] = [];
 	let nextId = 1;
 	const now = () => new Date().toISOString();
+	const releases: ReleaseRow[] = [{ id: 1, label: '2026.11.07', loaded_at: '2026-11-07T08:00:00Z' }];
+	// Everyone starts with one change in that release, so Your contributions shows a release and the green
+	// Live tag without clicking through suggest, accept, export and a newer load. The data says what each
+	// change made it say; `before` is the made-up wording it replaced.
+	const SEEDED = [
+		{ id: 'iyk45k', form: 'masu_pos', jp: '朝ご飯を食べます。', en: 'I eat breakfast.', was: 'I eat a breakfast.' },
+		{ id: 'fukewu', form: 'masu_pos', jp: 'レストランで晩ご飯を食べます。', en: 'I eat dinner at a restaurant.', was: 'I eat dinner in restaurant.' },
+		{ id: '5c7yfu', form: 'masu_neg', jp: '甘いものは食べません。', en: "I don't eat sweets.", was: "I don't eat sweet." },
+		{ id: '2zr322', form: 'masu_past', jp: 'おすしを食べました。', en: 'I ate sushi.', was: 'I eated sushi.' }
+	];
+	for (const [i, user] of ctx.users.entries()) {
+		const { was, ...value } = SEEDED[i % SEEDED.length];
+		const before = { ...value, en: was };
+		const decider = user.role === 'admin' ? ctx.users.find((u) => u.role === 'teacher') : ctx.users.find((u) => u.role === 'admin');
+		suggestions.push({
+			id: nextId++, action: 'change', dataset: 'verbs', kind: 'example', item_id: value.id, entry_id: 'たべる',
+			item_title: value.jp, author: user.email, status: 'accepted', base_hash: hashOf(before), proposed: value,
+			furigana: null, dropped_blanks: 0, comment: '', admin_edit: null, created_at: '2026-11-01T09:00:00Z',
+			decided_at: '2026-11-02T09:00:00Z', decided_by: decider?.email, exported_at: '2026-11-03T09:00:00Z',
+			before, released_in: 1
+		});
+		// Seen long ago: the bell doesn't start with it.
+		markRead(user.email, nextId - 1, '2026-11-03T09:00:00Z');
+	}
 	const nameOf = (email: string) => ctx.users.find((u) => u.email === email)?.display_name ?? '';
 	const same = (a: { dataset: string; kind: string; item_id: string }, b: { dataset: string; kind: string; item_id: string }) =>
 		a.dataset === b.dataset && a.kind === b.kind && a.item_id === b.item_id;
@@ -296,7 +326,7 @@ export function reviewMock(ctx: ReviewContext) {
 					out.push({ ...about(s), asked_of_name: '', to_you: true, what: 'comment', by_name: nameOf(c.author), at: c.created_at, body: c.body.length > 140 ? `${c.body.slice(0, 140)}…` : c.body, unread: c.created_at > since(s) });
 				}
 			}
-			const decider = (s as Suggestion & { decided_by?: string }).decided_by;
+			const decider = s.decided_by;
 			if (s.author === email && (s.status === 'accepted' || s.status === 'declined') && decider && decider !== email && s.decided_at) {
 				out.push({ ...about(s), asked_of_name: '', to_you: true, what: s.status, by_name: nameOf(decider), at: s.decided_at, body: '', unread: s.decided_at > since(s) });
 			}
@@ -462,6 +492,16 @@ export function reviewMock(ctx: ReviewContext) {
 			const marked = suggestions.filter((s) => ids(body.suggestions).includes(s.id) && s.status === 'accepted' && !s.exported_at);
 			const markedStamps = stamps.filter((t) => ids(body.stamps).includes(t.id) && !t.exported_at);
 			for (const row of [...marked, ...markedStamps]) row.exported_at = now();
+			// As if the owner signed it at once and the site loaded the newer file today: the Worker files an
+			// exported change under the first newer load's release. Notes never ship.
+			const shipped = marked.filter((s) => s.action !== 'note');
+			if (shipped.length) {
+				const at = now();
+				const label = at.slice(0, 10).replaceAll('-', '.');
+				const release = releases.find((r) => r.label === label) ?? { id: releases.length + 1, label, loaded_at: at };
+				if (!releases.includes(release)) releases.push(release);
+				for (const s of shipped) s.released_in = release.id;
+			}
 			return [200, { suggestions: marked.length, stamps: markedStamps.length }];
 		}
 		if (path === '/approve' || path === '/approve/withdraw') {
@@ -562,6 +602,50 @@ export function reviewMock(ctx: ReviewContext) {
 			Object.assign(suggestion, { status: 'withdrawn', decided_at: now() });
 			closeOpinions(suggestion);
 			return [200, suggestionOut(suggestion)];
+		}
+		if (path === '/contributions' && method === 'GET') {
+			// Mine, newest first, with the Worker's rules: released changes by release (newest first), `before` as
+			// recorded when decided (the item as it is now while open), others' comments as replies, and a
+			// declined change's reason the decider's newest comment at or after the decision.
+			const mine = suggestions.filter((s) => s.author === by && s.status !== 'withdrawn').reverse();
+			const change = (s: Suggestion) => {
+				const reason =
+					s.status === 'declined'
+						? comments.filter((c) => c.suggestion_id === s.id && c.author === s.decided_by && s.decided_at && c.created_at >= s.decided_at).at(-1)
+						: undefined;
+				const live = () => find(s)?.value ?? null;
+				return {
+					id: s.id, action: s.action, dataset: s.dataset, kind: s.kind, item_id: s.item_id, entry_id: s.entry_id,
+					parent_kind: s.parent_kind ?? null, parent_id: s.parent_id ?? null, item_title: s.item_title,
+					proposed: s.proposed, admin_edit: s.admin_edit, furigana: s.furigana, comment: s.comment,
+					created_at: s.created_at, decided_at: s.decided_at,
+					before: s.before ?? (s.status === 'open' || s.status === 'declined' ? live() : null),
+					replies: comments.filter((c) => c.suggestion_id === s.id && c.author !== by).length,
+					reason: reason ? { by_name: nameOf(reason.author), body: reason.body } : null
+				};
+			};
+			const live = mine.filter((s) => s.released_in);
+			const shipped = releases
+				.map((r) => ({ label: r.label, loaded_at: r.loaded_at, changes: live.filter((s) => s.released_in === r.id).map(change) }))
+				.filter((r) => r.changes.length)
+				.reverse();
+			const sets = new Map<string, { dataset: string; approved: number; suggested: number }>();
+			const set = (dataset: string) => sets.get(dataset) ?? sets.set(dataset, { dataset, approved: 0, suggested: 0 }).get(dataset)!;
+			for (const a of approvals.filter((a) => a.reviewer === by)) set(a.dataset).approved++;
+			for (const s of mine) set(s.dataset).suggested++;
+			const me = userOf(by);
+			return [200, {
+				counts: {
+					approved: approvals.filter((a) => a.reviewer === by).length, suggested: mine.length,
+					accepted: mine.filter((s) => s.status === 'accepted').length, live: live.length
+				},
+				credit: { name: me?.public_name ?? null, role: me?.public_role ?? 'native' },
+				releases: shipped,
+				accepted: mine.filter((s) => s.status === 'accepted' && !s.released_in).map(change),
+				waiting: mine.filter((s) => s.status === 'open').map(change),
+				declined: mine.filter((s) => s.status === 'declined').map(change),
+				datasets: [...sets.values()]
+			}];
 		}
 		if (path === '/replies' && method === 'GET') {
 			const list = repliesFor(by);
@@ -752,12 +836,16 @@ export function reviewMock(ctx: ReviewContext) {
 						(ctx.me.role !== 'native' || japaneseOnly(x))
 				);
 				for (const other of others) {
-					Object.assign(other, { status: 'declined', decided_at: now(), decided_by: by });
+					Object.assign(other, { status: 'declined', decided_at: now(), decided_by: by, before: find(other)?.value ?? null });
 					comments.push({ suggestion_id: other.id, author: by, body: `Declined: ${nameOf(suggestion.author)}'s suggestion was accepted instead.`, created_at: now() });
 					declined.push(other.id);
 				}
 			}
-			Object.assign(suggestion, { status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now(), decided_by: by });
+			Object.assign(suggestion, {
+				status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now(), decided_by: by,
+				// What it replaced, or what it was declined against, kept for Your contributions.
+				before: find(suggestion)?.value ?? null
+			});
 			closeOpinions(suggestion);
 			markRead(by, suggestion.id);
 			const reply = String(body.reply ?? '').trim();

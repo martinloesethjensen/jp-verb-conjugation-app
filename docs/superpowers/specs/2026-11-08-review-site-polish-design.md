@@ -157,6 +157,18 @@ Japanese-only ones), each with "Declined: {author}'s suggestion was accepted ins
 `opinion_asked`, `opinion_answered` and `opinion_cancelled` go to the person asked, to the authors of
 suggestions open at the time, and to the asker; they point at the anchor thread, and opening it marks them read.
 
+**As built (step 6b, 2026-11-28):** migration 0012 adds `data_releases`, `suggestions.released_in` and
+`suggestions.before_json`. A release is the SHA-256 of the signed manifest, labelled `YYYY.MM.DD` from the UTC
+day the site first loaded it (`-2`, `-3` for more that day). When a load finishes with a strictly newer version
+of a file, it records the release and claims that data set's exported, unreleased, non-note suggestions; a
+same-version reload records nothing. Accepting stores the item's text before the change in `before_json`.
+`GET /api/contributions` and the `/contributions` page (linked in the header for everyone) show counts,
+changes by release, "Accepted, in the next release", "Waiting for a decision", "Declined" with the reason, the
+credit, and counts by data set; accepted notes stay "Accepted". The backfill files every non-note suggestion
+exported before its dataset's last load under one "Earlier releases" row, shown as live; later exports wait for
+the next release. Owner decisions (2026-11-17): the "Earlier releases" group, and a warning is enough when
+"Mark exported" comes late (the Export page says to mark before the next `make data-release`).
+
 ## Onboarding
 
 - **Desktop:** on first sign-in, a welcome dialog, then five highlighted steps on the queue page:

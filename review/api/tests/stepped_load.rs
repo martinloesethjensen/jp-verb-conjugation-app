@@ -239,3 +239,184 @@ async fn reference_files_have_no_slices_and_keep_their_text() {
         src.get_bytes("furigana.json")
     );
 }
+
+// --- Releases: a signed load records its manifest as a release and claims exported suggestions ----
+
+/// Signs `src`'s manifest with a test key after `edit`, returning the key to trust.
+fn resign(src: &FakeSource, edit: impl FnOnce(&mut Value)) -> String {
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine;
+    use ed25519_dalek::{Signer, SigningKey};
+    let key = SigningKey::from_bytes(&[5u8; 32]);
+    let mut manifest: Value = serde_json::from_slice(&src.get_bytes("manifest.json")).unwrap();
+    edit(&mut manifest);
+    let bytes = serde_json::to_vec(&manifest).unwrap();
+    src.set(
+        "manifest.sig",
+        STANDARD.encode(key.sign(&bytes).to_bytes()).into_bytes(),
+    );
+    src.set("manifest.json", bytes);
+    STANDARD.encode(key.verifying_key().to_bytes())
+}
+
+/// Loads `file` from `src` as the owner at `now`, trusting `key`.
+async fn load_at(s: &SqliteStore, src: &FakeSource, key: &str, file: &str, now: &str) {
+    use review_api::app::{begin_load_with_keys, finish_load_with_keys, load_slice_with_keys};
+    let file = review_api::data::DataFile::parse_name(file).unwrap();
+    let keys = [key];
+    let started = begin_load_with_keys(file, s, src, &keys, OWNER, now)
+        .await
+        .unwrap();
+    for n in 0..started.slices {
+        load_slice_with_keys(&started.load_id, n as u32, s, src, &keys)
+            .await
+            .unwrap();
+    }
+    finish_load_with_keys(&started.load_id, s, src, &keys, OWNER, now)
+        .await
+        .unwrap();
+}
+
+/// A suggestion by Aiko, accepted and marked exported at `exported_at`. Returns its id.
+fn exported(s: &SqliteStore, action: &str, dataset: &str, exported_at: &str) -> i64 {
+    let conn = s.conn.borrow();
+    conn.execute(
+        "INSERT INTO suggestions (action, dataset, kind, item_id, entry_id, item_title, base_hash, author, \
+         status, created_at, decided_at, decided_by, exported_at) \
+         VALUES (?1, ?2, 'entry', 'x', 'x', 'x', 'h', 'aiko@example.com', 'accepted', ?3, ?3, ?4, ?3)",
+        rusqlite::params![action, dataset, exported_at, OWNER],
+    )
+    .unwrap();
+    conn.last_insert_rowid()
+}
+
+/// The label of the release that claimed suggestion `id`, if any.
+fn released_in(s: &SqliteStore, id: i64) -> Option<String> {
+    s.conn
+        .borrow()
+        .query_row(
+            "SELECT r.label FROM suggestions s LEFT JOIN data_releases r ON r.id = s.released_in WHERE s.id = ?1",
+            [id],
+            |r| r.get(0),
+        )
+        .unwrap()
+}
+
+fn release_labels(s: &SqliteStore) -> Vec<String> {
+    let conn = s.conn.borrow();
+    let mut st = conn
+        .prepare("SELECT label FROM data_releases ORDER BY id")
+        .unwrap();
+    st.query_map([], |r| r.get(0))
+        .unwrap()
+        .map(|r| r.unwrap())
+        .collect()
+}
+
+/// Re-signs the manifest with `file` at a newer version. Verbs' entry is the manifest's top level.
+fn bump(src: &FakeSource, file: &str) -> String {
+    resign(src, |m| {
+        let entry = if file == "verbs" { m } else { &mut m[file] };
+        entry["version"] = json!("99.0.0");
+    })
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_newer_signed_load_records_the_release_and_claims_exported_suggestions() {
+    let (s, src) = (seeded().await, FakeSource::published());
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "verbs", T0).await;
+    let id = exported(&s, "change", "verbs", "2026-11-06T10:00:00Z");
+    let key = bump(&src, "verbs");
+    load_at(&s, &src, &key, "verbs", "2026-11-07T09:30:00.000Z").await;
+    assert_eq!(release_labels(&s), ["2026.11.05", "2026.11.07"]);
+    assert_eq!(released_in(&s, id).as_deref(), Some("2026.11.07"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn reloading_the_same_version_claims_nothing() {
+    let (s, src) = (seeded().await, FakeSource::published());
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "verbs", T0).await;
+    let id = exported(&s, "change", "verbs", "2026-11-06T10:00:00Z");
+    load_at(&s, &src, &key, "verbs", "2026-11-07T09:30:00Z").await;
+    assert_eq!(released_in(&s, id), None);
+    assert_eq!(release_labels(&s), ["2026.11.05"]);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn only_the_loaded_dataset_is_claimed() {
+    let (s, src) = (seeded().await, FakeSource::published());
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "verbs", T0).await;
+    let counters = exported(&s, "change", "counters", "2026-11-06T10:00:00Z");
+    let verbs = exported(&s, "delete", "verbs", "2026-11-06T10:00:00Z");
+    let key = bump(&src, "verbs");
+    load_at(&s, &src, &key, "verbs", "2026-11-07T09:30:00Z").await;
+    assert_eq!(released_in(&s, counters), None);
+    assert_eq!(released_in(&s, verbs).as_deref(), Some("2026.11.07"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn notes_are_never_claimed() {
+    let (s, src) = (seeded().await, FakeSource::published());
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "verbs", T0).await;
+    let note = exported(&s, "note", "verbs", "2026-11-06T10:00:00Z");
+    let key = bump(&src, "verbs");
+    load_at(&s, &src, &key, "verbs", "2026-11-07T09:30:00Z").await;
+    assert_eq!(released_in(&s, note), None);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_first_load_claims_earlier_exports_and_a_claimed_one_stays_put() {
+    let (s, src) = (seeded().await, FakeSource::published());
+    let id = exported(&s, "change", "words", "2026-11-04T10:00:00Z");
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "words", T0).await;
+    assert_eq!(released_in(&s, id).as_deref(), Some("2026.11.05"));
+    let key = bump(&src, "words");
+    load_at(&s, &src, &key, "words", "2026-11-07T09:30:00Z").await;
+    assert_eq!(released_in(&s, id).as_deref(), Some("2026.11.05"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn every_file_of_one_release_shares_its_row() {
+    let (s, src) = (seeded().await, FakeSource::published());
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "verbs", T0).await;
+    load_at(&s, &src, &key, "grammar", "2026-11-06T08:00:00Z").await;
+    assert_eq!(release_labels(&s), ["2026.11.05"]);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_second_release_on_one_day_gets_a_suffix() {
+    let (s, src) = (seeded().await, FakeSource::published());
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "words", "2026-11-07T01:00:00Z").await;
+    let key = bump(&src, "words");
+    load_at(&s, &src, &key, "words", "2026-11-07T05:00:00Z").await;
+    let key = resign(&src, |m| m["words"]["version"] = json!("99.1.0"));
+    load_at(&s, &src, &key, "words", "2026-11-07T23:59:00Z").await;
+    assert_eq!(
+        release_labels(&s),
+        ["2026.11.07", "2026.11.07-2", "2026.11.07-3"]
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_same_version_load_from_another_manifest_records_no_release() {
+    // GitHub's cache serves an older signed manifest the site never recorded: verbs' version is the
+    // one already loaded, so no phantom release takes today's label.
+    let (s, src) = (seeded().await, FakeSource::published());
+    let key = resign(&src, |_| {});
+    load_at(&s, &src, &key, "verbs", T0).await;
+    let id = exported(&s, "change", "verbs", "2026-11-06T10:00:00Z");
+    let key = bump(&src, "grammar");
+    load_at(&s, &src, &key, "verbs", "2026-11-07T09:30:00Z").await;
+    assert_eq!(release_labels(&s), ["2026.11.05"]);
+    assert_eq!(released_in(&s, id), None);
+    let key = bump(&src, "verbs");
+    load_at(&s, &src, &key, "verbs", "2026-11-07T10:00:00Z").await;
+    assert_eq!(release_labels(&s), ["2026.11.05", "2026.11.07"]);
+}

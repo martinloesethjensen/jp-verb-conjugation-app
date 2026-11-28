@@ -473,6 +473,13 @@ export const decide = (
 	extra: Edits & { reply?: string; confirm?: boolean } = {}
 ) => request<Suggestion & { warning?: string; declined?: number[] }>('/api/decide', { id, decision, ...extra });
 
+/** Declines with the reply box's draft, when it has text: the Worker writes it with the decision, so it is the
+ * reason the author sees. */
+export const decline = (id: number, draft: string) => {
+	const reply = draft.trim();
+	return decide(id, 'decline', reply ? { reply } : {});
+};
+
 // --- Second opinions ----------------------------------------------------------------------------
 
 export const getCandidates = async (t: Target) =>
@@ -517,3 +524,44 @@ export const addItem = (
 /** Suggested new entries in a dataset, newest first. */
 export const getAdditions = async (dataset: string) =>
 	(await request<{ suggestions: Suggestion[] }>(`/api/additions?${new URLSearchParams({ dataset })}`)).suggestions;
+
+// --- Your contributions (review/api `GET /api/contributions`) ---------------------------------------------
+
+/** One of the viewer's own suggestions, with what the contributions page adds to it. */
+export type Change = {
+	id: number;
+	action: SuggestionAction;
+	dataset: string;
+	kind: string;
+	item_id: string;
+	entry_id: string;
+	parent_kind: string | null;
+	parent_id: string | null;
+	item_title: string;
+	proposed: Record<string, unknown> | null;
+	admin_edit: Record<string, unknown> | null;
+	furigana: Record<string, string> | null;
+	comment: string;
+	created_at: string;
+	decided_at: string | null;
+	/** The target before the change: as it is now for an open one, as it was when accepted for an accepted one. Null when unknown. */
+	before: Record<string, unknown> | null;
+	replies: number;
+	/** Declined only: the decider's newest comment. */
+	reason: { by_name: string; body: string } | null;
+};
+
+/** The data a release put live. `loaded_at` is null for the "Earlier releases" row. */
+export type Release = { label: string; loaded_at: string | null; changes: Change[] };
+
+export type Contributions = {
+	counts: { approved: number; suggested: number; accepted: number; live: number };
+	credit: { name: string | null; role: PublicRole };
+	releases: Release[];
+	accepted: Change[];
+	waiting: Change[];
+	declined: Change[];
+	datasets: { dataset: string; approved: number; suggested: number }[];
+};
+
+export const getContributions = () => request<Contributions>('/api/contributions');

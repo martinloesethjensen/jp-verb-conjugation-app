@@ -569,6 +569,7 @@ async fn a_decision_that_loses_a_race_writes_no_audit_row() {
                 MARTIN,
                 T0,
                 None::<String>,
+                None::<String>,
                 None::<String>
             ],
         )
