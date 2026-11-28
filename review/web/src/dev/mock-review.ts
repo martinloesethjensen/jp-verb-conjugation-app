@@ -574,7 +574,7 @@ export function reviewMock(ctx: ReviewContext) {
 					parent_kind: s.parent_kind ?? null, parent_id: s.parent_id ?? null, item_title: s.item_title,
 					proposed: s.proposed, admin_edit: s.admin_edit, furigana: s.furigana, comment: s.comment,
 					created_at: s.created_at, decided_at: s.decided_at,
-					before: s.status === 'open' ? (find(s)?.value ?? null) : (decided.before ?? null),
+					before: s.status === 'open' || s.status === 'declined' ? (find(s)?.value ?? null) : (decided.before ?? null),
 					replies: comments.filter((c) => c.suggestion_id === s.id && c.author !== by).length,
 					reason: reason ? { by_name: nameOf(reason.author), body: reason.body } : null
 				};
