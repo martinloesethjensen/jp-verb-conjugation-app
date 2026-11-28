@@ -2,12 +2,12 @@
   "version": "1.20.0",
   "sha256": "c67fe25469e381c7a96a3962647d6fc5882978bb25cdd7e7df59e5fc5a9ba80b",
   "grammar": {
-    "version": "1.22.0",
-    "sha256": "ce6d24d88c4cb8bee5a5f2123c6405cca89f75ff96873faccc9a79288ea2f486"
+    "version": "1.23.0",
+    "sha256": "84d09b6cf791aaf4da83810f66212c7ef273ed7d6c9dcb4cb590a0ef9761b6d9"
   },
   "furigana": {
-    "version": "1.29.0",
-    "sha256": "36122769ff19647de432527a45ebd04ba70569e03150a1dbf82cc866d89ca7ab"
+    "version": "1.30.0",
+    "sha256": "f8cc2f3922515d52afb1916b9e084a0ce837c058452d70a0325ef62ddff69b3e"
   },
   "words": {
     "version": "1.0.0",

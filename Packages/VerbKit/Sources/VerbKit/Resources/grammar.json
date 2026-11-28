@@ -324,7 +324,7 @@
           ]
         }
       ],
-      "related": ["n-desu"]
+      "related": ["n-desu", "naru"]
     },
     {
       "id": "certainty",
@@ -1811,7 +1811,7 @@
           "explanation": "The volitional states your will, so verbs for states or things that just happen have none: わかる (to understand), しる (to know), つかれる (to get tired). ある has あろう in writing, but it is rare in conversation."
         }
       ],
-      "related": ["tsumori", "masen-ka"]
+      "related": ["tsumori", "masen-ka", "to-omou"]
     },
     {
       "id": "nai-te",
@@ -3047,6 +3047,322 @@
           "explanation": "Answering an invitation with いいえ or 行きません sounds cold. Say ちょっと… and leave the rest unsaid, or give a reason with 〜んです.",
           "examples": [
             { "id": "x545u9", "jp": "土曜日はちょっと…。", "en": "Saturday is a bit… (difficult).", "particle_blanks": [{ "particle": "は", "at": 3 }] }
+          ]
+        }
+      ],
+      "related": ["volitional"]
+    },
+    {
+      "id": "ni-iku",
+      "title": "〜に行く・〜に来る",
+      "summary": "The ます-stem + に行く says why you go somewhere: 本を借りに行きます (I'm going to borrow a book). It works with 来る and 帰る too.",
+      "keywords": ["go to do", "come to do", "in order to", "purpose", "go and", "go shopping"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 7, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "mz7ds8",
+          "heading": "Going somewhere to do something",
+          "explanation": "Put the ます-stem before に and a verb of movement: 行く, 来る or 帰る. The place takes に or へ, and the purpose comes just before 行く.",
+          "examples": [
+            { "id": "63aiht", "jp": "図書館に本を借りに行きます。", "en": "I'm going to the library to borrow a book.", "particle_blanks": [{ "particle": "に", "at": 3 }, { "particle": "を", "at": 5 }] },
+            { "id": "p7qvkz", "jp": "友だちがうちに遊びに来ました。", "en": "A friend came over to hang out.", "particle_blanks": [{ "particle": "が", "at": 3 }, { "particle": "に", "at": 6 }] },
+            { "id": "ui3muq", "jp": "昼ご飯を食べに帰ります。", "en": "I'm going home to have lunch.", "particle_blanks": [{ "particle": "を", "at": 3 }] }
+          ]
+        },
+        {
+          "id": "78k7du",
+          "heading": "With a する-noun",
+          "explanation": "With nouns like 買い物, 旅行 and 勉強, drop する and put the noun straight before に行く.",
+          "examples": [
+            { "id": "3nhgp2", "jp": "週末、デパートに買い物に行きました。", "en": "At the weekend I went shopping at a department store.", "particle_blanks": [{ "particle": "に", "at": 7 }] },
+            { "id": "3xsp2u", "jp": "来月、京都に旅行に行きます。", "en": "Next month I'm going on a trip to Kyoto.", "particle_blanks": [{ "particle": "に", "at": 5 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["stem"],
+          "then": "に行く",
+          "pattern": "ます-stem + に行く",
+          "example": "借りる → 借りに行く / 食べる → 食べに行く / 遊ぶ → 遊びに行く",
+          "note": "Also with 来る and 帰る: 遊びに来る, 食べに帰る."
+        },
+        {
+          "word_class": "noun",
+          "pattern": "する-noun + に行く",
+          "example": "買い物 → 買い物に行く / 旅行 → 旅行に行く"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜に行きます", "register": "polite" },
+        { "form": "〜に来ます", "register": "polite" },
+        { "form": "〜に帰ります", "register": "polite" },
+        { "form": "〜に行く", "register": "casual" }
+      ],
+      "pitfalls": [
+        {
+          "id": "sbcva2",
+          "heading": "Use the ます-stem, not the dictionary form",
+          "explanation": "The verb before に行く is the ます-stem: 食べに行く, not 食べるに行く.",
+          "wrong": "食べるに行く",
+          "examples": [
+            { "id": "5bxfty", "jp": "映画を見に行きませんか。", "en": "Would you like to go and see a film?", "particle_blanks": [{ "particle": "を", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "cxned6",
+          "heading": "Only with going, coming and returning",
+          "explanation": "Stem + に works with verbs of movement such as 行く, 来る and 帰る. For a purpose with other verbs, Japanese uses ために (N4)."
+        }
+      ],
+      "related": []
+    },
+    {
+      "id": "naru",
+      "title": "〜くなる・〜になる",
+      "summary": "なる means \"to become\". い-adjectives change い to く (寒くなる), and な-adjectives and nouns take に (静かになる, 医者になる).",
+      "keywords": ["become", "get", "turn", "change", "come to", "start to", "can now"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 10, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "gx7vv9",
+          "heading": "い-adjectives: 〜くなる",
+          "explanation": "Change the final い to く and add なる. いい becomes よくなる.",
+          "examples": [
+            { "id": "vtzzfd", "jp": "だんだん寒くなりました。", "en": "It's gradually got colder." },
+            { "id": "a5u26a", "jp": "天気がよくなりました。", "en": "The weather has got better.", "particle_blanks": [{ "particle": "が", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "9nzg6a",
+          "heading": "な-adjectives and nouns: 〜になる",
+          "explanation": "Add に and なる.",
+          "examples": [
+            { "id": "38yw5z", "jp": "日本語が上手になりました。", "en": "Your Japanese has got good.", "particle_blanks": [{ "particle": "が", "at": 3 }] },
+            { "id": "j6vh3y", "jp": "部屋がきれいになりました。", "en": "The room is clean now.", "particle_blanks": [{ "particle": "が", "at": 2 }] },
+            { "id": "en3xvb", "jp": "将来、医者になりたいです。", "en": "I want to become a doctor in the future." }
+          ]
+        },
+        {
+          "id": "am2vav",
+          "heading": "Verbs: 〜ようになる",
+          "jlpt": "N4",
+          "explanation": "Dictionary form + ようになる says that something has come about gradually: a new habit, or, with the potential form, a new ability.",
+          "examples": [
+            { "id": "ipdmvt", "jp": "日本語が話せるようになりました。", "en": "I can speak Japanese now.", "particle_blanks": [{ "particle": "が", "at": 3 }] },
+            { "id": "buz2hc", "jp": "毎日野菜を食べるようになりました。", "en": "I've started eating vegetables every day.", "particle_blanks": [{ "particle": "を", "at": 4 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "i-adjective",
+          "slots": ["stem"],
+          "then": "くなる",
+          "pattern": "drop い + くなる",
+          "example": "寒い → 寒くなる / 高い → 高くなる / いい → よくなる"
+        },
+        {
+          "word_class": "na-adjective",
+          "slots": ["stem"],
+          "then": "になる",
+          "pattern": "+ になる",
+          "example": "上手 → 上手になる / きれい → きれいになる"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "+ になる",
+          "example": "医者 → 医者になる / 春 → 春になる"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plain"],
+          "then": "ようになる",
+          "pattern": "dictionary form + ようになる",
+          "example": "食べる → 食べるようになる / 話せる → 話せるようになる"
+        }
+      ],
+      "conjugations": [
+        { "form": "〜くなります", "register": "polite", "note": "い-adjectives." },
+        { "form": "〜になります", "register": "polite", "note": "な-adjectives and nouns." },
+        { "form": "〜くなった・〜になった", "register": "casual" },
+        { "form": "〜ようになりました", "register": "polite", "note": "Has come to…; can now…" }
+      ],
+      "pitfalls": [
+        {
+          "id": "jjzp28",
+          "heading": "い-adjectives change い to く",
+          "explanation": "Before なる, い-adjectives use the く-form: 寒くなる, not 寒いになる.",
+          "wrong": "寒いになる",
+          "examples": [
+            { "id": "e97ej8", "jp": "だんだん寒くなりました。", "en": "It's gradually got colder." }
+          ]
+        },
+        {
+          "id": "hu32jw",
+          "heading": "いい becomes よくなる",
+          "explanation": "いい has the stem よ, so it becomes よくなる. いくなる does not exist.",
+          "wrong": "いくなる",
+          "examples": [
+            { "id": "qx2k4x", "jp": "天気がよくなりました。", "en": "The weather has got better.", "particle_blanks": [{ "particle": "が", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "6hbsq4",
+          "heading": "な-adjectives take に, not く",
+          "explanation": "Words like 元気 and きれい are な-adjectives, even though きれい ends in い: 元気になる, きれいになる.",
+          "wrong": "きれくなる",
+          "examples": [
+            { "id": "xgqpbz", "jp": "部屋がきれいになりました。", "en": "The room is clean now.", "particle_blanks": [{ "particle": "が", "at": 2 }] }
+          ]
+        }
+      ],
+      "related": ["potential"]
+    },
+    {
+      "id": "to-omou",
+      "title": "〜でしょう・〜と思う・〜と言う",
+      "summary": "〜でしょう means \"probably\": 明日は雨でしょう. 〜と思います gives your opinion: おもしろいと思います. 〜と言う quotes what someone said: 休むと言っていました.",
+      "keywords": ["probably", "I think", "I don't think", "said", "say", "quote", "opinion", "right?"],
+      "jlpt": "N5",
+      "taught_in": [
+        { "book": "genki-1", "lesson": 8, "reviewed": false },
+        { "book": "genki-1", "lesson": 12, "reviewed": false }
+      ],
+      "usages": [
+        {
+          "id": "b97jpn",
+          "heading": "Probably (〜でしょう)",
+          "explanation": "Add でしょう to the short form. After a noun or a な-adjective, drop だ: 雨でしょう. With a rising tone, でしょう? asks the listener to agree.",
+          "examples": [
+            { "id": "5f8pxv", "jp": "明日は雨でしょう。", "en": "It will probably rain tomorrow.", "particle_blanks": [{ "particle": "は", "at": 2 }] },
+            { "id": "3s436y", "jp": "田中さんも来るでしょう。", "en": "Tanaka will probably come too.", "particle_blanks": [{ "particle": "も", "at": 4 }] },
+            { "id": "i2cj43", "jp": "このケーキ、おいしいでしょう？", "en": "This cake is good, isn't it?" }
+          ]
+        },
+        {
+          "id": "5zhh7p",
+          "heading": "I think… (〜と思います)",
+          "explanation": "Add と思います to the short form. Nouns and な-adjectives keep だ: 学生だと思います. For \"I don't think…\", make the first verb negative.",
+          "examples": [
+            { "id": "ampfbq", "jp": "明日は晴れると思います。", "en": "I think it'll be sunny tomorrow.", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "と", "at": 6 }] },
+            { "id": "vrzkf8", "jp": "この本はおもしろいと思います。", "en": "I think this book is interesting.", "particle_blanks": [{ "particle": "は", "at": 3 }, { "particle": "と", "at": 9 }] },
+            { "id": "cbfqnk", "jp": "山田さんは学生だと思います。", "en": "I think Yamada is a student.", "particle_blanks": [{ "particle": "は", "at": 4 }, { "particle": "と", "at": 8 }] },
+            { "id": "5ng6vi", "jp": "田中さんは来ないと思います。", "en": "I don't think Tanaka will come.", "particle_blanks": [{ "particle": "は", "at": 4 }, { "particle": "と", "at": 8 }] }
+          ]
+        },
+        {
+          "id": "5cwax3",
+          "heading": "Quoting (〜と言う)",
+          "explanation": "A direct quote goes in 「」 before と言いました. To pass on what someone said, put the short form before と言っていました. 何と言いますか asks what something is called.",
+          "examples": [
+            { "id": "ri3em7", "jp": "先生は「宿題を出してください」と言いました。", "en": "The teacher said, \"Please hand in your homework.\"", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "を", "at": 6 }, { "particle": "と", "at": 15 }] },
+            { "id": "686qnp", "jp": "田中さんは、明日休むと言っていました。", "en": "Tanaka said they'll be off tomorrow.", "particle_blanks": [{ "particle": "は", "at": 4 }, { "particle": "と", "at": 10 }] },
+            { "id": "c4sbcc", "jp": "これは日本語で何と言いますか。", "en": "What is this called in Japanese?", "particle_blanks": [{ "particle": "は", "at": 2 }, { "particle": "で", "at": 6 }, { "particle": "と", "at": 8 }] }
+          ]
+        }
+      ],
+      "attachment": [
+        {
+          "word_class": "verb",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "でしょう",
+          "pattern": "short form + でしょう",
+          "example": "降る → 降るでしょう / 来なかった → 来なかったでしょう"
+        },
+        {
+          "word_class": "i-adjective",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "でしょう",
+          "pattern": "short form + でしょう",
+          "example": "おいしい → おいしいでしょう / 寒かった → 寒かったでしょう"
+        },
+        {
+          "word_class": "na-adjective",
+          "pattern": "drop だ + でしょう",
+          "example": "静かだ → 静かでしょう"
+        },
+        {
+          "word_class": "noun",
+          "pattern": "drop だ + でしょう",
+          "example": "雨だ → 雨でしょう"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "と思います",
+          "pattern": "short form + と思います",
+          "example": "晴れる → 晴れると思います / 来ない → 来ないと思います"
+        },
+        {
+          "word_class": "i-adjective",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "と思います",
+          "pattern": "short form + と思います",
+          "example": "おもしろい → おもしろいと思います"
+        },
+        {
+          "word_class": "na-adjective",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "と思います",
+          "pattern": "short form (keep だ) + と思います",
+          "example": "静かだ → 静かだと思います"
+        },
+        {
+          "word_class": "noun",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "と思います",
+          "pattern": "short form (keep だ) + と思います",
+          "example": "学生だ → 学生だと思います"
+        },
+        {
+          "word_class": "verb",
+          "slots": ["plain", "plainNeg", "plainPast", "plainPastNeg"],
+          "then": "と言っていました",
+          "pattern": "short form + と言っていました",
+          "example": "休む → 休むと言っていました / 行かない → 行かないと言っていました",
+          "note": "A direct quote goes in 「」: 「…」と言いました."
+        }
+      ],
+      "conjugations": [
+        { "form": "〜でしょう", "register": "polite", "note": "Probably…" },
+        { "form": "〜だろう", "register": "casual", "note": "Probably… Blunt in speech; common in writing and in thoughts: どうしたんだろう." },
+        { "form": "〜と思います", "register": "polite" },
+        { "form": "〜と思う", "register": "casual" },
+        { "form": "〜と言っていました", "register": "polite", "note": "Passing on what someone said." }
+      ],
+      "pitfalls": [
+        {
+          "id": "wf9uwj",
+          "heading": "Nouns and な-adjectives keep だ before と思う",
+          "explanation": "Before と思う, a noun or a な-adjective needs だ: 学生だと思います, not 学生と思います.",
+          "wrong": "学生と思います",
+          "examples": [
+            { "id": "945hgx", "jp": "山田さんは学生だと思います。", "en": "I think Yamada is a student.", "particle_blanks": [{ "particle": "は", "at": 4 }, { "particle": "と", "at": 8 }] }
+          ]
+        },
+        {
+          "id": "msxgwj",
+          "heading": "No だ before でしょう",
+          "explanation": "でしょう replaces だ, so a noun or a な-adjective comes straight before it: 雨でしょう, not 雨だでしょう.",
+          "wrong": "雨だでしょう",
+          "examples": [
+            { "id": "fdp9hh", "jp": "明日は雨でしょう。", "en": "It will probably rain tomorrow.", "particle_blanks": [{ "particle": "は", "at": 2 }] }
+          ]
+        },
+        {
+          "id": "chdady",
+          "heading": "と思います is for your own thoughts",
+          "explanation": "〜と思います says what you think. For someone else's opinion, use と思っています: 田中さんは…と思っています.",
+          "examples": [
+            { "id": "4fzufb", "jp": "田中さんは日本語が難しいと思っています。", "en": "Tanaka thinks Japanese is hard.", "particle_blanks": [{ "particle": "は", "at": 4 }, { "particle": "が", "at": 8 }, { "particle": "と", "at": 12 }] }
           ]
         }
       ],
