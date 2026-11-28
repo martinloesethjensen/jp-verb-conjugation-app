@@ -47,6 +47,14 @@ Both halves deploy themselves when main changes; CI never holds Cloudflare crede
   reads it); `/api/decide` and withdrawing a suggestion (both close requests); `/api/replies`, so Home's
   replies section and the bell fail; and the four `/api/opinion/*` routes. Nothing else in the migration
   changes existing rows.
+- **Your contributions (2026-11-28)** need migration `0012_releases.sql` (`npm run migrate`), which adds the
+  `data_releases` table, `suggestions.released_in` and `suggestions.before_json`, and files every non-note
+  suggestion exported before its dataset's last load under one "Earlier releases" row (shown as live in the
+  app). Run it **before merging**: it is additive, the Worker running now ignores the new table and columns,
+  and the site deploys itself when the PR merges. Until it runs, the new Worker fails: accepting a suggestion
+  (it writes `before_json`), a load that finishes with a newer version of a file (it writes `data_releases`;
+  a same-version reload still works), and `/api/contributions`, so the Your contributions page shows an error.
+  Nothing else reads the new columns.
 - **Courses (2026-11-17)** need migration `0013_courses.sql` (`npm run migrate`). Run it just before or right
   after merging: until it runs, the course routes (`/api/courses`, `/api/course*`) fail with "the database is
   unavailable" and every other page works. `GET /api/books` reads the textbooks from the grammar's stored
@@ -218,6 +226,12 @@ item's last open suggestion is decided or withdrawn, its unanswered request clos
 write); nobody is told, the person asked sees "Already decided", and a later suggestion on the item starts
 afresh in Open and can be asked about again.
 
+**Your contributions** (in the header, for everyone) shows what you suggested: counts, then your changes
+grouped by release ("Live in the app", newest first), then "Accepted, in the next release", "Waiting for a
+decision" and "Declined" with the reason, the credit the app shows, and counts by data set. Accepted notes stay
+"Accepted": they never ship. Accepting stores the item's text from before the change, so a release shows
+what changed.
+
 Accepting only marks a suggestion accepted: nothing reaches
 `data/` until the export step (plan 6), and then only through your normal signed data PRs.
 
@@ -315,6 +329,11 @@ stamp names the most senior reviewer who approved (owner, then teacher, then nat
 4. After it merges, open Export on the admin page, paste the summary's last line ("Site suggestion ids: …
    Stamp ids: …") and press "Tick these", then "Mark ticked as exported". Only what the pull wrote is marked;
    anything it skipped, or anything accepted since, stays waiting for the next pull.
+5. After `make data-release` merges, open Reviewers › Published data › Load published data. A load that finishes
+   with a newer signed version of a file records the release (labelled with the UTC day it was first loaded,
+   `YYYY.MM.DD`, then `-2`, `-3`) and moves that data set's exported changes to "Live in the app". Mark a batch
+   exported **before** the next `make data-release`: otherwise its changes are credited to the release after.
+   A same-version reload records nothing.
 
 A change the pull skips as "the data changed since it was accepted" was built against older data: apply it by
 hand or have it suggested again. Accepting a change or removal declines the item's other open ones, so two

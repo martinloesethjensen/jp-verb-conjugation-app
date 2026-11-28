@@ -219,6 +219,10 @@
 			<button type="button" class="primary" disabled={busy || ticked.size === 0} onclick={mark}>
 				Mark ticked as exported
 			</button>
+			<p class="hint">
+				Mark exported before your next <code>make data-release</code>: the next newer load credits these
+				changes to that release.
+			</p>
 		{/if}
 	</section>
 {/if}
