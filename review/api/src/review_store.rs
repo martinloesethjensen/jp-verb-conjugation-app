@@ -607,12 +607,12 @@ pub struct OwnerEdit<'a> {
     pub item_json: Option<&'a str>,
     pub furigana_json: Option<&'a str>,
     pub base_hash: Option<&'a str>,
-    /// On an accept, the target's JSON at that moment (what "Your contributions" strikes through once
-    /// it ships). Not an edit, but it travels with the accept the same way.
+    /// The target's JSON at the decision (what "Your contributions" strikes through once an accept
+    /// ships, and what a decline was declined against). Not an edit, but it travels with the decision.
     pub before_json: Option<&'a str>,
 }
 
-/// ?8 the target's JSON before the accept (NULL on a decline).
+/// ?8 the target's JSON when decided (NULL when it isn't in the data).
 pub const DECIDE: &str =
     "UPDATE suggestions SET status = ?2, admin_edit_json = ?3, decided_by = ?4, \
      decided_at = ?5, furigana_json = IFNULL(?6, furigana_json), base_hash = IFNULL(?7, base_hash), \
@@ -637,8 +637,10 @@ pub const INSERT_SUPERSEDED_AUDIT: &str = concat!(
      WHERE id = ?3 AND status = 'open' AND ",
     accepted_here!()
 );
+/// Records the accepted one's `before_json` too: the same item, read at the same moment.
 pub const DECLINE_SUPERSEDED: &str = concat!(
-    "UPDATE suggestions SET status = 'declined', decided_by = ?2, decided_at = ?1 \
+    "UPDATE suggestions SET status = 'declined', decided_by = ?2, decided_at = ?1, \
+     before_json = (SELECT m.before_json FROM suggestions m WHERE m.id = ?4) \
      WHERE id = ?3 AND status = 'open' AND ",
     accepted_here!()
 );
@@ -967,7 +969,7 @@ pub struct Reason {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Contribution {
     pub suggestion: Suggestion,
-    /// The target's JSON when it was accepted; `None` for older accepts and for the rest.
+    /// The target's JSON when it was decided; `None` for older decisions and open suggestions.
     pub before: Option<Value>,
     pub replies: u32,
     /// The decider's newest comment, for a declined suggestion.
@@ -1047,10 +1049,11 @@ macro_rules! contributions_where {
 /// ?1 viewer: their suggestions that aren't withdrawn, newest first.
 pub const SELECT_CONTRIBUTIONS: &str =
     suggestions_where!(contributions_where!(), "ORDER BY s.id DESC");
-/// ?1 viewer: the same rows' release, recorded "before", comment count and decider's newest comment.
+/// ?1 viewer: the same rows' release, recorded "before", others' comment count and the decider's newest
+/// comment at or after the decision.
 pub const SELECT_CONTRIBUTION_EXTRAS: &str = concat!("SELECT s.id, s.before_json, s.released_in, \
      r.label AS release_label, r.first_loaded_at AS released_at, (r.manifest_sha256 IS NULL) AS earlier, \
-     (SELECT COUNT(*) FROM comments c WHERE c.suggestion_id = s.id) AS replies, \
+     (SELECT COUNT(*) FROM comments c WHERE c.suggestion_id = s.id AND c.author <> s.author) AS replies, \
      (SELECT IFNULL(d.display_name, '') FROM users d WHERE d.email = s.decided_by) AS reason_by, \
      (SELECT c.body FROM comments c WHERE c.suggestion_id = s.id AND c.author = s.decided_by \
       AND c.created_at >= s.decided_at ORDER BY c.id DESC LIMIT 1) AS reason_body \

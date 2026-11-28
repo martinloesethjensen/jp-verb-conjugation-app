@@ -845,7 +845,7 @@ fn before_json(s: &SqliteStore, id: &Value) -> Option<Value> {
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn accepting_records_the_text_before() {
+async fn deciding_records_the_text_before() {
     let s = seeded().await;
     let (_, _, current) = example(&s).await;
     let declined = suggest_en(&s, AIKO, "One.").await;
@@ -854,8 +854,9 @@ async fn accepting_records_the_text_before() {
     assert_eq!(r.status, 200, "{}", r.body);
     let r = decide(&s, json!({"id": accepted, "decision": "accept"})).await;
     assert_eq!(r.status, 200, "{}", r.body);
-    assert_eq!(before_json(&s, &accepted), Some(current));
-    assert_eq!(before_json(&s, &declined), None);
+    assert_eq!(before_json(&s, &accepted), Some(current.clone()));
+    // A decline keeps it too: the text the suggestion was declined against.
+    assert_eq!(before_json(&s, &declined), Some(current));
 }
 
 #[tokio::test(flavor = "current_thread")]

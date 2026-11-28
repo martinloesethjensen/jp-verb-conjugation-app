@@ -116,7 +116,7 @@ async fn counts_and_groups_match_the_viewers_work() {
 
     // An open suggestion's `before` is the current item.
     assert_eq!(c["waiting"][0]["before"], doc_example());
-    // So is a declined one's: it was never applied.
+    // A declined one's is the text it was declined against, recorded then (here, still the current item).
     assert_eq!(c["declined"][0]["before"], doc_example_n(3));
     assert_eq!(c["waiting"][0]["proposed"]["en"], "Open.");
     assert_eq!(c["waiting"][0]["replies"], 0);
@@ -390,4 +390,69 @@ async fn a_superseded_decline_gives_the_automatic_comment() {
     let body = c["declined"][0]["reason"]["body"].as_str().unwrap();
     assert!(body.starts_with("Declined:"), "{body}");
     assert_eq!(c["declined"][0]["reason"]["by_name"], "Martin");
+}
+
+fn set_before(s: &SqliteStore, id: i64, json: Option<&str>) {
+    s.conn
+        .borrow()
+        .execute(
+            "UPDATE suggestions SET before_json = ?2 WHERE id = ?1",
+            rusqlite::params![id, json],
+        )
+        .unwrap();
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_declined_change_shows_the_text_it_was_declined_against() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, 3, "Declined.").await;
+    decide(&s, id, "decline", None).await;
+    // Recorded on declining, so the page reads it rather than the item as it is now.
+    let c = contributions(&s, AIKO).await;
+    assert_eq!(c["declined"][0]["before"], doc_example_n(3));
+    set_before(&s, id, Some("{\"en\":\"Was.\"}"));
+    let c = contributions(&s, AIKO).await;
+    assert_eq!(c["declined"][0]["before"], json!({"en": "Was."}));
+    // Older declines have none: the item as it is now.
+    set_before(&s, id, None);
+    let c = contributions(&s, AIKO).await;
+    assert_eq!(c["declined"][0]["before"], doc_example_n(3));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn a_superseded_decline_keeps_the_text_before_too() {
+    let s = seeded().await;
+    let mine = suggest_en(&s, AIKO, 0, "Aiko's.").await;
+    let theirs = suggest_en(&s, BEN, 0, "Ben's.").await;
+    decide_at(&s, theirs, "accept", None, LATER).await;
+    let stored: Option<String> = s
+        .conn
+        .borrow()
+        .query_row(
+            "SELECT before_json FROM suggestions WHERE id = ?1",
+            [mine],
+            |r| r.get(0),
+        )
+        .unwrap();
+    let stored: Value =
+        serde_json::from_str(&stored.expect("a superseded decline records before")).unwrap();
+    assert_eq!(stored, doc_example());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn replies_count_only_other_peoples_comments() {
+    let s = seeded().await;
+    let id = suggest_en(&s, AIKO, 0, "Open.").await;
+    for (who, body) in [(AIKO, "Mine."), (MARTIN, "Theirs."), (AIKO, "Mine again.")] {
+        let r = post(
+            &s,
+            "/api/comment",
+            json!({"suggestion_id": id, "body": body}),
+            who,
+        )
+        .await;
+        assert_eq!(r.status, 201, "{}", r.body);
+    }
+    let c = contributions(&s, AIKO).await;
+    assert_eq!(c["waiting"][0]["replies"], 1);
 }

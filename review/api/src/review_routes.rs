@@ -876,9 +876,10 @@ pub async fn decide<S: Store + ReviewStore>(
             }
         }
     }
-    // What the target said when accepted, for the shipped change's strike-through; none for a decline
-    // or a target that isn't in the data (an addition, or one that left it).
-    let before = (accept && !current.is_null()).then(|| current.to_string());
+    // What the target said when decided: an accepted change's strike-through once it ships, and what a
+    // decline was declined against. None for a target that isn't in the data (an addition, or one that
+    // left it).
+    let before = (!current.is_null()).then(|| current.to_string());
     let reason = format!(
         "Declined: {}'s suggestion was accepted instead.",
         s.author_name

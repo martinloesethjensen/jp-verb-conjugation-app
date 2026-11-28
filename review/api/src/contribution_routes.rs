@@ -30,15 +30,15 @@ pub async fn contributions<S: Store + ReviewStore>(by: &Principal, store: &S) ->
         if s.status == "accepted" {
             accepted_n += 1;
         }
-        let before = if s.status == "open" || s.status == "declined" {
-            // An open suggestion shows the item as it is now; a declined one was never applied, so the
-            // current item is its baseline too.
-            match current_json(store, &mut entries, s).await {
+        // An open suggestion shows the item as it is now. A decided one shows what it was decided
+        // against, recorded then; an older decline without one falls back to the item as it is now.
+        let before = match (&c.before, s.status.as_str()) {
+            (Some(before), _) => Some(before.clone()),
+            (None, "open" | "declined") => match current_json(store, &mut entries, s).await {
                 Value::Null => None,
                 v => Some(v),
-            }
-        } else {
-            c.before.clone()
+            },
+            (None, _) => None,
         };
         let value = change(&c, before);
         match (&c.release, s.status.as_str()) {
