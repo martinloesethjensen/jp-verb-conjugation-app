@@ -30,8 +30,9 @@ pub async fn contributions<S: Store + ReviewStore>(by: &Principal, store: &S) ->
         if s.status == "accepted" {
             accepted_n += 1;
         }
-        let before = if s.status == "open" {
-            // An open suggestion shows the item as it is now.
+        let before = if s.status == "open" || s.status == "declined" {
+            // An open suggestion shows the item as it is now; a declined one was never applied, so the
+            // current item is its baseline too.
             match current_json(store, &mut entries, s).await {
                 Value::Null => None,
                 v => Some(v),

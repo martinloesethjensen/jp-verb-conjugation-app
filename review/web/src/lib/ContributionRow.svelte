@@ -1,7 +1,7 @@
 <script lang="ts">
 	// One of your changes: where it is, what it changes (a red-pen correction when we know the before), its tag.
 	import type { Change } from './api.ts';
-	import { tagFor, textFields, type ChangeGroup } from './contributions.ts';
+	import { changedNames, plainNames, tagFor, textFields, type ChangeGroup } from './contributions.ts';
 	import Japanese from './Japanese.svelte';
 	import { fieldLabel, JAPANESE_FIELDS, KINDS } from './labels.ts';
 	import RedPen from './RedPen.svelte';
@@ -26,9 +26,10 @@
 	);
 	// What the change ends as: the editor's wording when it was edited on accepting.
 	const after = $derived(textFields(change.admin_edit ?? change.proposed));
-	const names = $derived(Object.keys(after));
-	const fieldsLine = $derived(change.action === 'change' ? names.map(fieldLabel).join(', ') : '');
 	const before = $derived(change.before && change.action === 'change' ? change.before : null);
+	// With a before: the fields that differ (as the red pen sees them). Without: every field but the ids.
+	const names = $derived(before ? changedNames(before, after) : plainNames(after));
+	const fieldsLine = $derived(before ? names.map(fieldLabel).join(', ') : '');
 	const struck = $derived(
 		typeof change.before?.jp === 'string' ? change.before.jp : typeof change.before?.en === 'string' ? change.before.en : null
 	);

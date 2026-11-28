@@ -46,7 +46,6 @@
 	const showWaiting = $derived(filter === 'all' || filter === 'waiting');
 	const showDeclined = $derived(filter === 'all' || filter === 'declined');
 	const empty = $derived(!!data && data.counts.approved + data.counts.suggested === 0);
-	const noChanges = $derived(!!counts && counts.all === 0);
 	const sections = $derived(
 		data
 			? [
@@ -56,6 +55,7 @@
 				].filter((s) => s.show && s.list.length)
 			: []
 	);
+	const nothingShown = $derived(!!data && !(showLive && data.releases.length) && !sections.length);
 	const key = (c: Change) => c.id;
 </script>
 
@@ -89,15 +89,15 @@
 			<div class="main">
 				<FilterChips label="Show" {options} bind:value={filter} />
 
-				{#if noChanges}
-					<p class="empty">You haven't suggested a change yet.</p>
+				{#if nothingShown}
+					<p class="quiet">Nothing here yet.</p>
 				{/if}
 
 				{#if showLive}
-					{#each data.releases as release (release.label)}
-						<section aria-labelledby="release-{release.label}">
+					{#each data.releases as release, i (release.label)}
+						<section aria-labelledby="release-{i}">
 							<div class="head">
-								<h2 id="release-{release.label}">
+								<h2 id="release-{i}">
 									{release.loaded_at ? `Release ${release.label}` : release.label}
 								</h2>
 								<p class="quiet">{releaseLine(release, longDate)}</p>

@@ -88,3 +88,18 @@ test('a waiting row links its replies to the thread; a declined row shows the re
 	expect(d).toContain('<strong>Keiko:</strong>');
 	expect(d).toContain('Too formal.');
 });
+
+test('the where line lists only fields that differ, never ids; plain rows hide ids', () => {
+	const row = change({
+		proposed: { id: 'x', form: 'a', jp: 'あ', en: 'I drink tea.' },
+		before: { id: 'x', form: 'a', jp: 'あ', en: 'I drinks tea.' }
+	});
+	const body = render(ContributionRow, { props: { change: row, group: 'waiting', readings: {} } }).body;
+	expect(body).toMatch(/· English(<!--\]-->)?<\/p>/);
+	expect(body).not.toMatch(/Form,|Japanese,/);
+	const plain = render(ContributionRow, {
+		props: { change: { ...row, before: null, proposed: { id: '5c7yfu', en: 'Hi' } }, group: 'declined', readings: {} }
+	}).body;
+	expect(plain).not.toContain('5c7yfu');
+	expect(plain).not.toMatch(/·/);
+});

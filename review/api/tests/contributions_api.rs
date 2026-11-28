@@ -116,6 +116,8 @@ async fn counts_and_groups_match_the_viewers_work() {
 
     // An open suggestion's `before` is the current item.
     assert_eq!(c["waiting"][0]["before"], doc_example());
+    // So is a declined one's: it was never applied.
+    assert_eq!(c["declined"][0]["before"], doc_example_n(3));
     assert_eq!(c["waiting"][0]["proposed"]["en"], "Open.");
     assert_eq!(c["waiting"][0]["replies"], 0);
     assert_eq!(c["declined"][0]["replies"], 1);
@@ -124,13 +126,17 @@ async fn counts_and_groups_match_the_viewers_work() {
 }
 
 fn doc_example() -> Value {
+    doc_example_n(0)
+}
+
+fn doc_example_n(n: usize) -> Value {
     use review_api::data::DataFile;
     doc(DataFile::Verbs)["verbs"]
         .as_array()
         .unwrap()
         .iter()
         .find(|v| v["dict"] == "たべる")
-        .unwrap()["examples"][0]
+        .unwrap()["examples"][n]
         .clone()
 }
 

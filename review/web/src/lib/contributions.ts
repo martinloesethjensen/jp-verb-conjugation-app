@@ -1,4 +1,5 @@
 // Your contributions: how the page counts, words and tags what `GET /api/contributions` returns.
+import { diffFields } from './diff.ts';
 import type { Change, Contributions, PublicRole, Release } from './api.ts';
 
 export type ContributionFilter = 'all' | 'live' | 'waiting' | 'declined';
@@ -45,3 +46,13 @@ export const ROLE_PILL: Record<PublicRole, string> = { owner: 'Owner', teacher: 
 export function textFields(fields: Record<string, unknown> | null | undefined): Record<string, string> {
 	return Object.fromEntries(Object.entries(fields ?? {}).filter((e): e is [string, string] => typeof e[1] === 'string'));
 }
+
+/** An id field: never shown, it means nothing to a reviewer. */
+const isId = (name: string) => name === 'id' || name.endsWith('_id');
+
+/** The fields that differ between `before` and `after`, as the red pen compares them. */
+export const changedNames = (before: Record<string, unknown>, after: Record<string, string>) =>
+	diffFields(before, after, Object.keys(after).filter((n) => !isId(n))).map((f) => f.name);
+
+/** Every field to show when there is no before to compare with. */
+export const plainNames = (after: Record<string, string>) => Object.keys(after).filter((n) => !isId(n));
