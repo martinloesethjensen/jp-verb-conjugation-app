@@ -473,6 +473,13 @@ export const decide = (
 	extra: Edits & { reply?: string; confirm?: boolean } = {}
 ) => request<Suggestion & { warning?: string; declined?: number[] }>('/api/decide', { id, decision, ...extra });
 
+/** Declines with the reply box's draft, when it has text: the Worker writes it with the decision, so it is the
+ * reason the author sees. */
+export const decline = (id: number, draft: string) => {
+	const reply = draft.trim();
+	return decide(id, 'decline', reply ? { reply } : {});
+};
+
 // --- Second opinions ----------------------------------------------------------------------------
 
 export const getCandidates = async (t: Target) =>

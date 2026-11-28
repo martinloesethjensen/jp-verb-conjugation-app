@@ -28,8 +28,9 @@
 		names: string[];
 		onwithdraw?: () => Promise<void>;
 		oncomment?: (text: string) => Promise<void>;
-		/** Extra buttons (the owner's decisions). */
-		actions?: Snippet;
+		/** Extra buttons (the owner's decisions), given the reply box's draft and a way to clear it: Decline
+		 * sends the draft as its reply. */
+		actions?: Snippet<[{ draft: string; clear: () => void }]>;
 		/** Furigana and form labels, for previewing an addition. */
 		readings?: Record<string, string>;
 		forms?: Record<string, string>;
@@ -148,7 +149,7 @@
 				</form>
 			{/if}
 			<div class="actions">
-				{@render actions?.()}
+				{@render actions?.({ draft: reply, clear: () => (reply = '') })}
 				{#if s.mine && s.status === 'open' && onwithdraw}
 					<button type="button" class="link" disabled={busy} onclick={() => run(onwithdraw)}>Withdraw</button>
 				{/if}

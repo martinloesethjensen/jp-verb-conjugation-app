@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { render } from 'svelte/server';
 import type { Change, Contributions, Release } from './api.ts';
-import { filterCounts, headline, releaseLine, tagFor } from './contributions.ts';
+import { countTiles, filterCounts, headline, releaseLine, splitAccepted, tagFor } from './contributions.ts';
 import ContributionRow from './ContributionRow.svelte';
 
 const change = (over: Partial<Change> = {}): Change => ({
@@ -47,6 +48,24 @@ test('filter counts: waiting is accepted plus waiting', () => {
 	expect(filterCounts(c)).toEqual({ all: 7, live: 3, waiting: 3, declined: 1 });
 });
 
+test('accepted notes never ship: not waiting for a release, but counted in All', () => {
+	const note = change({ id: 9, action: 'note', proposed: null, comment: 'Looks off.' });
+	const c = contributions({ accepted: [...some(2), note], waiting: some(1), declined: some(1) });
+	expect(splitAccepted(c.accepted)).toEqual({ next: some(2), notes: [note] });
+	expect(filterCounts(c)).toEqual({ all: 8, live: 3, waiting: 3, declined: 1 });
+});
+
+test('counts: only "live in the app" is green, and only above 0', () => {
+	const tiles = countTiles({ approved: 7, suggested: 3, accepted: 3, live: 2 });
+	expect(tiles.map((t) => [t.label, t.n, t.good])).toEqual([
+		['items approved', 7, false],
+		['changes suggested', 3, false],
+		['accepted', 3, false],
+		['live in the app', 2, true]
+	]);
+	expect(countTiles({ approved: 0, suggested: 1, accepted: 1, live: 0 })[3].good).toBe(false);
+});
+
 test('the headline counts what is live', () => {
 	const live = (n: number) => contributions({ counts: { approved: 0, suggested: n, accepted: n, live: n } });
 	expect(headline(live(3))).toBe('3 of your changes are in the app.');
@@ -60,10 +79,10 @@ test('a release line has its date, and none for Earlier releases', () => {
 	expect(releaseLine(release('Earlier releases', 2, null), date)).toBe('2 of your changes');
 });
 
-test('tags: live is the only green; a note is Accepted, not Next release', () => {
+test('tags: live is the only green; an accepted note is a muted Accepted', () => {
 	expect(tagFor(change(), 'release')).toEqual({ text: 'Live in the app', tone: 'live' });
 	expect(tagFor(change(), 'accepted')).toEqual({ text: 'Next release', tone: 'next' });
-	expect(tagFor(change({ action: 'note' }), 'accepted')).toEqual({ text: 'Accepted', tone: 'next' });
+	expect(tagFor(change({ action: 'note' }), 'note')).toEqual({ text: 'Accepted', tone: 'note' });
 	expect(tagFor(change(), 'waiting')).toEqual({ text: 'Waiting', tone: 'wait' });
 	expect(tagFor(change(), 'declined')).toEqual({ text: 'Declined', tone: 'no' });
 });
@@ -102,4 +121,16 @@ test('the where line lists only fields that differ, never ids; plain rows hide i
 	}).body;
 	expect(plain).not.toContain('5c7yfu');
 	expect(plain).not.toMatch(/·/);
+});
+
+test('the page lists accepted notes in their own section after Declined, and greens only the live count', () => {
+	const page = readFileSync(new URL('../routes/contributions/+page.svelte', import.meta.url), 'utf8');
+	const order = ['Accepted, in the next release', 'Waiting for a decision', "title: 'Declined'", 'Notes accepted'].map((t) =>
+		page.indexOf(t)
+	);
+	expect(order.every((i) => i > 0)).toBe(true);
+	expect([...order].sort((a, b) => a - b)).toEqual(order);
+	expect(page).toContain('splitAccepted(');
+	expect(page).toContain('countTiles(');
+	expect(page).not.toMatch(/good: data\.counts\.accepted/);
 });

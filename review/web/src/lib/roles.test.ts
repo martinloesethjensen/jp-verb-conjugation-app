@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { canAskOpinion, canDecide, decidesAll, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from './roles.ts';
+import { canAskOpinion, canDecide, decidesAll, declineLabel, editableFields, mayDecide, ownSuggestionLine, TEACHER_DECIDES } from './roles.ts';
 import type { Field } from './api.ts';
 
 test('teachers, natives and the owner open the inbox; only teachers and the owner decide everything', () => {
@@ -78,4 +78,19 @@ test('teachers and the owner ask for a second opinion; natives and reviewers do 
 	expect(canAskOpinion('teacher')).toBe(true);
 	expect(canAskOpinion('native')).toBe(false);
 	expect(canAskOpinion('reviewer')).toBe(false);
+});
+
+test('Decline says the reply goes with it when the reply box has text', () => {
+	expect(declineLabel('')).toBe('Decline');
+	expect(declineLabel('   ')).toBe('Decline');
+	expect(declineLabel('Too literal.')).toBe('Decline with reply');
+});
+
+test("the inbox's Decline sends the card's reply draft and clears it", () => {
+	const page = readFileSync(join(SRC, 'routes/inbox/+page.svelte'), 'utf8');
+	expect(page).toMatch(/\{#snippet actions\(\{ draft, clear \}\)\}/);
+	expect(page).toMatch(/decline\(s\.id, draft\)/);
+	expect(page).toMatch(/clear\(\)/);
+	expect(page).toContain('declineLabel(draft)');
+	expect(page).not.toMatch(/decide\(s\.id, 'decline'\)/);
 });

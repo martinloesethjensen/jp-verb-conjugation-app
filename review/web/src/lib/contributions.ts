@@ -3,16 +3,31 @@ import { diffFields } from './diff.ts';
 import type { Change, Contributions, PublicRole, Release } from './api.ts';
 
 export type ContributionFilter = 'all' | 'live' | 'waiting' | 'declined';
-export type ChangeGroup = 'release' | 'accepted' | 'waiting' | 'declined';
+export type ChangeGroup = 'release' | 'accepted' | 'waiting' | 'declined' | 'note';
 
 const liveCount = (c: Contributions) => c.releases.reduce((n, r) => n + r.changes.length, 0);
 
-/** What each filter chip counts. "Waiting" holds the accepted changes that aren't in a release yet. */
+/** The accepted changes not in a release yet, and the accepted notes, which never ship: they wait for nothing. */
+export function splitAccepted(accepted: Change[]): { next: Change[]; notes: Change[] } {
+	return { next: accepted.filter((c) => c.action !== 'note'), notes: accepted.filter((c) => c.action === 'note') };
+}
+
+/** What each filter chip counts. "Waiting" holds the accepted changes that aren't in a release yet; accepted
+ * notes count only in All. */
 export function filterCounts(c: Contributions): Record<ContributionFilter, number> {
 	const live = liveCount(c);
-	const waiting = c.accepted.length + c.waiting.length;
-	return { all: live + waiting + c.declined.length, live, waiting, declined: c.declined.length };
+	const { next, notes } = splitAccepted(c.accepted);
+	const waiting = next.length + c.waiting.length;
+	return { all: live + waiting + c.declined.length + notes.length, live, waiting, declined: c.declined.length };
 }
+
+/** The four counts at the top. Green only for what is live in the app, and only once there is some. */
+export const countTiles = (n: Contributions['counts']) => [
+	{ label: 'items approved', n: n.approved, good: false },
+	{ label: 'changes suggested', n: n.suggested, good: false },
+	{ label: 'accepted', n: n.accepted, good: false },
+	{ label: 'live in the app', n: n.live, good: n.live > 0 }
+];
 
 export function headline(c: Contributions): string {
 	const n = c.counts.live;
@@ -26,11 +41,12 @@ export function releaseLine(r: Release, dateFormat: (iso: string) => string): st
 	return r.loaded_at ? `${dateFormat(r.loaded_at)} · ${n}` : n;
 }
 
-export type Tag = { text: string; tone: 'live' | 'next' | 'wait' | 'no' };
+export type Tag = { text: string; tone: 'live' | 'next' | 'wait' | 'no' | 'note' };
 
 export function tagFor(change: Change, group: ChangeGroup): Tag {
 	if (group === 'release') return { text: 'Live in the app', tone: 'live' };
-	if (group === 'accepted') return { text: change.action === 'note' ? 'Accepted' : 'Next release', tone: 'next' };
+	if (group === 'accepted') return { text: 'Next release', tone: 'next' };
+	if (group === 'note') return { text: 'Accepted', tone: 'note' };
 	if (group === 'waiting') return { text: 'Waiting', tone: 'wait' };
 	return { text: 'Declined', tone: 'no' };
 }

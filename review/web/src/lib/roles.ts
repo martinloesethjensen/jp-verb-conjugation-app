@@ -29,5 +29,9 @@ export const ownSuggestionLine = (role: Role) =>
 			? 'Yours. Someone else accepts it.'
 			: 'Yours. Another teacher or Martin accepts it.';
 
+/** The inbox's Decline: with text in the card's reply box, that reply goes with it (and becomes the reason
+ * the author sees under Your contributions), so the button says so. */
+export const declineLabel = (draft: string) => (draft.trim() ? 'Decline with reply' : 'Decline');
+
 /** Asks a colleague for a second opinion on an item's open suggestions: teachers and the owner. */
 export const canAskOpinion = (role: Role) => role === 'teacher' || role === 'admin';

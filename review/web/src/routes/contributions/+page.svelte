@@ -4,11 +4,13 @@
 	import { ApiError, getContributions, type Change, type Contributions } from '#lib/api.ts';
 	import ContributionRow from '#lib/ContributionRow.svelte';
 	import {
+		countTiles,
 		filterCounts,
 		headline,
 		longDate,
 		releaseLine,
 		ROLE_PILL,
+		splitAccepted,
 		type ContributionFilter
 	} from '#lib/contributions.ts';
 	import ErrorLine from '#lib/ErrorLine.svelte';
@@ -46,12 +48,15 @@
 	const showWaiting = $derived(filter === 'all' || filter === 'waiting');
 	const showDeclined = $derived(filter === 'all' || filter === 'declined');
 	const empty = $derived(!!data && data.counts.approved + data.counts.suggested === 0);
+	// Accepted notes never ship, so they don't wait for a release: their own section, under All only.
+	const accepted = $derived(data ? splitAccepted(data.accepted) : { next: [], notes: [] });
 	const sections = $derived(
 		data
 			? [
-					{ id: 'accepted', title: 'Accepted, in the next release', show: showWaiting, group: 'accepted' as const, list: data.accepted },
+					{ id: 'accepted', title: 'Accepted, in the next release', show: showWaiting, group: 'accepted' as const, list: accepted.next },
 					{ id: 'waiting', title: 'Waiting for a decision', show: showWaiting, group: 'waiting' as const, list: data.waiting },
-					{ id: 'declined', title: 'Declined', show: showDeclined, group: 'declined' as const, list: data.declined }
+					{ id: 'declined', title: 'Declined', show: showDeclined, group: 'declined' as const, list: data.declined },
+					{ id: 'notes', title: 'Notes accepted', show: filter === 'all', group: 'note' as const, list: accepted.notes }
 				].filter((s) => s.show && s.list.length)
 			: []
 	);
@@ -76,10 +81,9 @@
 
 {#if data}
 	<dl class="counts">
-		<div><dt>items approved</dt><dd>{data.counts.approved}</dd></div>
-		<div><dt>changes suggested</dt><dd>{data.counts.suggested}</dd></div>
-		<div><dt>accepted</dt><dd class={{ good: data.counts.accepted > 0 }}>{data.counts.accepted}</dd></div>
-		<div><dt>live in the app</dt><dd>{data.counts.live}</dd></div>
+		{#each countTiles(data.counts) as tile (tile.label)}
+			<div><dt>{tile.label}</dt><dd class={{ good: tile.good }}>{tile.n}</dd></div>
+		{/each}
 	</dl>
 
 	{#if empty}
