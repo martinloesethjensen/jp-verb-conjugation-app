@@ -61,3 +61,14 @@ test('the header links to Settings, not the old Account page', () => {
 	expect(body).toContain('>Settings<');
 	expect(body).not.toContain('href="/account"');
 });
+
+test('everyone gets Your contributions, before Settings, in the nav and the phone menu', () => {
+	for (const me of [admin, reviewer]) {
+		const { body } = render(SiteHeader, { props: { me } });
+		expect(body.match(/href="\/contributions"/g)?.length, me.role).toBe(2);
+		expect(body).toContain('Your contributions');
+		expect(body.indexOf('href="/contributions"')).toBeLessThan(body.indexOf('href="/settings"'));
+	}
+	const menu = render(SiteHeader, { props: { me: reviewer } }).body.split('class="account-menu')[1];
+	expect(menu.indexOf('/contributions')).toBeLessThan(menu.indexOf('/settings'));
+});

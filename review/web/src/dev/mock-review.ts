@@ -563,6 +563,41 @@ export function reviewMock(ctx: ReviewContext) {
 			closeOpinions(suggestion);
 			return [200, suggestionOut(suggestion)];
 		}
+		if (path === '/contributions' && method === 'GET') {
+			// Mine, newest first. The mock has no releases: an accepted change counts as live once it is exported.
+			const mine = suggestions.filter((s) => s.author === by && s.status !== 'withdrawn').reverse();
+			const change = (s: Suggestion) => {
+				const decided = s as Suggestion & { decided_by?: string; before?: Json | null };
+				const reason = s.status === 'declined' ? comments.filter((c) => c.suggestion_id === s.id && c.author !== by).at(-1) : undefined;
+				return {
+					id: s.id, action: s.action, dataset: s.dataset, kind: s.kind, item_id: s.item_id, entry_id: s.entry_id,
+					parent_kind: s.parent_kind ?? null, parent_id: s.parent_id ?? null, item_title: s.item_title,
+					proposed: s.proposed, admin_edit: s.admin_edit, furigana: s.furigana, comment: s.comment,
+					created_at: s.created_at, decided_at: s.decided_at,
+					before: s.status === 'open' ? (find(s)?.value ?? null) : (decided.before ?? null),
+					replies: comments.filter((c) => c.suggestion_id === s.id && c.author !== by).length,
+					reason: reason ? { by_name: nameOf(reason.author), body: reason.body } : null
+				};
+			};
+			const live = mine.filter((s) => s.status === 'accepted' && s.exported_at);
+			const sets = new Map<string, { dataset: string; approved: number; suggested: number }>();
+			const set = (dataset: string) => sets.get(dataset) ?? sets.set(dataset, { dataset, approved: 0, suggested: 0 }).get(dataset)!;
+			for (const a of approvals.filter((a) => a.reviewer === by)) set(a.dataset).approved++;
+			for (const s of mine) set(s.dataset).suggested++;
+			const me = userOf(by);
+			return [200, {
+				counts: {
+					approved: approvals.filter((a) => a.reviewer === by).length, suggested: mine.length,
+					accepted: mine.filter((s) => s.status === 'accepted').length, live: live.length
+				},
+				credit: { name: me?.public_name ?? null, role: me?.public_role ?? 'native' },
+				releases: live.length ? [{ label: '2026.11.07', loaded_at: '2026-11-07T08:00:00Z', changes: live.map(change) }] : [],
+				accepted: mine.filter((s) => s.status === 'accepted' && !s.exported_at).map(change),
+				waiting: mine.filter((s) => s.status === 'open').map(change),
+				declined: mine.filter((s) => s.status === 'declined').map(change),
+				datasets: [...sets.values()]
+			}];
+		}
 		if (path === '/replies' && method === 'GET') {
 			const list = repliesFor(by);
 			return [200, { unread: list.filter((r) => r.unread).length, replies: list.slice(0, 50) }];
@@ -757,7 +792,11 @@ export function reviewMock(ctx: ReviewContext) {
 					declined.push(other.id);
 				}
 			}
-			Object.assign(suggestion, { status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now(), decided_by: by });
+			Object.assign(suggestion, {
+				status: body.decision === 'accept' ? 'accepted' : 'declined', decided_at: now(), decided_by: by,
+				// What it replaced, kept for Your contributions.
+				before: body.decision === 'accept' ? (find(suggestion)?.value ?? null) : null
+			});
 			closeOpinions(suggestion);
 			markRead(by, suggestion.id);
 			const reply = String(body.reply ?? '').trim();
