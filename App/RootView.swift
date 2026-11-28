@@ -80,6 +80,9 @@ struct RootView: View {
             linkLeavingQuiz = url
             return
         }
+        // A quiz cover closing in this same update would swallow a sheet opened now.
+        let quizWasShowing = quiz != nil || connectionQuestions != nil || spotQuestions != nil
+            || particleQuestions != nil || verbPairQuestions != nil
         // Anything presented over the list would hide the page the link opens.
         examplesVerb = nil
         showingSettings = false
@@ -102,7 +105,15 @@ struct RootView: View {
             let verbs = verbStore.verbs.visible(in: LevelSettings.load())
             let questions = questions(for: .weakSpots, verbs: verbs)
             if questions.isEmpty {
-                topicSheetVerbs = verbs
+                if quizWasShowing {
+                    // Open the topic sheet once the quiz cover has finished closing.
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(600))
+                        topicSheetVerbs = verbs
+                    }
+                } else {
+                    topicSheetVerbs = verbs
+                }
             } else {
                 quiz = QuizLaunch(questions: questions, topic: .weakSpots)
             }

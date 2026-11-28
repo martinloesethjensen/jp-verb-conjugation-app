@@ -6,14 +6,9 @@ import VerbKit
 struct DataSyncSection: View {
     @Environment(DataSyncStatus.self) private var syncStatus
 
+    /// A plain `Section`, so the list styles it like the others (a TimelineView around it turned it
+    /// into one grey system row). The relative times redraw every minute inside their own rows.
     var body: some View {
-        // Redrawn every minute so "Updated 2 minutes ago" doesn't go stale while Settings is open.
-        TimelineView(.everyMinute) { _ in
-            section
-        }
-    }
-
-    private var section: some View {
         Section {
             ForEach(DataFile.allCases) { file in
                 DataFileRow(status: syncStatus.status(for: file))
@@ -34,10 +29,11 @@ struct DataSyncSection: View {
             Text("Data")
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
-                Text(footer)
+                TimelineView(.everyMinute) { _ in Text(footer) }
                 Text(KanjiDisplay.settingsCredit)
             }
         }
+        .paperRow()
     }
 
     private var footer: String {
@@ -66,9 +62,12 @@ private struct DataFileRow: View {
                     .monospacedDigit()
             }
             if let updated = status.lastUpdated {
-                Text("Updated \(updated.formatted(.relative(presentation: .named)))")
-                    .font(.footnote)
-                    .foregroundStyle(palette.muted)
+                // Redrawn every minute so "Updated 2 minutes ago" doesn't go stale while Settings is open.
+                TimelineView(.everyMinute) { _ in
+                    Text("Updated \(updated.formatted(.relative(presentation: .named)))")
+                        .font(.footnote)
+                        .foregroundStyle(palette.muted)
+                }
             }
             if let message = status.problemMessage {
                 Label(message, systemImage: "info.circle")
